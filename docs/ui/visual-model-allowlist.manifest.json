@@ -12,25 +12,25 @@
     "requiredForVisualMutation": true
   },
   "proposalPath": "docs/ui/visual-change-proposal.template.md",
-  "privateApprovalAlias": "private-codex-ui-approval",
+  "externalApprovalAlias": "external-ui-approval",
   "modelStatuses": ["active", "revoked"],
-  "initialActiveModels": ["claude-opus-4.7"],
+  "initialActiveModels": ["approved-visual-model"],
   "additionalActiveModelPolicy": {
     "requiresExplicitUserApproval": true,
-    "privateApprovalReferenceRequired": true,
+    "externalApprovalReferenceRequired": true,
     "publicRepoStoresApprovalAliasOnly": true
   },
   "allowedVisualModels": [
     {
-      "id": "claude-opus-4.7",
-      "label": "Claude Opus 4.7",
+      "id": "approved-visual-model",
+      "label": "Approved visual model",
       "status": "active",
       "allowedMutationClasses": ["visual-ui", "copy-ui", "mechanical-equivalent-refactor"],
       "scopeSource": "docs/ui/visual-change-scopes.manifest.json",
       "privateApprovalRequired": true,
       "approvedBy": "user",
       "approvedAt": "2026-05-15",
-      "privateApprovalReference": "private-codex-ui-approval:models/claude-opus-4.7"
+      "externalApprovalReference": "external-ui-approval:models/approved-visual-model"
     }
   ]
 }

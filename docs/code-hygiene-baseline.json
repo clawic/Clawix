@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "program": "code-hygiene",
   "defaultExpiryDays": 90,
-  "sourceConversationId": "private-runtime-conversation:code-hygiene",
+  "sourceConversationId": "source:code-hygiene",
   "categories": [
     "public_api",
     "protocol_compat",

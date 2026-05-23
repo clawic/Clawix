@@ -118,7 +118,7 @@ if (args.has("--simulate-wrong-external-pending-code") && manifest) {
   manifest.externalPendingExitCode = 1;
 }
 if (args.has("--simulate-private-command-mismatch") && manifest) {
-  manifest.privateEvidenceCommand = "node scripts/ui_private_visual_verify.mjs";
+  manifest.externalEvidenceCommand = "node scripts/ui_private_visual_verify.mjs";
 }
 if (args.has("--simulate-missing-required-lane") && Array.isArray(manifest?.requiredLanes)) {
   manifest.requiredLanes = manifest.requiredLanes.filter((lane) => lane !== "release");
@@ -155,22 +155,22 @@ requireFields(manifest, manifestPath, [
   "publicCiStrategy",
   "requiredPublicCheckScripts",
   "publicCheckCoverage",
-  "privateEvidenceCommand",
+  "externalEvidenceCommand",
   "externalPendingExitCode",
 ]);
 
 if (manifest?.externalPendingExitCode !== 2) {
   fail(`${manifestPath}.externalPendingExitCode must be 2`);
 }
-if (!String(manifest?.privateEvidenceCommand || "").includes("scripts/ui_private_visual_verify.mjs --require-approved")) {
-  fail(`${manifestPath}.privateEvidenceCommand must require the aggregate private visual verifier`);
+if (!String(manifest?.externalEvidenceCommand || "").includes("scripts/ui_private_visual_verify.mjs --require-approved")) {
+  fail(`${manifestPath}.externalEvidenceCommand must require the aggregate private visual verifier`);
 }
-if (manifest?.privateEvidenceCommand !== privateVisualValidation?.verificationCommand) {
-  fail(`${manifestPath}.privateEvidenceCommand must match ${privateVisualValidationPath}.verificationCommand`);
+if (manifest?.externalEvidenceCommand !== privateVisualValidation?.verificationCommand) {
+  fail(`${manifestPath}.externalEvidenceCommand must match ${privateVisualValidationPath}.verificationCommand`);
 }
 for (const rootEnv of requireArray(privateVisualValidation, privateVisualValidationPath, "requiredRoots")) {
-  if (!String(manifest?.privateEvidenceCommand || "").includes(rootEnv)) {
-    fail(`${manifestPath}.privateEvidenceCommand must include ${rootEnv}`);
+  if (!String(manifest?.externalEvidenceCommand || "").includes(rootEnv)) {
+    fail(`${manifestPath}.externalEvidenceCommand must include ${rootEnv}`);
   }
 }
 
@@ -197,7 +197,7 @@ requireFields(publicCiStrategy, `${manifestPath}.publicCiStrategy`, [
   "job",
   "validates",
   "forbidsPrivateRoots",
-  "privateEvidenceMode",
+  "externalEvidenceMode",
 ]);
 if (!workflow.includes(`${publicCiStrategy.job}:`)) {
   fail(`${manifest.publicWorkflow} must define ${publicCiStrategy.job}`);
@@ -227,8 +227,8 @@ for (const script of ["scripts/ui_governance_guard.mjs", "scripts/ui_pattern_mut
     fail(`${script} must consume ${publicCiStrategy.diffBaseEnv}`);
   }
 }
-if (publicCiStrategy.privateEvidenceMode !== "external-pending-contract") {
-  fail(`${manifestPath}.publicCiStrategy.privateEvidenceMode must be external-pending-contract`);
+if (publicCiStrategy.externalEvidenceMode !== "external-pending-contract") {
+  fail(`${manifestPath}.publicCiStrategy.externalEvidenceMode must be external-pending-contract`);
 }
 if (/CLAWIX_UI_PRIVATE_[A-Z_]+_ROOT/.test(workflow)) {
   fail(`${manifest.publicWorkflow} must not require private evidence roots`);
@@ -312,7 +312,7 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
     ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-wrong-external-pending-code", "externalPendingExitCode must be 2"],
-    ["--simulate-private-command-mismatch", "privateEvidenceCommand must require the aggregate private visual verifier"],
+    ["--simulate-private-command-mismatch", "externalEvidenceCommand must require the aggregate private visual verifier"],
     ["--simulate-missing-required-lane", "requiredLanes must include release"],
     ["--simulate-missing-release-requirement", "releaseLaneRequires must include host"],
     ["--simulate-missing-visual-diff", "publicCiStrategy.validates must include visual-diff"],

@@ -371,13 +371,13 @@ if (promotions && args.has("--simulate-promotion-unknown-pattern")) {
     ...(Array.isArray(promotions.promotions) ? promotions.promotions : []),
     {
       patterns: ["unknown-pattern"],
-      privateApprovalReference: "private-codex-ui-approvals:canon/unknown-pattern",
+      externalApprovalReference: "external-ui-approvals:canon/unknown-pattern",
     },
   ];
 }
 for (const [index, promotion] of requireArray(promotions, manifest.promotionRegistry, "promotions", { nonEmpty: false }).entries()) {
   const label = `${manifest.promotionRegistry}.promotions[${index}]`;
-  requireFields(promotion, label, ["patterns", "privateApprovalReference"]);
+  requireFields(promotion, label, ["patterns", "externalApprovalReference"]);
   for (const patternId of requireArray(promotion, label, "patterns")) {
     if (!registryPatternIds.has(patternId)) fail(`${label}.patterns references unknown pattern ${patternId}`);
   }

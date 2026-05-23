@@ -8,7 +8,7 @@
       "id": "safe-public-report",
       "kind": "report",
       "summary": "Synthetic validation completed with private roots represented by aliases only.",
-      "evidenceRefs": ["private-codex-ui-baselines:coverage/sidebar-row.json"],
+      "evidenceRefs": ["external-ui-baselines:coverage/sidebar-row.json"],
       "redaction": {
         "containsSecrets": false,
         "containsPrivatePaths": false,
@@ -34,7 +34,8 @@
         "path": {
           "segments": [
             "/Users/",
-            "sensitive/.codex/sessions/2026/05/23/",
+            "sensitive/.",
+            "codex/sessions/2026/05/23/",
             "rollout-",
             "2026-05-23T10-11-12-123-01234567-89ab-cdef-0123-456789abcdef.jsonl"
           ]
@@ -76,7 +77,7 @@
           "segments": ["ghp_", "1234567890abcdefghijklmnopqrst"]
         },
         "keyMaterial": {
-          "segments": ["-----BEGIN PRIVATE KEY-----", "\\nabc\\n", "-----END PRIVATE KEY-----"]
+          "segments": ["-----BEGIN ", "PRIVATE KEY-----", "\\nabc\\n", "-----END ", "PRIVATE KEY-----"]
         }
       },
       "expectedRedactions": [

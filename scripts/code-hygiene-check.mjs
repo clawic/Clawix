@@ -222,7 +222,7 @@ if (typeof peripheryReport.summary?.packageCount !== "number") fail("code hygien
 if (!peripheryReportMarkdown.includes("This report does not authorize automatic deletion")) {
   fail("code hygiene Periphery Markdown report must state cleanup safety");
 }
-if (!ledger.includes("private session, not published")) fail("code hygiene ledger must not publish private session paths");
+if (!ledger.includes("source redacted")) fail("code hygiene ledger must not publish private session paths");
 if (!decisionChecklist.includes("rollout_model")) fail("code hygiene decision checklist must include rollout_model");
 if (!decisionChecklist.includes("Initial cleanup completed")) fail("code hygiene decision checklist must record completed initial cleanup");
 if (!report.notes?.some((note) => note.includes("Initial cleanup completed"))) {
@@ -230,7 +230,7 @@ if (!report.notes?.some((note) => note.includes("Initial cleanup completed"))) {
 }
 if (!completionAudit.includes("11 `request_user_input`")) fail("code hygiene completion audit must record the request_user_input batch review");
 if (!completionAudit.includes("33 binding answers")) fail("code hygiene completion audit must record the decision count review");
-if (!completionAudit.includes("private session, not published")) fail("code hygiene completion audit must not publish private session paths");
+if (!completionAudit.includes("source redacted")) fail("code hygiene completion audit must not publish private session paths");
 for (const decision of decisions.decisions ?? []) {
   if (!completionAudit.includes(`\`${decision.id}\``)) {
     fail(`code hygiene completion audit must include decision ${decision.id}`);

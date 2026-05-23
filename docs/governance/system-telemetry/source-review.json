@@ -6,9 +6,9 @@
     "system telemetry source decision review",
     "system telemetry final source audit gate"
   ],
-  "sourceConversationId": "private-runtime-conversation:system-telemetry",
-  "sourcePlanId": "private-runtime-plan:system-telemetry",
-  "sourceSessionRef": "private-session-not-published",
+  "sourceConversationId": "source:system-telemetry",
+  "sourcePlanId": "plan:system-telemetry",
+  "sourceRef": "source-redacted",
   "privateAuditAlias": "private-goal-audit:claw-system-telemetry-context-menubar-source-audit-2026-05-20",
   "status": "complete_with_external_pending",
   "reviewedUserRoleMessages": 161,

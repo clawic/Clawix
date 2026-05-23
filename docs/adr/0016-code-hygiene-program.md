@@ -10,7 +10,7 @@ ClawJS and Clawix need a repeatable, programmatic way to prevent dead code, stal
 
 ## Decision
 
-The code hygiene program applies to ClawJS and Clawix. Existing debt is cleaned first by repo and category; then the changed and release lanes block new clear debt. The source conversation is `private-runtime-conversation:code-hygiene`, and all 33 decisions in `docs/code-hygiene-decisions.json` are binding.
+The code hygiene program applies to ClawJS and Clawix. Existing debt is cleaned first by repo and category; then the changed and release lanes block new clear debt. The source conversation is `source:code-hygiene`, and all 33 decisions in `docs/code-hygiene-decisions.json` are binding.
 
 The program fails only clear mechanical debt: local unused code, true orphan files after entrypoint calibration, private unused exports/types, stale baselines, invalid exceptions, and dependency declarations that contradict workspace imports. Semantic surfaces are report-only until classified: enum members, public APIs, Swift dynamic use, duplicates, and visual/assets similarity.
 

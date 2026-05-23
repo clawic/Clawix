@@ -126,7 +126,7 @@ const requestedVisualScopeId = visualScopeEnv ? String(process.env[visualScopeEn
 const simulatedScopeApproval = {
   approvedBy: "user",
   approvedAt: "2026-05-17",
-  privateApprovalReference: "private-codex-ui-approval:simulated",
+  externalApprovalReference: "external-ui-approval:simulated",
 };
 const simulatedPatternScope = {
   platforms: ["macos", "ios", "android", "web"],
@@ -295,7 +295,7 @@ if (simulateUnsafeReferenceVisualScope) {
       ...simulatedPatternScope,
       approvedBy: "user",
       approvedAt: "2026-05-17",
-      privateApprovalReference: "private-codex-ui-approval:../private/approval",
+      externalApprovalReference: "external-ui-approval:../private/approval",
       files: ["docs/ui/pattern-registry/patterns/sidebar-row.pattern.json"],
       changeKinds: ["layout", "microcopy", "hierarchy"],
       changeBudget: { maxFiles: 1, maxLines: 3, allowedChangeKinds: ["layout", "microcopy", "hierarchy"] },
@@ -327,8 +327,8 @@ function isIsoDate(value) {
 }
 
 function isSafePrivateApprovalReference(value) {
-  if (typeof value !== "string" || !value.startsWith("private-codex-ui-approval:")) return false;
-  const suffix = value.slice("private-codex-ui-approval:".length);
+  if (typeof value !== "string" || !value.startsWith("external-ui-approval:")) return false;
+  const suffix = value.slice("external-ui-approval:".length);
   return Boolean(
     suffix &&
       !suffix.startsWith("/") &&
@@ -380,8 +380,8 @@ function approvedScopeForHits(hits) {
   if (scope.expiresAt && scope.expiresAt < today) return { ok: false, reason: `scope ${requestedVisualScopeId} expired on ${scope.expiresAt}` };
   if (scope.approvedBy !== "user") return { ok: false, reason: `scope ${requestedVisualScopeId} must be approvedBy user` };
   if (!isIsoDate(scope.approvedAt)) return { ok: false, reason: `scope ${requestedVisualScopeId} must include approvedAt ISO date` };
-  if (!isSafePrivateApprovalReference(scope.privateApprovalReference)) {
-    return { ok: false, reason: `scope ${requestedVisualScopeId} must include safe private approval reference` };
+  if (!isSafePrivateApprovalReference(scope.externalApprovalReference)) {
+    return { ok: false, reason: `scope ${requestedVisualScopeId} must include safe external approval reference` };
   }
 
   const files = new Set(hits.map((hit) => hit.path));
@@ -677,7 +677,7 @@ if (errors.length === 0 && !isSelfTest && args.length === 0) {
     ],
     [
       ["--simulate-unauthorized-pattern-mutation", "--simulate-unsafe-reference-visual-scope"],
-      "scope simulated-unsafe-reference-scope must include safe private approval reference",
+      "scope simulated-unsafe-reference-scope must include safe external approval reference",
       { ...authorizedEnv, [visualScopeEnv]: "simulated-unsafe-reference-scope" },
     ],
   ]) {

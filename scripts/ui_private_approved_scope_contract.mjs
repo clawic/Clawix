@@ -34,8 +34,8 @@ export function loadApprovedScopeContract(rootDir, fail) {
   return {
     requiredFields: Array.isArray(validation?.requiredApprovedScopeFields)
       ? validation.requiredApprovedScopeFields
-      : ["scopeId", "approvedBy", "approvedAt", "privateApprovalReference"],
-    privateApprovalAlias: approval?.privateApprovalAlias || "private-codex-ui-approval",
+      : ["scopeId", "approvedBy", "approvedAt", "externalApprovalReference"],
+    externalApprovalAlias: approval?.externalApprovalAlias || "external-ui-approval",
   };
 }
 
@@ -51,9 +51,9 @@ export function assertApprovedScopeMetadata(value, label, contract, fail) {
   }
   if (value.approvedBy !== "user") fail(`${label}.approvedBy must be user`);
   if (!isIsoTimestamp(value.approvedAt)) fail(`${label}.approvedAt must be an ISO date or timestamp`);
-  const approvalReference = splitReference(value.privateApprovalReference);
-  if (!approvalReference || approvalReference.alias !== contract.privateApprovalAlias) {
-    fail(`${label}.privateApprovalReference must use ${contract.privateApprovalAlias}:`);
+  const approvalReference = splitReference(value.externalApprovalReference);
+  if (!approvalReference || approvalReference.alias !== contract.externalApprovalAlias) {
+    fail(`${label}.externalApprovalReference must use ${contract.externalApprovalAlias}:`);
   }
   if (typeof value.scopeId !== "string" || value.scopeId === "") {
     fail(`${label}.scopeId must be a non-empty string`);

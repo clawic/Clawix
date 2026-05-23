@@ -102,7 +102,7 @@ function requireAlias(value, alias, label) {
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
   }
   if (hasLocalPath(value)) {
     fail(`${label} must not contain a local path`);
@@ -125,11 +125,11 @@ function runFailureSelfTests() {
   const selfTestEnv = { ...process.env, CLAWIX_UI_PROTECTED_SURFACE_SELF_TEST: "1" };
   const tests = [
     [["--unknown-flag"], "received unknown flag --unknown-flag"],
-    [["--simulate-wrong-private-baseline-alias"], "privateBaselineAlias must be private-codex-ui-baselines"],
+    [["--simulate-wrong-private-baseline-alias"], "externalBaselineAlias must be external-ui-baselines"],
     [["--simulate-missing-required-freeze-field"], "requiredFreezeFields must include changePolicy"],
     [["--simulate-wrong-freeze-contract-value"], "freezeContractValue must be stable"],
     [["--simulate-missing-approval-authority-source"], "approvalSources must include protected-surfaces"],
-    [["--simulate-missing-freeze-field"], "is missing privateApprovalReference"],
+    [["--simulate-missing-freeze-field"], "is missing externalApprovalReference"],
     [["--simulate-unknown-pattern"], "patterns references unknown pattern unknown-pattern"],
     [["--simulate-invalid-baseline-hash"], "privateBaselineHash must be a 64-character hex hash"],
     [["--simulate-disabled-change-policy"], "changePolicy.requiresExplicitUserApproval must be true"],
@@ -137,7 +137,7 @@ function runFailureSelfTests() {
     [["--simulate-unsupported-platform"], "platform is not governed"],
     [["--simulate-non-user-approval"], "approvedBy must be user"],
     [["--simulate-invalid-approval-date"], "approvedAt must be an ISO date"],
-    [["--simulate-unsafe-private-reference"], "privateBaselineReference must use a safe relative private reference"],
+    [["--simulate-unsafe-private-reference"], "externalBaselineReference must use a safe relative external reference"],
     [["--simulate-missing-contract-field"], "contract is missing performance"],
     [["--simulate-unstable-contract-value"], "contract.copy must be stable"],
     [["--simulate-disabled-visual-model-policy"], "changePolicy.requiresVisualModelAllowlist must be true"],
@@ -173,15 +173,15 @@ requireFields(protectedSurfaces, protectedPath, [
   "schemaVersion",
   "status",
   "policy",
-  "privateBaselineAlias",
+  "externalBaselineAlias",
   "privateCopyAlias",
-  "privateGeometryAlias",
+  "externalGeometryAlias",
   "freezeContractValue",
   "requiredFreezeFields",
   "surfaces",
 ]);
 if (args.has("--simulate-wrong-private-baseline-alias") && protectedSurfaces) {
-  protectedSurfaces.privateBaselineAlias = "private-local-baselines";
+  protectedSurfaces.externalBaselineAlias = "private-local-baselines";
 }
 if (args.has("--simulate-missing-required-freeze-field") && Array.isArray(protectedSurfaces?.requiredFreezeFields)) {
   protectedSurfaces.requiredFreezeFields = protectedSurfaces.requiredFreezeFields.filter((field) => field !== "changePolicy");
@@ -191,9 +191,9 @@ if (args.has("--simulate-wrong-freeze-contract-value") && protectedSurfaces) {
 }
 
 for (const [field, expected] of [
-  ["privateBaselineAlias", "private-codex-ui-baselines"],
-  ["privateCopyAlias", "private-codex-ui-copy-snapshots"],
-  ["privateGeometryAlias", "private-runtime-ui-rendered-geometry"],
+  ["externalBaselineAlias", "external-ui-baselines"],
+  ["privateCopyAlias", "external-ui-copy-snapshots"],
+  ["externalGeometryAlias", "external-ui-rendered-geometry"],
   ["freezeContractValue", "stable"],
 ]) {
   if (protectedSurfaces?.[field] !== expected) fail(`${protectedPath}.${field} must be ${expected}`);
@@ -208,9 +208,9 @@ for (const field of [
   "patterns",
   "approvedBy",
   "approvedAt",
-  "privateApprovalReference",
+  "externalApprovalReference",
   "contract",
-  "privateBaselineReference",
+  "externalBaselineReference",
   "privateBaselineHash",
   "copySnapshotReference",
   "copySnapshotHash",
@@ -236,18 +236,18 @@ function simulatedProtectedSurface(overrides = {}) {
     patterns: ["sidebar-row"],
     approvedBy: "user",
     approvedAt: "2026-05-17",
-    privateApprovalReference: "private-codex-ui-approval:simulated",
+    externalApprovalReference: "external-ui-approval:simulated",
     contract: {
       geometry: "stable",
       copy: "stable",
       states: "stable",
       performance: "stable",
     },
-    privateBaselineReference: "private-codex-ui-baselines:simulated",
+    externalBaselineReference: "external-ui-baselines:simulated",
     privateBaselineHash: hash,
-    copySnapshotReference: "private-codex-ui-copy-snapshots:simulated",
+    copySnapshotReference: "external-ui-copy-snapshots:simulated",
     copySnapshotHash: hash,
-    geometryEvidenceReference: "private-runtime-ui-rendered-geometry:simulated",
+    geometryEvidenceReference: "external-ui-rendered-geometry:simulated",
     geometryEvidenceHash: hash,
     changePolicy: {
       requiresExplicitUserApproval: true,
@@ -267,7 +267,7 @@ function appendSimulatedSurface(overrides = {}) {
 
 if (args.has("--simulate-missing-freeze-field")) {
   const simulated = simulatedProtectedSurface();
-  delete simulated.privateApprovalReference;
+  delete simulated.externalApprovalReference;
   protectedSurfaces.surfaces = [
     ...(Array.isArray(protectedSurfaces?.surfaces) ? protectedSurfaces.surfaces : []),
     simulated,
@@ -313,7 +313,7 @@ if (args.has("--simulate-invalid-approval-date")) {
 if (args.has("--simulate-unsafe-private-reference")) {
   appendSimulatedSurface({
     id: "simulated-unsafe-private-reference",
-    privateBaselineReference: "private-codex-ui-baselines:../outside",
+    externalBaselineReference: "external-ui-baselines:../outside",
   });
 }
 
@@ -367,8 +367,8 @@ if (!protectedApprovalSource) {
   if (protectedApprovalSource.path !== protectedPath) fail(`${approvalAuthorityPath}.approvalSources.protected-surfaces.path must be ${protectedPath}`);
   if (protectedApprovalSource.arrayField !== "surfaces") fail(`${approvalAuthorityPath}.approvalSources.protected-surfaces.arrayField must be surfaces`);
   if (protectedApprovalSource.approvedByField !== "approvedBy") fail(`${approvalAuthorityPath}.approvalSources.protected-surfaces.approvedByField must be approvedBy`);
-  if (protectedApprovalSource.privateApprovalField !== "privateApprovalReference") {
-    fail(`${approvalAuthorityPath}.approvalSources.protected-surfaces.privateApprovalField must be privateApprovalReference`);
+  if (protectedApprovalSource.privateApprovalField !== "externalApprovalReference") {
+    fail(`${approvalAuthorityPath}.approvalSources.protected-surfaces.privateApprovalField must be externalApprovalReference`);
   }
 }
 
@@ -382,7 +382,7 @@ for (const [index, surface] of surfaces.entries()) {
   if (!requiredPlatforms.has(surface.platform)) fail(`${label}.platform is not governed`);
   if (surface.approvedBy !== "user") fail(`${label}.approvedBy must be user`);
   requireIsoDate(surface.approvedAt, `${label}.approvedAt`);
-  requireAlias(surface.privateApprovalReference, "private-codex-ui-approval", `${label}.privateApprovalReference`);
+  requireAlias(surface.externalApprovalReference, "external-ui-approval", `${label}.externalApprovalReference`);
   for (const pattern of requireArray(surface, label, "patterns")) {
     if (!patternIds.has(pattern)) fail(`${label}.patterns references unknown pattern ${pattern}`);
   }
@@ -392,9 +392,9 @@ for (const [index, surface] of surfaces.entries()) {
       fail(`${label}.contract.${field} must be ${protectedSurfaces.freezeContractValue}`);
     }
   }
-  requireAlias(surface.privateBaselineReference, protectedSurfaces.privateBaselineAlias, `${label}.privateBaselineReference`);
+  requireAlias(surface.externalBaselineReference, protectedSurfaces.externalBaselineAlias, `${label}.externalBaselineReference`);
   requireAlias(surface.copySnapshotReference, protectedSurfaces.privateCopyAlias, `${label}.copySnapshotReference`);
-  requireAlias(surface.geometryEvidenceReference, protectedSurfaces.privateGeometryAlias, `${label}.geometryEvidenceReference`);
+  requireAlias(surface.geometryEvidenceReference, protectedSurfaces.externalGeometryAlias, `${label}.geometryEvidenceReference`);
   requireHash(surface.privateBaselineHash, `${label}.privateBaselineHash`);
   requireHash(surface.copySnapshotHash, `${label}.copySnapshotHash`);
   requireHash(surface.geometryEvidenceHash, `${label}.geometryEvidenceHash`);

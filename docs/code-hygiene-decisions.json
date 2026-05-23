@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "program": "code-hygiene",
-  "sourceConversationId": "private-runtime-conversation:code-hygiene",
-  "sourceSessionRef": "private-session-not-published",
+  "sourceConversationId": "source:code-hygiene",
+  "sourceRef": "source-redacted",
   "decisionCount": 33,
   "decisions": [
     {

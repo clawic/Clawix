@@ -13,7 +13,7 @@
   ],
   "publicContract": "docs/governance/core-ux-reliability.md",
   "privateCommandEnv": "CLAWIX_CORE_UX_GATE_COMMAND",
-  "privateEvidenceRootEnv": "CLAWIX_CORE_UX_PRIVATE_ROOT",
+  "externalEvidenceRootEnv": "CLAWIX_CORE_UX_PRIVATE_ROOT",
   "visibleFlowCommandEnv": "CLAWIX_CORE_UX_VISIBLE_FLOW_COMMAND",
   "visibleFlowEvidenceFileEnv": "CLAWIX_CORE_UX_VISIBLE_FLOW_EVIDENCE_FILE",
   "metricsFileEnv": "CLAWIX_CORE_UX_METRICS_FILE",
@@ -32,7 +32,7 @@
     ]
   },
   "conversationGovernor": {
-    "lockRoot": ".dev-control/core-ux",
+    "lockRoot": "external-core-ux-locks",
     "maxNewConversationsPerRun": 1,
     "maxNewConversationsPerDay": 3,
     "minimalPrompt": "reply OK",

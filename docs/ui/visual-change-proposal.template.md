@@ -45,7 +45,7 @@ Do not edit visible source code from this lane.
 ## Required Evidence
 
 - Private baseline, geometry, copy, drift, or performance evidence needed:
-- Approval scope and private approval reference needed:
+- Approval scope and external approval reference needed:
 - Checks that must pass before implementation:
 
 ## Out Of Scope

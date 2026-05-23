@@ -21,7 +21,7 @@
       "platforms": ["macos"],
       "evidenceTypes": ["critical-flow-baseline", "performance-budget", "surface-baseline", "surface-geometry", "surface-copy", "pattern-geometry", "rendered-drift"],
       "planCommand": "node scripts/ui_private_capture_plan.mjs --runner-id macos-private-visual-baseline --json",
-      "outputAliases": ["private-codex-ui-baselines", "private-runtime-ui-rendered-geometry", "private-codex-ui-copy-snapshots", "private-codex-ui-rendered-drift"],
+      "outputAliases": ["external-ui-baselines", "external-ui-rendered-geometry", "external-ui-copy-snapshots", "external-ui-rendered-drift"],
       "requiresHumanApproval": true
     },
     {
@@ -29,7 +29,7 @@
       "platforms": ["ios"],
       "evidenceTypes": ["critical-flow-baseline", "performance-budget", "surface-baseline", "surface-geometry", "surface-copy", "pattern-geometry", "rendered-drift"],
       "planCommand": "node scripts/ui_private_capture_plan.mjs --runner-id ios-private-visual-baseline --json",
-      "outputAliases": ["private-codex-ui-baselines", "private-runtime-ui-rendered-geometry", "private-codex-ui-copy-snapshots", "private-codex-ui-rendered-drift"],
+      "outputAliases": ["external-ui-baselines", "external-ui-rendered-geometry", "external-ui-copy-snapshots", "external-ui-rendered-drift"],
       "requiresHumanApproval": true
     },
     {
@@ -37,7 +37,7 @@
       "platforms": ["android"],
       "evidenceTypes": ["critical-flow-baseline", "performance-budget", "surface-baseline", "surface-geometry", "surface-copy", "pattern-geometry", "rendered-drift"],
       "planCommand": "node scripts/ui_private_capture_plan.mjs --runner-id android-private-visual-baseline --json",
-      "outputAliases": ["private-codex-ui-baselines", "private-runtime-ui-rendered-geometry", "private-codex-ui-copy-snapshots", "private-codex-ui-rendered-drift"],
+      "outputAliases": ["external-ui-baselines", "external-ui-rendered-geometry", "external-ui-copy-snapshots", "external-ui-rendered-drift"],
       "requiresHumanApproval": true
     },
     {
@@ -45,7 +45,7 @@
       "platforms": ["web"],
       "evidenceTypes": ["critical-flow-baseline", "performance-budget", "surface-baseline", "surface-geometry", "surface-copy", "pattern-geometry", "rendered-drift"],
       "planCommand": "node scripts/ui_private_capture_plan.mjs --runner-id web-private-visual-baseline --json",
-      "outputAliases": ["private-codex-ui-baselines", "private-runtime-ui-rendered-geometry", "private-codex-ui-copy-snapshots", "private-codex-ui-rendered-drift"],
+      "outputAliases": ["external-ui-baselines", "external-ui-rendered-geometry", "external-ui-copy-snapshots", "external-ui-rendered-drift"],
       "requiresHumanApproval": true
     },
     {
@@ -53,7 +53,7 @@
       "platforms": ["macos"],
       "evidenceTypes": ["debt-audit"],
       "planCommand": "node scripts/ui_private_capture_plan.mjs --runner-id macos-private-debt-audit --json",
-      "outputAliases": ["private-codex-ui-debt-audit"],
+      "outputAliases": ["external-ui-debt-audit"],
       "requiresHumanApproval": true
     }
   ]

@@ -121,7 +121,7 @@ const verifyPending = hasFlag("--include-pending");
 const privateSlice = privateSliceOption(args, fail, "UI private baseline verification");
 const manifest = readJson(manifestPath);
 const approvedScopeContract = loadApprovedScopeContract(rootDir, fail);
-const alias = manifest?.privateRootAlias || "private-codex-ui-baselines";
+const alias = manifest?.externalRootAlias || "external-ui-baselines";
 const privateRootEnv = privateRootEnvForAlias(rootDir, alias);
 
 if (!requireApproved) {
@@ -173,9 +173,9 @@ if (Array.isArray(manifest?.flows)) {
       continue;
     }
 
-    const relativeEvidenceDir = relativePathFromReference(flow.privateBaselineReference, alias);
+    const relativeEvidenceDir = relativePathFromReference(flow.externalBaselineReference, alias);
     if (!relativeEvidenceDir) {
-      fail(`${label} has invalid privateBaselineReference`);
+      fail(`${label} has invalid externalBaselineReference`);
       continue;
     }
     const evidencePath = path.join(privateRoot, relativeEvidenceDir, evidenceFilename);
@@ -190,8 +190,8 @@ if (Array.isArray(manifest?.flows)) {
     assertHash(evidence.geometryHash, `${label}.geometryHash`);
     assertHash(evidence.screenshotHash, `${label}.screenshotHash`);
     assertHash(evidence.baselineArtifactHash, `${label}.baselineArtifactHash`);
-    if (String(evidence.privateBaselineReference || "") !== flow.privateBaselineReference) {
-      fail(`${label}.privateBaselineReference must match the public manifest`);
+    if (String(evidence.externalBaselineReference || "") !== flow.externalBaselineReference) {
+      fail(`${label}.externalBaselineReference must match the public manifest`);
     }
     if (evidence.platform !== flow.platform) fail(`${label}.platform must match the public manifest`);
     if (evidence.flowId !== flow.id) fail(`${label}.flowId must match the public manifest`);
@@ -217,9 +217,9 @@ if (Array.isArray(surfaceCoverage?.coverage)) {
       continue;
     }
 
-    const relativeEvidenceDir = relativePathFromReference(entry.privateBaselineReference, alias);
+    const relativeEvidenceDir = relativePathFromReference(entry.externalBaselineReference, alias);
     if (!relativeEvidenceDir) {
-      fail(`${label} has invalid privateBaselineReference`);
+      fail(`${label} has invalid externalBaselineReference`);
       continue;
     }
     const evidencePath = path.join(privateRoot, relativeEvidenceDir, surfaceEvidenceFilename);
@@ -235,8 +235,8 @@ if (Array.isArray(surfaceCoverage?.coverage)) {
     assertHash(evidence.screenshotHash, `${label}.screenshotHash`);
     assertHash(evidence.copySnapshotHash, `${label}.copySnapshotHash`);
     assertHash(evidence.baselineArtifactHash, `${label}.baselineArtifactHash`);
-    if (String(evidence.privateBaselineReference || "") !== entry.privateBaselineReference) {
-      fail(`${label}.privateBaselineReference must match the surface coverage manifest`);
+    if (String(evidence.externalBaselineReference || "") !== entry.externalBaselineReference) {
+      fail(`${label}.externalBaselineReference must match the surface coverage manifest`);
     }
     if (evidence.platform !== entry.platform) fail(`${label}.platform must match the surface coverage manifest`);
     if (evidence.coverageId !== entry.coverageId) fail(`${label}.coverageId must match the surface coverage manifest`);

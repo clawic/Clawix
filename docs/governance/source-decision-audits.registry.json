@@ -22,7 +22,7 @@
     {
       "id": "ui-governance-decision-verification",
       "artifactPath": "docs/ui/decision-verification.json",
-      "sourceConversationId": "private-runtime-conversation:interface-governance",
+      "sourceConversationId": "source:interface-governance",
       "artifactKind": "json-decision-verification",
       "minimumDecisionRows": 39,
       "legacyStateField": "status",
@@ -44,8 +44,8 @@
     {
       "id": "system-telemetry-source-review",
       "artifactPath": "docs/governance/system-telemetry/source-review.json",
-      "sourceConversationId": "private-runtime-conversation:system-telemetry",
-      "sourcePlanId": "private-runtime-plan:system-telemetry",
+      "sourceConversationId": "source:system-telemetry",
+      "sourcePlanId": "plan:system-telemetry",
       "artifactKind": "json-source-review",
       "minimumDecisionRows": 12,
       "legacyStateField": "disposition",
@@ -69,7 +69,7 @@
     {
       "id": "v1-surface-closure-decisions",
       "artifactPath": "docs/governance/v1-surface-closure/decisions.json",
-      "sourceConversationId": "private-runtime-conversation:v1-surface-closure",
+      "sourceConversationId": "source:v1-surface-closure",
       "artifactKind": "json-decision-review",
       "minimumDecisionRows": 37,
       "normalizedStates": ["implemented", "blocked"],
@@ -85,7 +85,7 @@
     {
       "id": "adoption-canonicity-governance-p0",
       "artifactPath": "docs/governance/adoption-canonicity/source-review.json",
-      "sourceConversationId": "current-thread-2026-05-21",
+      "sourceConversationId": "source:local-review",
       "sourcePlanId": "p0-adoption-and-canonicity-governance",
       "artifactKind": "json-source-review",
       "minimumDecisionRows": 1,
@@ -100,7 +100,7 @@
     {
       "id": "legal-closure-selective-backfill",
       "artifactPath": "docs/governance/legal/source-audit.md",
-      "sourceConversationId": "private-runtime-conversation:legal-safety",
+      "sourceConversationId": "source:legal-safety",
       "artifactKind": "markdown-source-audit",
       "markdownRowPrefix": "LCA",
       "minimumDecisionRows": 33,

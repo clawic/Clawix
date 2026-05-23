@@ -54,7 +54,7 @@ const requiredFlows = [
 const requiredEvidence = [
   "flowId",
   "platform",
-  "privateBaselineReference",
+  "externalBaselineReference",
   "captureCommand",
   "geometryHash",
   "screenshotHash",
@@ -151,7 +151,7 @@ function assertPublicSafeReference(reference, alias, label) {
   }
   const suffix = reference.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
   }
   if (hasAbsolutePath(reference) || reference.includes("/Users/")) {
     fail(`${label} must not contain a local absolute path`);
@@ -169,7 +169,7 @@ function runFailureSelfTests() {
     [["--simulate-wrong-manifest-status"], "status must be pending-private-capture or approved-private-baselines"],
     [["--simulate-verifier-without-approval"], "verificationCommand must require approved private baseline evidence"],
     [["--simulate-missing-critical-flow"], "flows must include web:right-sidebar-browser-use"],
-    [["--simulate-unsafe-baseline-reference"], "privateBaselineReference must use a safe relative private reference"],
+    [["--simulate-unsafe-baseline-reference"], "externalBaselineReference must use a safe relative external reference"],
     [["--simulate-baselines-decision-premature-complete"], "status must remain open or blocked-external-pending until private baselines are captured and approved"],
   ];
 
@@ -203,7 +203,7 @@ if (manifest) {
     manifest.status = "active";
   }
   if (args.has("--simulate-wrong-private-root-alias")) {
-    manifest.privateRootAlias = "private-runtime-ui-rendered-geometry";
+    manifest.externalRootAlias = "external-ui-rendered-geometry";
   }
   if (args.has("--simulate-verifier-without-approval")) {
     manifest.verificationCommand = "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> node scripts/ui_private_baseline_verify.mjs";
@@ -239,14 +239,14 @@ if (manifest) {
     manifest.flows[0].tolerance = { ...manifest.flows[0].tolerance, screenshotDiff: "public-threshold" };
   }
   if (args.has("--simulate-unsafe-baseline-reference") && Array.isArray(manifest.flows) && manifest.flows[0]) {
-    manifest.flows[0].privateBaselineReference = `${manifest.privateRootAlias}:../baseline`;
+    manifest.flows[0].externalBaselineReference = `${manifest.externalRootAlias}:../baseline`;
   }
   if (args.has("--simulate-invalid-baseline-status") && Array.isArray(manifest.flows) && manifest.flows[0]) {
     manifest.flows[0].baselineStatus = "captured-without-user";
   }
   if (args.has("--simulate-approved-pending-reference") && Array.isArray(manifest.flows) && manifest.flows[0]) {
     manifest.flows[0].baselineStatus = "approved";
-    manifest.flows[0].privateBaselineReference = `${manifest.privateRootAlias}:${manifest.flows[0].platform}/pending-${manifest.flows[0].id}`;
+    manifest.flows[0].externalBaselineReference = `${manifest.externalRootAlias}:${manifest.flows[0].platform}/pending-${manifest.flows[0].id}`;
   }
   if (args.has("--simulate-approved-manifest-with-pending-flow")) {
     manifest.status = "approved-private-baselines";
@@ -296,8 +296,8 @@ if (manifest) {
     );
   }
   if (args.has("--simulate-baselines-decision-missing-platform-evidence") && visualBaselinesDecision) {
-    visualBaselinesDecision.privateEvidence = visualBaselinesDecision.privateEvidence.filter(
-      (evidenceReference) => evidenceReference !== "private-codex-ui-baselines:web/*",
+    visualBaselinesDecision.externalEvidence = visualBaselinesDecision.externalEvidence.filter(
+      (evidenceReference) => evidenceReference !== "external-ui-baselines:web/*",
     );
   }
   if (args.has("--simulate-baselines-decision-premature-complete") && visualBaselinesDecision) {
@@ -318,7 +318,7 @@ requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
   "policy",
-  "privateRootAlias",
+  "externalRootAlias",
   "evidenceFilename",
   "verificationCommand",
   "privateArtifactPolicy",
@@ -329,8 +329,8 @@ requireFields(manifest, manifestPath, [
 if (!["pending-private-capture", "approved-private-baselines"].includes(manifest?.status)) {
   fail(`${manifestPath}.status must be pending-private-capture or approved-private-baselines`);
 }
-if (manifest?.privateRootAlias !== "private-codex-ui-baselines") {
-  fail(`${manifestPath}.privateRootAlias must use the public-safe private alias`);
+if (manifest?.externalRootAlias !== "external-ui-baselines") {
+  fail(`${manifestPath}.externalRootAlias must use the public-safe external alias`);
 }
 if (manifest?.evidenceFilename !== "evidence.json") {
   fail(`${manifestPath}.evidenceFilename must be evidence.json`);
@@ -369,7 +369,7 @@ for (const [index, flow] of requireArray(manifest, manifestPath, "flows").entrie
     "id",
     "platform",
     "baselineStatus",
-    "privateBaselineReference",
+    "externalBaselineReference",
     "runnerId",
     "requiredEvidence",
     "tolerance",
@@ -378,9 +378,9 @@ for (const [index, flow] of requireArray(manifest, manifestPath, "flows").entrie
   if (!requiredPlatforms.includes(flow.platform)) fail(`${label}.platform is not governed`);
   if (coverage.has(`${flow.platform}:${flow.id}`)) fail(`${label} duplicates ${flow.platform}:${flow.id}`);
   coverage.add(`${flow.platform}:${flow.id}`);
-  const referenceSuffix = assertPublicSafeReference(flow.privateBaselineReference, manifest.privateRootAlias, `${label}.privateBaselineReference`);
+  const referenceSuffix = assertPublicSafeReference(flow.externalBaselineReference, manifest.externalRootAlias, `${label}.externalBaselineReference`);
   if (referenceSuffix && referenceSuffix !== `${flow.platform}/${flow.id}`) {
-    fail(`${label}.privateBaselineReference must target ${flow.platform}/${flow.id}`);
+    fail(`${label}.externalBaselineReference must target ${flow.platform}/${flow.id}`);
   }
   requireExactStringSet(requireArray(flow, label, "requiredEvidence"), `${label}.requiredEvidence`, [...evidenceFields]);
   if (flow.runnerId !== `${flow.platform}-private-visual-baseline`) {
@@ -391,8 +391,8 @@ for (const [index, flow] of requireArray(manifest, manifestPath, "flows").entrie
   }
   if (flow.baselineStatus === "approved") approvedFlowCount += 1;
   if (flow.baselineStatus === "pending-user-approved-capture") pendingFlowCount += 1;
-  if (flow.baselineStatus === "approved" && String(flow.privateBaselineReference).includes("pending")) {
-    fail(`${label}.privateBaselineReference cannot be pending when approved`);
+  if (flow.baselineStatus === "approved" && String(flow.externalBaselineReference).includes("pending")) {
+    fail(`${label}.externalBaselineReference cannot be pending when approved`);
   }
   if (flow?.tolerance?.geometryPixels !== 0) {
     fail(`${label}.tolerance.geometryPixels must be 0`);
@@ -419,7 +419,7 @@ for (const platform of requiredPlatforms) {
 
 scanForAbsolutePaths(manifest, manifestPath);
 
-const privateRootAlias = manifest?.privateRootAlias || "private-codex-ui-baselines";
+const externalRootAlias = manifest?.externalRootAlias || "external-ui-baselines";
 if (!visualBaselinesDecision) {
   fail(`${decisionVerificationPath}.decisions must include visual_baselines_location`);
 } else {
@@ -440,17 +440,17 @@ if (!visualBaselinesDecision) {
       fail(`${decisionVerificationPath}.decisions.visual_baselines_location.publicEvidence must include ${evidencePath}`);
     }
   }
-  const privateEvidence = new Set(Array.isArray(visualBaselinesDecision.privateEvidence) ? visualBaselinesDecision.privateEvidence : []);
+  const externalEvidence = new Set(Array.isArray(visualBaselinesDecision.externalEvidence) ? visualBaselinesDecision.externalEvidence : []);
   for (const evidenceReference of [
-    `${privateRootAlias}:macos/*`,
-    `${privateRootAlias}:ios/*`,
-    `${privateRootAlias}:android/*`,
-    `${privateRootAlias}:web/*`,
-    `${privateRootAlias}:surfaces/*`,
-    "private-codex-ui-rendered-drift:surfaces/*",
+    `${externalRootAlias}:macos/*`,
+    `${externalRootAlias}:ios/*`,
+    `${externalRootAlias}:android/*`,
+    `${externalRootAlias}:web/*`,
+    `${externalRootAlias}:surfaces/*`,
+    "external-ui-rendered-drift:surfaces/*",
   ]) {
-    if (!privateEvidence.has(evidenceReference)) {
-      fail(`${decisionVerificationPath}.decisions.visual_baselines_location.privateEvidence must include ${evidenceReference}`);
+    if (!externalEvidence.has(evidenceReference)) {
+      fail(`${decisionVerificationPath}.decisions.visual_baselines_location.externalEvidence must include ${evidenceReference}`);
     }
   }
   const blockingVerifiers = new Set(Array.isArray(visualBaselinesDecision.blockingVerifiers) ? visualBaselinesDecision.blockingVerifiers : []);

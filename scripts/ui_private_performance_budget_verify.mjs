@@ -148,7 +148,7 @@ const privateSlice = privateSliceOption(args, fail, "UI private performance budg
 const budgets = readJson("docs/ui/performance-budgets.registry.json");
 const privateBaselines = readJson("docs/ui/private-baselines.manifest.json");
 const approvedScopeContract = loadApprovedScopeContract(rootDir, fail);
-const alias = privateBaselines?.privateRootAlias || "private-codex-ui-baselines";
+const alias = privateBaselines?.externalRootAlias || "external-ui-baselines";
 const privateRootEnv = privateRootEnvForAlias(rootDir, alias);
 
 if (!requireApproved) {
@@ -192,9 +192,9 @@ for (const [index, flow] of (budgets?.flows || []).entries()) {
       continue;
     }
   }
-  const relativeEvidenceDir = relativePathFromReference(flow.privateBaselineReference, alias);
+  const relativeEvidenceDir = relativePathFromReference(flow.externalBaselineReference, alias);
   if (!relativeEvidenceDir) {
-    fail(`${label} has invalid privateBaselineReference`);
+    fail(`${label} has invalid externalBaselineReference`);
     continue;
   }
   const evidencePath = path.join(privateRoot, relativeEvidenceDir, evidenceFilename);
@@ -206,8 +206,8 @@ for (const [index, flow] of (budgets?.flows || []).entries()) {
   assertApprovedScope(evidence.approvedScope, `${label}.approvedScope`);
   if (evidence.flowId !== flow.id) fail(`${label}.flowId must match the budget registry`);
   if (evidence.platform !== flow.platform) fail(`${label}.platform must match the budget registry`);
-  if (evidence.privateBaselineReference !== flow.privateBaselineReference) {
-    fail(`${label}.privateBaselineReference must match the budget registry`);
+  if (evidence.externalBaselineReference !== flow.externalBaselineReference) {
+    fail(`${label}.externalBaselineReference must match the budget registry`);
   }
   assertHash(evidence.measurementHash, `${label}.measurementHash`);
   const metrics = evidence.metrics || {};

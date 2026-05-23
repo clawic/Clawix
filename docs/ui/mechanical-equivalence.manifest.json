@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "status": "active",
   "policy": "Mechanical UI refactors are allowed only when before/after evidence proves equivalent rendered output, geometry, copy, and governed visual tokens. Public records store safe aliases and hashes; screenshots and raw captures stay private.",
-  "privateEvidenceAlias": "private-codex-ui-mechanical-equivalence",
+  "externalEvidenceAlias": "external-ui-mechanical-equivalence",
   "evidenceFilename": "mechanical-equivalence-evidence.json",
   "recordRequirement": {
     "requiredForMutationClass": "mechanical-equivalent-refactor",
@@ -27,8 +27,8 @@
     "approvedByUserAt",
     "approvedScope"
   ],
-  "requiredPrivateEvidenceFields": ["recordId", "platform", "status", "privateEvidenceReference"],
-  "requiredApprovedScopeFields": ["scopeId", "approvedBy", "approvedAt", "privateApprovalReference"],
+  "requiredPrivateEvidenceFields": ["recordId", "platform", "status", "externalEvidenceReference"],
+  "requiredApprovedScopeFields": ["scopeId", "approvedBy", "approvedAt", "externalApprovalReference"],
   "allowedTokenDiffStatuses": ["no-token-diff", "approved-token-diff"],
   "equivalenceStatuses": ["pending-private-evidence", "verified-equivalent", "blocked-visible-diff"],
   "records": []

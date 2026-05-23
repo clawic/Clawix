@@ -1,7 +1,7 @@
 # Code Hygiene Completion Audit
 
-Source conversation: `private-runtime-conversation:code-hygiene`
-Source session: private session, not published
+Source conversation: `source:code-hygiene`
+Source session: source redacted
 
 This audit records the required one-by-one review of the 11 `request_user_input`
 batches and their 33 binding answers before the code hygiene goal can be

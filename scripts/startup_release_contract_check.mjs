@@ -14,7 +14,7 @@ const allowedFlags = new Set([
   "--current",
   "--simulate-missing-startup-flow",
   "--simulate-missing-p95",
-  "--simulate-missing-private-alias",
+  "--simulate-missing-external-alias",
   "--simulate-premature-enforcement",
   "--simulate-stale-approved-baseline",
   "--require-launch-evidence",
@@ -125,7 +125,7 @@ function privateReferenceSuffix(reference, alias, label) {
     suffix.split("/").includes("..") ||
     suffix.split("/").includes(".")
   ) {
-    fail(`${label} must be a relative private alias suffix`);
+    fail(`${label} must be a relative external alias suffix`);
     return null;
   }
   return suffix;
@@ -160,8 +160,8 @@ function validateEvidence(packet, label, manifest, { requireApproval = false } =
   requireFields(packet, label, requiredFields);
   if (packet?.flowId !== manifest.flow.id) fail(`${label}.flowId must be ${manifest.flow.id}`);
   if (packet?.platform !== "macos") fail(`${label}.platform must be macos`);
-  if (packet?.privateBaselineReference !== manifest.privateBaselineReference) {
-    fail(`${label}.privateBaselineReference must match ${manifest.privateBaselineReference}`);
+  if (packet?.externalBaselineReference !== manifest.externalBaselineReference) {
+    fail(`${label}.externalBaselineReference must match ${manifest.externalBaselineReference}`);
   }
   for (const metricName of manifest.flow.requiredMetrics) {
     const value = metricAt(packet, metricName);
@@ -279,8 +279,8 @@ if (args.has("--simulate-missing-startup-flow") && manifest?.flow) {
 if (args.has("--simulate-missing-p95") && Array.isArray(manifest?.flow?.requiredMetrics)) {
   manifest.flow.requiredMetrics = manifest.flow.requiredMetrics.filter((metric) => metric !== "warm.p95Ms");
 }
-if (args.has("--simulate-missing-private-alias") && manifest) {
-  manifest.privateBaselineAlias = "";
+if (args.has("--simulate-missing-external-alias") && manifest) {
+  manifest.externalBaselineAlias = "";
 }
 if (args.has("--simulate-premature-enforcement") && manifest) {
   manifest.status = "approved-baseline-enforced";
@@ -292,8 +292,8 @@ requireFields(manifest, manifestPath, [
   "policy",
   "platformScope",
   "flow",
-  "privateBaselineAlias",
-  "privateBaselineReference",
+  "externalBaselineAlias",
+  "externalBaselineReference",
   "baselineFilename",
   "currentEvidenceEnv",
   "privateRootEnv",
@@ -348,7 +348,7 @@ requireExact(requireArray(manifest?.flow, `${manifestPath}.flow`, "requiredMetri
 for (const field of [
   "flowId",
   "platform",
-  "privateBaselineReference",
+  "externalBaselineReference",
   "measurementSamples",
   "metrics",
   "milestoneCompleteness",
@@ -360,16 +360,16 @@ for (const field of [
   }
 }
 
-if (manifest?.privateBaselineAlias !== "private-codex-startup-baselines") {
-  fail(`${manifestPath}.privateBaselineAlias must be private-codex-startup-baselines`);
+if (manifest?.externalBaselineAlias !== "external-startup-baselines") {
+  fail(`${manifestPath}.externalBaselineAlias must be external-startup-baselines`);
 }
 const suffix = privateReferenceSuffix(
-  manifest?.privateBaselineReference,
-  manifest?.privateBaselineAlias,
-  `${manifestPath}.privateBaselineReference`,
+  manifest?.externalBaselineReference,
+  manifest?.externalBaselineAlias,
+  `${manifestPath}.externalBaselineReference`,
 );
 if (suffix && suffix !== "macos/startup-first-chat-interactive") {
-  fail(`${manifestPath}.privateBaselineReference must resolve to macos/startup-first-chat-interactive`);
+  fail(`${manifestPath}.externalBaselineReference must resolve to macos/startup-first-chat-interactive`);
 }
 if (!String(manifest?.verificationCommand || "").includes("scripts/startup_release_contract_check.mjs --require-approved")) {
   fail(`${manifestPath}.verificationCommand must run scripts/startup_release_contract_check.mjs --require-approved`);
@@ -492,7 +492,7 @@ if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
     baselineStatus: "approved",
     flowId: "macos-startup-first-chat-interactive",
     platform: "macos",
-    privateBaselineReference: "private-codex-startup-baselines:macos/startup-first-chat-interactive",
+    externalBaselineReference: "external-startup-baselines:macos/startup-first-chat-interactive",
     bundleIdentifier: "redacted",
     bundleVersion: "1",
     gitHead: "abcdef0",
@@ -515,7 +515,7 @@ if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
     ["--unknown-flag", "received unknown flag --unknown-flag", {}],
     ["--simulate-missing-startup-flow", "flow.id must be macos-startup-first-chat-interactive", {}],
     ["--simulate-missing-p95", "requiredMetrics must include warm.p95Ms", {}],
-    ["--simulate-missing-private-alias", "privateBaselineAlias must be private-codex-startup-baselines", {}],
+    ["--simulate-missing-external-alias", "externalBaselineAlias must be external-startup-baselines", {}],
     ["--simulate-premature-enforcement", "status cannot be approved-baseline-enforced without approved private baseline verification", {}],
     ["--simulate-stale-approved-baseline", "approved startup baseline.approvedScope must match macos-startup-first-chat-interactive", { CLAWIX_STARTUP_PRIVATE_BASELINE_ROOT: staleRoot }],
   ]) {

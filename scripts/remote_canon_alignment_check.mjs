@@ -53,7 +53,7 @@ for (const snippet of [
   "blocked",
   "pending",
   "brokered secret leases",
-  "Sync authority handoff",
+  "Authority handoff for Sync",
   "RemoteExternalPendingRegister",
   "RemoteRouteContractCatalog",
   "claw inspect remote",

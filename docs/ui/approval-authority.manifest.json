@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "status": "active",
-  "policy": "Only the user can approve canon promotions, protected surfaces, visual scopes, visual proposal handoffs, exception records, approved rendered drift, and audited UI debt. Empty registries are valid; future approval records must stay public-safe and reference private approval evidence.",
-  "privateApprovalAlias": "private-codex-ui-approval",
+  "policy": "Only the user can approve canon promotions, protected surfaces, visual scopes, visual proposal handoffs, exception records, approved rendered drift, and audited UI debt. Empty registries are valid; future approval records must stay public-safe and reference external approval evidence.",
+  "externalApprovalAlias": "external-ui-approval",
   "evidenceFilename": "approval-evidence.json",
-  "requiredPrivateApprovalEvidenceFields": ["sourceId", "privateApprovalReference", "approvedBy", "approvedAt", "approvalHash", "publicRecordHash"],
+  "requiredPrivateApprovalEvidenceFields": ["sourceId", "externalApprovalReference", "approvedBy", "approvedAt", "approvalHash", "publicRecordHash"],
   "requiredApprovalSourceIds": [
     "canon-promotions",
     "protected-surfaces",
@@ -22,7 +22,7 @@
       "arrayField": "promotions",
       "approvedByField": "approvedBy",
       "approvedAtField": "approvedAt",
-      "privateApprovalField": "privateApprovalReference"
+      "privateApprovalField": "externalApprovalReference"
     },
     {
       "id": "protected-surfaces",
@@ -30,7 +30,7 @@
       "arrayField": "surfaces",
       "approvedByField": "approvedBy",
       "approvedAtField": "approvedAt",
-      "privateApprovalField": "privateApprovalReference"
+      "privateApprovalField": "externalApprovalReference"
     },
     {
       "id": "visual-change-scopes",
@@ -38,7 +38,7 @@
       "arrayField": "activeScopes",
       "approvedByField": "approvedBy",
       "approvedAtField": "approvedAt",
-      "privateApprovalField": "privateApprovalReference"
+      "privateApprovalField": "externalApprovalReference"
     },
     {
       "id": "visual-model-allowlist",
@@ -49,7 +49,7 @@
       "approvalRequiredStatuses": ["active"],
       "approvedByField": "approvedBy",
       "approvedAtField": "approvedAt",
-      "privateApprovalField": "privateApprovalReference"
+      "privateApprovalField": "externalApprovalReference"
     },
     {
       "id": "visual-proposals",
@@ -60,7 +60,7 @@
       "approvalRequiredStatuses": ["user-approved-for-visual-lane"],
       "approvedByField": "approvedBy",
       "approvedAtField": "approvedAt",
-      "privateApprovalField": "privateApprovalReference"
+      "privateApprovalField": "externalApprovalReference"
     },
     {
       "id": "exceptions",
@@ -68,7 +68,7 @@
       "arrayField": "exceptions",
       "approvedByField": "approvedBy",
       "approvedAtField": "approvedAt",
-      "privateApprovalField": "privateApprovalReference"
+      "privateApprovalField": "externalApprovalReference"
     },
     {
       "id": "rendered-drift",
@@ -79,7 +79,7 @@
       "approvalRequiredStatuses": ["approved-drift"],
       "approvedByField": "approvedBy",
       "approvedAtField": "approvedAt",
-      "privateApprovalField": "privateApprovalReference"
+      "privateApprovalField": "externalApprovalReference"
     },
     {
       "id": "debt-audit",
@@ -90,7 +90,7 @@
       "approvalRequiredStatuses": ["audited-approved"],
       "approvedByField": "approvedBy",
       "approvedAtField": "approvedAt",
-      "privateApprovalField": "privateApprovalReference"
+      "privateApprovalField": "externalApprovalReference"
     }
   ]
 }

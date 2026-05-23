@@ -21,7 +21,7 @@
   "performance": {
     "criticalFlows": ["right-sidebar-browser-use"],
     "budgetRegistry": "docs/ui/performance-budgets.registry.json",
-    "privateBaselineAlias": "private-codex-ui-baselines"
+    "externalBaselineAlias": "external-ui-baselines"
   },
   "validation": {
     "public": ["node scripts/ui_governance_guard.mjs", "node scripts/ui_pattern_performance_check.mjs"],

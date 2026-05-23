@@ -85,7 +85,7 @@ function buildApprovalFixture() {
       id: "fixture-canon-approval",
       approvedBy: "user",
       approvedAt: "2026-05-17",
-      privateApprovalReference: "private-codex-ui-approval:canon/fixture-canon-approval",
+      externalApprovalReference: "external-ui-approval:canon/fixture-canon-approval",
     },
   ];
   writeJson(promotionsPath, promotions);
@@ -202,7 +202,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
     },
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
@@ -212,7 +212,7 @@ try {
   authorizedNoScopeOutput = `${error.stdout || ""}${error.stderr || ""}`;
 }
 if (authorizedNoScopeExitCode === 0) {
-  fail("simulated visual diff must fail for claude-opus-4.7 when no approved visual scope is provided");
+  fail("simulated visual diff must fail for approved-visual-model when no approved visual scope is provided");
 }
 for (const snippet of [
   "authorized visual/copy/layout source edit missing approved scope",
@@ -232,7 +232,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-approved-scope",
     },
     encoding: "utf8",
@@ -242,7 +242,7 @@ try {
   authorizedScopedExitCode = error.status || 1;
 }
 if (authorizedScopedExitCode !== 0) {
-  fail("simulated visual diff must pass for claude-opus-4.7 with an approved visual scope");
+  fail("simulated visual diff must pass for approved-visual-model with an approved visual scope");
 }
 
 let authorizedUnknownScopeOutput = "";
@@ -253,7 +253,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "unknown-scope",
     },
     encoding: "utf8",
@@ -282,7 +282,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-overbudget-scope",
     },
     encoding: "utf8",
@@ -311,7 +311,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-wrong-file-scope",
     },
     encoding: "utf8",
@@ -340,7 +340,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-missing-pattern-scope",
     },
     encoding: "utf8",
@@ -369,7 +369,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-layout-only-scope",
     },
     encoding: "utf8",
@@ -398,7 +398,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-revoked-scope",
     },
     encoding: "utf8",
@@ -427,7 +427,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-expired-scope",
     },
     encoding: "utf8",
@@ -456,7 +456,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-budget-kind-scope",
     },
     encoding: "utf8",
@@ -485,7 +485,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-duplicate-pattern-scope",
     },
     encoding: "utf8",
@@ -516,7 +516,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-invalid-budget-scope",
     },
     encoding: "utf8",
@@ -547,7 +547,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-unsafe-file-scope",
     },
     encoding: "utf8",
@@ -671,7 +671,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
     },
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
@@ -682,7 +682,7 @@ try {
 }
 
 if (patternAuthorizedNoScopeExitCode === 0) {
-  fail("simulated pattern mutation must fail for claude-opus-4.7 when no approved visual scope is provided");
+  fail("simulated pattern mutation must fail for approved-visual-model when no approved visual scope is provided");
 }
 for (const snippet of [
   "authorized pattern registry visual/copy contract mutation missing approved scope",
@@ -702,7 +702,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-approved-scope",
     },
     encoding: "utf8",
@@ -712,7 +712,7 @@ try {
   patternAuthorizedScopedExitCode = error.status || 1;
 }
 if (patternAuthorizedScopedExitCode !== 0) {
-  fail("simulated pattern mutation must pass for claude-opus-4.7 with an approved visual scope");
+  fail("simulated pattern mutation must pass for approved-visual-model with an approved visual scope");
 }
 
 let patternAuthorizedUnknownScopeOutput = "";
@@ -723,7 +723,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "unknown-scope",
     },
     encoding: "utf8",
@@ -753,7 +753,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-overbudget-scope",
     },
     encoding: "utf8",
@@ -783,7 +783,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-wrong-file-scope",
     },
     encoding: "utf8",
@@ -813,7 +813,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-missing-pattern-scope",
     },
     encoding: "utf8",
@@ -843,7 +843,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-layout-only-scope",
     },
     encoding: "utf8",
@@ -873,7 +873,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-revoked-scope",
     },
     encoding: "utf8",
@@ -903,7 +903,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-expired-scope",
     },
     encoding: "utf8",
@@ -933,7 +933,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-budget-kind-scope",
     },
     encoding: "utf8",
@@ -963,7 +963,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-duplicate-pattern-scope",
     },
     encoding: "utf8",
@@ -995,7 +995,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-invalid-budget-scope",
     },
     encoding: "utf8",
@@ -1027,7 +1027,7 @@ try {
     env: {
       ...env,
       CLAWIX_UI_VISUAL_AUTHORIZED: "1",
-      CLAWIX_UI_VISUAL_MODEL: "claude-opus-4.7",
+      CLAWIX_UI_VISUAL_MODEL: "approved-visual-model",
       CLAWIX_UI_VISUAL_SCOPE_ID: "simulated-unsafe-reference-scope",
     },
     encoding: "utf8",
@@ -1039,12 +1039,12 @@ try {
 }
 
 if (patternAuthorizedUnsafeReferenceScopeExitCode === 0) {
-  fail("simulated pattern mutation must fail when the approved visual scope has an unsafe private reference");
+  fail("simulated pattern mutation must fail when the approved visual scope has an unsafe external reference");
 }
 for (const snippet of [
   "authorized pattern registry visual/copy contract mutation missing approved scope",
   "current scope signal: CLAWIX_UI_VISUAL_SCOPE_ID=simulated-unsafe-reference-scope",
-  "must include safe private approval reference",
+  "must include safe external approval reference",
 ]) {
   if (!patternAuthorizedUnsafeReferenceScopeOutput.includes(snippet)) {
     fail(`pattern authorized unsafe-reference-scope failure output is missing: ${snippet}`);
@@ -1185,38 +1185,38 @@ try {
   const approvalFixturePromotionsPath = path.join(approvalFixtureRoot, "docs/ui/canon-promotions.registry.json");
   const approvalPromotions = JSON.parse(fs.readFileSync(approvalFixturePromotionsPath, "utf8"));
   const missingReferencePromotions = JSON.parse(JSON.stringify(approvalPromotions));
-  delete missingReferencePromotions.promotions[0].privateApprovalReference;
+  delete missingReferencePromotions.promotions[0].externalApprovalReference;
   writeJson(approvalFixturePromotionsPath, missingReferencePromotions);
   const missingApprovalReferenceResult = runFixtureNode(approvalFixtureRoot, ["scripts/ui_private_approval_verify.mjs", "--require-approved"]);
   if (missingApprovalReferenceResult.exitCode === 0) {
-    fail("private approval verifier must fail when an approval record is missing its private approval reference");
+    fail("external approval verifier must fail when an approval record is missing its external approval reference");
   }
   for (const snippet of [
-    "UI private approval verification failed:",
-    "privateApprovalReference is required for private approval verification",
+    "UI external approval verification failed:",
+    "externalApprovalReference is required for external approval verification",
     "docs/ui/canon-promotions.registry.json.promotions[0]",
   ]) {
-    if (!missingApprovalReferenceResult.output.includes(snippet)) fail(`private approval missing-reference output is missing: ${snippet}`);
+    if (!missingApprovalReferenceResult.output.includes(snippet)) fail(`external approval missing-reference output is missing: ${snippet}`);
   }
   writeJson(approvalFixturePromotionsPath, approvalPromotions);
 
   const missingApprovalRootResult = runFixtureNode(approvalFixtureRoot, ["scripts/ui_private_approval_verify.mjs", "--require-approved"]);
   if (missingApprovalRootResult.exitCode !== 2) {
-    fail("private approval verifier must report EXTERNAL PENDING when approval records exist and the private root is missing");
+    fail("external approval verifier must report EXTERNAL PENDING when approval records exist and the private root is missing");
   }
   for (const snippet of [
     "EXTERNAL PENDING:",
     "CLAWIX_UI_PRIVATE_APPROVAL_ROOT",
-    "private approval evidence",
+    "external approval evidence",
   ]) {
-    if (!missingApprovalRootResult.output.includes(snippet)) fail(`private approval missing-root output is missing: ${snippet}`);
+    if (!missingApprovalRootResult.output.includes(snippet)) fail(`external approval missing-root output is missing: ${snippet}`);
   }
 
   const approvalEvidenceDir = path.join(approvalPrivateRoot, "canon", "fixture-canon-approval");
   fs.mkdirSync(approvalEvidenceDir, { recursive: true });
   writeJson(path.join(approvalEvidenceDir, "approval-evidence.json"), {
     sourceId: "canon-promotions",
-    privateApprovalReference: "private-codex-ui-approval:canon/fixture-canon-approval",
+    externalApprovalReference: "external-ui-approval:canon/fixture-canon-approval",
     approvedBy: "user",
     approvedAt: "2026-05-17",
     approvalHash: "not-a-valid-hash",
@@ -1228,19 +1228,19 @@ try {
     { CLAWIX_UI_PRIVATE_APPROVAL_ROOT: approvalPrivateRoot },
   );
   if (invalidApprovalResult.exitCode === 0) {
-    fail("private approval verifier must fail when approval evidence is invalid");
+    fail("external approval verifier must fail when approval evidence is invalid");
   }
   for (const snippet of [
-    "UI private approval verification failed:",
+    "UI external approval verification failed:",
     "approvalHash must be a 64-character hex hash",
     "docs/ui/canon-promotions.registry.json.promotions[0]",
   ]) {
-    if (!invalidApprovalResult.output.includes(snippet)) fail(`private approval invalid-evidence output is missing: ${snippet}`);
+    if (!invalidApprovalResult.output.includes(snippet)) fail(`external approval invalid-evidence output is missing: ${snippet}`);
   }
 
   writeJson(path.join(approvalEvidenceDir, "approval-evidence.json"), {
     sourceId: "canon-promotions",
-    privateApprovalReference: "private-codex-ui-approval:canon/fixture-canon-approval",
+    externalApprovalReference: "external-ui-approval:canon/fixture-canon-approval",
     approvedBy: "user",
     approvedAt: "2026-05-17",
     approvalHash: "a".repeat(64),
@@ -1252,19 +1252,19 @@ try {
     { CLAWIX_UI_PRIVATE_APPROVAL_ROOT: approvalPrivateRoot },
   );
   if (mismatchedRecordHashResult.exitCode === 0) {
-    fail("private approval verifier must fail when approval evidence is not bound to the public approval record");
+    fail("external approval verifier must fail when approval evidence is not bound to the public approval record");
   }
   for (const snippet of [
-    "UI private approval verification failed:",
+    "UI external approval verification failed:",
     "publicRecordHash must match the public approval record",
     "docs/ui/canon-promotions.registry.json.promotions[0]",
   ]) {
-    if (!mismatchedRecordHashResult.output.includes(snippet)) fail(`private approval record-hash output is missing: ${snippet}`);
+    if (!mismatchedRecordHashResult.output.includes(snippet)) fail(`external approval record-hash output is missing: ${snippet}`);
   }
 
   writeJson(path.join(approvalEvidenceDir, "approval-evidence.json"), {
     sourceId: "canon-promotions",
-    privateApprovalReference: "private-codex-ui-approval:canon/fixture-canon-approval",
+    externalApprovalReference: "external-ui-approval:canon/fixture-canon-approval",
     approvedBy: "user",
     approvedAt: "2026-05-17",
     approvalHash: "a".repeat(64),
@@ -1276,10 +1276,10 @@ try {
     { CLAWIX_UI_PRIVATE_APPROVAL_ROOT: approvalPrivateRoot },
   );
   if (validApprovalResult.exitCode !== 0) {
-    fail("private approval verifier must pass when approval evidence matches the public approval record");
+    fail("external approval verifier must pass when approval evidence matches the public approval record");
   }
-  if (!validApprovalResult.output.includes("UI private approval verification passed (1 approval records)")) {
-    fail("private approval valid-evidence output must report one verified approval record");
+  if (!validApprovalResult.output.includes("UI external approval verification passed (1 approval records)")) {
+    fail("external approval valid-evidence output must report one verified approval record");
   }
 } finally {
   fs.rmSync(approvalFixtureRoot, { recursive: true, force: true });

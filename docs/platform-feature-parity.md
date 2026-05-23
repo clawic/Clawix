@@ -28,7 +28,7 @@ in-scope cell remains below `complete` or `not-applicable`.
 - Each feature row maps one macOS reference feature to every release platform:
   `macos`, `ios`, `linux`, `windows`, and `web`.
 - `complete` cells require evidence and tests and must not carry an exception.
-- Any non-complete cell requires an accepted exception with owner area, review
+- Any non-complete cell requires an accepted exception with steward area, review
   date, reason, and release effect.
 - `blocks-release` exceptions fail release readiness. `blocks-parity-claim`
   exceptions allow targeted releases but block any 100% parity claim.

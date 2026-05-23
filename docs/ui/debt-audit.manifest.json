@@ -5,7 +5,7 @@
   "sourceBaseline": "docs/ui/debt.baseline.json",
   "sourceReport": "docs/ui/debt-report.registry.json",
   "surfaceCoverageSource": "docs/ui/surface-baseline-coverage.manifest.json",
-  "privateDebtAuditAlias": "private-codex-ui-debt-audit",
+  "privateDebtAuditAlias": "external-ui-debt-audit",
   "evidenceFilename": "debt-audit-evidence.json",
   "verificationCommand": "CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT=<private-root> node scripts/ui_private_debt_audit_verify.mjs --require-approved",
   "auditStatuses": ["pending-private-visual-inventory", "audited-approved"],
@@ -29,7 +29,7 @@
       "platforms": ["macos"],
       "surfaceCoverageId": "macos-design-debt",
       "auditStatus": "pending-private-visual-inventory",
-      "privateDebtAuditReference": "private-codex-ui-debt-audit:macos/ui-debt-design-surface-raw-visual-values",
+      "privateDebtAuditReference": "external-ui-debt-audit:macos/ui-debt-design-surface-raw-visual-values",
       "requiredEvidence": ["debtId", "platform", "scope", "platforms", "privateDebtAuditReference", "findingItems", "findingHash", "visualInventoryHash", "auditedAt", "approvedByUserAt", "approvedScope"]
     },
     {
@@ -38,7 +38,7 @@
       "platforms": ["macos"],
       "surfaceCoverageId": "macos-design-debt",
       "auditStatus": "pending-private-visual-inventory",
-      "privateDebtAuditReference": "private-codex-ui-debt-audit:macos/ui-debt-automations-surface-raw-visual-values",
+      "privateDebtAuditReference": "external-ui-debt-audit:macos/ui-debt-automations-surface-raw-visual-values",
       "requiredEvidence": ["debtId", "platform", "scope", "platforms", "privateDebtAuditReference", "findingItems", "findingHash", "visualInventoryHash", "auditedAt", "approvedByUserAt", "approvedScope"]
     },
     {
@@ -47,7 +47,7 @@
       "platforms": ["macos"],
       "surfaceCoverageId": "macos-design-debt",
       "auditStatus": "pending-private-visual-inventory",
-      "privateDebtAuditReference": "private-codex-ui-debt-audit:macos/ui-debt-plan-question-card-raw-visual-values",
+      "privateDebtAuditReference": "external-ui-debt-audit:macos/ui-debt-plan-question-card-raw-visual-values",
       "requiredEvidence": ["debtId", "platform", "scope", "platforms", "privateDebtAuditReference", "findingItems", "findingHash", "visualInventoryHash", "auditedAt", "approvedByUserAt", "approvedScope"]
     }
   ]

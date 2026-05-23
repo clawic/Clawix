@@ -2,15 +2,15 @@
   "schemaVersion": 1,
   "artifactId": "clawix-system-telemetry-external-approval-fixtures",
   "status": "synthetic_templates_not_approval",
-  "conversationId": "private-runtime-conversation:system-telemetry",
-  "planId": "private-runtime-plan:system-telemetry",
+  "conversationId": "source:system-telemetry",
+  "planId": "plan:system-telemetry",
   "schemaPath": "docs/governance/system-telemetry/external-approval.schema.json",
   "validatorPath": "scripts/validate-system-telemetry-external-approval.mjs",
   "validSyntheticPackets": [
     {
       "schemaVersion": 1,
-      "conversationId": "private-runtime-conversation:system-telemetry",
-      "planId": "private-runtime-plan:system-telemetry",
+      "conversationId": "source:system-telemetry",
+      "planId": "plan:system-telemetry",
       "repoScope": "clawix-app",
       "laneId": "CLX-SYS-TEL-EXT-003",
       "approval": {
@@ -56,8 +56,8 @@
     },
     {
       "schemaVersion": 1,
-      "conversationId": "private-runtime-conversation:system-telemetry",
-      "planId": "private-runtime-plan:system-telemetry",
+      "conversationId": "source:system-telemetry",
+      "planId": "plan:system-telemetry",
       "repoScope": "clawix-app",
       "laneId": "CLX-SYS-TEL-EXT-004",
       "approval": {
@@ -103,8 +103,8 @@
     },
     {
       "schemaVersion": 1,
-      "conversationId": "private-runtime-conversation:system-telemetry",
-      "planId": "private-runtime-plan:system-telemetry",
+      "conversationId": "source:system-telemetry",
+      "planId": "plan:system-telemetry",
       "repoScope": "clawix-app",
       "laneId": "CLX-SYS-TEL-EXT-005",
       "approval": {

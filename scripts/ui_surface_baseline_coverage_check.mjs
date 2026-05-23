@@ -105,7 +105,7 @@ function requireAlias(reference, alias, label) {
   }
   const suffix = reference.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
     return null;
   }
   if (reference.includes("/Users/") || reference.startsWith("/") || reference.startsWith("~/") || reference.startsWith("file://") || /^[A-Z]:\\/.test(reference)) {
@@ -128,8 +128,8 @@ function runFailureSelfTests() {
   const tests = [
     [["--unknown-flag"], "received unknown flag --unknown-flag"],
     [["--simulate-missing-platform-scope"], "coverage must include at least one android surface"],
-    [["--simulate-unsafe-geometry-reference"], "geometryEvidenceReference must use a safe relative private reference"],
-    [["--simulate-mismatched-surface-reference"], "privateBaselineReference must target"],
+    [["--simulate-unsafe-geometry-reference"], "geometryEvidenceReference must use a safe relative external reference"],
+    [["--simulate-mismatched-surface-reference"], "externalBaselineReference must target"],
     [["--simulate-initial-scope-premature-complete"], "status must remain open or blocked-external-pending until private surface baseline, geometry, and copy artifacts are approved"],
   ];
 
@@ -177,7 +177,7 @@ if (args.has("--simulate-duplicate-required-evidence-field") && Array.isArray(ma
 if (args.has("--simulate-mismatched-surface-reference") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
   manifest.coverage[0] = {
     ...manifest.coverage[0],
-    privateBaselineReference: `${manifest.privateBaselineAlias}:surfaces/${manifest.coverage[0].platform}/wrong-surface`,
+    externalBaselineReference: `${manifest.externalBaselineAlias}:surfaces/${manifest.coverage[0].platform}/wrong-surface`,
   };
 }
 if (args.has("--simulate-duplicate-coverage-id") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
@@ -190,7 +190,7 @@ if (args.has("--simulate-invalid-baseline-status") && Array.isArray(manifest?.co
   manifest.coverage[0].baselineStatus = "captured-without-user-approval";
 }
 if (args.has("--simulate-unsafe-geometry-reference") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
-  manifest.coverage[0].geometryEvidenceReference = `${manifest.privateGeometryAlias}:../geometry`;
+  manifest.coverage[0].geometryEvidenceReference = `${manifest.externalGeometryAlias}:../geometry`;
 }
 if (args.has("--simulate-unsafe-copy-reference") && Array.isArray(manifest?.coverage) && manifest.coverage[0]) {
   manifest.coverage[0].copySnapshotReference = "/Users/example/copy-snapshot";
@@ -230,7 +230,7 @@ if (args.has("--simulate-initial-scope-missing-surface-manifest") && initialScop
   initialScopeDecision.publicEvidence = initialScopeDecision.publicEvidence.filter((evidencePath) => evidencePath !== manifestPath);
 }
 if (args.has("--simulate-initial-scope-missing-private-geometry") && initialScopeDecision) {
-  initialScopeDecision.privateEvidence = initialScopeDecision.privateEvidence.filter((evidencePath) => evidencePath !== `${manifest?.privateGeometryAlias}:surfaces/*`);
+  initialScopeDecision.externalEvidence = initialScopeDecision.externalEvidence.filter((evidencePath) => evidencePath !== `${manifest?.externalGeometryAlias}:surfaces/*`);
 }
 if (args.has("--simulate-initial-scope-missing-copy-verifier") && initialScopeDecision) {
   initialScopeDecision.blockingVerifiers = initialScopeDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_copy_verify.mjs");
@@ -258,8 +258,8 @@ requireFields(manifest, manifestPath, [
   "status",
   "policy",
   "inventoryPath",
-  "privateBaselineAlias",
-  "privateGeometryAlias",
+  "externalBaselineAlias",
+  "externalGeometryAlias",
   "privateCopyAlias",
   "surfaceEvidenceFilename",
   "allowedBaselineStatuses",
@@ -274,12 +274,12 @@ if (!["pending-private-capture", "approved-private-capture"].includes(manifest?.
 }
 
 const privateBaselines = readJson("docs/ui/private-baselines.manifest.json");
-if (manifest?.privateBaselineAlias !== privateBaselines?.privateRootAlias) {
-  fail(`${manifestPath}.privateBaselineAlias must match docs/ui/private-baselines.manifest.json`);
+if (manifest?.externalBaselineAlias !== privateBaselines?.externalRootAlias) {
+  fail(`${manifestPath}.externalBaselineAlias must match docs/ui/private-baselines.manifest.json`);
 }
 const renderedGeometry = readJson("docs/ui/rendered-geometry.manifest.json");
-if (manifest?.privateGeometryAlias !== renderedGeometry?.privateGeometryAlias) {
-  fail(`${manifestPath}.privateGeometryAlias must match docs/ui/rendered-geometry.manifest.json`);
+if (manifest?.externalGeometryAlias !== renderedGeometry?.externalGeometryAlias) {
+  fail(`${manifestPath}.externalGeometryAlias must match docs/ui/rendered-geometry.manifest.json`);
 }
 const copyInventory = readJson("docs/ui/copy.inventory.json");
 if (manifest?.privateCopyAlias !== copyInventory?.privateSnapshotAlias) {
@@ -289,7 +289,7 @@ if (manifest?.privateCopyAlias !== copyInventory?.privateSnapshotAlias) {
 const requiredEvidenceFieldValues = [
   "coverageId",
   "platform",
-  "privateBaselineReference",
+  "externalBaselineReference",
   "captureCommand",
   "screenshotHash",
   "geometryHash",
@@ -328,7 +328,7 @@ for (const [index, entry] of requireArray(manifest, manifestPath, "coverage").en
     "platform",
     "classification",
     "baselineStatus",
-    "privateBaselineReference",
+    "externalBaselineReference",
     "geometryEvidenceReference",
     "copySnapshotReference",
     "requiredEvidence",
@@ -347,11 +347,11 @@ for (const [index, entry] of requireArray(manifest, manifestPath, "coverage").en
   if (entry.classification !== inventoryEntry.classification) fail(`${label}.classification must match ${inventoryPath}`);
   if (!allowedStatuses.has(entry.baselineStatus)) fail(`${label}.baselineStatus is not allowed`);
   const expectedSurfaceReference = `surfaces/${entry.platform}/${entry.coverageId}`;
-  const baselineReferenceSuffix = requireAlias(entry.privateBaselineReference, manifest.privateBaselineAlias, `${label}.privateBaselineReference`);
-  const geometryReferenceSuffix = requireAlias(entry.geometryEvidenceReference, manifest.privateGeometryAlias, `${label}.geometryEvidenceReference`);
+  const baselineReferenceSuffix = requireAlias(entry.externalBaselineReference, manifest.externalBaselineAlias, `${label}.externalBaselineReference`);
+  const geometryReferenceSuffix = requireAlias(entry.geometryEvidenceReference, manifest.externalGeometryAlias, `${label}.geometryEvidenceReference`);
   const copyReferenceSuffix = requireAlias(entry.copySnapshotReference, manifest.privateCopyAlias, `${label}.copySnapshotReference`);
   if (baselineReferenceSuffix && baselineReferenceSuffix !== expectedSurfaceReference) {
-    fail(`${label}.privateBaselineReference must target ${expectedSurfaceReference}`);
+    fail(`${label}.externalBaselineReference must target ${expectedSurfaceReference}`);
   }
   if (geometryReferenceSuffix && geometryReferenceSuffix !== expectedSurfaceReference) {
     fail(`${label}.geometryEvidenceReference must target ${expectedSurfaceReference}`);
@@ -399,14 +399,14 @@ if (!initialScopeDecision) {
       fail(`${decisionVerificationPath}.decisions.initial_scope.publicEvidence must include ${evidencePath}`);
     }
   }
-  const privateEvidence = new Set(Array.isArray(initialScopeDecision.privateEvidence) ? initialScopeDecision.privateEvidence : []);
+  const externalEvidence = new Set(Array.isArray(initialScopeDecision.externalEvidence) ? initialScopeDecision.externalEvidence : []);
   for (const evidencePath of [
-    `${manifest?.privateBaselineAlias}:surfaces/*`,
-    `${manifest?.privateGeometryAlias}:surfaces/*`,
+    `${manifest?.externalBaselineAlias}:surfaces/*`,
+    `${manifest?.externalGeometryAlias}:surfaces/*`,
     `${manifest?.privateCopyAlias}:surfaces/*`,
   ]) {
-    if (!privateEvidence.has(evidencePath)) {
-      fail(`${decisionVerificationPath}.decisions.initial_scope.privateEvidence must include ${evidencePath}`);
+    if (!externalEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.initial_scope.externalEvidence must include ${evidencePath}`);
     }
   }
   const blockingVerifiers = new Set(Array.isArray(initialScopeDecision.blockingVerifiers) ? initialScopeDecision.blockingVerifiers : []);

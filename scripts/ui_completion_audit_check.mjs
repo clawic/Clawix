@@ -148,13 +148,13 @@ let audit = read(auditPath);
 const decisionVerification = readJson(decisionPath);
 const privateVisualValidation = readJson("docs/ui/private-visual-validation.manifest.json");
 const completionSource = readJson("docs/ui/completion-source.manifest.json");
-let privateEvidencePlan = runPrivateEvidencePlan();
+let externalEvidencePlan = runPrivateEvidencePlan();
 const privateApprovalRecordCount = countPrivateApprovalRecords();
 if (args.has("--simulate-unsafe-private-path")) {
   audit += "\nPrivate source: /Users/private/source-session.jsonl\n";
 }
 if (args.has("--simulate-missing-goal-reference")) {
-  audit = audit.replace("private-codex-goal:clawix-interface-governance-plan-2026-05-15.md", "private-codex-goal:other.md");
+  audit = audit.replace("goal:clawix-interface-governance-plan-2026-05-15.md", "goal:other.md");
 }
 if (args.has("--simulate-missing-blocked-status")) {
   audit = audit.replace("Completion status: blocked by EXTERNAL PENDING private evidence.", "Completion status: ready.");
@@ -182,7 +182,7 @@ if (args.has("--simulate-open-decision-public-state")) {
 }
 if (args.has("--simulate-approval-state-public-only")) {
   audit = audit.replace(
-    "| 5 | `canon_approval` | verified-complete | Public approval evidence and private approval verifier wired. |",
+    "| 5 | `canon_approval` | verified-complete | Public approval evidence and external approval verifier wired. |",
     "| 5 | `canon_approval` | verified-complete | Public evidence verified. |",
   );
 }
@@ -199,10 +199,10 @@ if (args.has("--simulate-decision-status-mismatch") && Array.isArray(decisionVer
   };
 }
 if (args.has("--simulate-private-evidence-count-mismatch")) {
-  privateEvidencePlan = {
-    ...privateEvidencePlan,
+  externalEvidencePlan = {
+    ...externalEvidencePlan,
     counts: {
-      ...(privateEvidencePlan.counts || {}),
+      ...(externalEvidencePlan.counts || {}),
       "surface-baseline": 15,
     },
   };
@@ -253,7 +253,7 @@ if (args.has("--simulate-unknown-status") && Array.isArray(decisionVerification?
   };
 }
 if (args.has("--simulate-source-session-alias-mismatch")) {
-  completionSource.sourceSessionAlias = "private-codex-session:other";
+  completionSource.sourceAlias = "source:other";
 }
 if (args.has("--simulate-wrong-conversation-id")) {
   decisionVerification.conversationId = "other";
@@ -272,8 +272,8 @@ scanPublicSafety(audit, auditPath);
 if (completionSource?.goalReferenceAlias !== decisionVerification?.goalReference) {
   fail(`${decisionPath}.goalReference must match docs/ui/completion-source.manifest.json.goalReferenceAlias`);
 }
-if (completionSource?.sourceSessionAlias !== decisionVerification?.sourceSession) {
-  fail(`${decisionPath}.sourceSession must match docs/ui/completion-source.manifest.json.sourceSessionAlias`);
+if (completionSource?.sourceAlias !== decisionVerification?.sourceSession) {
+  fail(`${decisionPath}.sourceSession must match docs/ui/completion-source.manifest.json.sourceAlias`);
 }
 if (completionSource?.expectedConversationId !== decisionVerification?.conversationId) {
   fail(`${decisionPath}.conversationId must match docs/ui/completion-source.manifest.json.expectedConversationId`);
@@ -290,9 +290,9 @@ if (!arrayEquals(allowedStatuses, ["open", "blocked-external-pending", "verified
 }
 
 for (const required of [
-  "private-codex-goal:clawix-interface-governance-plan-2026-05-15.md",
-  "private-codex-session:interface-governance-source",
-  "private session, not published",
+  "goal:clawix-interface-governance-plan-2026-05-15.md",
+  "source:interface-governance",
+  "source redacted",
   "Do not call update_goal",
 ]) {
   if (!audit.includes(required)) fail(`${auditPath} must include ${required}`);
@@ -331,12 +331,12 @@ if (unresolvedDecisions.length === 0 && audit.includes("Completion status: block
   fail(`${auditPath} must not stay blocked when all decisions are verified-complete`);
 }
 
-const plannedEvidenceTotal = Array.isArray(privateEvidencePlan.evidence) ? privateEvidencePlan.evidence.length : 0;
+const plannedEvidenceTotal = Array.isArray(externalEvidencePlan.evidence) ? externalEvidencePlan.evidence.length : 0;
 if (!audit.includes(`Private evidence plan: ${plannedEvidenceTotal} records must be verified before completion.`)) {
   fail(`${auditPath} must state the derived private evidence total`);
 }
 if (!audit.includes(`Private approval evidence: ${privateApprovalRecordCount} record(s) must be verified before completion.`)) {
-  fail(`${auditPath} must state the private approval evidence total`);
+  fail(`${auditPath} must state the external approval evidence total`);
 }
 const sourceSessionRequirements = completionSource?.sourceSessionRequirements || {};
 for (const recordType of sourceSessionRequirements.requiredRecordTypes || []) {
@@ -348,7 +348,7 @@ if (!audit.includes(`at least ${sourceSessionRequirements.minimumUserMessages} u
 if (sourceSessionRequirements.decisionsBeforeFirstGoalEvent && !audit.includes("before the first `thread_goal_*` event")) {
   fail(`${auditPath} must state decisions are verified before the first thread_goal event`);
 }
-for (const [type, count] of Object.entries(privateEvidencePlan.counts || {})) {
+for (const [type, count] of Object.entries(externalEvidencePlan.counts || {})) {
   const row = `| \`${type}\` | ${count} |`;
   if (!audit.includes(row)) fail(`${auditPath} must include private evidence count row ${row}`);
 }
@@ -357,7 +357,7 @@ const decisionBlockerEvidenceTypes = requireArray(
   "docs/ui/private-visual-validation.manifest.json",
   "decisionBlockerEvidenceTypes",
 );
-const privateEvidenceTypes = new Set(Object.keys(privateEvidencePlan.counts || {}));
+const externalEvidenceTypes = new Set(Object.keys(externalEvidencePlan.counts || {}));
 const privateBlockerIds = requireArray(privateVisualValidation, "docs/ui/private-visual-validation.manifest.json", "decisionBlockers");
 const unresolvedDecisionIds = new Set(unresolvedDecisions.map((decision) => decision.id));
 const privateBlockerIdSet = new Set(privateBlockerIds);
@@ -384,7 +384,7 @@ if (!arrayEquals(decisionBlockerEvidenceTypes.map((entry) => entry?.decisionId),
 for (const entry of decisionBlockerEvidenceTypes) {
   const evidenceTypes = requireArray(entry, `docs/ui/private-visual-validation.manifest.json.${entry?.decisionId || "unknown"}`, "evidenceTypes");
   for (const evidenceType of evidenceTypes) {
-    if (!privateEvidenceTypes.has(evidenceType)) {
+    if (!externalEvidenceTypes.has(evidenceType)) {
       fail(`docs/ui/private-visual-validation.manifest.json.${entry?.decisionId}.evidenceTypes contains unknown type ${evidenceType}`);
     }
   }
@@ -392,7 +392,7 @@ for (const entry of decisionBlockerEvidenceTypes) {
   if (!audit.includes(row)) fail(`${auditPath} must include unresolved decision evidence row ${row}`);
   const decision = unresolvedDecisions.find((candidate) => candidate.id === entry.decisionId);
   const evidenceRecordSummary = evidenceTypes
-    .map((type) => `${privateEvidencePlan.counts?.[type]} \`${type}\``)
+    .map((type) => `${externalEvidencePlan.counts?.[type]} \`${type}\``)
     .join("; ");
   const verifierSummary = requireArray(decision, `${decisionPath}.${entry.decisionId}`, "blockingVerifiers")
     .map((verifier) => `\`${verifier}\``)
@@ -576,7 +576,7 @@ for (const decision of decisions) {
     fail(`${label} must identify private evidence as EXTERNAL PENDING`);
   }
   if (decision.status === "open" || decision.status === "blocked-external-pending") {
-    if (requireArray(decision, `${decisionPath}.${decision.id}`, "privateEvidence").length === 0) {
+    if (requireArray(decision, `${decisionPath}.${decision.id}`, "externalEvidence").length === 0) {
       fail(`${label} must include private evidence aliases while unresolved`);
     }
     if (requireArray(decision, `${decisionPath}.${decision.id}`, "blockingVerifiers").length === 0) {
@@ -595,10 +595,10 @@ for (const decision of decisions) {
   }
   if (decision.status === "verified-complete" && approvalDecisionIds.has(decision.id)) {
     if (!decision.publicEvidence.includes("scripts/ui_private_approval_verify.mjs")) {
-      fail(`${label} approval completion must include the private approval verifier`);
+      fail(`${label} approval completion must include the external approval verifier`);
     }
-    if (row.evidenceState !== "Public approval evidence and private approval verifier wired.") {
-      fail(`${label} must state private approval verifier is wired`);
+    if (row.evidenceState !== "Public approval evidence and external approval verifier wired.") {
+      fail(`${label} must state external approval verifier is wired`);
     }
   }
   if (decision.status === "verified-complete") {
@@ -608,7 +608,7 @@ for (const decision of decisions) {
     if (Array.isArray(decision.remaining) && decision.remaining.length > 0) {
       fail(`${label} verified-complete decisions must not have remaining work`);
     }
-    if (Array.isArray(decision.privateEvidence) && decision.privateEvidence.length > 0) {
+    if (Array.isArray(decision.externalEvidence) && decision.externalEvidence.length > 0) {
       fail(`${label} verified-complete decisions must not require private evidence`);
     }
     if (Array.isArray(decision.blockingVerifiers) && decision.blockingVerifiers.length > 0) {
@@ -621,7 +621,7 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
     ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-unsafe-private-path", "must not publish local private paths"],
-    ["--simulate-missing-goal-reference", "must include private-codex-goal:clawix-interface-governance-plan-2026-05-15.md"],
+    ["--simulate-missing-goal-reference", "must include goal:clawix-interface-governance-plan-2026-05-15.md"],
     ["--simulate-missing-blocked-status", "must state completion is blocked while decisions remain unresolved"],
     ["--simulate-wrong-private-evidence-total", "must state the derived private evidence total"],
     ["--simulate-missing-evidence-count-row", "must include private evidence count row"],
@@ -629,7 +629,7 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-missing-open-blocker-action-row", "must include unresolved blocker action row"],
     ["--simulate-missing-decision-row", "must include one completion row per decision"],
     ["--simulate-open-decision-public-state", "initial_scope must identify private evidence as EXTERNAL PENDING"],
-    ["--simulate-approval-state-public-only", "canon_approval must state private approval verifier is wired"],
+    ["--simulate-approval-state-public-only", "canon_approval must state external approval verifier is wired"],
     ["--simulate-verified-state-external-pending", "canonical_source must state public evidence is verified"],
     ["--simulate-decision-status-mismatch", "canonical_source status must match"],
     ["--simulate-private-evidence-count-mismatch", "must include private evidence count row"],

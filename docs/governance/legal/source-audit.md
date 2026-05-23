@@ -1,6 +1,6 @@
 # Clawix Legal Closure Decision Audit
 
-Source conversation: `private-runtime-conversation:legal-safety`
+Source conversation: `source:legal-safety`
 
 Closure state: `active_goal_not_complete`
 

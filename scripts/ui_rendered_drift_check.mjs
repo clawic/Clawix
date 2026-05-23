@@ -118,7 +118,7 @@ function requireAlias(value, alias, label) {
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
     return null;
   }
   if (value.includes("/Users/") || value.startsWith("~/") || value.startsWith("file://") || /^[A-Z]:\\/.test(value)) {
@@ -237,7 +237,7 @@ if (manifest) {
     enforcementModeDecision.blockingVerifiers = enforcementModeDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_drift_verify.mjs");
   }
   if (args.has("--simulate-enforcement-missing-private-drift-evidence") && enforcementModeDecision) {
-    enforcementModeDecision.privateEvidence = [];
+    enforcementModeDecision.externalEvidence = [];
   }
   if (args.has("--simulate-enforcement-premature-complete") && enforcementModeDecision) {
     enforcementModeDecision.status = "verified-complete";
@@ -384,9 +384,9 @@ if (!enforcementModeDecision) {
       fail(`${decisionVerificationPath}.decisions.enforcement_mode.publicEvidence must include ${evidencePath}`);
     }
   }
-  const privateEvidence = new Set(Array.isArray(enforcementModeDecision.privateEvidence) ? enforcementModeDecision.privateEvidence : []);
-  if (!privateEvidence.has(`${manifest?.privateDriftAlias}:surfaces/*`)) {
-    fail(`${decisionVerificationPath}.decisions.enforcement_mode.privateEvidence must include ${manifest?.privateDriftAlias}:surfaces/*`);
+  const externalEvidence = new Set(Array.isArray(enforcementModeDecision.externalEvidence) ? enforcementModeDecision.externalEvidence : []);
+  if (!externalEvidence.has(`${manifest?.privateDriftAlias}:surfaces/*`)) {
+    fail(`${decisionVerificationPath}.decisions.enforcement_mode.externalEvidence must include ${manifest?.privateDriftAlias}:surfaces/*`);
   }
   const blockingVerifiers = new Set(Array.isArray(enforcementModeDecision.blockingVerifiers) ? enforcementModeDecision.blockingVerifiers : []);
   for (const verifier of [
@@ -424,7 +424,7 @@ if (!isSelfTest && rawArgs.length === 0) {
     ["--simulate-missing-drift-category", "driftCategories must include copy"],
     ["--simulate-missing-failure-output-requirement", "failureOutputRequirements must include required permission"],
     ["--simulate-missing-coverage-report", "reports must include web-screens"],
-    ["--simulate-unsafe-private-reference", "privateDriftReportReference must use a safe relative private reference"],
+    ["--simulate-unsafe-private-reference", "privateDriftReportReference must use a safe relative external reference"],
     ["--simulate-mismatched-private-reference", "privateDriftReportReference must target surfaces/"],
     ["--simulate-active-manifest-with-blocking-report", "status cannot be active while"],
     ["--simulate-enforcement-missing-private-drift-verifier", "blockingVerifiers must include scripts/ui_private_drift_verify.mjs"],

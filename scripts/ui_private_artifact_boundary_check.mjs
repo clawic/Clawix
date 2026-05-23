@@ -5,7 +5,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const uiDir = path.join(rootDir, "docs/ui");
-const expectedPrivateBaselineAlias = "private-codex-ui-baselines";
+const expectedPrivateBaselineAlias = "external-ui-baselines";
 const expectedPrivateAssignment = "outside-public-repo";
 const rawArgs = process.argv.slice(2);
 const args = new Set(rawArgs);
@@ -151,7 +151,7 @@ function runFailureSelfTests() {
   const tests = [
     [["--unknown-flag"], "received unknown flag --unknown-flag"],
     [["--simulate-public-ui-binary-artifact"], "must not store private visual evidence in the public repo"],
-    [["--simulate-missing-private-baseline-alias"], "rootAliases must include private-codex-ui-baselines"],
+    [["--simulate-missing-private-baseline-alias"], "rootAliases must include external-ui-baselines"],
     [["--simulate-public-screenshots-policy"], "privateArtifactsPolicy.screenshots must be private"],
     [["--simulate-public-visual-model-assignment"], "visual-model-allowlist.manifest.json.privateAssignment must be outside-public-repo"],
   ];
@@ -239,7 +239,7 @@ if (args.has("--simulate-duplicate-root-alias") && Array.isArray(privateValidati
   privateValidation.rootAliases.push({ ...privateValidation.rootAliases[0], env: "CLAWIX_UI_PRIVATE_DUPLICATE_ALIAS_ROOT" });
 }
 if (args.has("--simulate-duplicate-root-env") && Array.isArray(privateValidation?.rootAliases) && privateValidation.rootAliases[0]) {
-  privateValidation.rootAliases.push({ ...privateValidation.rootAliases[0], alias: "private-codex-ui-duplicate-alias" });
+  privateValidation.rootAliases.push({ ...privateValidation.rootAliases[0], alias: "external-ui-duplicate-alias" });
 }
 if (args.has("--simulate-root-alias-missing-field") && Array.isArray(privateValidation?.rootAliases) && privateValidation.rootAliases[0]) {
   delete privateValidation.rootAliases[0].manifestAliasField;
@@ -248,7 +248,7 @@ if (args.has("--simulate-root-alias-unsafe-manifest-path") && Array.isArray(priv
   privateValidation.rootAliases[0].manifestPath = "../private-baselines.manifest.json";
 }
 if (args.has("--simulate-root-alias-wrong-manifest-alias-field") && Array.isArray(privateValidation?.rootAliases) && privateValidation.rootAliases[1]) {
-  privateValidation.rootAliases[1].manifestAliasField = "privateRootAlias";
+  privateValidation.rootAliases[1].manifestAliasField = "externalRootAlias";
 }
 if (args.has("--simulate-optional-root-alias-wrong-env") && Array.isArray(privateValidation?.optionalRootAliases) && privateValidation.optionalRootAliases[0]) {
   privateValidation.optionalRootAliases[0].env = "CLAWIX_UI_PRIVATE_BASELINE_ROOT";
@@ -274,10 +274,10 @@ if (args.has("--simulate-public-baseline-may-store-raw-screenshot") && Array.isA
 if (args.has("--simulate-public-baseline-must-not-store-missing-secret") && Array.isArray(privateBaselines?.privateArtifactPolicy?.publicRepoMustNotStore)) {
   privateBaselines.privateArtifactPolicy.publicRepoMustNotStore = privateBaselines.privateArtifactPolicy.publicRepoMustNotStore.filter((store) => store !== "secret");
 }
-requireField(privateBaselines, "docs/ui/private-baselines.manifest.json", "privateRootAlias");
-const privateBaselineAlias = privateBaselines?.privateRootAlias;
-if (privateBaselineAlias !== expectedPrivateBaselineAlias) {
-  fail(`docs/ui/private-baselines.manifest.json.privateRootAlias must be ${expectedPrivateBaselineAlias}`);
+requireField(privateBaselines, "docs/ui/private-baselines.manifest.json", "externalRootAlias");
+const externalBaselineAlias = privateBaselines?.externalRootAlias;
+if (externalBaselineAlias !== expectedPrivateBaselineAlias) {
+  fail(`docs/ui/private-baselines.manifest.json.externalRootAlias must be ${expectedPrivateBaselineAlias}`);
 }
 const requiredRootValues = requireArray(privateValidation, "docs/ui/private-visual-validation.manifest.json", "requiredRoots");
 const requiredRoots = requireExactStrings(requiredRootValues, "docs/ui/private-visual-validation.manifest.json.requiredRoots", [
@@ -290,36 +290,36 @@ const requiredRoots = requireExactStrings(requiredRootValues, "docs/ui/private-v
 const rootAliases = Array.isArray(privateValidation?.rootAliases) ? privateValidation.rootAliases : [];
 const optionalRootAliases = Array.isArray(privateValidation?.optionalRootAliases) ? privateValidation.optionalRootAliases : [];
 if (rootAliases.length === 0) fail("docs/ui/private-visual-validation.manifest.json.rootAliases must not be empty");
-if (!rootAliases.some((entry) => entry?.alias === privateBaselineAlias)) {
-  fail(`docs/ui/private-visual-validation.manifest.json.rootAliases must include ${privateBaselineAlias}`);
+if (!rootAliases.some((entry) => entry?.alias === externalBaselineAlias)) {
+  fail(`docs/ui/private-visual-validation.manifest.json.rootAliases must include ${externalBaselineAlias}`);
 }
 const expectedRootAliases = [
   {
-    alias: "private-codex-ui-baselines",
+    alias: "external-ui-baselines",
     env: "CLAWIX_UI_PRIVATE_BASELINE_ROOT",
     manifestPath: "docs/ui/private-baselines.manifest.json",
-    manifestAliasField: "privateRootAlias",
+    manifestAliasField: "externalRootAlias",
   },
   {
-    alias: "private-runtime-ui-rendered-geometry",
+    alias: "external-ui-rendered-geometry",
     env: "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT",
     manifestPath: "docs/ui/rendered-geometry.manifest.json",
-    manifestAliasField: "privateGeometryAlias",
+    manifestAliasField: "externalGeometryAlias",
   },
   {
-    alias: "private-codex-ui-copy-snapshots",
+    alias: "external-ui-copy-snapshots",
     env: "CLAWIX_UI_PRIVATE_COPY_ROOT",
     manifestPath: "docs/ui/copy.inventory.json",
     manifestAliasField: "privateSnapshotAlias",
   },
   {
-    alias: "private-codex-ui-rendered-drift",
+    alias: "external-ui-rendered-drift",
     env: "CLAWIX_UI_PRIVATE_DRIFT_ROOT",
     manifestPath: "docs/ui/rendered-drift.manifest.json",
     manifestAliasField: "privateDriftAlias",
   },
   {
-    alias: "private-codex-ui-debt-audit",
+    alias: "external-ui-debt-audit",
     env: "CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT",
     manifestPath: "docs/ui/debt-audit.manifest.json",
     manifestAliasField: "privateDebtAuditAlias",
@@ -327,16 +327,16 @@ const expectedRootAliases = [
 ];
 const expectedOptionalRootAliases = [
   {
-    alias: "private-codex-ui-approval",
+    alias: "external-ui-approval",
     env: "CLAWIX_UI_PRIVATE_APPROVAL_ROOT",
     manifestPath: "docs/ui/approval-authority.manifest.json",
-    manifestAliasField: "privateApprovalAlias",
+    manifestAliasField: "externalApprovalAlias",
   },
   {
-    alias: "private-codex-ui-mechanical-equivalence",
+    alias: "external-ui-mechanical-equivalence",
     env: "CLAWIX_UI_PRIVATE_MECHANICAL_EQUIVALENCE_ROOT",
     manifestPath: "docs/ui/mechanical-equivalence.manifest.json",
-    manifestAliasField: "privateEvidenceAlias",
+    manifestAliasField: "externalEvidenceAlias",
   },
 ];
 for (const [index, expected] of expectedRootAliases.entries()) {

@@ -103,7 +103,7 @@ function assertPublicSafeReference(reference, alias, label) {
   }
   const suffix = reference.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
   }
   if (/^\/Users\//.test(reference) || reference.startsWith("~/") || reference.startsWith("file://") || /^[A-Z]:\\/.test(reference)) {
     fail(`${label} must not contain a local absolute path`);
@@ -193,21 +193,21 @@ const idFieldByEvidenceType = new Map([
 ]);
 
 const referenceFieldByEvidenceType = new Map([
-  ["surface-baseline", "privateBaselineReference"],
+  ["surface-baseline", "externalBaselineReference"],
   ["surface-geometry", "geometryEvidenceReference"],
   ["surface-copy", "copySnapshotReference"],
-  ["critical-flow-baseline", "privateBaselineReference"],
+  ["critical-flow-baseline", "externalBaselineReference"],
   ["pattern-geometry", "geometryEvidenceReference"],
   ["rendered-drift", "privateDriftReportReference"],
   ["debt-audit", "privateDebtAuditReference"],
-  ["performance-budget", "privateBaselineReference"],
-  ["mechanical-equivalence", "privateEvidenceReference"],
+  ["performance-budget", "externalBaselineReference"],
+  ["mechanical-equivalence", "externalEvidenceReference"],
 ]);
 
 function approvedScopeTemplate() {
   const fields = Array.isArray(privateValidation?.requiredApprovedScopeFields)
     ? privateValidation.requiredApprovedScopeFields
-    : ["scopeId", "approvedBy", "approvedAt", "privateApprovalReference"];
+    : ["scopeId", "approvedBy", "approvedAt", "externalApprovalReference"];
   return Object.fromEntries(fields.map((field) => [field, null]));
 }
 
@@ -371,7 +371,7 @@ function candidateFieldErrors(evidence, requiredFields) {
     if (field === "approvedScope") {
       const requiredScopeFields = Array.isArray(privateValidation?.requiredApprovedScopeFields)
         ? privateValidation.requiredApprovedScopeFields
-        : ["scopeId", "approvedBy", "approvedAt", "privateApprovalReference"];
+        : ["scopeId", "approvedBy", "approvedAt", "externalApprovalReference"];
       if (!value || typeof value !== "object" || Array.isArray(value)) {
         fieldErrors.push(field);
       } else {
@@ -681,7 +681,7 @@ function captureInvalidCandidatesFromEvidencePlan() {
     status: invalidCandidates.length > 0
       ? "invalid-private-candidate-evidence"
       : "no-invalid-private-candidate-evidence",
-    note: "This report is public-safe: it lists private aliases and relative evidence paths, not local private root paths or raw artifacts.",
+    note: "This report is public-safe: it lists external aliases and relative evidence paths, not local private root paths or raw artifacts.",
     totalRecords: capturePlan.totalRecords,
     totals,
     invalidCandidateCount: invalidCandidates.length,
@@ -726,15 +726,15 @@ function capturePlanFromEvidencePlan() {
     roots.set(parsed.alias, root);
   }
   const verifierByAlias = new Map([
-    ["private-codex-ui-baselines", [
+    ["external-ui-baselines", [
       "node scripts/ui_private_baseline_verify.mjs --require-approved",
       "node scripts/ui_private_performance_budget_verify.mjs --require-approved",
     ]],
-    ["private-runtime-ui-rendered-geometry", ["node scripts/ui_private_geometry_verify.mjs --require-approved"]],
-    ["private-codex-ui-copy-snapshots", ["node scripts/ui_private_copy_verify.mjs --require-approved"]],
-    ["private-codex-ui-rendered-drift", ["node scripts/ui_private_drift_verify.mjs --require-approved"]],
-    ["private-codex-ui-debt-audit", ["node scripts/ui_private_debt_audit_verify.mjs --require-approved"]],
-    ["private-codex-ui-mechanical-equivalence", ["node scripts/ui_private_evidence_verify.mjs --require-approved"]],
+    ["external-ui-rendered-geometry", ["node scripts/ui_private_geometry_verify.mjs --require-approved"]],
+    ["external-ui-copy-snapshots", ["node scripts/ui_private_copy_verify.mjs --require-approved"]],
+    ["external-ui-rendered-drift", ["node scripts/ui_private_drift_verify.mjs --require-approved"]],
+    ["external-ui-debt-audit", ["node scripts/ui_private_debt_audit_verify.mjs --require-approved"]],
+    ["external-ui-mechanical-equivalence", ["node scripts/ui_private_evidence_verify.mjs --require-approved"]],
   ]);
   for (const [alias, root] of roots) {
     root.verifierCommands = verifierByAlias.get(alias) || ["node scripts/ui_private_evidence_verify.mjs --require-approved"];
@@ -785,11 +785,11 @@ const mechanicalEquivalence = readJson("docs/ui/mechanical-equivalence.manifest.
 const privateValidation = readJson("docs/ui/private-visual-validation.manifest.json");
 
 if (argSet.has("--simulate-unsafe-surface-baseline-reference") && Array.isArray(surfaceCoverage?.coverage) && surfaceCoverage.coverage[0]) {
-  surfaceCoverage.coverage[0].privateBaselineReference = "/Users/example/private-baseline";
+  surfaceCoverage.coverage[0].externalBaselineReference = "/Users/example/private-baseline";
 }
 
 if (argSet.has("--simulate-unsafe-flow-baseline-reference") && Array.isArray(privateBaselines?.flows) && privateBaselines.flows[0]) {
-  privateBaselines.flows[0].privateBaselineReference = `${privateBaselines.privateRootAlias}:../escape`;
+  privateBaselines.flows[0].externalBaselineReference = `${privateBaselines.externalRootAlias}:../escape`;
 }
 
 if (argSet.has("--simulate-path-evidence-filename") && surfaceCoverage) {
@@ -907,20 +907,20 @@ for (const [index, entry] of requireArray(surfaceCoverage, "docs/ui/surface-base
   requireFields(entry, label, [
     "coverageId",
     "platform",
-    "privateBaselineReference",
+    "externalBaselineReference",
     "geometryEvidenceReference",
     "copySnapshotReference",
     "requiredEvidence",
   ]);
-  assertPublicSafeReference(entry.privateBaselineReference, surfaceCoverage?.privateBaselineAlias, `${label}.privateBaselineReference`);
-  assertPublicSafeReference(entry.geometryEvidenceReference, surfaceCoverage?.privateGeometryAlias, `${label}.geometryEvidenceReference`);
+  assertPublicSafeReference(entry.externalBaselineReference, surfaceCoverage?.externalBaselineAlias, `${label}.externalBaselineReference`);
+  assertPublicSafeReference(entry.geometryEvidenceReference, surfaceCoverage?.externalGeometryAlias, `${label}.geometryEvidenceReference`);
   assertPublicSafeReference(entry.copySnapshotReference, surfaceCoverage?.privateCopyAlias, `${label}.copySnapshotReference`);
   addPlanItem({
     label,
     type: "surface-baseline",
     id: entry.coverageId,
     platform: entry.platform,
-    privateReference: entry.privateBaselineReference,
+    privateReference: entry.externalBaselineReference,
     evidenceFilename: surfaceCoverage?.surfaceEvidenceFilename || "surface-evidence.json",
     requiredFields: surfaceRequiredFields,
   });
@@ -946,14 +946,14 @@ for (const [index, entry] of requireArray(surfaceCoverage, "docs/ui/surface-base
 
 for (const [index, flow] of requireArray(privateBaselines, "docs/ui/private-baselines.manifest.json", "flows").entries()) {
   const label = `private-baselines[${index}]`;
-  requireFields(flow, label, ["id", "platform", "privateBaselineReference", "requiredEvidence"]);
-  assertPublicSafeReference(flow.privateBaselineReference, privateBaselines?.privateRootAlias, `${label}.privateBaselineReference`);
+  requireFields(flow, label, ["id", "platform", "externalBaselineReference", "requiredEvidence"]);
+  assertPublicSafeReference(flow.externalBaselineReference, privateBaselines?.externalRootAlias, `${label}.externalBaselineReference`);
   addPlanItem({
     label,
     type: "critical-flow-baseline",
     id: flow.id,
     platform: flow.platform,
-    privateReference: flow.privateBaselineReference,
+    privateReference: flow.externalBaselineReference,
     evidenceFilename: privateBaselines?.evidenceFilename || "evidence.json",
     requiredFields: flow.requiredEvidence,
   });
@@ -963,8 +963,8 @@ for (const patternId of requireArray(patternRegistry, "docs/ui/pattern-registry/
   const patternPath = `docs/ui/pattern-registry/patterns/${patternId}.pattern.json`;
   const pattern = readJson(patternPath);
   for (const platform of requireArray(pattern, patternPath, "platforms")) {
-    const privateReference = `${renderedGeometry?.privateGeometryAlias}:${platform}/${patternId}`;
-    assertPublicSafeReference(privateReference, renderedGeometry?.privateGeometryAlias, `${patternPath}.${platform}.geometryReference`);
+    const privateReference = `${renderedGeometry?.externalGeometryAlias}:${platform}/${patternId}`;
+    assertPublicSafeReference(privateReference, renderedGeometry?.externalGeometryAlias, `${patternPath}.${platform}.geometryReference`);
     addPlanItem({
       label: `${patternPath}:${platform}`,
       type: "pattern-geometry",
@@ -1009,14 +1009,14 @@ for (const [index, entry] of requireArray(debtAudit, "docs/ui/debt-audit.manifes
 
 for (const [index, flow] of requireArray(performanceBudgets, "docs/ui/performance-budgets.registry.json", "flows").entries()) {
   const label = `performance-budgets[${index}]`;
-  requireFields(flow, label, ["id", "platform", "privateBaselineReference"]);
-  assertPublicSafeReference(flow.privateBaselineReference, privateBaselines?.privateRootAlias, `${label}.privateBaselineReference`);
+  requireFields(flow, label, ["id", "platform", "externalBaselineReference"]);
+  assertPublicSafeReference(flow.externalBaselineReference, privateBaselines?.externalRootAlias, `${label}.externalBaselineReference`);
   addPlanItem({
     label,
     type: "performance-budget",
     id: flow.id,
     platform: flow.platform,
-    privateReference: flow.privateBaselineReference,
+    privateReference: flow.externalBaselineReference,
     evidenceFilename: performanceBudgets?.evidenceFilename || "performance-evidence.json",
     requiredFields: performanceBudgets?.requiredEvidenceFields || [],
   });
@@ -1027,8 +1027,8 @@ for (const [index, record] of requireArray(mechanicalEquivalence, "docs/ui/mecha
   requireFields(record, label, ["id", "status", "platforms", "changedFiles"]);
   const platforms = requireArray(record, label, "platforms");
   for (const platform of platforms) {
-    const privateReference = `${mechanicalEquivalence?.privateEvidenceAlias}:records/${record.id}/${platform}`;
-    assertPublicSafeReference(privateReference, mechanicalEquivalence?.privateEvidenceAlias, `${label}.${platform}.privateEvidenceReference`);
+    const privateReference = `${mechanicalEquivalence?.externalEvidenceAlias}:records/${record.id}/${platform}`;
+    assertPublicSafeReference(privateReference, mechanicalEquivalence?.externalEvidenceAlias, `${label}.${platform}.externalEvidenceReference`);
     addPlanItem({
       label: `${label}:${platform}`,
       type: "mechanical-equivalence",
@@ -1037,7 +1037,7 @@ for (const [index, record] of requireArray(mechanicalEquivalence, "docs/ui/mecha
       privateReference,
       evidenceFilename: mechanicalEquivalence?.evidenceFilename || "mechanical-equivalence-evidence.json",
       requiredFields: [
-        ...(mechanicalEquivalence?.requiredPrivateEvidenceFields || ["recordId", "platform", "status", "privateEvidenceReference"]),
+        ...(mechanicalEquivalence?.requiredPrivateEvidenceFields || ["recordId", "platform", "status", "externalEvidenceReference"]),
         ...(mechanicalEquivalence?.requiredEvidenceFields || []),
       ],
     });
@@ -1060,7 +1060,7 @@ for (const item of plan) {
   logicalKeys.add(logicalKey);
   const referenceKey = `${item.type}:${item.privateReference}`;
   if (referenceKeys.has(referenceKey)) {
-    fail(`private evidence plan duplicates private reference ${referenceKey}`);
+    fail(`private evidence plan duplicates external reference ${referenceKey}`);
   }
   referenceKeys.add(referenceKey);
 }
@@ -1099,8 +1099,8 @@ for (const [decisionId, evidenceTypes] of expectedDecisionEvidence.entries()) {
 if (errors.length === 0 && !isSelfTest && args.length === 0) {
   for (const [flag, expectedOutput] of [
     ["--unknown-flag", "received unknown flag --unknown-flag"],
-    ["--simulate-unsafe-surface-baseline-reference", "privateBaselineReference must use private-codex-ui-baselines:"],
-    ["--simulate-unsafe-flow-baseline-reference", "privateBaselineReference must use a safe relative private reference"],
+    ["--simulate-unsafe-surface-baseline-reference", "externalBaselineReference must use external-ui-baselines:"],
+    ["--simulate-unsafe-flow-baseline-reference", "externalBaselineReference must use a safe relative external reference"],
     ["--simulate-path-evidence-filename", "evidenceFilename must be a safe filename"],
     ["--simulate-duplicate-surface-required-field", "requiredFields duplicates coverageId"],
     ["--simulate-empty-pattern-geometry-fields", "requiredFields must not be empty"],

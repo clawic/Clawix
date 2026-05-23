@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "artifactId": "sdk-first-custom-surfaces-external-evidence-fixtures",
   "status": "synthetic_templates_not_evidence",
-  "conversationId": "private-runtime-conversation:sdk-first-custom-surfaces",
+  "conversationId": "source:sdk-first-custom-surfaces",
   "schemaPath": "docs/governance/sdk-first-custom-surfaces/external-evidence.schema.json",
   "validSyntheticPackets": [
     {
       "schemaVersion": 1,
-      "conversationId": "private-runtime-conversation:sdk-first-custom-surfaces",
+      "conversationId": "source:sdk-first-custom-surfaces",
       "goal": "sdk-first-custom-surfaces",
       "laneId": "CLX-SDK-EXT-001",
       "status": "accepted_external_evidence",
@@ -65,7 +65,7 @@
     },
     {
       "schemaVersion": 1,
-      "conversationId": "private-runtime-conversation:sdk-first-custom-surfaces",
+      "conversationId": "source:sdk-first-custom-surfaces",
       "goal": "sdk-first-custom-surfaces",
       "laneId": "CLX-SDK-EXT-002",
       "status": "accepted_external_evidence",
@@ -123,7 +123,7 @@
     },
     {
       "schemaVersion": 1,
-      "conversationId": "private-runtime-conversation:sdk-first-custom-surfaces",
+      "conversationId": "source:sdk-first-custom-surfaces",
       "goal": "sdk-first-custom-surfaces",
       "laneId": "CLX-SDK-EXT-003",
       "status": "accepted_external_evidence",
@@ -190,7 +190,7 @@
     },
     {
       "schemaVersion": 1,
-      "conversationId": "private-runtime-conversation:sdk-first-custom-surfaces",
+      "conversationId": "source:sdk-first-custom-surfaces",
       "goal": "sdk-first-custom-surfaces",
       "laneId": "CLX-SDK-EXT-004",
       "status": "accepted_external_evidence",

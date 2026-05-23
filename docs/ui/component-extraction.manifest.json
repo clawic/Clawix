@@ -6,7 +6,7 @@
   "requiredRiskSignals": ["state", "interaction", "geometry", "accessibility", "performance"],
   "mechanicalEquivalence": {
     "manifestPath": "docs/ui/mechanical-equivalence.manifest.json",
-    "privateEvidenceAlias": "private-codex-ui-mechanical-equivalence",
+    "externalEvidenceAlias": "external-ui-mechanical-equivalence",
     "requiredForPolicies": ["required", "required-when-repeated-with-state", "allowed"],
     "requiredStatuses": ["verified-equivalent"],
     "requiredEvidenceFields": [

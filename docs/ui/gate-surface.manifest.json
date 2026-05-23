@@ -12,7 +12,7 @@
     "forbidsPrivateRoots": true,
     "diffBaseEnv": "CLAWIX_UI_GUARD_DIFF_BASE",
     "diffBaseConsumers": ["scripts/ui_governance_guard.mjs", "scripts/ui_pattern_mutation_guard.mjs"],
-    "privateEvidenceMode": "external-pending-contract"
+    "externalEvidenceMode": "external-pending-contract"
   },
   "requiredPublicCheckScripts": [
     "scripts/ui_governance_guard.mjs",
@@ -109,6 +109,6 @@
     "performance-budget-platform-coverage": ["scripts/ui_performance_budget_check.mjs"],
     "unauthorized-visual-diff": ["scripts/ui_governance_guard.mjs", "scripts/ui_visual_guard_failure_check.mjs"]
   },
-  "privateEvidenceCommand": "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT=<private-root> CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved",
+  "externalEvidenceCommand": "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT=<private-root> CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved",
   "externalPendingExitCode": 2
 }

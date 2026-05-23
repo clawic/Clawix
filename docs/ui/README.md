@@ -89,7 +89,7 @@ the public repo.
 - `protected-surfaces.registry.json`: user-approved frozen visual surfaces.
 - `approval-authority.manifest.json`: aggregate contract for explicit user
   approval authority across canon, protected surfaces, scopes, exceptions,
-  approved rendered drift, and audited UI debt; private approval evidence stays
+  approved rendered drift, and audited UI debt; external approval evidence stays
   outside the public repo.
 - `canon-units.manifest.json`: declares UI pattern as the primary canon unit
   and requires promotion for narrower units.
@@ -161,7 +161,7 @@ the public repo.
    `scripts/ui_protected_surface_check.mjs`.
 16. Keep approval authority current with
    `scripts/ui_approval_authority_check.mjs`; future approvals must be from the
-   user, point to private approval evidence bound to the public record hash, and pass
+   user, point to external approval evidence bound to the public record hash, and pass
    `scripts/ui_private_approval_verify.mjs --require-approved` once approval
    records exist.
 17. Keep canon unit contracts current with `scripts/ui_canon_unit_check.mjs`;
@@ -215,7 +215,7 @@ the public repo.
    presentation, copy, and hierarchy buckets must stay explicit.
 35. Keep visual model authorization current with
    `scripts/ui_visual_model_allowlist_check.mjs`; the active model signal must
-   identify an allowlisted visual model with private approval evidence.
+   identify an allowlisted visual model with external approval evidence.
 36. Keep visual guard failure diagnostics current with
    `scripts/ui_visual_guard_failure_check.mjs`; failures must include route,
    reason, and required permission.
@@ -266,9 +266,9 @@ the public repo.
     second checklist. Run
     `node scripts/ui_private_evidence_plan_check.mjs --capture-plan` to group
     records by `privateReference` alias and private root environment:
-    `private-codex-ui-baselines`, `private-runtime-ui-rendered-geometry`,
-    `private-codex-ui-copy-snapshots`, `private-codex-ui-rendered-drift`, and
-    `private-codex-ui-debt-audit`. For each record, create the matching private
+    `external-ui-baselines`, `external-ui-rendered-geometry`,
+    `external-ui-copy-snapshots`, `external-ui-rendered-drift`, and
+    `external-ui-debt-audit`. For each record, create the matching private
     root suffix plus its `evidenceFilename`; use the emitted
     `evidenceTemplate` only as a field-shape checklist. Template placeholders
     are intentionally invalid and do not count as approval. Keep raw
@@ -328,7 +328,7 @@ the public repo.
     evidence end to end with
     `CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> CLAWIX_UI_PRIVATE_GEOMETRY_ROOT=<private-root> CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> CLAWIX_UI_PRIVATE_DRIFT_ROOT=<private-root> CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT=<private-root> CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_visual_verify.mjs --require-approved`.
     The approval root is required while public approval records exist.
-50. When private approval evidence is available, verify it with
+50. When external approval evidence is available, verify it with
     `CLAWIX_UI_PRIVATE_APPROVAL_ROOT=<private-root> node scripts/ui_private_approval_verify.mjs --require-approved`.
     Before approval evidence is available, run
     `node scripts/ui_private_approval_verify.mjs --approval-plan` to list the

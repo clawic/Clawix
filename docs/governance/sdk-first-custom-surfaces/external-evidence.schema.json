@@ -50,7 +50,7 @@
   },
   "properties": {
     "schemaVersion": { "const": 1 },
-    "conversationId": { "const": "private-runtime-conversation:sdk-first-custom-surfaces" },
+    "conversationId": { "const": "source:sdk-first-custom-surfaces" },
     "goal": { "const": "sdk-first-custom-surfaces" },
     "laneId": { "$ref": "#/$defs/laneId" },
     "status": { "const": "accepted_external_evidence" },

@@ -120,14 +120,14 @@ function scanForLocalPaths(value, label) {
   if (hasLocalPath(value)) fail(`${label} must not contain a local path`);
 }
 
-function requireSafePrivateReference(value, alias, label) {
+function requireSafeExternalReference(value, alias, label) {
   if (typeof value !== "string" || !value.startsWith(`${alias}:`)) {
     fail(`${label} must use ${alias}:`);
     return;
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
   }
   if (hasLocalPath(value) || value.includes("/Users/")) {
     fail(`${label} must not contain a local path`);
@@ -239,7 +239,7 @@ if (
     approvedBy: "user",
     approvedAt: "2026-05-15",
     expiresAt: args.has("--simulate-expired-approved-scope") ? "2026-01-01" : "2999-12-31",
-    privateApprovalReference: "private-codex-ui-approval:scopes/simulated-scope",
+    externalApprovalReference: "external-ui-approval:scopes/simulated-scope",
   };
   manifest.activeScopes = [...(manifest.activeScopes || []), simulatedScope];
   if (args.has("--simulate-duplicate-scope-id")) {
@@ -348,7 +348,7 @@ requireExactStringSet(requiredApprovalFields, `${manifestPath}.requiredApprovalF
   "approvedBy",
   "approvedAt",
   "expiresAt",
-  "privateApprovalReference",
+  "externalApprovalReference",
 ]);
 
 const scopes = requireArray(manifest, manifestPath, "activeScopes", { nonEmpty: false });
@@ -406,7 +406,7 @@ for (const [index, scope] of scopes.entries()) {
   for (const kind of scope.changeKinds || []) {
     if (!budgetKinds.has(kind)) fail(`${label}.changeBudget.allowedChangeKinds must cover scope change kind ${kind}`);
   }
-  requireSafePrivateReference(scope.privateApprovalReference, "private-codex-ui-approval", `${label}.privateApprovalReference`);
+  requireSafeExternalReference(scope.externalApprovalReference, "external-ui-approval", `${label}.externalApprovalReference`);
 }
 
 scanForLocalPaths(manifest, manifestPath);

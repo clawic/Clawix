@@ -94,7 +94,7 @@ if (manifest) {
     manifest.performanceBudgetRegistryPath = "docs/ui/other-performance-budgets.registry.json";
   }
   if (args.has("--simulate-wrong-private-baseline-alias")) {
-    manifest.privateBaselineAlias = "local-private-baselines";
+    manifest.externalBaselineAlias = "local-private-baselines";
   }
   if (args.has("--simulate-missing-flow-mapping") && Array.isArray(manifest.requiredFlowMappings)) {
     manifest.requiredFlowMappings = manifest.requiredFlowMappings.filter(
@@ -126,7 +126,7 @@ requireFields(manifest, manifestPath, [
   "policy",
   "patternRegistryPath",
   "performanceBudgetRegistryPath",
-  "privateBaselineAlias",
+  "externalBaselineAlias",
   "requiredFlowMappings",
 ]);
 if (manifest?.status !== "active") fail(`${manifestPath}.status must be active`);
@@ -136,8 +136,8 @@ if (manifest?.patternRegistryPath !== "docs/ui/pattern-registry/patterns.registr
 if (manifest?.performanceBudgetRegistryPath !== "docs/ui/performance-budgets.registry.json") {
   fail(`${manifestPath}.performanceBudgetRegistryPath must be docs/ui/performance-budgets.registry.json`);
 }
-if (manifest?.privateBaselineAlias !== "private-codex-ui-baselines") {
-  fail(`${manifestPath}.privateBaselineAlias must be private-codex-ui-baselines`);
+if (manifest?.externalBaselineAlias !== "external-ui-baselines") {
+  fail(`${manifestPath}.externalBaselineAlias must be external-ui-baselines`);
 }
 
 const registryPath = manifest?.patternRegistryPath || "docs/ui/pattern-registry/patterns.registry.json";
@@ -188,7 +188,7 @@ for (const [index, mapping] of requireArray(manifest, manifestPath, "requiredFlo
     if (pattern && args.has("--simulate-pattern-wrong-private-baseline-alias") && patternId === "sidebar-row") {
       pattern.performance = {
         ...(pattern.performance || {}),
-        privateBaselineAlias: "private-other-baselines",
+        externalBaselineAlias: "private-other-baselines",
       };
     }
     if (pattern && args.has("--simulate-pattern-missing-platform") && patternId === "chat-surface") {
@@ -207,13 +207,13 @@ for (const [index, mapping] of requireArray(manifest, manifestPath, "requiredFlo
     requireFields(performance, `${patternPath}.performance`, [
       "criticalFlows",
       "budgetRegistry",
-      "privateBaselineAlias",
+      "externalBaselineAlias",
     ]);
     if (performance.budgetRegistry !== budgetsPath) {
       fail(`${patternPath}.performance.budgetRegistry must be ${budgetsPath}`);
     }
-    if (performance.privateBaselineAlias !== manifest.privateBaselineAlias) {
-      fail(`${patternPath}.performance.privateBaselineAlias must match ${manifestPath}`);
+    if (performance.externalBaselineAlias !== manifest.externalBaselineAlias) {
+      fail(`${patternPath}.performance.externalBaselineAlias must match ${manifestPath}`);
     }
     const criticalFlows = requireUniqueStrings(
       requireArray(performance, `${patternPath}.performance`, "criticalFlows", { nonEmpty: false }),
@@ -258,13 +258,13 @@ for (const patternId of patternIds) {
   requireFields(performance, `${patternPath}.performance`, [
     "criticalFlows",
     "budgetRegistry",
-    "privateBaselineAlias",
+    "externalBaselineAlias",
   ]);
   if (performance.budgetRegistry !== budgetsPath) {
     fail(`${patternPath}.performance.budgetRegistry must be ${budgetsPath}`);
   }
-  if (performance.privateBaselineAlias !== manifest?.privateBaselineAlias) {
-    fail(`${patternPath}.performance.privateBaselineAlias must be ${manifestPath}.privateBaselineAlias`);
+  if (performance.externalBaselineAlias !== manifest?.externalBaselineAlias) {
+    fail(`${patternPath}.performance.externalBaselineAlias must be ${manifestPath}.externalBaselineAlias`);
   }
   for (const flowId of requireUniqueStrings(
     requireArray(performance, `${patternPath}.performance`, "criticalFlows", { nonEmpty: false }),
@@ -279,7 +279,7 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-wrong-pattern-registry-path", "patternRegistryPath must be docs/ui/pattern-registry/patterns.registry.json"],
     ["--simulate-wrong-budget-registry-path", "performanceBudgetRegistryPath must be docs/ui/performance-budgets.registry.json"],
-    ["--simulate-wrong-private-baseline-alias", "privateBaselineAlias must be private-codex-ui-baselines"],
+    ["--simulate-wrong-private-baseline-alias", "externalBaselineAlias must be external-ui-baselines"],
     ["--simulate-missing-flow-mapping", "requiredFlowMappings must map critical flow chat-scroll"],
     ["--simulate-duplicate-flow-mapping", "flowId must be unique"],
     ["--simulate-unknown-pattern-mapping", "references unknown pattern missing-performance-pattern"],

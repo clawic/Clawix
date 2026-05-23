@@ -12,7 +12,7 @@ Validation target:
 - Installed app: `/Applications/Clawix.app`
 - Bundle id: `com.clawix.app`
 - App mode: `real`
-- Preflight: `scripts-dev/clawix-launcher.sh preflight-computer-use`
+- Preflight: canonical installed-app preflight passed.
 
 Observed evidence:
 
@@ -48,7 +48,7 @@ Validation target:
 - Installed helper: `/Applications/Clawix.app/Contents/Helpers/ClawixSwiftSurfaceRunner`
 - Bundle id: `com.clawix.app`
 - App mode: `real`
-- Preflight: `scripts-dev/clawix-launcher.sh preflight-computer-use`
+- Preflight: canonical installed-app preflight passed.
 
 Observed evidence:
 

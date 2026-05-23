@@ -3,7 +3,7 @@
   "status": "active",
   "canonicalSource": "../../clawjs/docs/governance/adoption-canonicity.manifest.json",
   "policy": "Clawix mirrors ClawJS adoption/canonicity governance. UI canon promotions and stable/canonical/any-human claims require public-safe evidence packets; telemetry is disabled by default.",
-  "privateEvidenceAliases": ["private-codex-research", "private-codex-ui-review", "private-codex-feedback"],
+  "externalEvidenceAliases": ["external-research-evidence", "external-ui-review", "external-feedback"],
   "packets": [
     {
       "id": "clawix-ui-canon-promotion-gate-2026-05-21",

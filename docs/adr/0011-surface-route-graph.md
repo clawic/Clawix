@@ -4,7 +4,7 @@ Status: Accepted
 
 Date: 2026-05-15
 
-Source conversation: `private-runtime-conversation:surface-route-graph`
+Source conversation: `source:surface-route-graph`
 
 ## Context
 

@@ -95,14 +95,14 @@ function scanForLocalPaths(value, label) {
   if (hasLocalPath(value)) fail(`${label} must not contain a local path`);
 }
 
-function requireSafePrivateReference(value, alias, label) {
+function requireSafeExternalReference(value, alias, label) {
   if (typeof value !== "string" || !value.startsWith(`${alias}:`)) {
     fail(`${label} must use ${alias}:`);
     return;
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
   }
   if (hasLocalPath(value) || value.includes("/Users/")) {
     fail(`${label} must not contain a local path`);
@@ -130,14 +130,14 @@ function runFailureSelfTests() {
   const tests = [
     [["--unknown-flag"], "received unknown flag --unknown-flag"],
     [["--simulate-missing-exception-status"], "exceptionStatuses must include revoked"],
-    [["--simulate-missing-required-exception-field"], "requiredExceptionFields must include privateApprovalReference"],
+    [["--simulate-missing-required-exception-field"], "requiredExceptionFields must include externalApprovalReference"],
     [["--simulate-missing-allowed-action-policy"], "allowedActionPolicy is missing nonVisualAgentAction"],
     [["--simulate-missing-approval-authority-source"], "approvalSources must include exceptions"],
     [["--simulate-unreferenced-active-exception"], "active exception must be referenced by docs/ui/visible-surfaces.inventory.json"],
     [["--simulate-expired-active-exception"], "active exception expired on 2026-05-16"],
     [["--simulate-duplicate-exception-id"], "id duplicates simulated-duplicate-exception"],
     [["--simulate-unsupported-platform"], "platforms contains unsupported visionos"],
-    [["--simulate-local-private-approval-reference"], "privateApprovalReference must use a safe relative private reference"],
+    [["--simulate-local-private-approval-reference"], "externalApprovalReference must use a safe relative external reference"],
     [["--simulate-invalid-status"], "status is invalid"],
     [["--simulate-non-user-approval"], "approvedBy must be user"],
     [["--simulate-invalid-approval-date"], "approvedAt must be a valid calendar date"],
@@ -187,7 +187,7 @@ if (args.has("--simulate-missing-exception-status") && Array.isArray(registry?.e
   registry.exceptionStatuses = registry.exceptionStatuses.filter((status) => status !== "revoked");
 }
 if (args.has("--simulate-missing-required-exception-field") && Array.isArray(registry?.requiredExceptionFields)) {
-  registry.requiredExceptionFields = registry.requiredExceptionFields.filter((field) => field !== "privateApprovalReference");
+  registry.requiredExceptionFields = registry.requiredExceptionFields.filter((field) => field !== "externalApprovalReference");
 }
 if (args.has("--simulate-missing-allowed-action-policy")) {
   delete registry.allowedActionPolicy;
@@ -239,7 +239,7 @@ for (const field of [
   "reviewAfter",
   "expiresAt",
   "allowedAction",
-  "privateApprovalReference",
+  "externalApprovalReference",
 ]) {
   if (!requiredExceptionFieldSet.has(field)) fail(`${registryPath}.requiredExceptionFields must include ${field}`);
 }
@@ -258,7 +258,7 @@ function simulatedException(overrides = {}) {
     reviewAfter: "2026-08-15",
     expiresAt: "2026-09-15",
     allowedAction: "conceptual proposal only",
-    privateApprovalReference: "private-codex-ui-approval:simulated",
+    externalApprovalReference: "external-ui-approval:simulated",
     ...overrides,
   };
 }
@@ -305,7 +305,7 @@ if (args.has("--simulate-local-private-approval-reference")) {
   appendSimulatedException({
     id: "simulated-local-private-approval-reference",
     status: "expired",
-    privateApprovalReference: `private-codex-ui-approval:${["", "Users", "example", "private-approval.json"].join("/")}`,
+    externalApprovalReference: `external-ui-approval:${["", "Users", "example", "private-approval.json"].join("/")}`,
   });
 }
 
@@ -371,8 +371,8 @@ if (!exceptionApprovalSource) {
   if (exceptionApprovalSource.path !== registryPath) fail(`${approvalAuthorityPath}.approvalSources.exceptions.path must be ${registryPath}`);
   if (exceptionApprovalSource.arrayField !== "exceptions") fail(`${approvalAuthorityPath}.approvalSources.exceptions.arrayField must be exceptions`);
   if (exceptionApprovalSource.approvedByField !== "approvedBy") fail(`${approvalAuthorityPath}.approvalSources.exceptions.approvedByField must be approvedBy`);
-  if (exceptionApprovalSource.privateApprovalField !== "privateApprovalReference") {
-    fail(`${approvalAuthorityPath}.approvalSources.exceptions.privateApprovalField must be privateApprovalReference`);
+  if (exceptionApprovalSource.privateApprovalField !== "externalApprovalReference") {
+    fail(`${approvalAuthorityPath}.approvalSources.exceptions.privateApprovalField must be externalApprovalReference`);
   }
 }
 
@@ -404,7 +404,7 @@ for (const [index, exception] of exceptionRecords.entries()) {
   if (reviewAfter && expiresAt && reviewAfter > expiresAt) {
     fail(`${label}.reviewAfter must not be after expiresAt`);
   }
-  requireSafePrivateReference(exception.privateApprovalReference, "private-codex-ui-approval", `${label}.privateApprovalReference`);
+  requireSafeExternalReference(exception.externalApprovalReference, "external-ui-approval", `${label}.externalApprovalReference`);
   const allowedAction = String(exception.allowedAction || "").toLowerCase();
   for (const term of forbiddenAllowedActionTerms) {
     if (allowedAction.includes(String(term).toLowerCase())) {

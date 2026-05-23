@@ -2,8 +2,8 @@
 
 This ledger records code hygiene campaigns, exceptions, and validation evidence.
 
-Source conversation: `private-runtime-conversation:code-hygiene`
-Source session: private session, not published
+Source conversation: `source:code-hygiene`
+Source session: source redacted
 
 ## 2026-05-17 - Program bootstrap
 

@@ -1,6 +1,6 @@
 # Legal External Pending Validation
 
-Source conversation: `private-runtime-conversation:legal-safety`
+Source conversation: `source:legal-safety`
 
 Status: `active_goal_not_complete`
 

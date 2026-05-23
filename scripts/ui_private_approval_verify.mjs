@@ -23,7 +23,7 @@ function hasFlag(name) {
 const optionsWithValues = ["--write-approval-template-root"];
 
 enforcePrivateVerifierArgs(args, {
-  label: "UI private approval verification",
+  label: "UI external approval verification",
   allowedFlags: ["--require-approved", "--approval-plan", "--approval-status", "--force-approval-template-root", ...optionsWithValues],
   optionsWithValues,
 });
@@ -147,7 +147,7 @@ function runFailureSelfTests(privateRootEnv) {
     });
     const output = `${result.stdout || ""}${result.stderr || ""}`;
     if (result.status === 0) {
-      fail(`self-test ${testArgs.join(" ") || "<no args>"} must fail for private approval verification`);
+      fail(`self-test ${testArgs.join(" ") || "<no args>"} must fail for external approval verification`);
       continue;
     }
     if (!output.includes(expectedOutput)) {
@@ -168,7 +168,7 @@ function runFailureSelfTests(privateRootEnv) {
   const templateWriteOutput = `${templateWrite.stdout || ""}${templateWrite.stderr || ""}`;
   if (templateWrite.status !== 0) {
     fail("self-test --write-approval-template-root must scaffold outside the public repository");
-  } else if (!templateWriteOutput.includes("UI private approval template root written")) {
+  } else if (!templateWriteOutput.includes("UI external approval template root written")) {
     fail("self-test --write-approval-template-root output must confirm template root write");
   }
 
@@ -179,7 +179,7 @@ function runFailureSelfTests(privateRootEnv) {
     cwd: rootDir,
     env: {
       ...selfTestEnv,
-      [privateRootEnv]: path.join(templateRoot, "private-codex-ui-approval"),
+      [privateRootEnv]: path.join(templateRoot, "external-ui-approval"),
     },
     encoding: "utf8",
   });
@@ -231,12 +231,12 @@ const approvalPlanMode = hasFlag("--approval-plan");
 const approvalStatusMode = hasFlag("--approval-status");
 const writeTemplateRoot = optionValue("--write-approval-template-root");
 if (!hasFlag("--require-approved") && !approvalPlanMode && !approvalStatusMode && !writeTemplateRoot) {
-  console.error("UI private approval verification requires --require-approved.");
+  console.error("UI external approval verification requires --require-approved.");
   process.exit(1);
 }
 
 const manifest = readRepoJson("docs/ui/approval-authority.manifest.json");
-const alias = manifest?.privateApprovalAlias;
+const alias = manifest?.externalApprovalAlias;
 const evidenceFilename = manifest?.evidenceFilename || "approval-evidence.json";
 const requiredEvidenceFields = manifest?.requiredPrivateApprovalEvidenceFields || [];
 const approvalEntries = approvalRecords(manifest);
@@ -245,14 +245,14 @@ const approvals = [];
 for (const { source, record, label } of approvalEntries) {
   const reference = record?.[source.privateApprovalField];
   if (!reference) {
-    fail(`${label}.${source.privateApprovalField} is required for private approval verification`);
+    fail(`${label}.${source.privateApprovalField} is required for external approval verification`);
     continue;
   }
   approvals.push({ source, record, label });
 }
 
 if (errors.length > 0) {
-  console.error("UI private approval verification failed:");
+  console.error("UI external approval verification failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
 }
@@ -265,7 +265,7 @@ try {
 }
 
 if (errors.length > 0) {
-  console.error("UI private approval verification failed:");
+  console.error("UI external approval verification failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
 }
@@ -278,7 +278,7 @@ function approvalPlanRecords() {
       sourceId: source.id,
       sourcePath: source.path,
       label,
-      privateApprovalReference: reference,
+      externalApprovalReference: reference,
       relativeEvidencePath: parsed?.alias === alias ? `${parsed.suffix}/${evidenceFilename}` : null,
       requiredFields: requiredEvidenceFields,
       publicRecordHash: publicRecordHash(record),
@@ -290,7 +290,7 @@ function approvalPlan() {
   return {
     schemaVersion: 1,
     status: approvals.length === 0 ? "no-private-approval-records" : "external-pending-until-approved-private-approval-evidence-exists",
-    privateApprovalAlias: alias,
+    externalApprovalAlias: alias,
     env: privateRootEnv,
     evidenceFilename,
     requiredFields: requiredEvidenceFields,
@@ -307,8 +307,8 @@ function approvalFieldErrorsForEvidence(evidence, record) {
     }
   }
   if (evidence?.sourceId !== undefined && evidence.sourceId !== record.sourceId) fieldErrors.push("sourceId");
-  if (evidence?.privateApprovalReference !== undefined && evidence.privateApprovalReference !== record.privateApprovalReference) {
-    fieldErrors.push("privateApprovalReference");
+  if (evidence?.externalApprovalReference !== undefined && evidence.externalApprovalReference !== record.externalApprovalReference) {
+    fieldErrors.push("externalApprovalReference");
   }
   if (evidence?.approvedBy !== undefined && evidence.approvedBy !== "user") fieldErrors.push("approvedBy");
   if (evidence?.approvedAt !== undefined && (
@@ -440,7 +440,7 @@ function approvalTemplateForRecord(record) {
   };
   for (const field of requiredEvidenceFields) {
     if (field === "sourceId") template[field] = record.sourceId;
-    else if (field === "privateApprovalReference") template[field] = record.privateApprovalReference;
+    else if (field === "externalApprovalReference") template[field] = record.externalApprovalReference;
     else if (field === "publicRecordHash") template[field] = record.publicRecordHash;
     else template[field] = null;
   }
@@ -466,14 +466,14 @@ function writeApprovalTemplateRoot(outputRootRaw) {
     schemaVersion: 1,
     status: "placeholder-not-valid-evidence",
     note: "Templates are field-shape checklists only. Replace null values with approved private user approval evidence before verification.",
-    privateApprovalAlias: plan.privateApprovalAlias,
+    externalApprovalAlias: plan.externalApprovalAlias,
     env: plan.env,
     evidenceFilename: plan.evidenceFilename,
     totalRecords: plan.totalRecords,
     records: plan.records.map((record) => ({
       sourceId: record.sourceId,
       sourcePath: record.sourcePath,
-      privateApprovalReference: record.privateApprovalReference,
+      externalApprovalReference: record.externalApprovalReference,
       relativeEvidencePath: record.relativeEvidencePath,
       requiredFields: record.requiredFields,
       publicRecordHash: record.publicRecordHash,
@@ -481,7 +481,7 @@ function writeApprovalTemplateRoot(outputRootRaw) {
   }, { force });
   for (const record of plan.records) {
     if (!record.relativeEvidencePath) {
-      fail(`${record.label}.privateApprovalReference must use ${alias}:`);
+      fail(`${record.label}.externalApprovalReference must use ${alias}:`);
       continue;
     }
     writeJsonTemplate(path.join(outputRoot, alias, record.relativeEvidencePath), {
@@ -492,14 +492,14 @@ function writeApprovalTemplateRoot(outputRootRaw) {
     }, { force });
   }
   if (errors.length === 0) {
-    console.log(`UI private approval template root written (${plan.totalRecords} placeholder files): ${outputRoot}`);
+    console.log(`UI external approval template root written (${plan.totalRecords} placeholder files): ${outputRoot}`);
   }
 }
 
 if (writeTemplateRoot) {
   writeApprovalTemplateRoot(writeTemplateRoot);
   if (errors.length > 0) {
-    console.error("UI private approval verification failed:");
+    console.error("UI external approval verification failed:");
     for (const error of errors) console.error(`- ${error}`);
     process.exit(1);
   }
@@ -517,7 +517,7 @@ if (approvalStatusMode) {
 }
 
 if (approvals.length === 0) {
-  console.log("UI private approval verification passed (0 approval records)");
+  console.log("UI external approval verification passed (0 approval records)");
   process.exit(0);
 }
 
@@ -525,7 +525,7 @@ if (!isSelfTest && privateRootEnv) {
   runFailureSelfTests(privateRootEnv);
 }
 if (!privateRootEnv || !process.env[privateRootEnv]) {
-  console.error(`EXTERNAL PENDING: set ${privateRootEnv} to verify private approval evidence.`);
+  console.error(`EXTERNAL PENDING: set ${privateRootEnv} to verify external approval evidence.`);
   process.exit(2);
 }
 
@@ -552,8 +552,8 @@ for (const { source, record, label } of approvals) {
   if (!evidence) continue;
   for (const field of requiredEvidenceFields) requireField(evidence, `${label} evidence`, field);
   if (evidence.sourceId !== source.id) fail(`${label}.sourceId must match ${source.id}`);
-  if (evidence.privateApprovalReference !== reference) {
-    fail(`${label}.privateApprovalReference must match public approval reference`);
+  if (evidence.externalApprovalReference !== reference) {
+    fail(`${label}.externalApprovalReference must match public approval reference`);
   }
   if (evidence.approvedBy !== "user") fail(`${label}.approvedBy must be user`);
   if (record.approvedBy !== undefined && evidence.approvedBy !== record.approvedBy) {
@@ -572,9 +572,9 @@ for (const { source, record, label } of approvals) {
 }
 
 if (errors.length > 0) {
-  console.error("UI private approval verification failed:");
+  console.error("UI external approval verification failed:");
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
 }
 
-console.log(`UI private approval verification passed (${verified} approval records)`);
+console.log(`UI external approval verification passed (${verified} approval records)`);

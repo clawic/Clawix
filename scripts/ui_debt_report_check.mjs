@@ -331,7 +331,7 @@ if (args.has("--simulate-debt-decision-missing-private-verifier") && debtStrateg
   debtStrategyDecision.blockingVerifiers = debtStrategyDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_debt_audit_verify.mjs");
 }
 if (args.has("--simulate-debt-decision-missing-private-evidence") && debtStrategyDecision) {
-  debtStrategyDecision.privateEvidence = [];
+  debtStrategyDecision.externalEvidence = [];
 }
 if (args.has("--simulate-debt-decision-premature-complete") && debtStrategyDecision) {
   debtStrategyDecision.status = "verified-complete";
@@ -450,10 +450,10 @@ if (!debtStrategyDecision) {
       fail(`${decisionVerificationPath}.decisions.debt_strategy.publicEvidence must include ${evidencePath}`);
     }
   }
-  const privateEvidence = new Set(Array.isArray(debtStrategyDecision.privateEvidence) ? debtStrategyDecision.privateEvidence : []);
-  const privateAlias = audit?.privateDebtAuditAlias || "private-codex-ui-debt-audit";
-  if (!privateEvidence.has(`${privateAlias}:macos/*`)) {
-    fail(`${decisionVerificationPath}.decisions.debt_strategy.privateEvidence must include ${privateAlias}:macos/*`);
+  const externalEvidence = new Set(Array.isArray(debtStrategyDecision.externalEvidence) ? debtStrategyDecision.externalEvidence : []);
+  const privateAlias = audit?.privateDebtAuditAlias || "external-ui-debt-audit";
+  if (!externalEvidence.has(`${privateAlias}:macos/*`)) {
+    fail(`${decisionVerificationPath}.decisions.debt_strategy.externalEvidence must include ${privateAlias}:macos/*`);
   }
   const blockingVerifiers = new Set(Array.isArray(debtStrategyDecision.blockingVerifiers) ? debtStrategyDecision.blockingVerifiers : []);
   for (const verifier of [

@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "artifactId": "clawix-system-telemetry-external-validation-manifest-fixtures",
   "status": "synthetic_templates_not_evidence",
-  "conversationId": "private-runtime-conversation:system-telemetry",
-  "planId": "private-runtime-plan:system-telemetry",
+  "conversationId": "source:system-telemetry",
+  "planId": "plan:system-telemetry",
   "schemaPath": "docs/governance/system-telemetry/external-validation.manifest.schema.json",
   "manifestPath": "docs/governance/system-telemetry/external-validation.manifest.json",
   "validSyntheticManifests": [

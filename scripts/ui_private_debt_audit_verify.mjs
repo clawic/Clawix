@@ -152,7 +152,7 @@ if (!isSelfTest && !includePending) {
 
 const manifest = readJson("docs/ui/debt-audit.manifest.json");
 const approvedScopeContract = loadApprovedScopeContract(rootDir, fail);
-const alias = manifest?.privateDebtAuditAlias || "private-codex-ui-debt-audit";
+const alias = manifest?.privateDebtAuditAlias || "external-ui-debt-audit";
 const privateRootEnv = privateRootEnvForAlias(rootDir, alias);
 const privateRootRaw = optionValue("--root") || process.env[privateRootEnv] || "";
 if (!privateRootRaw) {

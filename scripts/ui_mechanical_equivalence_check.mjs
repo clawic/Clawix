@@ -99,7 +99,7 @@ function requireAlias(value, alias, label) {
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
   }
   if (hasLocalPath(value)) {
     fail(`${label} must not contain a local path`);
@@ -118,7 +118,7 @@ function requireHash(value, label) {
   }
 }
 
-function requireApprovedScope(value, requiredFields, privateApprovalAlias, label) {
+function requireApprovedScope(value, requiredFields, externalApprovalAlias, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     fail(`${label} must be an object with approved user scope metadata`);
     return;
@@ -126,7 +126,7 @@ function requireApprovedScope(value, requiredFields, privateApprovalAlias, label
   requireFields(value, label, requiredFields);
   if (value.approvedBy !== "user") fail(`${label}.approvedBy must be user`);
   requireIsoTimestamp(value.approvedAt, `${label}.approvedAt`);
-  requireAlias(value.privateApprovalReference, privateApprovalAlias, `${label}.privateApprovalReference`);
+  requireAlias(value.externalApprovalReference, externalApprovalAlias, `${label}.externalApprovalReference`);
   if (typeof value.scopeId !== "string" || value.scopeId === "") {
     fail(`${label}.scopeId must be a non-empty string`);
   }
@@ -137,7 +137,7 @@ const manifest = readJson(manifestPath);
 const approvalAuthorityPath = "docs/ui/approval-authority.manifest.json";
 const approvalAuthority = readJson(approvalAuthorityPath);
 if (manifest && args.has("--simulate-wrong-private-evidence-alias")) {
-  manifest.privateEvidenceAlias = "private-codex-ui-baselines";
+  manifest.externalEvidenceAlias = "external-ui-baselines";
 }
 if (manifest && args.has("--simulate-wrong-evidence-filename")) {
   manifest.evidenceFilename = "mechanical-evidence.json";
@@ -157,7 +157,7 @@ if (manifest && args.has("--simulate-missing-merge-blocking-status")) {
 }
 if (manifest && args.has("--simulate-missing-private-evidence-field")) {
   manifest.requiredPrivateEvidenceFields =
-    manifest.requiredPrivateEvidenceFields.filter((field) => field !== "privateEvidenceReference");
+    manifest.requiredPrivateEvidenceFields.filter((field) => field !== "externalEvidenceReference");
 }
 
 const simulatedRecord = {
@@ -166,17 +166,17 @@ const simulatedRecord = {
   scope: "mechanical extraction self-test",
   platforms: ["macos"],
   changedFiles: ["macos/Sources/Clawix/SidebarView.swift"],
-  beforeSnapshotReference: "private-codex-ui-mechanical-equivalence:records/simulated/before.png",
+  beforeSnapshotReference: "external-ui-mechanical-equivalence:records/simulated/before.png",
   beforeSnapshotHash: "0".repeat(64),
-  afterSnapshotReference: "private-codex-ui-mechanical-equivalence:records/simulated/after.png",
+  afterSnapshotReference: "external-ui-mechanical-equivalence:records/simulated/after.png",
   afterSnapshotHash: "1".repeat(64),
-  geometryBeforeReference: "private-codex-ui-mechanical-equivalence:records/simulated/geometry-before.json",
+  geometryBeforeReference: "external-ui-mechanical-equivalence:records/simulated/geometry-before.json",
   geometryBeforeHash: "2".repeat(64),
-  geometryAfterReference: "private-codex-ui-mechanical-equivalence:records/simulated/geometry-after.json",
+  geometryAfterReference: "external-ui-mechanical-equivalence:records/simulated/geometry-after.json",
   geometryAfterHash: "3".repeat(64),
-  copyBeforeReference: "private-codex-ui-mechanical-equivalence:records/simulated/copy-before.json",
+  copyBeforeReference: "external-ui-mechanical-equivalence:records/simulated/copy-before.json",
   copyBeforeHash: "4".repeat(64),
-  copyAfterReference: "private-codex-ui-mechanical-equivalence:records/simulated/copy-after.json",
+  copyAfterReference: "external-ui-mechanical-equivalence:records/simulated/copy-after.json",
   copyAfterHash: "5".repeat(64),
   tokenDiffStatus: "no-token-diff",
   approvedByUserAt: "2026-05-15T00:00:00Z",
@@ -184,7 +184,7 @@ const simulatedRecord = {
     scopeId: "simulated-mechanical-equivalence-scope",
     approvedBy: "user",
     approvedAt: "2026-05-15T00:00:00Z",
-    privateApprovalReference: "private-codex-ui-approval:records/simulated/approval-evidence.json",
+    externalApprovalReference: "external-ui-approval:records/simulated/approval-evidence.json",
   },
 };
 if (manifest && args.has("--simulate-invalid-record-status")) {
@@ -208,7 +208,7 @@ if (manifest && args.has("--simulate-record-approved-by-agent")) {
 if (manifest && args.has("--simulate-record-unsafe-approval-reference")) {
   manifest.records = [{
     ...simulatedRecord,
-    approvedScope: { ...simulatedRecord.approvedScope, privateApprovalReference: "private-codex-ui-approval:../approval.json" },
+    approvedScope: { ...simulatedRecord.approvedScope, externalApprovalReference: "external-ui-approval:../approval.json" },
   }];
 }
 if (manifest && args.has("--simulate-missing-record-changed-files")) {
@@ -219,7 +219,7 @@ requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
   "policy",
-  "privateEvidenceAlias",
+  "externalEvidenceAlias",
   "evidenceFilename",
   "recordRequirement",
   "requiredEvidenceFields",
@@ -229,10 +229,10 @@ requireFields(manifest, manifestPath, [
   "equivalenceStatuses",
   "records",
 ]);
-requireFields(approvalAuthority, approvalAuthorityPath, ["privateApprovalAlias"]);
+requireFields(approvalAuthority, approvalAuthorityPath, ["externalApprovalAlias"]);
 
-if (manifest?.privateEvidenceAlias !== "private-codex-ui-mechanical-equivalence") {
-  fail(`${manifestPath}.privateEvidenceAlias must be private-codex-ui-mechanical-equivalence`);
+if (manifest?.externalEvidenceAlias !== "external-ui-mechanical-equivalence") {
+  fail(`${manifestPath}.externalEvidenceAlias must be external-ui-mechanical-equivalence`);
 }
 if (manifest?.evidenceFilename !== "mechanical-equivalence-evidence.json") {
   fail(`${manifestPath}.evidenceFilename must be mechanical-equivalence-evidence.json`);
@@ -275,12 +275,12 @@ for (const field of [
 }
 const requiredApprovedScopeFields = requireArray(manifest, manifestPath, "requiredApprovedScopeFields");
 const requiredApprovedScopeFieldSet = new Set(requiredApprovedScopeFields);
-for (const field of ["scopeId", "approvedBy", "approvedAt", "privateApprovalReference"]) {
+for (const field of ["scopeId", "approvedBy", "approvedAt", "externalApprovalReference"]) {
   if (!requiredApprovedScopeFieldSet.has(field)) fail(`${manifestPath}.requiredApprovedScopeFields must include ${field}`);
 }
 const requiredPrivateEvidenceFields = requireArray(manifest, manifestPath, "requiredPrivateEvidenceFields");
 const requiredPrivateEvidenceFieldSet = new Set(requiredPrivateEvidenceFields);
-for (const field of ["recordId", "platform", "status", "privateEvidenceReference"]) {
+for (const field of ["recordId", "platform", "status", "externalEvidenceReference"]) {
   if (!requiredPrivateEvidenceFieldSet.has(field)) fail(`${manifestPath}.requiredPrivateEvidenceFields must include ${field}`);
 }
 
@@ -315,7 +315,7 @@ for (const [index, record] of records.entries()) {
   if (!equivalenceStatuses.has(record.status)) fail(`${label}.status is invalid`);
   if (!tokenStatuses.has(record.tokenDiffStatus)) fail(`${label}.tokenDiffStatus is invalid`);
   requireIsoTimestamp(record.approvedByUserAt, `${label}.approvedByUserAt`);
-  requireApprovedScope(record.approvedScope, requiredApprovedScopeFields, approvalAuthority?.privateApprovalAlias, `${label}.approvedScope`);
+  requireApprovedScope(record.approvedScope, requiredApprovedScopeFields, approvalAuthority?.externalApprovalAlias, `${label}.approvedScope`);
   for (const field of [
     "beforeSnapshotReference",
     "afterSnapshotReference",
@@ -324,7 +324,7 @@ for (const [index, record] of records.entries()) {
     "copyBeforeReference",
     "copyAfterReference",
   ]) {
-    requireAlias(record[field], manifest.privateEvidenceAlias, `${label}.${field}`);
+    requireAlias(record[field], manifest.externalEvidenceAlias, `${label}.${field}`);
   }
   for (const hashField of [
     "beforeSnapshotHash",
@@ -353,7 +353,7 @@ if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
     ["--unknown-flag", "received unknown flag --unknown-flag"],
     [
       "--simulate-wrong-private-evidence-alias",
-      "docs/ui/mechanical-equivalence.manifest.json.privateEvidenceAlias must be private-codex-ui-mechanical-equivalence",
+      "docs/ui/mechanical-equivalence.manifest.json.externalEvidenceAlias must be external-ui-mechanical-equivalence",
     ],
     [
       "--simulate-wrong-evidence-filename",
@@ -377,7 +377,7 @@ if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
     ],
     [
       "--simulate-missing-private-evidence-field",
-      "docs/ui/mechanical-equivalence.manifest.json.requiredPrivateEvidenceFields must include privateEvidenceReference",
+      "docs/ui/mechanical-equivalence.manifest.json.requiredPrivateEvidenceFields must include externalEvidenceReference",
     ],
     [
       "--simulate-invalid-record-status",
@@ -389,7 +389,7 @@ if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
     ],
     [
       "--simulate-local-private-reference",
-      "docs/ui/mechanical-equivalence.manifest.json.records[0].beforeSnapshotReference must use private-codex-ui-mechanical-equivalence:",
+      "docs/ui/mechanical-equivalence.manifest.json.records[0].beforeSnapshotReference must use external-ui-mechanical-equivalence:",
     ],
     [
       "--simulate-short-record-hash",
@@ -405,7 +405,7 @@ if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
     ],
     [
       "--simulate-record-unsafe-approval-reference",
-      "docs/ui/mechanical-equivalence.manifest.json.records[0].approvedScope.privateApprovalReference must use a safe relative private reference",
+      "docs/ui/mechanical-equivalence.manifest.json.records[0].approvedScope.externalApprovalReference must use a safe relative external reference",
     ],
     [
       "--simulate-missing-record-changed-files",

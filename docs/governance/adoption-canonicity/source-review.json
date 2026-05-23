@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "sourceConversationId": "current-thread-2026-05-21",
+  "sourceConversationId": "source:local-review",
   "sourcePlanId": "p0-adoption-and-canonicity-governance",
   "rows": [
     {
       "decisionId": "CLX-ADOPT-001",
-      "sourceConversationId": "current-thread-2026-05-21",
+      "sourceConversationId": "source:local-review",
       "sourceAnchor": "P0 Adoption And Canonicity Governance",
       "architectureImpact": "Clawix UI canon and stable/canonical promotion claims now require adoption/canonicity evidence packets.",
       "state": "implemented",

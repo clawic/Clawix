@@ -1,7 +1,7 @@
 {
   "version": 1,
   "sourceGoal": "private-workspace:clawix-v1-surface-closure-plan-2026-05-15",
-  "sourceConversationId": "private-runtime-conversation:v1-surface-closure",
+  "sourceConversationId": "source:v1-surface-closure",
   "allowedStatuses": [
     "stable",
     "dev-only",

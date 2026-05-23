@@ -119,7 +119,7 @@ if (manifest) {
     manifest.status = "active";
   }
   if (args.has("--simulate-wrong-private-alias")) {
-    manifest.privateGeometryAlias = "private-codex-ui-baselines";
+    manifest.externalGeometryAlias = "external-ui-baselines";
   }
   if (args.has("--simulate-wrong-evidence-filename")) {
     manifest.evidenceFilename = "geometry-evidence.txt";
@@ -184,8 +184,8 @@ if (manifest) {
     );
   }
   if (args.has("--simulate-alignment-decision-missing-platform-evidence") && alignmentValidationDecision) {
-    alignmentValidationDecision.privateEvidence = alignmentValidationDecision.privateEvidence.filter(
-      (evidenceReference) => evidenceReference !== "private-runtime-ui-rendered-geometry:web/*",
+    alignmentValidationDecision.externalEvidence = alignmentValidationDecision.externalEvidence.filter(
+      (evidenceReference) => evidenceReference !== "external-ui-rendered-geometry:web/*",
     );
   }
   if (args.has("--simulate-alignment-decision-premature-complete") && alignmentValidationDecision) {
@@ -203,7 +203,7 @@ requireFields(manifest, manifestPath, [
   "status",
   "policy",
   "patternSource",
-  "privateGeometryAlias",
+  "externalGeometryAlias",
   "evidenceFilename",
   "surfaceEvidenceFilename",
   "verificationCommand",
@@ -215,8 +215,8 @@ requireFields(manifest, manifestPath, [
 if (!["pending-private-capture", "approved-private-geometry"].includes(manifest?.status)) {
   fail(`${manifestPath}.status must be pending-private-capture or approved-private-geometry`);
 }
-if (manifest?.privateGeometryAlias !== "private-runtime-ui-rendered-geometry") {
-  fail(`${manifestPath}.privateGeometryAlias must be private-runtime-ui-rendered-geometry`);
+if (manifest?.externalGeometryAlias !== "external-ui-rendered-geometry") {
+  fail(`${manifestPath}.externalGeometryAlias must be external-ui-rendered-geometry`);
 }
 if (manifest?.evidenceFilename !== "geometry-evidence.json") {
   fail(`${manifestPath}.evidenceFilename must be geometry-evidence.json`);
@@ -251,7 +251,7 @@ const registry = readJson(manifest?.patternSource || "");
 requireArray(registry, manifest?.patternSource || "patternSource", "patterns");
 scanForLocalPaths(manifest, manifestPath);
 
-const privateGeometryAlias = manifest?.privateGeometryAlias || "private-runtime-ui-rendered-geometry";
+const externalGeometryAlias = manifest?.externalGeometryAlias || "external-ui-rendered-geometry";
 if (!alignmentValidationDecision) {
   fail(`${decisionVerificationPath}.decisions must include alignment_validation`);
 } else {
@@ -272,17 +272,17 @@ if (!alignmentValidationDecision) {
       fail(`${decisionVerificationPath}.decisions.alignment_validation.publicEvidence must include ${evidencePath}`);
     }
   }
-  const privateEvidence = new Set(Array.isArray(alignmentValidationDecision.privateEvidence) ? alignmentValidationDecision.privateEvidence : []);
+  const externalEvidence = new Set(Array.isArray(alignmentValidationDecision.externalEvidence) ? alignmentValidationDecision.externalEvidence : []);
   for (const evidenceReference of [
-    `${privateGeometryAlias}:surfaces/*`,
-    `${privateGeometryAlias}:macos/*`,
-    `${privateGeometryAlias}:ios/*`,
-    `${privateGeometryAlias}:android/*`,
-    `${privateGeometryAlias}:web/*`,
-    "private-codex-ui-baselines:surfaces/*",
+    `${externalGeometryAlias}:surfaces/*`,
+    `${externalGeometryAlias}:macos/*`,
+    `${externalGeometryAlias}:ios/*`,
+    `${externalGeometryAlias}:android/*`,
+    `${externalGeometryAlias}:web/*`,
+    "external-ui-baselines:surfaces/*",
   ]) {
-    if (!privateEvidence.has(evidenceReference)) {
-      fail(`${decisionVerificationPath}.decisions.alignment_validation.privateEvidence must include ${evidenceReference}`);
+    if (!externalEvidence.has(evidenceReference)) {
+      fail(`${decisionVerificationPath}.decisions.alignment_validation.externalEvidence must include ${evidenceReference}`);
     }
   }
   const blockingVerifiers = new Set(Array.isArray(alignmentValidationDecision.blockingVerifiers) ? alignmentValidationDecision.blockingVerifiers : []);
@@ -319,7 +319,7 @@ if (errors.length > 0) {
 if (!isSelfTest && rawArgs.length === 0) {
   const selfTests = [
     ["--unknown-flag", "received unknown flag --unknown-flag"],
-    ["--simulate-wrong-private-alias", "privateGeometryAlias must be private-runtime-ui-rendered-geometry"],
+    ["--simulate-wrong-private-alias", "externalGeometryAlias must be external-ui-rendered-geometry"],
     ["--simulate-verifier-without-approval", "verificationCommand must require approved private geometry evidence"],
     ["--simulate-local-path-reference", "must not contain a local path"],
     ["--simulate-alignment-decision-missing-private-geometry-verifier", "publicEvidence must include scripts/ui_private_geometry_verify.mjs"],

@@ -155,7 +155,7 @@ const privateSlice = privateSliceOption(args, fail, "UI private drift verificati
 const manifest = readJson("docs/ui/rendered-drift.manifest.json");
 const visualModelAllowlist = readJson("docs/ui/visual-model-allowlist.manifest.json");
 const approvedScopeContract = loadApprovedScopeContract(rootDir, fail);
-const alias = manifest?.privateDriftAlias || "private-codex-ui-rendered-drift";
+const alias = manifest?.privateDriftAlias || "external-ui-rendered-drift";
 const privateRootEnv = privateRootEnvForAlias(rootDir, alias);
 
 if (!requireApproved) {

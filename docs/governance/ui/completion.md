@@ -6,9 +6,9 @@ blocked-external-pending decision has approved private evidence or a valid
 external-pending ledger, and the private goal reference plus source session are
 re-read one by one.
 
-- Goal reference: `private-codex-goal:clawix-interface-governance-plan-2026-05-15.md`
-- Source session: `private-codex-session:interface-governance-source`
-- Private source policy: private session, not published.
+- Goal reference: `goal:clawix-interface-governance-plan-2026-05-15.md`
+- Source session: `source:interface-governance`
+- Private source policy: source redacted.
 - Private source session shape: `session_meta`, `event_msg:user_message`,
   `response_item:message`, and `event_msg:thread_goal_updated` records
   required; at least 9 user message records.
@@ -89,14 +89,14 @@ verifier rerun.
 | 2 | `enforcement_mode` | blocked-external-pending | EXTERNAL PENDING: public strict enforcement is wired; exact rendered drift closure is ledgered until private capture and human approval are available. |
 | 3 | `canonical_source` | verified-complete | Public evidence verified. |
 | 4 | `debt_strategy` | blocked-external-pending | EXTERNAL PENDING: public debt baseline is enforced; exact private debt audit findings are ledgered until private visual inventory and human approval are available. |
-| 5 | `canon_approval` | verified-complete | Public approval evidence and private approval verifier wired. |
+| 5 | `canon_approval` | verified-complete | Public approval evidence and external approval verifier wired. |
 | 6 | `visual_baselines_location` | blocked-external-pending | EXTERNAL PENDING: public baseline manifests are enforced; exact baseline and drift hashes are ledgered until private capture and human approval are available. |
 | 7 | `canon_unit` | verified-complete | Public evidence verified. |
 | 8 | `agent_ui_workflow` | verified-complete | Public evidence verified. |
 | 9 | `performance_budget_style` | verified-complete | Public evidence verified. |
 | 10 | `alignment_validation` | blocked-external-pending | EXTERNAL PENDING: public alignment contracts are enforced; exact rendered geometry and screenshot comparison evidence are ledgered until private capture and human approval are available. |
 | 11 | `state_coverage` | verified-complete | Public evidence verified. |
-| 12 | `human_visual_review` | verified-complete | Public approval evidence and private approval verifier wired. |
+| 12 | `human_visual_review` | verified-complete | Public approval evidence and external approval verifier wired. |
 | 13 | `governance_location` | verified-complete | Public evidence verified. |
 | 14 | `skills_shape` | verified-complete | Public evidence verified. |
 | 15 | `external_references_policy` | verified-complete | Public evidence verified. |
@@ -113,14 +113,14 @@ verifier rerun.
 | 26 | `component_api_style` | verified-complete | Public evidence verified. |
 | 27 | `size_contracts` | blocked-external-pending | EXTERNAL PENDING: public geometry contracts are enforced; exact measured size contracts are ledgered until private rendered measurement and human approval are available. |
 | 28 | `visual_mutation_permission` | verified-complete | Public evidence verified. |
-| 29 | `approved_surface_protection` | verified-complete | Public approval evidence and private approval verifier wired. |
+| 29 | `approved_surface_protection` | verified-complete | Public approval evidence and external approval verifier wired. |
 | 30 | `ui_debt_fix_policy` | verified-complete | Public evidence verified. |
-| 31 | `visual_model_gate` | verified-complete | Public approval evidence and private approval verifier wired. |
+| 31 | `visual_model_gate` | verified-complete | Public approval evidence and external approval verifier wired. |
 | 32 | `mechanical_refactor_visual_safety` | verified-complete | Public evidence verified. |
-| 33 | `visual_change_scope_limit` | verified-complete | Public approval evidence and private approval verifier wired. |
+| 33 | `visual_change_scope_limit` | verified-complete | Public approval evidence and external approval verifier wired. |
 | 34 | `ui_change_classification` | verified-complete | Public evidence verified. |
 | 35 | `visual_guard_behavior` | verified-complete | Public evidence verified. |
 | 36 | `visual_proposal_flow` | verified-complete | Public evidence verified. |
 | 37 | `implementation_split` | verified-complete | Public evidence verified. |
-| 38 | `approved_baseline_authority` | verified-complete | Public approval evidence and private approval verifier wired. |
+| 38 | `approved_baseline_authority` | verified-complete | Public approval evidence and external approval verifier wired. |
 | 39 | `critical_cleanup_owner` | verified-complete | Public evidence verified. |

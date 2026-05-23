@@ -20,15 +20,15 @@ const isSelfTest = process.env.CLAWIX_UI_PRIVATE_EVIDENCE_VERIFY_SELF_TEST === "
 const errors = [];
 
 const referenceFields = {
-  "surface-baseline": "privateBaselineReference",
+  "surface-baseline": "externalBaselineReference",
   "surface-geometry": "geometryEvidenceReference",
   "surface-copy": "copySnapshotReference",
-  "critical-flow-baseline": "privateBaselineReference",
+  "critical-flow-baseline": "externalBaselineReference",
   "pattern-geometry": "geometryEvidenceReference",
   "rendered-drift": "privateDriftReportReference",
   "debt-audit": "privateDebtAuditReference",
-  "performance-budget": "privateBaselineReference",
-  "mechanical-equivalence": "privateEvidenceReference",
+  "performance-budget": "externalBaselineReference",
+  "mechanical-equivalence": "externalEvidenceReference",
 };
 
 const idFields = {

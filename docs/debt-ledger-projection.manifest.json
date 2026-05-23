@@ -49,7 +49,7 @@
   ],
   "privateOverlay": {
     "status": "excluded-from-public-repo",
-    "runner": "../scripts-dev/private-debt-ledger-audit.mjs",
+    "runner": "<private-debt-ledger-audit>",
     "redaction": "private-summary-only"
   }
 }

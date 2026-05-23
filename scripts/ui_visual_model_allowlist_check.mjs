@@ -119,14 +119,14 @@ function scanForLocalPaths(value, label) {
   if (hasLocalPath(value)) fail(`${label} must not contain a local path`);
 }
 
-function requireSafePrivateReference(value, alias, label) {
+function requireSafeExternalReference(value, alias, label) {
   if (typeof value !== "string" || !value.startsWith(`${alias}:`)) {
     fail(`${label} must use ${alias}:`);
     return;
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
   }
   if (hasLocalPath(value) || value.includes("/Users/")) {
     fail(`${label} must not contain a local path`);
@@ -140,12 +140,12 @@ function runFailureSelfTests() {
   };
   const tests = [
     [["--unknown-flag"], "received unknown flag --unknown-flag"],
-    [["--simulate-missing-active-initial-model"], "allowedVisualModels must include active claude-opus-4.7"],
+    [["--simulate-missing-active-initial-model"], "allowedVisualModels must include active approved-visual-model"],
     [["--simulate-extra-initial-model"], "initialActiveModels must not include other-visual-model"],
-    [["--simulate-duplicate-initial-model"], "initialActiveModels duplicates claude-opus-4.7"],
+    [["--simulate-duplicate-initial-model"], "initialActiveModels duplicates approved-visual-model"],
     [["--simulate-extra-model-status"], "modelStatuses must not include pending-review"],
     [["--simulate-duplicate-model-status"], "modelStatuses duplicates active"],
-    [["--simulate-duplicate-visual-model"], "id duplicates claude-opus-4.7"],
+    [["--simulate-duplicate-visual-model"], "id duplicates approved-visual-model"],
     [["--simulate-duplicate-mutation-class"], "allowedMutationClasses duplicates visual-ui"],
     [["--simulate-missing-copy-class"], "allowedMutationClasses must include copy-ui"],
     [["--simulate-unknown-mutation-class"], "allowedMutationClasses contains layout-ui"],
@@ -183,7 +183,7 @@ const manifestPath = "docs/ui/visual-model-allowlist.manifest.json";
 const manifest = readJson(manifestPath);
 if (args.has("--simulate-missing-active-initial-model") && Array.isArray(manifest?.allowedVisualModels)) {
   manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) => (
-    model?.id === "claude-opus-4.7" ? { ...model, status: "revoked" } : model
+    model?.id === "approved-visual-model" ? { ...model, status: "revoked" } : model
   ));
 }
 if (args.has("--simulate-extra-initial-model") && Array.isArray(manifest?.initialActiveModels)) {
@@ -203,33 +203,33 @@ if (args.has("--simulate-duplicate-visual-model") && Array.isArray(manifest?.all
 }
 if (args.has("--simulate-duplicate-mutation-class") && Array.isArray(manifest?.allowedVisualModels)) {
   manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) => (
-    model?.id === "claude-opus-4.7" && Array.isArray(model.allowedMutationClasses) && model.allowedMutationClasses[0]
+    model?.id === "approved-visual-model" && Array.isArray(model.allowedMutationClasses) && model.allowedMutationClasses[0]
       ? { ...model, allowedMutationClasses: [...model.allowedMutationClasses, model.allowedMutationClasses[0]] }
       : model
   ));
 }
 if (args.has("--simulate-missing-copy-class") && Array.isArray(manifest?.allowedVisualModels)) {
   manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) =>
-    model?.id === "claude-opus-4.7"
+    model?.id === "approved-visual-model"
       ? { ...model, allowedMutationClasses: (model.allowedMutationClasses || []).filter((mutationClass) => mutationClass !== "copy-ui") }
       : model,
   );
 }
 if (args.has("--simulate-unknown-mutation-class") && Array.isArray(manifest?.allowedVisualModels)) {
   manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) => (
-    model?.id === "claude-opus-4.7"
+    model?.id === "approved-visual-model"
       ? { ...model, allowedMutationClasses: [...(model.allowedMutationClasses || []), "layout-ui"] }
       : model
   ));
 }
 if (args.has("--simulate-private-approval-not-required") && Array.isArray(manifest?.allowedVisualModels)) {
   manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) => (
-    model?.id === "claude-opus-4.7" ? { ...model, privateApprovalRequired: false } : model
+    model?.id === "approved-visual-model" ? { ...model, privateApprovalRequired: false } : model
   ));
 }
 if (args.has("--simulate-wrong-scope-source") && Array.isArray(manifest?.allowedVisualModels)) {
   manifest.allowedVisualModels = manifest.allowedVisualModels.map((model) => (
-    model?.id === "claude-opus-4.7" ? { ...model, scopeSource: "docs/ui/unknown-scopes.manifest.json" } : model
+    model?.id === "approved-visual-model" ? { ...model, scopeSource: "docs/ui/unknown-scopes.manifest.json" } : model
   ));
 }
 if (args.has("--simulate-model-signal-not-required")) {
@@ -255,7 +255,7 @@ requireFields(manifest, manifestPath, [
   "authorizationSignal",
   "modelSignal",
   "proposalPath",
-  "privateApprovalAlias",
+  "externalApprovalAlias",
   "modelStatuses",
   "initialActiveModels",
   "additionalActiveModelPolicy",
@@ -284,19 +284,19 @@ if (manifest?.proposalPath !== "docs/ui/visual-change-proposal.template.md") {
   fail(`${manifestPath}.proposalPath must point to docs/ui/visual-change-proposal.template.md`);
 }
 const approvalAuthority = readJson("docs/ui/approval-authority.manifest.json");
-if (manifest?.privateApprovalAlias !== approvalAuthority?.privateApprovalAlias) {
-  fail(`${manifestPath}.privateApprovalAlias must match docs/ui/approval-authority.manifest.json.privateApprovalAlias`);
+if (manifest?.externalApprovalAlias !== approvalAuthority?.externalApprovalAlias) {
+  fail(`${manifestPath}.externalApprovalAlias must match docs/ui/approval-authority.manifest.json.externalApprovalAlias`);
 }
 requireFields(manifest?.additionalActiveModelPolicy, `${manifestPath}.additionalActiveModelPolicy`, [
   "requiresExplicitUserApproval",
-  "privateApprovalReferenceRequired",
+  "externalApprovalReferenceRequired",
   "publicRepoStoresApprovalAliasOnly",
 ]);
 if (manifest?.additionalActiveModelPolicy?.requiresExplicitUserApproval !== true) {
   fail(`${manifestPath}.additionalActiveModelPolicy.requiresExplicitUserApproval must be true`);
 }
-if (manifest?.additionalActiveModelPolicy?.privateApprovalReferenceRequired !== true) {
-  fail(`${manifestPath}.additionalActiveModelPolicy.privateApprovalReferenceRequired must be true`);
+if (manifest?.additionalActiveModelPolicy?.externalApprovalReferenceRequired !== true) {
+  fail(`${manifestPath}.additionalActiveModelPolicy.externalApprovalReferenceRequired must be true`);
 }
 if (manifest?.additionalActiveModelPolicy?.publicRepoStoresApprovalAliasOnly !== true) {
   fail(`${manifestPath}.additionalActiveModelPolicy.publicRepoStoresApprovalAliasOnly must be true`);
@@ -304,10 +304,10 @@ if (manifest?.additionalActiveModelPolicy?.publicRepoStoresApprovalAliasOnly !==
 const initialActiveModels = requireExactStringSet(
   requireArray(manifest, manifestPath, "initialActiveModels"),
   `${manifestPath}.initialActiveModels`,
-  ["claude-opus-4.7"],
+  ["approved-visual-model"],
 );
-if (!initialActiveModels.has("claude-opus-4.7")) {
-  fail(`${manifestPath}.initialActiveModels must include claude-opus-4.7`);
+if (!initialActiveModels.has("approved-visual-model")) {
+  fail(`${manifestPath}.initialActiveModels must include approved-visual-model`);
 }
 const modelStatuses = requireExactStringSet(requireArray(manifest, manifestPath, "modelStatuses"), `${manifestPath}.modelStatuses`, ["active", "revoked"]);
 
@@ -330,15 +330,15 @@ for (const [index, model] of requireArray(manifest, manifestPath, "allowedVisual
   modelIds.add(model?.id);
   if (!modelStatuses.has(model.status)) fail(`${label}.status is invalid`);
   if (model.status === "active") activeVisualModelCount += 1;
-  if (model.id === "claude-opus-4.7") initialVisualModel = { model, label };
+  if (model.id === "approved-visual-model") initialVisualModel = { model, label };
   if (model.privateApprovalRequired !== true) fail(`${label}.privateApprovalRequired must be true`);
   if (model.status === "active") {
-    requireFields(model, label, ["approvedBy", "approvedAt", "privateApprovalReference"]);
+    requireFields(model, label, ["approvedBy", "approvedAt", "externalApprovalReference"]);
     if (model.approvedBy !== "user") fail(`${label}.approvedBy must be user`);
     if (typeof model.approvedAt !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(model.approvedAt) || Number.isNaN(Date.parse(model.approvedAt))) {
       fail(`${label}.approvedAt must be an ISO date`);
     }
-    requireSafePrivateReference(model.privateApprovalReference, manifest.privateApprovalAlias, `${label}.privateApprovalReference`);
+    requireSafeExternalReference(model.externalApprovalReference, manifest.externalApprovalAlias, `${label}.externalApprovalReference`);
   }
   if (model.scopeSource !== "docs/ui/visual-change-scopes.manifest.json") {
     fail(`${label}.scopeSource must be docs/ui/visual-change-scopes.manifest.json`);
@@ -354,11 +354,11 @@ if (activeVisualModelCount < 1) fail(`${manifestPath}.allowedVisualModels must i
 const activeIds = new Set(
   (manifest?.allowedVisualModels || []).filter((model) => model.status === "active").map((model) => model.id),
 );
-if (!activeIds.has("claude-opus-4.7")) {
-  fail(`${manifestPath}.allowedVisualModels must include active claude-opus-4.7`);
+if (!activeIds.has("approved-visual-model")) {
+  fail(`${manifestPath}.allowedVisualModels must include active approved-visual-model`);
 }
 if (!initialVisualModel) {
-  fail(`${manifestPath}.allowedVisualModels must include claude-opus-4.7`);
+  fail(`${manifestPath}.allowedVisualModels must include approved-visual-model`);
 } else {
   const mutationClasses = new Set(Array.isArray(initialVisualModel.model.allowedMutationClasses) ? initialVisualModel.model.allowedMutationClasses : []);
   for (const mutationClass of requiredInitialMutationClasses) {

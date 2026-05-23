@@ -9,7 +9,7 @@ const args = new Set(rawArgs);
 const isSelfTest = process.env.CLAWIX_UI_CANON_PROMOTION_SELF_TEST === "1";
 const errors = [];
 const simulationFlags = [
-  "--simulate-wrong-private-approval-alias",
+  "--simulate-wrong-external-approval-alias",
   "--simulate-missing-approved-status",
   "--simulate-missing-required-promotion-field",
   "--simulate-invalid-promotion-status",
@@ -99,7 +99,7 @@ function requireAlias(value, alias, label) {
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
   }
   if (hasLocalPath(value)) {
     fail(`${label} must not contain a local path`);
@@ -125,12 +125,12 @@ function runFailureSelfTests() {
   };
   const tests = [
     [["--unknown-flag"], "received unknown flag --unknown-flag"],
-    [["--simulate-wrong-private-approval-alias"], "privateApprovalAlias must be private-codex-ui-approval"],
+    [["--simulate-wrong-external-approval-alias"], "externalApprovalAlias must be external-ui-approval"],
     [["--simulate-missing-approved-status"], "promotionStatuses must include approved"],
     [["--simulate-missing-required-promotion-field"], "requiredPromotionFields must include geometryEvidenceHash"],
     [["--simulate-invalid-promotion-status"], "status is invalid"],
     [["--simulate-approved-by-agent"], "approvedBy must be user"],
-    [["--simulate-local-private-reference"], "privateBaselineReference must use private-codex-ui-baselines:"],
+    [["--simulate-local-private-reference"], "externalBaselineReference must use external-ui-baselines:"],
     [["--simulate-invalid-baseline-hash"], "privateBaselineHash must be a 64-character hex hash"],
     [["--simulate-missing-adoption-canonicity-packet"], "requiredPromotionFields must include adoptionCanonicityPacketId"],
     [["--simulate-approved-without-protected-surface"], "protectedSurfaceId must reference an approved protected surface"],
@@ -164,8 +164,8 @@ if (!isSelfTest) {
 const requiredPlatforms = new Set(["macos", "ios", "android", "web"]);
 const manifestPath = "docs/ui/canon-promotions.registry.json";
 const manifest = readJson(manifestPath);
-if (manifest && args.has("--simulate-wrong-private-approval-alias")) {
-  manifest.privateApprovalAlias = "private-codex-ui-baselines";
+if (manifest && args.has("--simulate-wrong-external-approval-alias")) {
+  manifest.externalApprovalAlias = "external-ui-baselines";
 }
 if (manifest && args.has("--simulate-missing-approved-status")) {
   manifest.promotionStatuses = manifest.promotionStatuses.filter((status) => status !== "approved");
@@ -180,20 +180,20 @@ requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
   "policy",
-  "privateApprovalAlias",
-  "privateBaselineAlias",
+  "externalApprovalAlias",
+  "externalBaselineAlias",
   "privateCopyAlias",
-  "privateGeometryAlias",
+  "externalGeometryAlias",
   "promotionStatuses",
   "requiredPromotionFields",
   "promotions",
 ]);
 
 for (const [field, expected] of [
-  ["privateApprovalAlias", "private-codex-ui-approval"],
-  ["privateBaselineAlias", "private-codex-ui-baselines"],
-  ["privateCopyAlias", "private-codex-ui-copy-snapshots"],
-  ["privateGeometryAlias", "private-runtime-ui-rendered-geometry"],
+  ["externalApprovalAlias", "external-ui-approval"],
+  ["externalBaselineAlias", "external-ui-baselines"],
+  ["privateCopyAlias", "external-ui-copy-snapshots"],
+  ["externalGeometryAlias", "external-ui-rendered-geometry"],
 ]) {
   if (manifest?.[field] !== expected) fail(`${manifestPath}.${field} must be ${expected}`);
 }
@@ -213,8 +213,8 @@ for (const field of [
   "patterns",
   "approvedBy",
   "approvedAt",
-  "privateApprovalReference",
-  "privateBaselineReference",
+  "externalApprovalReference",
+  "externalBaselineReference",
   "privateBaselineHash",
   "copySnapshotReference",
   "copySnapshotHash",
@@ -237,13 +237,13 @@ const simulatedProtectedSurface = {
   patterns: ["sidebar-row"],
   approvedBy: "user",
   approvedAt: "2026-05-15",
-  privateApprovalReference: "private-codex-ui-approval:records/simulated/approval-evidence.json",
+  externalApprovalReference: "external-ui-approval:records/simulated/approval-evidence.json",
   contract: "docs/ui/protected-surfaces.registry.json#simulated-protected-surface",
-  privateBaselineReference: "private-codex-ui-baselines:surfaces/simulated/baseline.png",
+  externalBaselineReference: "external-ui-baselines:surfaces/simulated/baseline.png",
   privateBaselineHash: args.has("--simulate-approved-protected-hash-mismatch") ? simulatedOtherHash : simulatedHash,
-  copySnapshotReference: "private-codex-ui-copy-snapshots:surfaces/simulated/copy.json",
+  copySnapshotReference: "external-ui-copy-snapshots:surfaces/simulated/copy.json",
   copySnapshotHash: simulatedHash,
-  geometryEvidenceReference: "private-runtime-ui-rendered-geometry:surfaces/simulated/geometry.json",
+  geometryEvidenceReference: "external-ui-rendered-geometry:surfaces/simulated/geometry.json",
   geometryEvidenceHash: simulatedHash,
   changePolicy: "explicit-user-approval-required",
 };
@@ -255,12 +255,12 @@ const simulatedPromotion = {
   patterns: ["sidebar-row"],
   approvedBy: "user",
   approvedAt: "2026-05-15",
-  privateApprovalReference: "private-codex-ui-approval:records/simulated/approval-evidence.json",
-  privateBaselineReference: "private-codex-ui-baselines:surfaces/simulated/baseline.png",
+  externalApprovalReference: "external-ui-approval:records/simulated/approval-evidence.json",
+  externalBaselineReference: "external-ui-baselines:surfaces/simulated/baseline.png",
   privateBaselineHash: simulatedHash,
-  copySnapshotReference: "private-codex-ui-copy-snapshots:surfaces/simulated/copy.json",
+  copySnapshotReference: "external-ui-copy-snapshots:surfaces/simulated/copy.json",
   copySnapshotHash: simulatedHash,
-  geometryEvidenceReference: "private-runtime-ui-rendered-geometry:surfaces/simulated/geometry.json",
+  geometryEvidenceReference: "external-ui-rendered-geometry:surfaces/simulated/geometry.json",
   geometryEvidenceHash: simulatedHash,
   protectedSurfaceId: "simulated-protected-surface",
   adoptionCanonicityPacketId: "simulated-ui-canon-promotion-packet",
@@ -278,7 +278,7 @@ if (manifest && args.has("--simulate-invalid-approved-at")) {
   manifest.promotions = [{ ...simulatedPromotion, status: "revoked", approvedAt: "2026/05/15" }];
 }
 if (manifest && args.has("--simulate-local-private-reference")) {
-  manifest.promotions = [{ ...simulatedPromotion, status: "revoked", privateBaselineReference: "/Users/example/baseline.png" }];
+  manifest.promotions = [{ ...simulatedPromotion, status: "revoked", externalBaselineReference: "/Users/example/baseline.png" }];
 }
 if (manifest && args.has("--simulate-invalid-baseline-hash")) {
   manifest.promotions = [{ ...simulatedPromotion, status: "revoked", privateBaselineHash: "short" }];
@@ -346,10 +346,10 @@ for (const [index, promotion] of promotions.entries()) {
   if (promotion.approvedBy !== "user") fail(`${label}.approvedBy must be user`);
   requireIsoDate(promotion.approvedAt, `${label}.approvedAt`);
   requireArray(promotion, label, "patterns");
-  requireAlias(promotion.privateApprovalReference, manifest.privateApprovalAlias, `${label}.privateApprovalReference`);
-  requireAlias(promotion.privateBaselineReference, manifest.privateBaselineAlias, `${label}.privateBaselineReference`);
+  requireAlias(promotion.externalApprovalReference, manifest.externalApprovalAlias, `${label}.externalApprovalReference`);
+  requireAlias(promotion.externalBaselineReference, manifest.externalBaselineAlias, `${label}.externalBaselineReference`);
   requireAlias(promotion.copySnapshotReference, manifest.privateCopyAlias, `${label}.copySnapshotReference`);
-  requireAlias(promotion.geometryEvidenceReference, manifest.privateGeometryAlias, `${label}.geometryEvidenceReference`);
+  requireAlias(promotion.geometryEvidenceReference, manifest.externalGeometryAlias, `${label}.geometryEvidenceReference`);
   requireHash(promotion.privateBaselineHash, `${label}.privateBaselineHash`);
   requireHash(promotion.copySnapshotHash, `${label}.copySnapshotHash`);
   requireHash(promotion.geometryEvidenceHash, `${label}.geometryEvidenceHash`);
@@ -360,7 +360,7 @@ for (const [index, promotion] of promotions.entries()) {
       continue;
     }
     for (const field of [
-      "privateBaselineReference",
+      "externalBaselineReference",
       "privateBaselineHash",
       "copySnapshotReference",
       "copySnapshotHash",

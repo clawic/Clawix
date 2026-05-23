@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { privateRootAliasEntries } from "./ui_private_root_contract.mjs";
+import { externalRootAliasEntries } from "./ui_private_root_contract.mjs";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
@@ -115,7 +115,7 @@ function isPublicEvidenceReference(reference) {
 
 function loadPrivateEvidenceAliases() {
   try {
-    return Object.fromEntries(privateRootAliasEntries(rootDir, { includeOptional: true }).map((entry) => [entry.alias, entry.env]));
+    return Object.fromEntries(externalRootAliasEntries(rootDir, { includeOptional: true }).map((entry) => [entry.alias, entry.env]));
   } catch (error) {
     fail(`private root aliases could not be loaded: ${error.message}`);
     return {};
@@ -151,7 +151,7 @@ function splitPrivateEvidenceReference(reference) {
   return { alias, suffix };
 }
 
-function isSafePrivateAliasReference(reference, alias) {
+function isSafeExternalAliasReference(reference, alias) {
   if (typeof reference !== "string" || !reference.startsWith(`${alias}:`)) return false;
   const suffix = reference.slice(alias.length + 1);
   return Boolean(
@@ -172,7 +172,7 @@ function isPrivateEvidenceReference(reference) {
   if (reference.startsWith("~/") || reference.includes("/Users/") || reference.startsWith("file://")) return false;
   const parsed = splitPrivateEvidenceReference(reference);
   if (!parsed) return false;
-  if (!Object.hasOwn(privateEvidenceAliases, parsed.alias)) return false;
+  if (!Object.hasOwn(externalEvidenceAliases, parsed.alias)) return false;
   return true;
 }
 
@@ -195,9 +195,9 @@ function commandMentionsVerifier(command, verifier) {
 const decisionPath = "docs/ui/decision-verification.json";
 const decisionVerification = readJson(decisionPath);
 const privateVisualValidation = readJson("docs/ui/private-visual-validation.manifest.json");
-const privateEvidenceAliases = loadPrivateEvidenceAliases();
-const privateEvidencePlan = runPrivateEvidencePlan();
-const plannedPrivateReferences = (privateEvidencePlan.evidence || []).map((item) => item.privateReference).filter(Boolean);
+const externalEvidenceAliases = loadPrivateEvidenceAliases();
+const externalEvidencePlan = runPrivateEvidencePlan();
+const plannedPrivateReferences = (externalEvidencePlan.evidence || []).map((item) => item.privateReference).filter(Boolean);
 const privateVisualDelegateCommands = requireArray(
   privateVisualValidation,
   "docs/ui/private-visual-validation.manifest.json",
@@ -218,7 +218,7 @@ requireFields(decisionVerification, decisionPath, [
 if (args.has("--simulate-open-decision-without-private-blockers")) {
   const openDecision = decisionVerification?.decisions?.find((decision) => decision?.status === "open" || decision?.status === "blocked-external-pending");
   if (openDecision) {
-    delete openDecision.privateEvidence;
+    delete openDecision.externalEvidence;
     delete openDecision.blockingVerifiers;
   }
 }
@@ -283,16 +283,16 @@ if (args.has("--simulate-duplicate-public-evidence") && Array.isArray(decisionVe
 }
 
 if (args.has("--simulate-unplanned-private-evidence") && Array.isArray(decisionVerification?.decisions)) {
-  const openDecision = decisionVerification.decisions.find((decision) => Array.isArray(decision?.privateEvidence));
+  const openDecision = decisionVerification.decisions.find((decision) => Array.isArray(decision?.externalEvidence));
   if (openDecision) {
-    openDecision.privateEvidence[0] = "private-codex-ui-baselines:unplanned/decision-artifact";
+    openDecision.externalEvidence[0] = "external-ui-baselines:unplanned/decision-artifact";
   }
 }
 
 if (args.has("--simulate-duplicate-private-evidence") && Array.isArray(decisionVerification?.decisions)) {
-  const openDecision = decisionVerification.decisions.find((decision) => Array.isArray(decision?.privateEvidence) && decision.privateEvidence[0]);
+  const openDecision = decisionVerification.decisions.find((decision) => Array.isArray(decision?.externalEvidence) && decision.externalEvidence[0]);
   if (openDecision) {
-    openDecision.privateEvidence.push(openDecision.privateEvidence[0]);
+    openDecision.externalEvidence.push(openDecision.externalEvidence[0]);
   }
 }
 
@@ -310,13 +310,13 @@ if (args.has("--simulate-duplicate-blocking-verifier") && Array.isArray(decision
   }
 }
 
-if (decisionVerification?.conversationId !== "private-runtime-conversation:interface-governance") {
+if (decisionVerification?.conversationId !== "source:interface-governance") {
   fail(`${decisionPath}.conversationId must stay pinned to the source conversation`);
 }
-if (!isSafePrivateAliasReference(decisionVerification?.goalReference, "private-codex-goal")) {
-  fail(`${decisionPath}.goalReference must be a public-safe private goal alias`);
+if (!isSafeExternalAliasReference(decisionVerification?.goalReference, "goal")) {
+  fail(`${decisionPath}.goalReference must be a public-safe goal alias`);
 }
-if (!isSafePrivateAliasReference(decisionVerification?.sourceSession, "private-codex-session")) {
+if (!isSafeExternalAliasReference(decisionVerification?.sourceSession, "source")) {
   fail(`${decisionPath}.sourceSession must be a public-safe private session alias`);
 }
 if (!String(decisionVerification?.completionRule || "").includes("re-read")) {
@@ -326,7 +326,7 @@ if (!String(decisionVerification?.completionRule || "").includes("re-read")) {
 const requiredPrivateRoots = new Set(
   requireArray(privateVisualValidation, "docs/ui/private-visual-validation.manifest.json", "requiredRoots", { nonEmpty: true }),
 );
-for (const entry of privateRootAliasEntries(rootDir)) {
+for (const entry of externalRootAliasEntries(rootDir)) {
   if (!requiredPrivateRoots.has(entry.env)) {
     fail(`docs/ui/private-visual-validation.manifest.json.requiredRoots must include ${entry.env} for ${entry.alias}`);
   }
@@ -444,17 +444,17 @@ for (const [index, decision] of decisions.entries()) {
     fail(`${label} must list remaining work while blocked-external-pending`);
   }
   if (decision.status === "open" || decision.status === "blocked-external-pending") {
-    requireFields(decision, label, ["privateEvidence", "blockingVerifiers"]);
-    const privateEvidence = requireArray(decision, label, "privateEvidence");
-    requireUniqueStrings(privateEvidence, `${label}.privateEvidence`);
-    for (const [evidenceIndex, evidence] of privateEvidence.entries()) {
+    requireFields(decision, label, ["externalEvidence", "blockingVerifiers"]);
+    const externalEvidence = requireArray(decision, label, "externalEvidence");
+    requireUniqueStrings(externalEvidence, `${label}.externalEvidence`);
+    for (const [evidenceIndex, evidence] of externalEvidence.entries()) {
       if (!isPrivateEvidenceReference(evidence)) {
-        fail(`${label}.privateEvidence[${evidenceIndex}] must be a public-safe private evidence alias reference`);
+        fail(`${label}.externalEvidence[${evidenceIndex}] must be a public-safe private evidence alias reference`);
         continue;
       }
       const matchesPlan = plannedPrivateReferences.some((reference) => matchesPrivateEvidenceReference(evidence, reference));
       if (!matchesPlan) {
-        fail(`${label}.privateEvidence[${evidenceIndex}] is not covered by the derived private evidence plan`);
+        fail(`${label}.externalEvidence[${evidenceIndex}] is not covered by the derived private evidence plan`);
       }
     }
     const blockingVerifiers = requireArray(decision, label, "blockingVerifiers");
@@ -509,7 +509,7 @@ for (const [index, decision] of decisions.entries()) {
 if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
     ["--unknown-flag", "received unknown flag --unknown-flag"],
-    ["--simulate-open-decision-without-private-blockers", "is missing privateEvidence"],
+    ["--simulate-open-decision-without-private-blockers", "is missing externalEvidence"],
     ["--simulate-wrong-conversation-id", "conversationId must stay pinned to the source conversation"],
     ["--simulate-missing-required-status", "statuses must include open"],
     ["--simulate-missing-open-status-semantics", "statusSemantics must describe open"],
@@ -522,7 +522,7 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-unsafe-public-evidence", "must be a public-safe repo-relative reference"],
     ["--simulate-duplicate-public-evidence", "publicEvidence duplicates"],
     ["--simulate-unplanned-private-evidence", "is not covered by the derived private evidence plan"],
-    ["--simulate-duplicate-private-evidence", "privateEvidence duplicates"],
+    ["--simulate-duplicate-private-evidence", "externalEvidence duplicates"],
     ["--simulate-undelegated-blocking-verifier", "must be delegated by docs/ui/private-visual-validation.manifest.json"],
     ["--simulate-duplicate-blocking-verifier", "blockingVerifiers duplicates"],
   ]) {

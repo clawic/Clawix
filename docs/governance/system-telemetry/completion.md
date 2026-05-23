@@ -1,8 +1,8 @@
 # System Telemetry Completion Audit
 
-Source conversation: `private-runtime-conversation:system-telemetry`
+Source conversation: `source:system-telemetry`
 
-Plan item: `private-runtime-plan:system-telemetry`
+Plan item: `plan:system-telemetry`
 
 Status: `active_goal_not_complete`
 

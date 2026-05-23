@@ -236,7 +236,7 @@ if (args.has("--simulate-perf-decision-missing-private-verifier") && perfBudgetS
   perfBudgetSourceDecision.blockingVerifiers = perfBudgetSourceDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_performance_budget_verify.mjs");
 }
 if (args.has("--simulate-perf-decision-missing-platform-evidence") && perfBudgetSourceDecision) {
-  perfBudgetSourceDecision.privateEvidence = perfBudgetSourceDecision.privateEvidence.filter((evidence) => evidence !== "private-codex-ui-baselines:web/*");
+  perfBudgetSourceDecision.externalEvidence = perfBudgetSourceDecision.externalEvidence.filter((evidence) => evidence !== "external-ui-baselines:web/*");
 }
 if (args.has("--simulate-perf-decision-premature-complete") && perfBudgetSourceDecision) {
   perfBudgetSourceDecision.status = "verified-complete";
@@ -292,7 +292,7 @@ requireExactStringSet(
 const requiredEvidenceFields = [
   "flowId",
   "platform",
-  "privateBaselineReference",
+  "externalBaselineReference",
   "metrics",
   "measurementSamples",
   "measurementHash",
@@ -308,8 +308,8 @@ requireExactStringSet(
 
 const privateBaselinesPath = "docs/ui/private-baselines.manifest.json";
 const privateBaselines = readJson(privateBaselinesPath);
-if (privateBaselines?.privateRootAlias !== "private-codex-ui-baselines") {
-  fail(`${privateBaselinesPath}.privateRootAlias must be private-codex-ui-baselines`);
+if (privateBaselines?.externalRootAlias !== "external-ui-baselines") {
+  fail(`${privateBaselinesPath}.externalRootAlias must be external-ui-baselines`);
 }
 if (args.has("--simulate-missing-private-baseline") && Array.isArray(privateBaselines?.flows)) {
   privateBaselines.flows = privateBaselines.flows.filter((flow) => !(flow?.platform === "web" && flow?.id === "chat-scroll"));
@@ -323,9 +323,9 @@ if (args.has("--simulate-wrong-private-reference")) {
     candidate.platform === flow?.platform && candidate.id === flow?.id
   ));
   if (flow && baseline) {
-    const wrongReference = `${privateBaselines.privateRootAlias}:${flow.platform}/wrong-flow`;
-    flow.privateBaselineReference = wrongReference;
-    baseline.privateBaselineReference = wrongReference;
+    const wrongReference = `${privateBaselines.externalRootAlias}:${flow.platform}/wrong-flow`;
+    flow.externalBaselineReference = wrongReference;
+    baseline.externalBaselineReference = wrongReference;
   }
 }
 if (args.has("--simulate-pending-registry-with-all-enforced") && budgets && Array.isArray(budgets.flows) && Array.isArray(privateBaselines?.flows)) {
@@ -364,7 +364,7 @@ for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries(
     "platform",
     "baselineStatus",
     "measurementSource",
-    "privateBaselineReference",
+    "externalBaselineReference",
     "requiredMetrics",
     "budgetStatus",
   ]);
@@ -381,12 +381,12 @@ for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries(
   if (flow.measurementSource !== "private-baseline") fail(`${label}.measurementSource must be private-baseline`);
   const expectedSuffix = `${flow.platform}/${flow.id}`;
   const actualSuffix = privateReferenceSuffix(
-    flow.privateBaselineReference,
-    privateBaselines?.privateRootAlias,
-    `${label}.privateBaselineReference`,
+    flow.externalBaselineReference,
+    privateBaselines?.externalRootAlias,
+    `${label}.externalBaselineReference`,
   );
   if (actualSuffix && actualSuffix !== expectedSuffix) {
-    fail(`${label}.privateBaselineReference must resolve to ${expectedSuffix}`);
+    fail(`${label}.externalBaselineReference must resolve to ${expectedSuffix}`);
   }
   requireExactStringSet(requireArray(flow, label, "requiredMetrics"), `${label}.requiredMetrics`, requiredMetrics);
   const baseline = baselineByFlow.get(key);
@@ -394,8 +394,8 @@ for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries(
     fail(`${label} must have matching ${privateBaselinesPath}.flows entry`);
     continue;
   }
-  if (baseline.privateBaselineReference !== flow.privateBaselineReference) {
-    fail(`${label}.privateBaselineReference must match ${privateBaselinesPath}`);
+  if (baseline.externalBaselineReference !== flow.externalBaselineReference) {
+    fail(`${label}.externalBaselineReference must match ${privateBaselinesPath}`);
   }
   if (flow.baselineStatus === "approved" && baseline.baselineStatus !== "approved") {
     fail(`${label}.baselineStatus cannot be approved before private baseline is approved`);
@@ -436,12 +436,12 @@ if (!perfBudgetSourceDecision) {
       fail(`${decisionVerificationPath}.decisions.perf_budget_source.publicEvidence must include ${evidencePath}`);
     }
   }
-  const privateEvidence = new Set(Array.isArray(perfBudgetSourceDecision.privateEvidence) ? perfBudgetSourceDecision.privateEvidence : []);
-  const privateAlias = privateBaselines?.privateRootAlias || "private-codex-ui-baselines";
+  const externalEvidence = new Set(Array.isArray(perfBudgetSourceDecision.externalEvidence) ? perfBudgetSourceDecision.externalEvidence : []);
+  const privateAlias = privateBaselines?.externalRootAlias || "external-ui-baselines";
   for (const platform of requiredPlatforms) {
     const evidencePath = `${privateAlias}:${platform}/*`;
-    if (!privateEvidence.has(evidencePath)) {
-      fail(`${decisionVerificationPath}.decisions.perf_budget_source.privateEvidence must include ${evidencePath}`);
+    if (!externalEvidence.has(evidencePath)) {
+      fail(`${decisionVerificationPath}.decisions.perf_budget_source.externalEvidence must include ${evidencePath}`);
     }
   }
   const blockingVerifiers = new Set(Array.isArray(perfBudgetSourceDecision.blockingVerifiers) ? perfBudgetSourceDecision.blockingVerifiers : []);
@@ -499,10 +499,10 @@ if (!isSelfTest && rawArgs.length === 0) {
     ["--simulate-perf-decision-missing-evidence-verifier", "publicEvidence must include scripts/ui_private_evidence_verify.mjs"],
     ["--simulate-perf-decision-missing-visual-verifier", "publicEvidence must include scripts/ui_private_visual_verify.mjs"],
     ["--simulate-perf-decision-missing-private-verifier", "blockingVerifiers must include scripts/ui_private_performance_budget_verify.mjs"],
-    ["--simulate-perf-decision-missing-platform-evidence", "privateEvidence must include private-codex-ui-baselines:web/*"],
+    ["--simulate-perf-decision-missing-platform-evidence", "externalEvidence must include external-ui-baselines:web/*"],
     ["--simulate-missing-private-baseline", "must have matching docs/ui/private-baselines.manifest.json.flows entry"],
     ["--simulate-duplicate-private-baseline", "docs/ui/private-baselines.manifest.json.flows[24] duplicates macos:sidebar-hover-click-expand"],
-    ["--simulate-wrong-private-reference", "privateBaselineReference must resolve to"],
+    ["--simulate-wrong-private-reference", "externalBaselineReference must resolve to"],
     ["--simulate-pending-registry-with-all-enforced", "status must be approved-baseline-enforced when all flow budgets are enforced"],
     ["--simulate-perf-decision-premature-complete", "status must remain open or blocked-external-pending until private performance baselines are approved"],
     ["--simulate-approved-performance-budgets-stale-decision", "status must be verified-complete after private performance baselines are approved"],

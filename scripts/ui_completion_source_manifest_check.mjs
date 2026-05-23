@@ -99,9 +99,9 @@ function runFailureSelfTests() {
   const selfTestEnv = { ...process.env, CLAWIX_UI_COMPLETION_SOURCE_MANIFEST_SELF_TEST: "1" };
   const tests = [
     [["--unknown-flag"], "received unknown flag --unknown-flag"],
-    [["--simulate-unsafe-private-path"], "sourceSessionAlias must not publish a local private path"],
+    [["--simulate-unsafe-private-path"], "sourceAlias must not publish a local private path"],
     [["--simulate-wrong-goal-alias"], "goalReferenceAlias must match the private goal alias"],
-    [["--simulate-wrong-source-session-alias"], "sourceSessionAlias must match the private source session alias"],
+    [["--simulate-wrong-source-session-alias"], "sourceAlias must match the private source session alias"],
     [["--simulate-wrong-private-goal-env"], "privateGoalFileEnv must be CLAWIX_UI_PRIVATE_COMPLETION_GOAL_FILE"],
     [["--simulate-verifier-without-require-approved"], "verificationCommand must require the private completion source verifier"],
     [["--simulate-wrong-external-pending-exit-code"], "externalPendingExitCode must be 2"],
@@ -112,7 +112,7 @@ function runFailureSelfTests() {
     [["--simulate-duplicate-expected-decision-id"], "expectedDecisionIds must contain expectedDecisionCount entries"],
     [["--simulate-wrong-expected-decision-choice"], "expectedDecisions[0].choice must be"],
     [["--simulate-wrong-decision-conversation-id"], "expectedConversationId must match docs/ui/decision-verification.json.conversationId"],
-    [["--simulate-audit-missing-source-alias"], "docs/governance/ui/completion.md must include private-codex-session:interface-governance-source"],
+    [["--simulate-audit-missing-source-alias"], "docs/governance/ui/completion.md must include source:interface-governance"],
     [["--simulate-private-verifier-missing-snippet"], "ui_private_completion_source_verify.mjs must include sourceBeforeFirstGoalEvent"],
   ];
 
@@ -139,13 +139,13 @@ const manifestPath = "docs/ui/completion-source.manifest.json";
 const manifest = readJson(manifestPath);
 if (manifest) {
   if (args.has("--simulate-unsafe-private-path")) {
-    manifest.sourceSessionAlias = "/Users/private/source-session.jsonl";
+    manifest.sourceAlias = "/Users/private/source-session.jsonl";
   }
   if (args.has("--simulate-wrong-goal-alias")) {
-    manifest.goalReferenceAlias = "private-codex-goal:other-plan.md";
+    manifest.goalReferenceAlias = "goal:other-plan.md";
   }
   if (args.has("--simulate-wrong-source-session-alias")) {
-    manifest.sourceSessionAlias = "private-codex-session:other";
+    manifest.sourceAlias = "source:other";
   }
   if (args.has("--simulate-wrong-private-goal-env")) {
     manifest.privateGoalFileEnv = "CLAWIX_UI_OTHER_GOAL_FILE";
@@ -191,7 +191,7 @@ requireFields(manifest, manifestPath, [
   "status",
   "policy",
   "goalReferenceAlias",
-  "sourceSessionAlias",
+  "sourceAlias",
   "privateGoalFileEnv",
   "privateSourceSessionFileEnv",
   "verificationCommand",
@@ -204,11 +204,11 @@ requireFields(manifest, manifestPath, [
 ]);
 scanPublicSafety(manifest, manifestPath);
 
-if (manifest?.goalReferenceAlias !== "private-codex-goal:clawix-interface-governance-plan-2026-05-15.md") {
+if (manifest?.goalReferenceAlias !== "goal:clawix-interface-governance-plan-2026-05-15.md") {
   fail(`${manifestPath}.goalReferenceAlias must match the private goal alias`);
 }
-if (manifest?.sourceSessionAlias !== "private-codex-session:interface-governance-source") {
-  fail(`${manifestPath}.sourceSessionAlias must match the private source session alias`);
+if (manifest?.sourceAlias !== "source:interface-governance") {
+  fail(`${manifestPath}.sourceAlias must match the private source session alias`);
 }
 if (manifest?.privateGoalFileEnv !== "CLAWIX_UI_PRIVATE_COMPLETION_GOAL_FILE") {
   fail(`${manifestPath}.privateGoalFileEnv must be CLAWIX_UI_PRIVATE_COMPLETION_GOAL_FILE`);
@@ -258,8 +258,8 @@ if (manifest?.expectedConversationId !== decisionVerification?.conversationId) {
 if (decisionVerification?.goalReference !== manifest?.goalReferenceAlias) {
   fail(`${manifestPath}.goalReferenceAlias must match docs/ui/decision-verification.json.goalReference`);
 }
-if (decisionVerification?.sourceSession !== manifest?.sourceSessionAlias) {
-  fail(`${manifestPath}.sourceSessionAlias must match docs/ui/decision-verification.json.sourceSession`);
+if (decisionVerification?.sourceSession !== manifest?.sourceAlias) {
+  fail(`${manifestPath}.sourceAlias must match docs/ui/decision-verification.json.sourceSession`);
 }
 const decisions = requireArray(decisionVerification, "docs/ui/decision-verification.json", "decisions");
 const expectedDecisionIds = requireArray(manifest, manifestPath, "expectedDecisionIds");
@@ -291,12 +291,12 @@ for (const [index, decision] of decisions.entries()) {
 
 let completionAudit = read("docs/governance/ui/completion.md");
 if (args.has("--simulate-audit-missing-source-alias")) {
-  completionAudit = completionAudit.replace(String(manifest?.sourceSessionAlias || ""), "private-codex-session:missing");
+  completionAudit = completionAudit.replace(String(manifest?.sourceAlias || ""), "source:missing");
 }
 for (const snippet of [
   manifest?.goalReferenceAlias,
-  manifest?.sourceSessionAlias,
-  "private session, not published",
+  manifest?.sourceAlias,
+  "source redacted",
   "Do not call update_goal",
 ]) {
   if (!completionAudit.includes(snippet)) fail(`docs/governance/ui/completion.md must include ${snippet}`);

@@ -65,7 +65,7 @@ function validateManifest(manifest, { mutation } = {}) {
   if (mutation === "silent-telemetry") manifest.packets[0].telemetryDefault = "enabled";
   if (mutation === "local-private-path") manifest.packets[0].evidenceRefs[0].ref = "/Users/example/research.json";
 
-  requireFields(manifest, manifestPath, ["schemaVersion", "status", "canonicalSource", "policy", "privateEvidenceAliases", "packets"]);
+  requireFields(manifest, manifestPath, ["schemaVersion", "status", "canonicalSource", "policy", "externalEvidenceAliases", "packets"]);
   if (manifest.schemaVersion !== 1) fail(`${manifestPath}.schemaVersion must be 1`);
   if (manifest.canonicalSource !== "../../clawjs/docs/governance/adoption-canonicity.manifest.json") {
     fail(`${manifestPath}.canonicalSource must point at the sibling ClawJS manifest`);

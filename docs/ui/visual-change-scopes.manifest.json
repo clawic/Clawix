@@ -34,7 +34,7 @@
     "approvedBy",
     "approvedAt",
     "expiresAt",
-    "privateApprovalReference"
+    "externalApprovalReference"
   ],
   "activeScopes": [
     {
@@ -56,7 +56,7 @@
       "approvedBy": "user",
       "approvedAt": "2026-05-22",
       "expiresAt": "2026-06-30",
-      "privateApprovalReference": "private-codex-ui-approval:runtime-lens-settings-2026-05-22"
+      "externalApprovalReference": "external-ui-approval:runtime-lens-settings-2026-05-22"
     }
   ]
 }

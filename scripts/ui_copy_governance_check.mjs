@@ -176,7 +176,7 @@ if (args.has("--simulate-copy-decision-missing-private-verifier") && copyGoverna
   copyGovernanceDecision.blockingVerifiers = copyGovernanceDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_copy_verify.mjs");
 }
 if (args.has("--simulate-copy-decision-missing-private-evidence") && copyGovernanceDecision) {
-  copyGovernanceDecision.privateEvidence = [];
+  copyGovernanceDecision.externalEvidence = [];
 }
 if (args.has("--simulate-copy-decision-premature-complete") && copyGovernanceDecision) {
   copyGovernanceDecision.status = "verified-complete";
@@ -202,8 +202,8 @@ const requiredCopyKinds = [
 if (copyInventory?.status !== "active" && copyInventory?.status !== "approved-private-snapshots") {
   fail(`${copyPath}.status must be active or approved-private-snapshots`);
 }
-if (copyInventory?.privateSnapshotAlias !== "private-codex-ui-copy-snapshots") {
-  fail(`${copyPath}.privateSnapshotAlias must be private-codex-ui-copy-snapshots`);
+if (copyInventory?.privateSnapshotAlias !== "external-ui-copy-snapshots") {
+  fail(`${copyPath}.privateSnapshotAlias must be external-ui-copy-snapshots`);
 }
 if (copyInventory?.evidenceFilename !== "copy-evidence.json") {
   fail(`${copyPath}.evidenceFilename must be copy-evidence.json`);
@@ -337,7 +337,7 @@ for (const [index, surface] of requireArray(protectedSurfaces, protectedPath, "s
   }
 }
 
-const privateSnapshotAlias = copyInventory?.privateSnapshotAlias || "private-codex-ui-copy-snapshots";
+const privateSnapshotAlias = copyInventory?.privateSnapshotAlias || "external-ui-copy-snapshots";
 if (!copyGovernanceDecision) {
   fail(`${decisionVerificationPath}.decisions must include copy_governance`);
 } else {
@@ -355,9 +355,9 @@ if (!copyGovernanceDecision) {
       fail(`${decisionVerificationPath}.decisions.copy_governance.publicEvidence must include ${evidencePath}`);
     }
   }
-  const privateEvidence = Array.isArray(copyGovernanceDecision.privateEvidence) ? copyGovernanceDecision.privateEvidence : [];
-  if (!privateEvidence.includes(`${privateSnapshotAlias}:surfaces/*`)) {
-    fail(`${decisionVerificationPath}.decisions.copy_governance.privateEvidence must include ${privateSnapshotAlias}:surfaces/*`);
+  const externalEvidence = Array.isArray(copyGovernanceDecision.externalEvidence) ? copyGovernanceDecision.externalEvidence : [];
+  if (!externalEvidence.includes(`${privateSnapshotAlias}:surfaces/*`)) {
+    fail(`${decisionVerificationPath}.decisions.copy_governance.externalEvidence must include ${privateSnapshotAlias}:surfaces/*`);
   }
   const blockingVerifiers = new Set(Array.isArray(copyGovernanceDecision.blockingVerifiers) ? copyGovernanceDecision.blockingVerifiers : []);
   for (const verifier of [
@@ -386,18 +386,18 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
   for (const [flag, expectedOutput] of [
     ["--unknown-flag", "received unknown flag --unknown-flag"],
     ["--simulate-inactive-copy-inventory", "status must be active or approved-private-snapshots"],
-    ["--simulate-wrong-private-snapshot-alias", "privateSnapshotAlias must be private-codex-ui-copy-snapshots"],
+    ["--simulate-wrong-private-snapshot-alias", "privateSnapshotAlias must be external-ui-copy-snapshots"],
     ["--simulate-missing-copy-kind", "restrictedCopyKinds must include tooltip"],
     ["--simulate-extra-copy-kind", "restrictedCopyKinds must not include marketing-tagline"],
     ["--simulate-missing-required-evidence", "requiredEvidenceFields must include copyHierarchyHash"],
     ["--simulate-missing-pattern-copy-contract", "sidebar-row.pattern.json.copy must declare a non-empty copy contract"],
     ["--simulate-invalid-pattern-copy-key", "copy.Visible Label must use stable lowerCamelCase naming"],
     ["--simulate-mismatched-copy-snapshot-reference", "copySnapshotReference must target surfaces/macos/macos-root-chrome"],
-    ["--simulate-absolute-copy-snapshot-reference", "copySnapshotReference must use private-codex-ui-copy-snapshots: and must not contain a local path"],
+    ["--simulate-absolute-copy-snapshot-reference", "copySnapshotReference must use external-ui-copy-snapshots: and must not contain a local path"],
     ["--simulate-coverage-missing-copy-hash", "requiredEvidence must include copySnapshotHash"],
     ["--simulate-wrong-surface-copy-alias", "privateCopyAlias must match docs/ui/copy.inventory.json.privateSnapshotAlias"],
     ["--simulate-copy-decision-missing-private-verifier", "blockingVerifiers must include scripts/ui_private_copy_verify.mjs"],
-    ["--simulate-copy-decision-missing-private-evidence", "privateEvidence must include private-codex-ui-copy-snapshots:surfaces/*"],
+    ["--simulate-copy-decision-missing-private-evidence", "externalEvidence must include external-ui-copy-snapshots:surfaces/*"],
     ["--simulate-copy-decision-premature-complete", "status must remain open or blocked-external-pending until private copy snapshots are captured and approved"],
     ["--simulate-approved-copy-snapshots-stale-decision", "status must be verified-complete after private copy snapshots are approved"],
   ]) {

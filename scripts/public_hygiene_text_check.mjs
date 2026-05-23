@@ -90,6 +90,31 @@ const patterns = [
     regex: /\b(?:Source conversation|sourceConversationId|conversationId|sourcePlanId|planId|Reference plan item|Binding plan item|Plan item|source session|sourceSession)[^\n]{0,160}\b019e[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:-plan)?\b/gi,
   },
   {
+    id: "private-runtime-source-alias",
+    description: "private runtime conversation or plan alias",
+    regex: /\bprivate-runtime-(?:conversation|plan):[A-Za-z0-9._:-]+\b/g,
+  },
+  {
+    id: "private-session-placeholder",
+    description: "private session placeholder that has no public value",
+    regex: /\bprivate-session-not-published\b|\bprivate session,\s*not published\b/gi,
+  },
+  {
+    id: "current-thread-source-alias",
+    description: "private current-thread source alias",
+    regex: /\bcurrent-thread-20\d{2}-\d{2}-\d{2}\b/g,
+  },
+  {
+    id: "private-provenance-source-field",
+    description: "private source-session provenance field in public artifact",
+    regex: /\bsourceSession(?:Ref|Alias)\b/g,
+  },
+  {
+    id: "private-codename",
+    description: "private internal codename",
+    regex: /\b(?:Source Code Aging Program|Provocation Not Publish)\b/g,
+  },
+  {
     id: "contextual-team-id",
     description: "private Team ID in signing or release context",
     regex: /\b(?:DEVELOPMENT_TEAM|TEAM_ID|team_id|teamId|Team ID|team identifier)\b[^\n]{0,60}\b[A-Z0-9]{10}\b/g,
@@ -120,6 +145,11 @@ const patterns = [
     id: "release-artifact-output-reference",
     description: "private release output reference",
     regex: /(^|[/"'`\s])release-output([/"'`\s]|$)/g,
+  },
+  {
+    id: "private-workflow-marker",
+    description: "private workflow marker or launcher path",
+    regex: /\b(?:scripts-dev|clawix-launcher|signing-guard|private-agent-playbooks|brand-reference-guard|commit-de-todo|timestamp-plan|plausible commit-date)\b|\.signing\.env|\.dev-control|(?:~|\$HOME)\/Desktop\/clawjs\b/g,
   },
 ];
 
@@ -183,6 +213,14 @@ function selfTest() {
   const privateDevelopmentTeam = ["DEVELOPMENT_TEAM", "ABCDE12345"].join(" = ");
   const privateBundleId = ["bundle_id=com", "clawix", "private"].join(".");
   const privateSigningIdentity = ["Apple Distribution", "Private Org (ABCDE12345)"].join(": ");
+  const privateWorkflowMarker = ["scripts", "dev"].join("-");
+  const privateSigningEnv = [".signing", "env"].join(".");
+  const privateLauncher = ["clawix", "launcher"].join("-");
+  const privateRuntimeConversation = ["private", "runtime", "conversation"].join("-") + ":system-telemetry";
+  const privateSessionPlaceholder = ["private", "session", "not", "published"].join("-");
+  const currentThreadAlias = ["current", "thread", "2026", "05", "21"].join("-");
+  const sourceSessionRef = ["source", "Session", "Ref"].join("");
+  const privateCodename = ["Source Code Aging", "Program"].join(" ");
   const privateText = [
     privatePath,
     codexPrivatePath,
@@ -195,6 +233,14 @@ function selfTest() {
     "sk-" + "a".repeat(24),
     privateKeyMarker,
     "release-output",
+    privateWorkflowMarker,
+    privateSigningEnv,
+    privateLauncher,
+    privateRuntimeConversation,
+    privateSessionPlaceholder,
+    currentThreadAlias,
+    sourceSessionRef,
+    privateCodename,
   ].join("\n");
   const safeText = [
     "/Users/example/project",

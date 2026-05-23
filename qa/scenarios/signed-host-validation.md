@@ -14,11 +14,11 @@ app shell.
 
 ## Steps
 
-1. Build and launch the current workspace through the private Clawix launcher.
+1. Build and launch the current workspace through the configured app launcher.
 2. Confirm the open app is the current `/Applications/Clawix.app` build through
-   `scripts-dev/clawix-launcher.sh preflight-computer-use`.
+   the configured installed-app preflight.
 3. Confirm the app identity, signature state, process identity, and build
-   metadata through the private signed-host check. Public evidence must redact
+   metadata through the signed-host check. Public evidence must redact
    private bundle ids, Team IDs, signing identities, local paths, and secrets.
 4. Run `bash scripts/test.sh host` with a private `CLAWIX_HOST_TEST_COMMAND`
    that uses the signed-host validation flow.

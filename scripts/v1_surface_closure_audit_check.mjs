@@ -137,7 +137,7 @@ const allowedCompletionStatuses = new Set(["complete", "local-validation-passed-
 
 if (decisions.schemaVersion !== 1) fail(`${decisionsPath}.schemaVersion must be 1`);
 if (decisions.program !== "v1-surface-closure") fail(`${decisionsPath}.program must be v1-surface-closure`);
-if (decisions.sourceSessionRef !== "private-session-not-published") fail(`${decisionsPath} must not publish the private source session path`);
+if (decisions.sourceRef !== "source-redacted") fail(`${decisionsPath} must not publish the private source session path`);
 if (decisions.decisionCount !== expectedIds.length) fail(`${decisionsPath}.decisionCount must be ${expectedIds.length}`);
 if (!Array.isArray(decisions.decisions)) fail(`${decisionsPath}.decisions must be an array`);
 if (decisions.sourceExtraction?.requestUserInputPrompts !== 39) fail(`${decisionsPath}.sourceExtraction.requestUserInputPrompts must be 39`);
@@ -264,7 +264,7 @@ if (!audit.includes("Validation ledger")) fail(`${auditPath} must mention the va
 for (const sourceSnippet of ["`bridge_manifest_source`", "`apps_design_storage`", "`apps_design_contract_status`"]) {
   if (!audit.includes(sourceSnippet)) fail(`${auditPath} must mention source extraction snippet ${sourceSnippet}`);
 }
-if (!audit.includes("private session, not published")) fail(`${auditPath} must not publish the private source session path`);
+if (!audit.includes("source redacted")) fail(`${auditPath} must not publish the private source session path`);
 if (/\/Users\//.test(audit) || /rollout-\d{4}-\d{2}-\d{2}T/.test(audit)) {
   fail(`${auditPath} must not include private local session paths`);
 }

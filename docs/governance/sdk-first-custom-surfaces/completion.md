@@ -1,6 +1,6 @@
 # SDK-first custom surfaces completion audit
 
-Source conversation: `private-runtime-conversation:sdk-first-custom-surfaces`
+Source conversation: `source:sdk-first-custom-surfaces`
 
 Status: `active_goal_not_complete`
 

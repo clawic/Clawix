@@ -5,7 +5,7 @@
   "patternCopySource": "docs/ui/pattern-registry/patterns/*.pattern.json",
   "surfaceCoverageSource": "docs/ui/surface-baseline-coverage.manifest.json",
   "protectedSurfaceSource": "docs/ui/protected-surfaces.registry.json",
-  "privateSnapshotAlias": "private-codex-ui-copy-snapshots",
+  "privateSnapshotAlias": "external-ui-copy-snapshots",
   "evidenceFilename": "copy-evidence.json",
   "verificationCommand": "CLAWIX_UI_PRIVATE_COPY_ROOT=<private-root> node scripts/ui_private_copy_verify.mjs --require-approved",
   "protectedSurfaceRequirement": {

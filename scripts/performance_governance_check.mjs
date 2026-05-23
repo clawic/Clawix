@@ -89,7 +89,7 @@ for (const [relativePath, snippets] of new Map([
   ]],
   ["docs/performance/startup-release-contract.manifest.json", [
     "macos-startup-first-chat-interactive",
-    "private-codex-startup-baselines",
+    "external-startup-baselines",
     "CLAWIX_STARTUP_PRIVATE_BASELINE_ROOT",
   ]],
   ["docs/adr/TEMPLATE.md", [

@@ -186,12 +186,12 @@ function withTemporaryPrivatePlaceholderRoots(callback) {
       return callback({});
     }
     return callback({
-      CLAWIX_UI_PRIVATE_BASELINE_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-baselines"),
-      CLAWIX_UI_PRIVATE_GEOMETRY_ROOT: path.join(evidenceTemplateRoot, "private-runtime-ui-rendered-geometry"),
-      CLAWIX_UI_PRIVATE_COPY_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-copy-snapshots"),
-      CLAWIX_UI_PRIVATE_DRIFT_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-rendered-drift"),
-      CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-debt-audit"),
-      CLAWIX_UI_PRIVATE_APPROVAL_ROOT: path.join(approvalTemplateRoot, "private-codex-ui-approval"),
+      CLAWIX_UI_PRIVATE_BASELINE_ROOT: path.join(evidenceTemplateRoot, "external-ui-baselines"),
+      CLAWIX_UI_PRIVATE_GEOMETRY_ROOT: path.join(evidenceTemplateRoot, "external-ui-rendered-geometry"),
+      CLAWIX_UI_PRIVATE_COPY_ROOT: path.join(evidenceTemplateRoot, "external-ui-copy-snapshots"),
+      CLAWIX_UI_PRIVATE_DRIFT_ROOT: path.join(evidenceTemplateRoot, "external-ui-rendered-drift"),
+      CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT: path.join(evidenceTemplateRoot, "external-ui-debt-audit"),
+      CLAWIX_UI_PRIVATE_APPROVAL_ROOT: path.join(approvalTemplateRoot, "external-ui-approval"),
     });
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -218,7 +218,7 @@ function withTemporaryPrivateInvalidApprovalCandidateRoots(callback) {
     const approvalPath = path.join(
       temporaryPrivateRootEnv.CLAWIX_UI_PRIVATE_APPROVAL_ROOT,
       "models",
-      "claude-opus-4.7",
+      "approved-visual-model",
       "approval-evidence.json",
     );
     const approval = JSON.parse(fs.readFileSync(approvalPath, "utf8"));
@@ -424,8 +424,8 @@ if (activeApprovalRecords.length > 0) {
   if (!requireArray(visualManifest, manifest?.privateVisualValidationManifestPath || "docs/ui/private-visual-validation.manifest.json", "delegates").includes("node scripts/ui_private_approval_verify.mjs --require-approved")) {
     fail(`${manifest?.privateVisualValidationManifestPath}.delegates must include scripts/ui_private_approval_verify.mjs while approval records exist`);
   }
-  if (!optionalRootAliases.some((entry) => entry?.alias === approvalManifest?.privateApprovalAlias && entry?.env === "CLAWIX_UI_PRIVATE_APPROVAL_ROOT")) {
-    fail(`${manifest?.privateVisualValidationManifestPath}.optionalRootAliases must expose CLAWIX_UI_PRIVATE_APPROVAL_ROOT for private approvals`);
+  if (!optionalRootAliases.some((entry) => entry?.alias === approvalManifest?.externalApprovalAlias && entry?.env === "CLAWIX_UI_PRIVATE_APPROVAL_ROOT")) {
+    fail(`${manifest?.privateVisualValidationManifestPath}.optionalRootAliases must expose CLAWIX_UI_PRIVATE_APPROVAL_ROOT for external approvals`);
   }
   const approvalResult = spawnSync(process.execPath, [path.join(rootDir, manifest.privateApprovalVerifierScript), "--require-approved"], {
     cwd: rootDir,
@@ -434,7 +434,7 @@ if (activeApprovalRecords.length > 0) {
   });
   const approvalOutput = `${approvalResult.stdout || ""}${approvalResult.stderr || ""}`;
   if (approvalResult.status !== manifest.externalPendingExitCode) {
-    fail(`${manifest.privateApprovalVerifierScript} must exit ${manifest.externalPendingExitCode} while private approval evidence is missing`);
+    fail(`${manifest.privateApprovalVerifierScript} must exit ${manifest.externalPendingExitCode} while external approval evidence is missing`);
   }
   if (!approvalOutput.includes("CLAWIX_UI_PRIVATE_APPROVAL_ROOT")) {
     fail(`${manifest.privateApprovalVerifierScript} must report CLAWIX_UI_PRIVATE_APPROVAL_ROOT when approval records exist`);
@@ -537,11 +537,11 @@ if (completionStatusResult.status !== 0) {
     if (!Array.isArray(status.decisions?.blockedExternalPendingDecisionIds) || !status.decisions.blockedExternalPendingDecisionIds.includes("initial_scope")) {
       fail(`${manifest.privateVerifierScript} --completion-status must list blocked decision ids`);
     }
-    if (!status.privateEvidence || status.privateEvidence.totalRecords !== 166) {
+    if (!status.externalEvidence || status.externalEvidence.totalRecords !== 166) {
       fail(`${manifest.privateVerifierScript} --completion-status must include private evidence totals`);
     }
     if (!status.privateApproval || status.privateApproval.totalRecords !== activeApprovalRecords.length) {
-      fail(`${manifest.privateVerifierScript} --completion-status must include private approval totals`);
+      fail(`${manifest.privateVerifierScript} --completion-status must include external approval totals`);
     }
     if (!status.privateReviewBundles || status.privateReviewBundles.totalRecords !== 166 || status.privateReviewBundles.decisionCount !== 9) {
       fail(`${manifest.privateVerifierScript} --completion-status must include private review bundle totals`);
@@ -743,11 +743,11 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
       if (status.privateSourceReview?.status !== "passed") {
         fail(`${manifest.privateVerifierScript} --completion-status must keep private source review passed with placeholder roots`);
       }
-      if (status.privateEvidence?.totals?.placeholder !== 166 || status.privateEvidence?.totals?.candidate !== 0) {
+      if (status.externalEvidence?.totals?.placeholder !== 166 || status.externalEvidence?.totals?.candidate !== 0) {
         fail(`${manifest.privateVerifierScript} --completion-status must classify temporary private evidence templates as placeholders`);
       }
       if (status.privateApproval?.counts?.placeholder !== activeApprovalRecords.length || status.privateApproval?.counts?.candidate !== 0) {
-        fail(`${manifest.privateVerifierScript} --completion-status must classify temporary private approval templates as placeholders`);
+        fail(`${manifest.privateVerifierScript} --completion-status must classify temporary external approval templates as placeholders`);
       }
       if (
         status.privateReviewBundles?.captureTotals?.placeholder !== 166 ||
@@ -800,7 +800,7 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
         const candidate = report.invalidCandidates?.[0];
         if (
           candidate?.relativeEvidencePath !== "macos/dropdown-open/evidence.json" ||
-          candidate?.rootAlias !== "private-codex-ui-baselines" ||
+          candidate?.rootAlias !== "external-ui-baselines" ||
           !candidate?.missingOrInvalidFields?.includes("geometryHash") ||
           String(JSON.stringify(report)).includes(path.dirname(temporaryPrivateRootEnv.CLAWIX_UI_PRIVATE_BASELINE_ROOT))
         ) {
@@ -830,7 +830,7 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
     }
     try {
       const status = JSON.parse(invalidCandidateStatusResult.stdout);
-      if (status.privateEvidence?.totals?.invalidCandidate !== 1 || status.privateEvidence?.totals?.candidate !== 0) {
+      if (status.externalEvidence?.totals?.invalidCandidate !== 1 || status.externalEvidence?.totals?.candidate !== 0) {
         fail(`${manifest.privateVerifierScript} --completion-status must classify malformed private candidate evidence as invalidCandidate, not candidate`);
       }
       const blockerIds = new Set((status.blockingSummary?.blockers || []).map((blocker) => blocker?.id));
@@ -858,7 +858,7 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
       },
     );
     if (invalidApprovalStatusResult.status !== 0) {
-      fail("scripts/ui_private_approval_verify.mjs --approval-status must pass with malformed private approval candidate roots");
+      fail("scripts/ui_private_approval_verify.mjs --approval-status must pass with malformed external approval candidate roots");
     } else {
       try {
         const report = JSON.parse(invalidApprovalStatusResult.stdout);
@@ -891,22 +891,22 @@ withTemporaryCompletionSources(sourceManifest, (temporaryEnv) => {
       },
     );
     if (invalidApprovalCompletionStatusResult.status !== 0) {
-      fail(`${manifest.privateVerifierScript} --completion-status must pass with malformed private approval candidate roots`);
+      fail(`${manifest.privateVerifierScript} --completion-status must pass with malformed external approval candidate roots`);
       return;
     }
     try {
       const status = JSON.parse(invalidApprovalCompletionStatusResult.stdout);
       if (status.privateApproval?.counts?.invalidCandidate !== 1 || status.privateApproval?.counts?.candidate !== 0) {
-        fail(`${manifest.privateVerifierScript} --completion-status must classify malformed private approval evidence as invalidCandidate, not candidate`);
+        fail(`${manifest.privateVerifierScript} --completion-status must classify malformed external approval evidence as invalidCandidate, not candidate`);
       }
       const blockerIds = new Set((status.blockingSummary?.blockers || []).map((blocker) => blocker?.id));
       for (const blockerId of requiredBlockersWithInvalidApprovalCandidates) {
         if (!blockerIds.has(blockerId)) {
-          fail(`${manifest.privateVerifierScript} --completion-status must include ${blockerId} blocker while private approval root contains invalid candidates`);
+          fail(`${manifest.privateVerifierScript} --completion-status must include ${blockerId} blocker while external approval root contains invalid candidates`);
         }
       }
     } catch (error) {
-      fail(`${manifest.privateVerifierScript} --completion-status with malformed private approval candidate roots output must be valid JSON: ${error.message}`);
+      fail(`${manifest.privateVerifierScript} --completion-status with malformed external approval candidate roots output must be valid JSON: ${error.message}`);
     }
   });
 

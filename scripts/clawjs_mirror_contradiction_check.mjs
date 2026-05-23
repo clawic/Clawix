@@ -51,7 +51,7 @@ const contradictionPatterns = [
   },
   {
     category: "remote",
-    pattern: /\bClawix\b[^.\n]{0,120}\b(?:owns|defines|is the source of truth for|becomes the source of truth for)\b[^.\n]{0,120}\b(?:remote contracts|Relay API|remote source of truth|Gateway contracts|Sync authority manifests)\b/i,
+    pattern: /\bClawix\b[^.\n]{0,120}\b(?:owns|defines|is the source of truth for|becomes the source of truth for)\b[^.\n]{0,120}\b(?:remote contracts|Relay API|remote source of truth|Gateway contracts|authority manifests for Sync)\b/i,
     reason: "ClawJS owns remote, Relay, Gateway, and Sync contracts",
     example: "Clawix owns remote contracts.",
   },

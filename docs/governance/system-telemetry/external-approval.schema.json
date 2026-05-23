@@ -38,8 +38,8 @@
   ],
   "properties": {
     "schemaVersion": { "const": 1 },
-    "conversationId": { "const": "private-runtime-conversation:system-telemetry" },
-    "planId": { "const": "private-runtime-plan:system-telemetry" },
+    "conversationId": { "const": "source:system-telemetry" },
+    "planId": { "const": "plan:system-telemetry" },
     "repoScope": { "const": "clawix-app" },
     "laneId": { "enum": ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"] },
     "approval": {

@@ -18,7 +18,7 @@
   "defaultPolicy": {
     "missingContract": "incomplete",
     "visualCopyLayoutChanges": "defer-to-docs-ui-governance",
-    "privateEvidence": "EXTERNAL PENDING until approved run exists"
+    "externalEvidence": "EXTERNAL PENDING until approved run exists"
   },
   "publicChecks": ["node scripts/accessibility_governance_guard.mjs"],
   "externalPendingEvidence": [

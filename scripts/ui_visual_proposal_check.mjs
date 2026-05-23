@@ -20,7 +20,7 @@ const simulationFlags = [
   "--simulate-extra-required-proposal-field",
   "--simulate-duplicate-required-proposal-field",
   "--simulate-conceptual-implemented",
-  "--simulate-approved-without-private-reference",
+  "--simulate-approved-without-external-reference",
   "--simulate-approved-mismatched-private-reference",
   "--simulate-unknown-required-evidence",
   "--simulate-duplicate-proposal-change-kind",
@@ -133,14 +133,14 @@ function scanForLocalPaths(value, label) {
   if (hasLocalPath(value)) fail(`${label} must not contain a local path`);
 }
 
-function requireSafePrivateReference(value, alias, label) {
+function requireSafeExternalReference(value, alias, label) {
   if (typeof value !== "string" || !value.startsWith(`${alias}:`)) {
     fail(`${label} must use ${alias}:`);
     return null;
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
     return null;
   }
   if (hasLocalPath(value) || value.includes("/Users/")) {
@@ -191,8 +191,8 @@ function runFailureSelfTests() {
     [["--simulate-extra-required-proposal-field"], "requiredProposalFields must not include localDraftPath"],
     [["--simulate-duplicate-required-proposal-field"], "requiredProposalFields duplicates id"],
     [["--simulate-conceptual-implemented"], "implementationStatus must be not-approved while conceptual-only"],
-    [["--simulate-approved-without-private-reference"], "privateApprovalReference must use private-codex-ui-approval:"],
-    [["--simulate-approved-mismatched-private-reference"], "privateApprovalReference must target visual-proposals/simulated-proposal"],
+    [["--simulate-approved-without-external-reference"], "externalApprovalReference must use external-ui-approval:"],
+    [["--simulate-approved-mismatched-private-reference"], "externalApprovalReference must target visual-proposals/simulated-proposal"],
     [["--simulate-unknown-required-evidence"], "requiredEvidence contains unsupported invented-evidence"],
     [["--simulate-duplicate-proposal-change-kind"], "changeKinds duplicates color"],
     [["--simulate-duplicate-proposal-platform"], "platforms duplicates macos"],
@@ -256,7 +256,7 @@ if (registry) {
 if (
   registry &&
   (args.has("--simulate-conceptual-implemented") ||
-    args.has("--simulate-approved-without-private-reference") ||
+    args.has("--simulate-approved-without-external-reference") ||
     args.has("--simulate-approved-mismatched-private-reference") ||
     args.has("--simulate-unknown-required-evidence") ||
     args.has("--simulate-duplicate-proposal-change-kind") ||
@@ -266,7 +266,7 @@ if (
 ) {
   const simulatedProposal = {
     id: "simulated-proposal",
-    status: args.has("--simulate-approved-without-private-reference")
+    status: args.has("--simulate-approved-without-external-reference")
       ? "user-approved-for-visual-lane"
       : "conceptual-only",
     requestedBy: "non-visual-lane",
@@ -279,11 +279,11 @@ if (
       ? ["private-baseline", "invented-evidence"]
       : ["private-baseline", "rendered-geometry"],
     outOfScopeDrift: [],
-    userApprovalStatus: args.has("--simulate-approved-without-private-reference") ? "approved" : "not-approved",
+    userApprovalStatus: args.has("--simulate-approved-without-external-reference") ? "approved" : "not-approved",
     implementationStatus: args.has("--simulate-conceptual-implemented") ? "implemented" : "not-approved",
     reviewAfter: "2999-12-31",
   };
-  if (args.has("--simulate-approved-without-private-reference")) {
+  if (args.has("--simulate-approved-without-external-reference")) {
     simulatedProposal.approvedBy = "user";
     simulatedProposal.approvedAt = "2026-05-15";
   }
@@ -292,7 +292,7 @@ if (
     simulatedProposal.userApprovalStatus = "approved";
     simulatedProposal.approvedBy = "user";
     simulatedProposal.approvedAt = "2026-05-15";
-    simulatedProposal.privateApprovalReference = `${registry.privateApprovalAlias}:visual-proposals/wrong-proposal`;
+    simulatedProposal.externalApprovalReference = `${registry.externalApprovalAlias}:visual-proposals/wrong-proposal`;
   }
   if (args.has("--simulate-duplicate-proposal-change-kind")) {
     simulatedProposal.changeKinds.push(simulatedProposal.changeKinds[0]);
@@ -313,7 +313,7 @@ requireFields(registry, registryPath, [
   "status",
   "policy",
   "templatePath",
-  "privateApprovalAlias",
+  "externalApprovalAlias",
   "approvalRequiredForStatuses",
   "proposalStatuses",
   "allowedRequiredEvidence",
@@ -341,8 +341,8 @@ for (const snippet of [
 }
 
 const approvalAuthority = readJson("docs/ui/approval-authority.manifest.json");
-if (registry?.privateApprovalAlias !== approvalAuthority?.privateApprovalAlias) {
-  fail(`${registryPath}.privateApprovalAlias must match docs/ui/approval-authority.manifest.json.privateApprovalAlias`);
+if (registry?.externalApprovalAlias !== approvalAuthority?.externalApprovalAlias) {
+  fail(`${registryPath}.externalApprovalAlias must match docs/ui/approval-authority.manifest.json.externalApprovalAlias`);
 }
 
 const configPath = "docs/ui/interface-governance.config.json";
@@ -430,10 +430,10 @@ for (const [index, proposal] of requireArray(registry, registryPath, "proposals"
     }
     if (proposal.approvedBy !== "user") fail(`${label}.approvedBy must be user for ${proposal.status}`);
     requireIsoDate(proposal.approvedAt, `${label}.approvedAt`);
-    const approvalSuffix = requireSafePrivateReference(proposal.privateApprovalReference, registry.privateApprovalAlias, `${label}.privateApprovalReference`);
+    const approvalSuffix = requireSafeExternalReference(proposal.externalApprovalReference, registry.externalApprovalAlias, `${label}.externalApprovalReference`);
     const expectedApprovalSuffix = `visual-proposals/${proposal.id}`;
     if (approvalSuffix && approvalSuffix !== expectedApprovalSuffix) {
-      fail(`${label}.privateApprovalReference must target ${expectedApprovalSuffix}`);
+      fail(`${label}.externalApprovalReference must target ${expectedApprovalSuffix}`);
     }
   }
   if (reviewAfter && reviewAfter < today) fail(`${label}.reviewAfter expired on ${proposal.reviewAfter}`);

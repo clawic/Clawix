@@ -4,7 +4,7 @@
   "policy": "Critical interface performance flows must resolve to registry patterns. Pattern manifests declare matching performance.criticalFlows, while measured budgets and private evidence stay in the performance budget registry and private baseline manifest.",
   "patternRegistryPath": "docs/ui/pattern-registry/patterns.registry.json",
   "performanceBudgetRegistryPath": "docs/ui/performance-budgets.registry.json",
-  "privateBaselineAlias": "private-codex-ui-baselines",
+  "externalBaselineAlias": "external-ui-baselines",
   "requiredFlowMappings": [
     { "flowId": "sidebar-hover-click-expand", "patterns": ["sidebar-section", "sidebar-row"] },
     { "flowId": "chat-scroll", "patterns": ["chat-surface"] },

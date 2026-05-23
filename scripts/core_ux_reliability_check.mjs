@@ -69,7 +69,7 @@ function validateManifest(manifest, { requireApproved = false } = {}) {
   if (manifest.lane !== "core-ux") failures.push(`${manifestPath} lane must be core-ux`);
   if (manifest.publicContract !== contractPath) failures.push(`${manifestPath} publicContract must point to ${contractPath}`);
   if (manifest.privateCommandEnv !== "CLAWIX_CORE_UX_GATE_COMMAND") failures.push(`${manifestPath} privateCommandEnv must be CLAWIX_CORE_UX_GATE_COMMAND`);
-  if (manifest.privateEvidenceRootEnv !== "CLAWIX_CORE_UX_PRIVATE_ROOT") failures.push(`${manifestPath} privateEvidenceRootEnv must be CLAWIX_CORE_UX_PRIVATE_ROOT`);
+  if (manifest.externalEvidenceRootEnv !== "CLAWIX_CORE_UX_PRIVATE_ROOT") failures.push(`${manifestPath} externalEvidenceRootEnv must be CLAWIX_CORE_UX_PRIVATE_ROOT`);
   if (manifest.visibleFlowCommandEnv !== "CLAWIX_CORE_UX_VISIBLE_FLOW_COMMAND") failures.push(`${manifestPath} visibleFlowCommandEnv must be CLAWIX_CORE_UX_VISIBLE_FLOW_COMMAND`);
   if (manifest.visibleFlowEvidenceFileEnv !== "CLAWIX_CORE_UX_VISIBLE_FLOW_EVIDENCE_FILE") failures.push(`${manifestPath} visibleFlowEvidenceFileEnv must be CLAWIX_CORE_UX_VISIBLE_FLOW_EVIDENCE_FILE`);
   if (manifest.metricsFileEnv !== "CLAWIX_CORE_UX_METRICS_FILE") failures.push(`${manifestPath} metricsFileEnv must be CLAWIX_CORE_UX_METRICS_FILE`);
@@ -92,7 +92,7 @@ function validateManifest(manifest, { requireApproved = false } = {}) {
   }
 
   const governor = requireObject(failures, manifest.conversationGovernor, `${manifestPath}.conversationGovernor`);
-  if (governor.lockRoot !== ".dev-control/core-ux") failures.push(`${manifestPath}.conversationGovernor.lockRoot must be .dev-control/core-ux`);
+  if (governor.lockRoot !== "external-core-ux-locks") failures.push(`${manifestPath}.conversationGovernor.lockRoot must be external-core-ux-locks`);
   if (governor.maxNewConversationsPerRun !== 1) failures.push(`${manifestPath}.conversationGovernor.maxNewConversationsPerRun must be 1`);
   if (governor.maxNewConversationsPerDay !== 3) failures.push(`${manifestPath}.conversationGovernor.maxNewConversationsPerDay must be 3`);
   if (governor.minimalPrompt !== "reply OK") failures.push(`${manifestPath}.conversationGovernor.minimalPrompt must be reply OK`);
@@ -250,7 +250,7 @@ function runSelfTest() {
     platforms: [{ id: "macos-real", p0: true, enforcement: "blocking-after-approved-baseline" }],
     publicContract: contractPath,
     privateCommandEnv: "CLAWIX_CORE_UX_GATE_COMMAND",
-    privateEvidenceRootEnv: "CLAWIX_CORE_UX_PRIVATE_ROOT",
+    externalEvidenceRootEnv: "CLAWIX_CORE_UX_PRIVATE_ROOT",
     visibleFlowCommandEnv: "CLAWIX_CORE_UX_VISIBLE_FLOW_COMMAND",
     visibleFlowEvidenceFileEnv: "CLAWIX_CORE_UX_VISIBLE_FLOW_EVIDENCE_FILE",
     metricsFileEnv: "CLAWIX_CORE_UX_METRICS_FILE",
@@ -263,7 +263,7 @@ function runSelfTest() {
       captures: ["branch", "head", "dirtyStatus", "trackedFileMtimes", "trackedFileSizes"],
     },
     conversationGovernor: {
-      lockRoot: ".dev-control/core-ux",
+      lockRoot: "external-core-ux-locks",
       maxNewConversationsPerRun: 1,
       maxNewConversationsPerDay: 3,
       minimalPrompt: "reply OK",

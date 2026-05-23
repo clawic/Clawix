@@ -14,7 +14,7 @@ until closure. Rows use the canonical states `implemented`, `documented`,
 Clawix rows may store conversation ids, public-safe aliases, source anchors,
 hashes, and evidence refs. They must not publish private session paths, local
 machine paths, secrets, credentials, screenshots, raw transcripts, signing
-identities, or private approval roots.
+identities, or external approval roots.
 
 Completion is blocked while any architecture-changing decision is missing,
 while an `implemented` or `documented` row lacks evidence refs, while a

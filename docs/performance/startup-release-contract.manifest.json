@@ -35,7 +35,7 @@
     "requiredEvidenceFields": [
       "flowId",
       "platform",
-      "privateBaselineReference",
+      "externalBaselineReference",
       "bundleIdentifier",
       "bundleVersion",
       "gitHead",
@@ -51,8 +51,8 @@
       "approvedScope"
     ]
   },
-  "privateBaselineAlias": "private-codex-startup-baselines",
-  "privateBaselineReference": "private-codex-startup-baselines:macos/startup-first-chat-interactive",
+  "externalBaselineAlias": "external-startup-baselines",
+  "externalBaselineReference": "external-startup-baselines:macos/startup-first-chat-interactive",
   "baselineFilename": "baseline.json",
   "currentEvidenceEnv": "CLAWIX_STARTUP_CURRENT_EVIDENCE",
   "privateRootEnv": "CLAWIX_STARTUP_PRIVATE_BASELINE_ROOT",

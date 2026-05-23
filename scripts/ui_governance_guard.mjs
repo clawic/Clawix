@@ -153,8 +153,8 @@ const activeVisualModelIds = new Set(
     .filter((model) => model?.status === "active")
     .map((model) => model.id),
 );
-if (!activeVisualModelIds.has("claude-opus-4.7")) {
-  fail(`${visualModelAllowlistPath}.allowedVisualModels must include active claude-opus-4.7`);
+if (!activeVisualModelIds.has("approved-visual-model")) {
+  fail(`${visualModelAllowlistPath}.allowedVisualModels must include active approved-visual-model`);
 }
 
 const requiredStates = [
@@ -383,9 +383,9 @@ requireFields(protectedSurfaces, protectedPath, [
   "schemaVersion",
   "status",
   "policy",
-  "privateBaselineAlias",
+  "externalBaselineAlias",
   "privateCopyAlias",
-  "privateGeometryAlias",
+  "externalGeometryAlias",
   "requiredFreezeFields",
   "surfaces",
 ]);
@@ -400,10 +400,10 @@ requireFields(promotions, promotionPath, [
   "schemaVersion",
   "status",
   "policy",
-  "privateApprovalAlias",
-  "privateBaselineAlias",
+  "externalApprovalAlias",
+  "externalBaselineAlias",
   "privateCopyAlias",
-  "privateGeometryAlias",
+  "externalGeometryAlias",
   "promotionStatuses",
   "requiredPromotionFields",
   "promotions",
@@ -415,7 +415,7 @@ requireFields(mechanicalEquivalence, mechanicalEquivalencePath, [
   "schemaVersion",
   "status",
   "policy",
-  "privateEvidenceAlias",
+  "externalEvidenceAlias",
   "requiredEvidenceFields",
   "allowedTokenDiffStatuses",
   "equivalenceStatuses",
@@ -433,7 +433,7 @@ requireFields(patternPerformance, patternPerformancePath, [
   "policy",
   "patternRegistryPath",
   "performanceBudgetRegistryPath",
-  "privateBaselineAlias",
+  "externalBaselineAlias",
   "requiredFlowMappings",
 ]);
 const requiredFlows = [
@@ -459,7 +459,7 @@ for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries(
     "platform",
     "baselineStatus",
     "measurementSource",
-    "privateBaselineReference",
+    "externalBaselineReference",
     "requiredMetrics",
     "budgetStatus",
   ]);
@@ -467,8 +467,8 @@ for (const [index, flow] of requireArray(budgets, budgetsPath, "flows").entries(
   seenFlowPlatforms.add(`${flow.platform}:${flow.id}`);
   if (!requiredPlatforms.includes(flow.platform)) fail(`${label}.platform is not governed`);
   if (flow.measurementSource !== "private-baseline") fail(`${label}.measurementSource must be private-baseline`);
-  if (!String(flow.privateBaselineReference || "").startsWith("private-codex-ui-baselines:")) {
-    fail(`${label}.privateBaselineReference must use the private baseline alias`);
+  if (!String(flow.externalBaselineReference || "").startsWith("external-ui-baselines:")) {
+    fail(`${label}.externalBaselineReference must use the private baseline alias`);
   }
   const metrics = new Set(requireArray(flow, label, "requiredMetrics"));
   for (const metric of requiredPerformanceMetrics) {
@@ -492,13 +492,13 @@ requireFields(privateBaselines, privateBaselinesPath, [
   "schemaVersion",
   "status",
   "policy",
-  "privateRootAlias",
+  "externalRootAlias",
   "privateArtifactPolicy",
   "requiredEvidenceFields",
   "flows",
 ]);
-if (privateBaselines?.privateRootAlias !== "private-codex-ui-baselines") {
-  fail(`${privateBaselinesPath}.privateRootAlias must be private-codex-ui-baselines`);
+if (privateBaselines?.externalRootAlias !== "external-ui-baselines") {
+  fail(`${privateBaselinesPath}.externalRootAlias must be external-ui-baselines`);
 }
 const baselineCoverage = new Set();
 for (const [index, flow] of requireArray(privateBaselines, privateBaselinesPath, "flows").entries()) {
@@ -507,7 +507,7 @@ for (const [index, flow] of requireArray(privateBaselines, privateBaselinesPath,
     "id",
     "platform",
     "baselineStatus",
-    "privateBaselineReference",
+    "externalBaselineReference",
     "runnerId",
     "requiredEvidence",
     "tolerance",
@@ -595,7 +595,7 @@ const requestedVisualScopeId = visualScopeEnv ? String(process.env[visualScopeEn
 const simulatedScopeApproval = {
   approvedBy: "user",
   approvedAt: "2026-05-17",
-  privateApprovalReference: "private-codex-ui-approval:simulated",
+  externalApprovalReference: "external-ui-approval:simulated",
 };
 const simulatedSourceScope = {
   platforms: ["web"],
@@ -821,8 +821,8 @@ function isIsoDate(value) {
 }
 
 function isSafePrivateApprovalReference(value) {
-  if (typeof value !== "string" || !value.startsWith("private-codex-ui-approval:")) return false;
-  const suffix = value.slice("private-codex-ui-approval:".length);
+  if (typeof value !== "string" || !value.startsWith("external-ui-approval:")) return false;
+  const suffix = value.slice("external-ui-approval:".length);
   return Boolean(
     suffix &&
       !suffix.startsWith("/") &&
@@ -873,8 +873,8 @@ function approvedScopeForHits(hits) {
   if (scope.expiresAt && scope.expiresAt < today) return { ok: false, reason: `scope ${requestedVisualScopeId} expired on ${scope.expiresAt}` };
   if (scope.approvedBy !== "user") return { ok: false, reason: `scope ${requestedVisualScopeId} must be approvedBy user` };
   if (!isIsoDate(scope.approvedAt)) return { ok: false, reason: `scope ${requestedVisualScopeId} must include approvedAt ISO date` };
-  if (!isSafePrivateApprovalReference(scope.privateApprovalReference)) {
-    return { ok: false, reason: `scope ${requestedVisualScopeId} must include safe private approval reference` };
+  if (!isSafePrivateApprovalReference(scope.externalApprovalReference)) {
+    return { ok: false, reason: `scope ${requestedVisualScopeId} must include safe external approval reference` };
   }
 
   const files = new Set(hits.map((hit) => hit.path));

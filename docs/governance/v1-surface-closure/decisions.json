@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "program": "v1-surface-closure",
-  "sourceConversationId": "private-runtime-conversation:v1-surface-closure",
-  "sourceSessionRef": "private-session-not-published",
+  "sourceConversationId": "source:v1-surface-closure",
+  "sourceRef": "source-redacted",
   "decisionCount": 37,
   "notes": [
     "Public-safe mirror of the private source review. The private session path is intentionally not published.",

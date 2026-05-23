@@ -121,7 +121,7 @@ function splitReference(reference, alias, label) {
   }
   const suffix = reference.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
     return null;
   }
   return suffix;
@@ -172,8 +172,8 @@ if (!isSelfTest && !includePending) {
 
 const manifest = readJson("docs/ui/rendered-geometry.manifest.json");
 const approvedScopeContract = loadApprovedScopeContract(rootDir, fail);
-const privateGeometryAlias = manifest?.privateGeometryAlias || "private-runtime-ui-rendered-geometry";
-const privateRootEnv = privateRootEnvForAlias(rootDir, privateGeometryAlias);
+const externalGeometryAlias = manifest?.externalGeometryAlias || "external-ui-rendered-geometry";
+const privateRootEnv = privateRootEnvForAlias(rootDir, externalGeometryAlias);
 const privateRootArg = optionValue("--root");
 const privateRootRaw = privateRootArg || process.env[privateRootEnv] || "";
 if (!privateRootRaw) {
@@ -218,7 +218,7 @@ if (skipEvidence) {
       assertApprovedScope(evidence.approvedScope, `${label}.approvedScope`);
       if (evidence.patternId !== patternId) fail(`${label}.patternId must match the pattern registry`);
       if (evidence.platform !== platform) fail(`${label}.platform must match the pattern registry`);
-      const expectedReference = `${privateGeometryAlias}:${platform}/${patternId}`;
+      const expectedReference = `${externalGeometryAlias}:${platform}/${patternId}`;
       if (evidence.geometryEvidenceReference !== expectedReference) {
         fail(`${label}.geometryEvidenceReference must be ${expectedReference}`);
       }
@@ -234,7 +234,7 @@ if (skipEvidence) {
   for (const [index, entry] of (surfaceCoverage?.coverage || []).entries()) {
     if (privateSlice && !isCriticalMacosSurfaceCoverage(entry)) continue;
     const label = `surface:${entry?.platform || "unknown"}:${entry?.coverageId || index}`;
-    const suffix = splitReference(entry?.geometryEvidenceReference, privateGeometryAlias, `${label}.geometryEvidenceReference`);
+    const suffix = splitReference(entry?.geometryEvidenceReference, externalGeometryAlias, `${label}.geometryEvidenceReference`);
     if (!suffix) continue;
     const evidencePath = path.join(privateRoot, suffix.split("/").join(path.sep), surfaceEvidenceFilename);
     const evidence = readJsonFile(evidencePath, `${label} ${surfaceEvidenceFilename}`);

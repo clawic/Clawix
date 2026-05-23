@@ -198,7 +198,7 @@ for (const signal of ["state", "interaction", "geometry", "accessibility", "perf
 const mechanicalEquivalence = manifest?.mechanicalEquivalence || {};
 requireFields(mechanicalEquivalence, `${manifestPath}.mechanicalEquivalence`, [
   "manifestPath",
-  "privateEvidenceAlias",
+  "externalEvidenceAlias",
   "requiredForPolicies",
   "requiredStatuses",
   "requiredEvidenceFields",
@@ -208,8 +208,8 @@ if (mechanicalEquivalence.manifestPath !== "docs/ui/mechanical-equivalence.manif
 }
 
 const mechanicalManifest = readJson(mechanicalEquivalence.manifestPath || "docs/ui/mechanical-equivalence.manifest.json");
-if (mechanicalEquivalence.privateEvidenceAlias !== mechanicalManifest?.privateEvidenceAlias) {
-  fail(`${manifestPath}.mechanicalEquivalence.privateEvidenceAlias must match ${mechanicalEquivalence.manifestPath}.privateEvidenceAlias`);
+if (mechanicalEquivalence.externalEvidenceAlias !== mechanicalManifest?.externalEvidenceAlias) {
+  fail(`${manifestPath}.mechanicalEquivalence.externalEvidenceAlias must match ${mechanicalEquivalence.manifestPath}.externalEvidenceAlias`);
 }
 
 const requiredMechanicalPolicies = new Set(requireArray(mechanicalEquivalence, `${manifestPath}.mechanicalEquivalence`, "requiredForPolicies"));

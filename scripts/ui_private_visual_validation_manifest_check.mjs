@@ -167,18 +167,18 @@ if (manifest) {
   }
   if (args.has("--simulate-extra-root-alias") && Array.isArray(manifest.rootAliases)) {
     manifest.rootAliases.push({
-      alias: "private-codex-ui-screenshots",
+      alias: "external-ui-screenshots",
       env: "CLAWIX_UI_PRIVATE_SCREENSHOT_ROOT",
       manifestPath: "docs/ui/private-baselines.manifest.json",
-      manifestAliasField: "privateRootAlias",
+      manifestAliasField: "externalRootAlias",
     });
   }
   if (args.has("--simulate-extra-optional-root-alias") && Array.isArray(manifest.optionalRootAliases)) {
     manifest.optionalRootAliases.push({
-      alias: "private-codex-ui-local-drafts",
+      alias: "external-ui-local-drafts",
       env: "CLAWIX_UI_PRIVATE_LOCAL_DRAFT_ROOT",
       manifestPath: "docs/ui/approval-authority.manifest.json",
-      manifestAliasField: "privateApprovalAlias",
+      manifestAliasField: "externalApprovalAlias",
     });
   }
   if (args.has("--simulate-optional-root-required") && Array.isArray(manifest.requiredRoots)) {
@@ -277,7 +277,7 @@ if (manifest?.externalPendingExitCode !== 2) {
 requireExactStringSet(
   requireArray(manifest, manifestPath, "requiredApprovedScopeFields"),
   `${manifestPath}.requiredApprovedScopeFields`,
-  ["scopeId", "approvedBy", "approvedAt", "privateApprovalReference"],
+  ["scopeId", "approvedBy", "approvedAt", "externalApprovalReference"],
 );
 
 const expectedRoots = [
@@ -296,31 +296,31 @@ for (const root of expectedRoots) {
 
 const expectedAliasContracts = [
   {
-    alias: "private-codex-ui-baselines",
+    alias: "external-ui-baselines",
     env: "CLAWIX_UI_PRIVATE_BASELINE_ROOT",
     manifestPath: "docs/ui/private-baselines.manifest.json",
-    manifestAliasField: "privateRootAlias",
+    manifestAliasField: "externalRootAlias",
   },
   {
-    alias: "private-runtime-ui-rendered-geometry",
+    alias: "external-ui-rendered-geometry",
     env: "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT",
     manifestPath: "docs/ui/rendered-geometry.manifest.json",
-    manifestAliasField: "privateGeometryAlias",
+    manifestAliasField: "externalGeometryAlias",
   },
   {
-    alias: "private-codex-ui-copy-snapshots",
+    alias: "external-ui-copy-snapshots",
     env: "CLAWIX_UI_PRIVATE_COPY_ROOT",
     manifestPath: "docs/ui/copy.inventory.json",
     manifestAliasField: "privateSnapshotAlias",
   },
   {
-    alias: "private-codex-ui-rendered-drift",
+    alias: "external-ui-rendered-drift",
     env: "CLAWIX_UI_PRIVATE_DRIFT_ROOT",
     manifestPath: "docs/ui/rendered-drift.manifest.json",
     manifestAliasField: "privateDriftAlias",
   },
   {
-    alias: "private-codex-ui-debt-audit",
+    alias: "external-ui-debt-audit",
     env: "CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT",
     manifestPath: "docs/ui/debt-audit.manifest.json",
     manifestAliasField: "privateDebtAuditAlias",
@@ -328,25 +328,25 @@ const expectedAliasContracts = [
 ];
 const expectedOptionalAliasContracts = [
   {
-    alias: "private-codex-ui-approval",
+    alias: "external-ui-approval",
     env: "CLAWIX_UI_PRIVATE_APPROVAL_ROOT",
     manifestPath: "docs/ui/approval-authority.manifest.json",
-    manifestAliasField: "privateApprovalAlias",
+    manifestAliasField: "externalApprovalAlias",
   },
   {
-    alias: "private-codex-ui-mechanical-equivalence",
+    alias: "external-ui-mechanical-equivalence",
     env: "CLAWIX_UI_PRIVATE_MECHANICAL_EQUIVALENCE_ROOT",
     manifestPath: "docs/ui/mechanical-equivalence.manifest.json",
-    manifestAliasField: "privateEvidenceAlias",
+    manifestAliasField: "externalEvidenceAlias",
   },
 ];
 const rootAliases = requireArray(manifest, manifestPath, "rootAliases");
 const optionalRootAliases = requireArray(manifest, manifestPath, "optionalRootAliases");
 if (rootAliases.length !== expectedAliasContracts.length) {
-  fail(`${manifestPath}.rootAliases must exactly match required private aliases`);
+  fail(`${manifestPath}.rootAliases must exactly match required external aliases`);
 }
 if (optionalRootAliases.length !== expectedOptionalAliasContracts.length) {
-  fail(`${manifestPath}.optionalRootAliases must exactly match optional private aliases`);
+  fail(`${manifestPath}.optionalRootAliases must exactly match optional external aliases`);
 }
 const aliasesByAlias = new Map();
 const aliasesByEnv = new Map();
@@ -470,7 +470,7 @@ if (!evidenceVerifierSource.includes("scripts/ui_private_evidence_plan_check.mjs
 }
 for (const snippet of ["docs/ui/private-visual-validation.manifest.json", "rootAliases", "optionalRootAliases", "loadPrivateAliasRoots"]) {
   if (!evidenceVerifierSource.includes(snippet)) {
-    fail(`scripts/ui_private_evidence_verify.mjs must derive private aliases from ${snippet}`);
+    fail(`scripts/ui_private_evidence_verify.mjs must derive external aliases from ${snippet}`);
   }
 }
 const rootContractSource = fs.existsSync(path.join(rootDir, "scripts/ui_private_root_contract.mjs"))
@@ -486,7 +486,7 @@ const approvedScopeContractSource = fs.existsSync(path.join(rootDir, approvedSco
   ? fs.readFileSync(path.join(rootDir, approvedScopeContractPath), "utf8")
   : "";
 if (!approvedScopeContractSource) fail(`missing ${approvedScopeContractPath}`);
-for (const snippet of ["requiredApprovedScopeFields", "privateApprovalAlias", "approvedBy", "privateApprovalReference"]) {
+for (const snippet of ["requiredApprovedScopeFields", "externalApprovalAlias", "approvedBy", "externalApprovalReference"]) {
   if (!approvedScopeContractSource.includes(snippet)) {
     fail(`${approvedScopeContractPath} must validate approved scope metadata via ${snippet}`);
   }
@@ -714,8 +714,8 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-missing-required-root", "requiredRoots must include CLAWIX_UI_PRIVATE_COPY_ROOT"],
     ["--simulate-extra-approved-scope-field", "requiredApprovedScopeFields must not include localApprovalPath"],
     ["--simulate-delegate-without-approval", "delegates must include node scripts/ui_private_copy_verify.mjs --require-approved"],
-    ["--simulate-extra-root-alias", "rootAliases must exactly match required private aliases"],
-    ["--simulate-extra-optional-root-alias", "optionalRootAliases must exactly match optional private aliases"],
+    ["--simulate-extra-root-alias", "rootAliases must exactly match required external aliases"],
+    ["--simulate-extra-optional-root-alias", "optionalRootAliases must exactly match optional external aliases"],
     ["--simulate-missing-decision-blocker", "decisionBlockers must include unresolved decision copy_governance"],
     ["--simulate-unknown-evidence-type", "evidenceTypes includes unknown-private-evidence"],
     ["--simulate-missing-candidate-capture-manifest", "is missing candidateCaptureRunnerManifestPath"],

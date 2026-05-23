@@ -209,10 +209,10 @@ if (hasFlag("--simulate-verified-complete-with-remaining") && firstVerifiedDecis
   firstVerifiedDecision.remaining = ["Simulated remaining work."];
 }
 if (hasFlag("--simulate-verified-complete-with-private-evidence") && firstVerifiedDecision) {
-  firstVerifiedDecision.privateEvidence = ["private-codex-ui-baselines:simulated"];
+  firstVerifiedDecision.externalEvidence = ["external-ui-baselines:simulated"];
 }
 if (hasFlag("--simulate-open-decision-without-private-evidence") && firstOpenDecision) {
-  firstOpenDecision.privateEvidence = [];
+  firstOpenDecision.externalEvidence = [];
 }
 if (hasFlag("--simulate-open-decision-without-blocking-verifier") && firstOpenDecision) {
   firstOpenDecision.blockingVerifiers = [];
@@ -226,14 +226,14 @@ for (const decision of decisions) {
     process.exit(1);
   }
   const remaining = Array.isArray(decision.remaining) ? decision.remaining : [];
-  const privateEvidence = Array.isArray(decision.privateEvidence) ? decision.privateEvidence : [];
+  const externalEvidence = Array.isArray(decision.externalEvidence) ? decision.externalEvidence : [];
   const blockingVerifiers = Array.isArray(decision.blockingVerifiers) ? decision.blockingVerifiers : [];
   if (decision.status === "open") {
     if (remaining.length === 0) {
       console.error(`UI private completion verification requires open decision ${decision.id} to list remaining work.`);
       process.exit(1);
     }
-    if (privateEvidence.length === 0) {
+    if (externalEvidence.length === 0) {
       console.error(`UI private completion verification requires open decision ${decision.id} to list private evidence aliases.`);
       process.exit(1);
     }
@@ -247,7 +247,7 @@ for (const decision of decisions) {
       console.error(`UI private completion verification requires blocked decision ${decision.id} to list remaining work.`);
       process.exit(1);
     }
-    if (privateEvidence.length === 0) {
+    if (externalEvidence.length === 0) {
       console.error(`UI private completion verification requires blocked decision ${decision.id} to list private evidence aliases.`);
       process.exit(1);
     }
@@ -267,7 +267,7 @@ for (const decision of decisions) {
       console.error(`UI private completion verification requires verified-complete decision ${decision.id} to have no remaining work.`);
       process.exit(1);
     }
-    if (privateEvidence.length > 0) {
+    if (externalEvidence.length > 0) {
       console.error(`UI private completion verification requires verified-complete decision ${decision.id} to have no private evidence blockers.`);
       process.exit(1);
     }
@@ -282,7 +282,7 @@ const actualBlockedDecisions = decisions.filter((decision) => decision.status ==
 const actualUnresolvedDecisions = decisions.filter((decision) => decision.status === "open" || decision.status === "blocked-external-pending");
 
 if (completionStatusMode) {
-  const privateEvidenceStatus = runStatusScript("scripts/ui_private_evidence_plan_check.mjs", ["--capture-decisions"]);
+  const externalEvidenceStatus = runStatusScript("scripts/ui_private_evidence_plan_check.mjs", ["--capture-decisions"]);
   const privateApprovalStatus = runStatusScript("scripts/ui_private_approval_verify.mjs", ["--approval-status"]);
   const privateReviewBundleStatus = runStatusScript(manifest.privateReviewBundleScript || "scripts/ui_private_review_bundle_check.mjs", ["--json"]);
   const approvalCounts = privateApprovalStatus.json?.counts || {};
@@ -319,7 +319,7 @@ if (completionStatusMode) {
     .map((decision) => JSON.stringify(decision.scope || []))
     .filter((scope, index, scopes) => scopes.indexOf(scope) === index)
     .map((scope) => JSON.parse(scope));
-  const evidenceTotals = privateEvidenceStatus.json?.totals || {};
+  const evidenceTotals = externalEvidenceStatus.json?.totals || {};
   const approvalCandidateBlockerCount = privateApprovalVerification?.exitCode === 0 ? 0 : approvalCounts.candidate || 0;
   const blockers = [];
   if (openDecisionIds.length > 0) {
@@ -406,13 +406,13 @@ if (completionStatusMode) {
       blockedExternalPendingDecisionIds: blockedDecisionIds,
       unresolved: actualUnresolvedDecisions.length,
     },
-    privateEvidence: {
-      script: privateEvidenceStatus.script,
-      exitCode: privateEvidenceStatus.exitCode,
-      status: privateEvidenceStatus.status,
-      totalRecords: privateEvidenceStatus.json?.totalRecords ?? null,
-      totals: privateEvidenceStatus.json?.totals ?? null,
-      decisionCount: privateEvidenceStatus.json?.decisionCount ?? null,
+    externalEvidence: {
+      script: externalEvidenceStatus.script,
+      exitCode: externalEvidenceStatus.exitCode,
+      status: externalEvidenceStatus.status,
+      totalRecords: externalEvidenceStatus.json?.totalRecords ?? null,
+      totals: externalEvidenceStatus.json?.totals ?? null,
+      decisionCount: externalEvidenceStatus.json?.decisionCount ?? null,
     },
     privateApproval: {
       script: privateApprovalStatus.script,

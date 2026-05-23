@@ -27,7 +27,7 @@
     "reviewAfter",
     "expiresAt",
     "allowedAction",
-    "privateApprovalReference"
+    "externalApprovalReference"
   ],
   "exceptions": []
 }

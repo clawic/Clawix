@@ -219,14 +219,14 @@ function validate(base = rootDir) {
     requiredAxes,
   );
   for (const axis of requireArray(matrix, matrixPath, "requiredAxes")) {
-    requireFields(axis, `${matrixPath}.requiredAxes.${axis?.id || "<missing>"}`, ["id", "summary", "publicEvidence", "privateEvidence"]);
+    requireFields(axis, `${matrixPath}.requiredAxes.${axis?.id || "<missing>"}`, ["id", "summary", "publicEvidence", "externalEvidence"]);
   }
   requireIncludes(requireArray(matrix, matrixPath, "publicChecks"), `${matrixPath}.publicChecks`, ["node scripts/accessibility_governance_guard.mjs"]);
   const mayStore = requireArray(matrix?.privateDataPolicy, `${matrixPath}.privateDataPolicy`, "publicRepoMayStore");
   const mustNotStore = requireArray(matrix?.privateDataPolicy, `${matrixPath}.privateDataPolicy`, "publicRepoMustNotStore");
   requireUniqueStrings(mayStore, `${matrixPath}.privateDataPolicy.publicRepoMayStore`);
   requireUniqueStrings(mustNotStore, `${matrixPath}.privateDataPolicy.publicRepoMustNotStore`);
-  for (const privateItem of ["raw screen reader transcript", "raw screenshot", "local absolute path", "private approval artifact", "secret"]) {
+  for (const privateItem of ["raw screen reader transcript", "raw screenshot", "local absolute path", "external approval artifact", "secret"]) {
     if (mayStore.includes(privateItem)) fail(`${matrixPath}.privateDataPolicy.publicRepoMayStore must not include ${privateItem}`);
     if (!mustNotStore.includes(privateItem)) fail(`${matrixPath}.privateDataPolicy.publicRepoMustNotStore must include ${privateItem}`);
   }

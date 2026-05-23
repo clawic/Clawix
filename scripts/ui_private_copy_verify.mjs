@@ -143,7 +143,7 @@ const includePending = hasFlag("--include-pending");
 const privateSlice = privateSliceOption(args, fail, "UI private copy verification");
 const copyInventory = readJson("docs/ui/copy.inventory.json");
 const approvedScopeContract = loadApprovedScopeContract(rootDir, fail);
-const alias = copyInventory?.privateSnapshotAlias || "private-codex-ui-copy-snapshots";
+const alias = copyInventory?.privateSnapshotAlias || "external-ui-copy-snapshots";
 const privateRootEnv = privateRootEnvForAlias(rootDir, alias);
 
 if (!requireApproved) {

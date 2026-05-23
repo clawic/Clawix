@@ -102,7 +102,7 @@ function assertPublicSafeReference(reference, alias, label) {
   }
   const suffix = reference.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
   }
   if (/^\/Users\//.test(reference) || reference.startsWith("~/") || reference.startsWith("file://") || /^[A-Z]:\\/.test(reference)) {
     fail(`${label} must not contain a local absolute path`);
@@ -121,11 +121,11 @@ function runFailureSelfTests() {
   const tests = [
     [["--unknown-flag"], "received unknown flag --unknown-flag"],
     [["--simulate-inactive-debt-audit-manifest"], "status must be pending-private-visual-inventory or audited-approved"],
-    [["--simulate-wrong-private-debt-audit-alias"], "privateDebtAuditAlias must be private-codex-ui-debt-audit"],
+    [["--simulate-wrong-private-debt-audit-alias"], "privateDebtAuditAlias must be external-ui-debt-audit"],
     [["--simulate-wrong-evidence-filename"], "evidenceFilename must be debt-audit-evidence.json"],
     [["--simulate-unknown-debt-id"], "debtId must reference"],
     [["--simulate-mismatched-surface-coverage"], "surfaceCoverageId must map the debt entry"],
-    [["--simulate-unsafe-private-reference"], "privateDebtAuditReference must use private-codex-ui-debt-audit:"],
+    [["--simulate-unsafe-private-reference"], "privateDebtAuditReference must use external-ui-debt-audit:"],
     [["--simulate-approved-manifest-with-pending-entry"], "status cannot be audited-approved while"],
     [["--simulate-pending-manifest-with-all-approved"], "status must be audited-approved when all debt audit entries are approved"],
   ];
@@ -243,8 +243,8 @@ requireFields(manifest, manifestPath, [
 if (!["pending-private-visual-inventory", "audited-approved"].includes(manifest?.status)) {
   fail(`${manifestPath}.status must be pending-private-visual-inventory or audited-approved`);
 }
-if (manifest?.privateDebtAuditAlias !== "private-codex-ui-debt-audit") {
-  fail(`${manifestPath}.privateDebtAuditAlias must be private-codex-ui-debt-audit`);
+if (manifest?.privateDebtAuditAlias !== "external-ui-debt-audit") {
+  fail(`${manifestPath}.privateDebtAuditAlias must be external-ui-debt-audit`);
 }
 if (manifest?.evidenceFilename !== "debt-audit-evidence.json") {
   fail(`${manifestPath}.evidenceFilename must be debt-audit-evidence.json`);

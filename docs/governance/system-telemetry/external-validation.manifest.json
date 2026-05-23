@@ -2,8 +2,8 @@
   "$schema": "docs/governance/system-telemetry/external-validation.manifest.schema.json",
   "schemaVersion": 1,
   "id": "clawix-system-telemetry-external-validation-manifest",
-  "conversationId": "private-runtime-conversation:system-telemetry",
-  "planId": "private-runtime-plan:system-telemetry",
+  "conversationId": "source:system-telemetry",
+  "planId": "plan:system-telemetry",
   "status": "active_goal_not_complete",
   "completionPolicy": {
     "externalPendingBlocksCompletion": true,

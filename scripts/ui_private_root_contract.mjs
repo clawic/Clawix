@@ -8,7 +8,7 @@ function readManifest(rootDir) {
   return JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 }
 
-export function privateRootAliasEntries(rootDir, options = {}) {
+export function externalRootAliasEntries(rootDir, options = {}) {
   const manifest = readManifest(rootDir);
   const requiredEntries = Array.isArray(manifest.rootAliases)
     ? manifest.rootAliases.map((entry) => ({ ...entry, required: true }))
@@ -21,7 +21,7 @@ export function privateRootAliasEntries(rootDir, options = {}) {
 }
 
 export function privateRootEnvForAlias(rootDir, alias) {
-  const entry = privateRootAliasEntries(rootDir, { includeOptional: true }).find((candidate) => candidate?.alias === alias);
+  const entry = externalRootAliasEntries(rootDir, { includeOptional: true }).find((candidate) => candidate?.alias === alias);
   if (!entry?.env) {
     throw new Error(`${manifestRelativePath}.rootAliases or optionalRootAliases is missing ${alias}`);
   }

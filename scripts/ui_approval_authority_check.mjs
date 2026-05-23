@@ -103,14 +103,14 @@ function scanForLocalPaths(value, label) {
   if (hasLocalPath(value)) fail(`${label} must not contain a local path`);
 }
 
-function requireSafePrivateReference(value, alias, label) {
+function requireSafeExternalReference(value, alias, label) {
   if (typeof value !== "string" || !value.startsWith(`${alias}:`)) {
     fail(`${label} must use ${alias}:`);
     return;
   }
   const suffix = value.slice(alias.length + 1);
   if (!suffix || suffix.startsWith("/") || suffix.startsWith("\\") || suffix.startsWith("~/") || suffix.includes("..") || /^[A-Z]:\\/.test(suffix)) {
-    fail(`${label} must use a safe relative private reference`);
+    fail(`${label} must use a safe relative external reference`);
   }
   if (hasLocalPath(value) || value.includes("/Users/")) {
     fail(`${label} must not contain a local path`);
@@ -132,11 +132,11 @@ function runFailureSelfTests() {
     [["--simulate-duplicate-required-evidence-field"], "duplicates sourceId"],
     [["--simulate-wrong-approval-source-path"], "path must be docs/ui/canon-promotions.registry.json"],
     [["--simulate-wrong-approval-source-array-field"], "arrayField must be surfaces"],
-    [["--simulate-wrong-private-approval-field"], "privateApprovalField must be privateApprovalReference"],
+    [["--simulate-wrong-private-approval-field"], "privateApprovalField must be externalApprovalReference"],
     [["--simulate-missing-required-evidence-field"], "requiredPrivateApprovalEvidenceFields must include approvalHash"],
     [["--simulate-missing-approved-at"], "approvedAt must be an ISO date"],
     [["--simulate-approved-by-not-user"], "approvedBy must be user"],
-    [["--simulate-unsafe-private-approval-reference"], "privateApprovalReference must use a safe relative private reference"],
+    [["--simulate-unsafe-private-approval-reference"], "externalApprovalReference must use a safe relative external reference"],
     [["--simulate-undeclared-required-status"], "approvalRequiredStatuses contains status not declared"],
     [["--simulate-visual-proposal-approved-by-not-user"], "approvedBy must be user"],
     [["--simulate-approved-drift-by-not-user"], "approvedBy must be user"],
@@ -170,7 +170,7 @@ requireFields(manifest, manifestPath, [
   "schemaVersion",
   "status",
   "policy",
-  "privateApprovalAlias",
+  "externalApprovalAlias",
   "evidenceFilename",
   "requiredPrivateApprovalEvidenceFields",
   "requiredApprovalSourceIds",
@@ -194,7 +194,7 @@ if (args.has("--simulate-unknown-approval-source") && Array.isArray(manifest?.ap
       arrayField: "approvals",
       approvedByField: "approvedBy",
       approvedAtField: "approvedAt",
-      privateApprovalField: "privateApprovalReference",
+      privateApprovalField: "externalApprovalReference",
     },
   ];
 }
@@ -222,8 +222,8 @@ if (args.has("--simulate-wrong-private-approval-field") && Array.isArray(manifes
 if (manifest?.status !== "active") {
   fail(`${manifestPath}.status must be active`);
 }
-if (manifest?.privateApprovalAlias !== "private-codex-ui-approval") {
-  fail(`${manifestPath}.privateApprovalAlias must be private-codex-ui-approval`);
+if (manifest?.externalApprovalAlias !== "external-ui-approval") {
+  fail(`${manifestPath}.externalApprovalAlias must be external-ui-approval`);
 }
 if (manifest?.evidenceFilename !== "approval-evidence.json") {
   fail(`${manifestPath}.evidenceFilename must be approval-evidence.json`);
@@ -235,7 +235,7 @@ const requiredEvidenceFields = requireUniqueStrings(
 if (args.has("--simulate-missing-required-evidence-field")) {
   requiredEvidenceFields.delete("approvalHash");
 }
-for (const field of ["sourceId", "privateApprovalReference", "approvedBy", "approvedAt", "approvalHash", "publicRecordHash"]) {
+for (const field of ["sourceId", "externalApprovalReference", "approvedBy", "approvedAt", "approvalHash", "publicRecordHash"]) {
   if (!requiredEvidenceFields.has(field)) {
     fail(`${manifestPath}.requiredPrivateApprovalEvidenceFields must include ${field}`);
   }
@@ -248,21 +248,21 @@ const canonicalSources = new Map([
     arrayField: "promotions",
     approvedByField: "approvedBy",
     approvedAtField: "approvedAt",
-    privateApprovalField: "privateApprovalReference",
+    privateApprovalField: "externalApprovalReference",
   }],
   ["protected-surfaces", {
     path: "docs/ui/protected-surfaces.registry.json",
     arrayField: "surfaces",
     approvedByField: "approvedBy",
     approvedAtField: "approvedAt",
-    privateApprovalField: "privateApprovalReference",
+    privateApprovalField: "externalApprovalReference",
   }],
   ["visual-change-scopes", {
     path: "docs/ui/visual-change-scopes.manifest.json",
     arrayField: "activeScopes",
     approvedByField: "approvedBy",
     approvedAtField: "approvedAt",
-    privateApprovalField: "privateApprovalReference",
+    privateApprovalField: "externalApprovalReference",
   }],
   ["visual-model-allowlist", {
     path: "docs/ui/visual-model-allowlist.manifest.json",
@@ -272,7 +272,7 @@ const canonicalSources = new Map([
     approvalRequiredStatuses: ["active"],
     approvedByField: "approvedBy",
     approvedAtField: "approvedAt",
-    privateApprovalField: "privateApprovalReference",
+    privateApprovalField: "externalApprovalReference",
   }],
   ["visual-proposals", {
     path: "docs/ui/visual-proposals.registry.json",
@@ -282,14 +282,14 @@ const canonicalSources = new Map([
     approvalRequiredStatuses: ["user-approved-for-visual-lane"],
     approvedByField: "approvedBy",
     approvedAtField: "approvedAt",
-    privateApprovalField: "privateApprovalReference",
+    privateApprovalField: "externalApprovalReference",
   }],
   ["exceptions", {
     path: "docs/ui/exceptions.registry.json",
     arrayField: "exceptions",
     approvedByField: "approvedBy",
     approvedAtField: "approvedAt",
-    privateApprovalField: "privateApprovalReference",
+    privateApprovalField: "externalApprovalReference",
   }],
   ["rendered-drift", {
     path: "docs/ui/rendered-drift.manifest.json",
@@ -299,7 +299,7 @@ const canonicalSources = new Map([
     approvalRequiredStatuses: ["approved-drift"],
     approvedByField: "approvedBy",
     approvedAtField: "approvedAt",
-    privateApprovalField: "privateApprovalReference",
+    privateApprovalField: "externalApprovalReference",
   }],
   ["debt-audit", {
     path: "docs/ui/debt-audit.manifest.json",
@@ -309,7 +309,7 @@ const canonicalSources = new Map([
     approvalRequiredStatuses: ["audited-approved"],
     approvedByField: "approvedBy",
     approvedAtField: "approvedAt",
-    privateApprovalField: "privateApprovalReference",
+    privateApprovalField: "externalApprovalReference",
   }],
 ]);
 const canonicalSourceIds = [...canonicalSources.keys()];
@@ -367,7 +367,7 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
   if (registry && source.id === "visual-model-allowlist" && args.has("--simulate-unsafe-private-approval-reference")) {
     registry.allowedVisualModels = registry.allowedVisualModels.map((model) => (
       model.status === "active"
-        ? { ...model, privateApprovalReference: `${manifest.privateApprovalAlias}:${path.join(path.sep, "tmp", "approval-evidence")}` }
+        ? { ...model, externalApprovalReference: `${manifest.externalApprovalAlias}:${path.join(path.sep, "tmp", "approval-evidence")}` }
         : model
     ));
   }
@@ -393,7 +393,7 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
         reviewAfter: "2999-12-31",
         approvedBy: "agent",
         approvedAt: "2026-05-15",
-        privateApprovalReference: "private-codex-ui-approval:visual-proposals/simulated-visual-proposal-approval",
+        externalApprovalReference: "external-ui-approval:visual-proposals/simulated-visual-proposal-approval",
       },
     ];
   }
@@ -402,13 +402,13 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
       {
         coverageId: "macos-root-chrome",
         platform: "macos",
-        privateDriftReportReference: "private-codex-ui-rendered-drift:surfaces/macos/macos-root-chrome",
+        privateDriftReportReference: "external-ui-rendered-drift:surfaces/macos/macos-root-chrome",
         driftCategories: ["geometry", "screenshot", "copy", "performance", "state"],
         status: "approved-drift",
         reviewAfter: "2999-12-31",
         approvedBy: "agent",
         approvedAt: "2026-05-17",
-        privateApprovalReference: "private-codex-ui-approval:rendered-drift/macos-root-chrome",
+        externalApprovalReference: "external-ui-approval:rendered-drift/macos-root-chrome",
       },
     ];
   }
@@ -421,11 +421,11 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
         platforms: ["macos"],
         surfaceCoverageId: "macos-design-debt",
         auditStatus: "audited-approved",
-        privateDebtAuditReference: "private-codex-ui-debt-audit:macos/simulated-approved-debt-audit",
+        privateDebtAuditReference: "external-ui-debt-audit:macos/simulated-approved-debt-audit",
         requiredEvidence: registry.requiredEvidenceFields || [],
         approvedBy: "agent",
         approvedAt: "2026-05-19",
-        privateApprovalReference: "private-codex-ui-approval:debt-audit/simulated-approved-debt-audit",
+        externalApprovalReference: "external-ui-approval:debt-audit/simulated-approved-debt-audit",
       },
     ];
   }
@@ -454,7 +454,7 @@ for (const [sourceIndex, source] of requireArray(manifest, manifestPath, "approv
     }
     if (source.privateApprovalField) {
       const reference = record[source.privateApprovalField];
-      requireSafePrivateReference(reference, manifest.privateApprovalAlias, `${label}.${source.privateApprovalField}`);
+      requireSafeExternalReference(reference, manifest.externalApprovalAlias, `${label}.${source.privateApprovalField}`);
     }
     checkedRecords += 1;
   }

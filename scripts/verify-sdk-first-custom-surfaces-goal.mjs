@@ -42,7 +42,7 @@ function requireSiblingSnippet(siblingRoot, relativePath, snippet) {
 function assertCompletionAudit() {
   const text = read("docs/governance/sdk-first-custom-surfaces/completion.md");
   for (const snippet of [
-    "Source conversation: `private-runtime-conversation:sdk-first-custom-surfaces`",
+    "Source conversation: `source:sdk-first-custom-surfaces`",
     "Status: `active_goal_not_complete`",
     "private source session path is",
     "also inspects",

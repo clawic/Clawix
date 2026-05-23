@@ -280,8 +280,8 @@ function assertNoForbiddenPublicNames() {
 function assertExternalPendingLedger() {
   const text = read("docs/governance/system-telemetry/external-pending.md");
   for (const snippet of [
-    "Source conversation: `private-runtime-conversation:system-telemetry`",
-    "Plan item: `private-runtime-plan:system-telemetry`",
+    "Source conversation: `source:system-telemetry`",
+    "Plan item: `plan:system-telemetry`",
     "Status: `active_goal_not_complete`",
     "`EXTERNAL PENDING` are not passes and must not be used to close the goal.",
     "`docs/governance/system-telemetry/external-validation.manifest.json` and",
@@ -375,8 +375,8 @@ function assertExternalValidationManifest() {
   assert(manifest.$schema === "docs/governance/system-telemetry/external-validation.manifest.schema.json", "external validation manifest: wrong schema ref");
   assert(manifest.schemaVersion === 1, "external validation manifest: schemaVersion must be 1");
   assert(manifest.id === "clawix-system-telemetry-external-validation-manifest", "external validation manifest: wrong id");
-  assert(manifest.conversationId === "private-runtime-conversation:system-telemetry", "external validation manifest: wrong conversationId");
-  assert(manifest.planId === "private-runtime-plan:system-telemetry", "external validation manifest: wrong planId");
+  assert(manifest.conversationId === "source:system-telemetry", "external validation manifest: wrong conversationId");
+  assert(manifest.planId === "plan:system-telemetry", "external validation manifest: wrong planId");
   assert(manifest.status === "active_goal_not_complete", "external validation manifest: goal must remain active");
   assert(manifest.completionPolicy?.externalPendingBlocksCompletion === true, "external validation manifest: external pending must block completion");
   assert(manifest.completionPolicy?.requiresFinalSourceAudit === true, "external validation manifest: final source audit must be required");
@@ -536,8 +536,8 @@ function assertExternalValidationManifestFixtures() {
   assert(fixtures.schemaVersion === 1, "external validation manifest fixtures: schemaVersion must be 1");
   assert(fixtures.artifactId === "clawix-system-telemetry-external-validation-manifest-fixtures", "external validation manifest fixtures: wrong artifact id");
   assert(fixtures.status === "synthetic_templates_not_evidence", "external validation manifest fixtures: must be synthetic templates only");
-  assert(fixtures.conversationId === "private-runtime-conversation:system-telemetry", "external validation manifest fixtures: wrong conversation id");
-  assert(fixtures.planId === "private-runtime-plan:system-telemetry", "external validation manifest fixtures: wrong plan id");
+  assert(fixtures.conversationId === "source:system-telemetry", "external validation manifest fixtures: wrong conversation id");
+  assert(fixtures.planId === "plan:system-telemetry", "external validation manifest fixtures: wrong plan id");
   assert(fixtures.schemaPath === "docs/governance/system-telemetry/external-validation.manifest.schema.json", "external validation manifest fixtures: wrong schema path");
   assert(fixtures.manifestPath === "docs/governance/system-telemetry/external-validation.manifest.json", "external validation manifest fixtures: wrong manifest path");
   assert(Array.isArray(fixtures.validSyntheticManifests) && fixtures.validSyntheticManifests.length === 1, "external validation manifest fixtures: must contain 1 valid manifest reference");
@@ -650,8 +650,8 @@ function assertExternalApprovalSchema() {
   assert(schema.title === "Clawix System Telemetry External Approval Packet", "external approval schema: wrong title");
   assert(schema["x-validatorPath"] === "scripts/validate-system-telemetry-external-approval.mjs", "external approval schema: wrong validator path");
   assert(schema.properties?.schemaVersion?.const === 1, "external approval schema: schemaVersion must be 1");
-  assert(schema.properties?.conversationId?.const === "private-runtime-conversation:system-telemetry", "external approval schema: wrong conversation id");
-  assert(schema.properties?.planId?.const === "private-runtime-plan:system-telemetry", "external approval schema: wrong plan id");
+  assert(schema.properties?.conversationId?.const === "source:system-telemetry", "external approval schema: wrong conversation id");
+  assert(schema.properties?.planId?.const === "plan:system-telemetry", "external approval schema: wrong plan id");
   assert(schema.properties?.repoScope?.const === "clawix-app", "external approval schema: wrong repo scope");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(schema.properties?.laneId?.enum?.includes(rowId), `external approval schema: missing lane ${rowId}`);
@@ -720,8 +720,8 @@ function assertExternalApprovalFixtures() {
   assert(fixtures.schemaVersion === 1, "external approval fixtures: schemaVersion must be 1");
   assert(fixtures.artifactId === "clawix-system-telemetry-external-approval-fixtures", "external approval fixtures: wrong artifact id");
   assert(fixtures.status === "synthetic_templates_not_approval", "external approval fixtures: must be synthetic templates only");
-  assert(fixtures.conversationId === "private-runtime-conversation:system-telemetry", "external approval fixtures: wrong conversation id");
-  assert(fixtures.planId === "private-runtime-plan:system-telemetry", "external approval fixtures: wrong plan id");
+  assert(fixtures.conversationId === "source:system-telemetry", "external approval fixtures: wrong conversation id");
+  assert(fixtures.planId === "plan:system-telemetry", "external approval fixtures: wrong plan id");
   assert(fixtures.schemaPath === "docs/governance/system-telemetry/external-approval.schema.json", "external approval fixtures: wrong schema path");
   assert(fixtures.validatorPath === "scripts/validate-system-telemetry-external-approval.mjs", "external approval fixtures: wrong validator path");
   assert(Array.isArray(fixtures.validSyntheticPackets) && fixtures.validSyntheticPackets.length === 3, "external approval fixtures: must contain 3 valid synthetic packets");
@@ -764,8 +764,8 @@ function assertExternalApprovalValidator() {
 function assertExternalValidationRunbook() {
   const text = read("docs/governance/system-telemetry/external-validation-runbook.md");
   for (const snippet of [
-    "Source conversation: `private-runtime-conversation:system-telemetry`",
-    "Plan item: `private-runtime-plan:system-telemetry`",
+    "Source conversation: `source:system-telemetry`",
+    "Plan item: `plan:system-telemetry`",
     "Status: `active_goal_not_complete`",
     "This runbook defines the only accepted way to replace the remaining Clawix",
     "It does not authorize provider calls,",
@@ -835,8 +835,8 @@ function assertExternalEvidenceSchema() {
   assert(schema.title === "Clawix System Telemetry External Evidence Packet", "external evidence schema: wrong title");
   assert(schema["x-fixturePath"] === "docs/governance/system-telemetry/external-evidence.fixtures.json", "external evidence schema: wrong fixture path");
   assert(schema.properties?.schemaVersion?.const === 1, "external evidence schema: schemaVersion must be 1");
-  assert(schema.properties?.conversationId?.const === "private-runtime-conversation:system-telemetry", "external evidence schema: wrong conversation id");
-  assert(schema.properties?.planId?.const === "private-runtime-plan:system-telemetry", "external evidence schema: wrong plan id");
+  assert(schema.properties?.conversationId?.const === "source:system-telemetry", "external evidence schema: wrong conversation id");
+  assert(schema.properties?.planId?.const === "plan:system-telemetry", "external evidence schema: wrong plan id");
   assert(schema.properties?.repoScope?.const === "clawix-app", "external evidence schema: wrong repo scope");
   for (const rowId of ["CLX-SYS-TEL-EXT-003", "CLX-SYS-TEL-EXT-004", "CLX-SYS-TEL-EXT-005"]) {
     assert(schema.properties?.laneId?.enum?.includes(rowId), `external evidence schema: missing lane ${rowId}`);
@@ -1017,8 +1017,8 @@ function assertExternalEvidenceFixtures() {
   assert(fixtures.schemaVersion === 1, "external evidence fixtures: schemaVersion must be 1");
   assert(fixtures.artifactId === "clawix-system-telemetry-external-evidence-fixtures", "external evidence fixtures: wrong artifact id");
   assert(fixtures.status === "synthetic_templates_not_evidence", "external evidence fixtures: must be synthetic templates only");
-  assert(fixtures.conversationId === "private-runtime-conversation:system-telemetry", "external evidence fixtures: wrong conversation id");
-  assert(fixtures.planId === "private-runtime-plan:system-telemetry", "external evidence fixtures: wrong plan id");
+  assert(fixtures.conversationId === "source:system-telemetry", "external evidence fixtures: wrong conversation id");
+  assert(fixtures.planId === "plan:system-telemetry", "external evidence fixtures: wrong plan id");
   assert(fixtures.schemaPath === "docs/governance/system-telemetry/external-evidence.schema.json", "external evidence fixtures: wrong schema path");
   assert(Array.isArray(fixtures.validSyntheticPackets) && fixtures.validSyntheticPackets.length === 3, "external evidence fixtures: must contain 3 valid synthetic packets");
   assert(Array.isArray(fixtures.invalidSyntheticPackets) && fixtures.invalidSyntheticPackets.length === 15, "external evidence fixtures: must contain 15 invalid synthetic packets");
@@ -1065,8 +1065,8 @@ function assertExternalClosureFixtures() {
   assert(fixtures.schemaVersion === 1, "external closure fixtures: schemaVersion must be 1");
   assert(fixtures.artifactId === "clawix-system-telemetry-external-closure-fixtures", "external closure fixtures: wrong artifact id");
   assert(fixtures.status === "synthetic_templates_not_closure", "external closure fixtures: must be synthetic templates only");
-  assert(fixtures.conversationId === "private-runtime-conversation:system-telemetry", "external closure fixtures: wrong conversation id");
-  assert(fixtures.planId === "private-runtime-plan:system-telemetry", "external closure fixtures: wrong plan id");
+  assert(fixtures.conversationId === "source:system-telemetry", "external closure fixtures: wrong conversation id");
+  assert(fixtures.planId === "plan:system-telemetry", "external closure fixtures: wrong plan id");
   assert(fixtures.approvalFixturesPath === "docs/governance/system-telemetry/external-approval.fixtures.json", "external closure fixtures: wrong approval fixtures path");
   assert(fixtures.evidenceFixturesPath === "docs/governance/system-telemetry/external-evidence.fixtures.json", "external closure fixtures: wrong evidence fixtures path");
   assert(fixtures.validatorPath === "scripts/validate-system-telemetry-external-closure.mjs", "external closure fixtures: wrong validator path");
@@ -1100,9 +1100,9 @@ function assertSourceQaReview() {
   assert(review.schemaVersion === 1, "source Q/A review: schemaVersion must be 1");
   assert(review.artifactId === "clawix-system-telemetry-source-qa-review", "source Q/A review: wrong artifactId");
   assert(review.discoveryTerms?.includes("system telemetry source Q/A review"), "source Q/A review: missing discovery term");
-  assert(review.sourceConversationId === "private-runtime-conversation:system-telemetry", "source Q/A review: wrong sourceConversationId");
-  assert(review.sourcePlanId === "private-runtime-plan:system-telemetry", "source Q/A review: wrong sourcePlanId");
-  assert(review.sourceSessionRef === "private-session-not-published", "source Q/A review: must not publish private source session path");
+  assert(review.sourceConversationId === "source:system-telemetry", "source Q/A review: wrong sourceConversationId");
+  assert(review.sourcePlanId === "plan:system-telemetry", "source Q/A review: wrong sourcePlanId");
+  assert(review.sourceRef === "source-redacted", "source Q/A review: must not publish private source session path");
   assert(!JSON.stringify(review).includes("/Users/"), "source Q/A review: must not publish private filesystem paths");
   assert(review.status === "complete_with_external_pending", "source Q/A review: status must keep external blockers visible");
   assert(review.reviewedUserRoleMessages === 161, "source Q/A review: reviewed user-role message count drifted");
@@ -1155,8 +1155,8 @@ function assertSourceQaReview() {
 function assertCompletionAudit() {
   const text = read("docs/governance/system-telemetry/completion.md");
   for (const snippet of [
-    "Source conversation: `private-runtime-conversation:system-telemetry`",
-    "Plan item: `private-runtime-plan:system-telemetry`",
+    "Source conversation: `source:system-telemetry`",
+    "Plan item: `plan:system-telemetry`",
     "Status: `active_goal_not_complete`",
     "This public-safe Clawix audit mirrors the framework system telemetry goal",
     "- `validated-local`: 12 rows.",
@@ -1206,8 +1206,8 @@ function assertCompletionAudit() {
 function assertDecisionMatrix() {
   const text = read("docs/governance/system-telemetry/decision-matrix.md");
   for (const snippet of [
-    "Source conversation: `private-runtime-conversation:system-telemetry`",
-    "Plan item: `private-runtime-plan:system-telemetry`",
+    "Source conversation: `source:system-telemetry`",
+    "Plan item: `plan:system-telemetry`",
     "Status: `active_goal_not_complete`",
     "source session path is intentionally not published here.",
     "| D01 | Provide a first-class framework plane",
@@ -1532,9 +1532,9 @@ function assertSwiftTestCoverage() {
 
 function assertOptionalPreflight() {
   if (!args.has("--preflight")) return;
-  const launcher = path.resolve(rootDir, "..", "scripts-dev", "clawix-launcher.sh");
+  const launcher = process.env.CLAWIX_APP_PREFLIGHT_SCRIPT ?? "";
   if (!fs.existsSync(launcher)) {
-    fail("--preflight requested but private launcher is unavailable");
+    fail("--preflight requested but CLAWIX_APP_PREFLIGHT_SCRIPT is unavailable");
     return;
   }
   const output = run("bash", [launcher, "preflight-computer-use"], { cwd: path.dirname(rootDir), timeout: 60_000 });

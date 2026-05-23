@@ -11,7 +11,7 @@ Use this skill for recurring code hygiene audits, pre-release hygiene review, or
 ## Procedure
 
 1. Read the code hygiene ADR, decision map entry, decision checklist, baseline, ledger, and latest JSON/Markdown report.
-2. Confirm the source conversation id `019e2bee-b635-7c51-b569-bd31b3cca875` and inspect every recorded decision before classifying findings.
+2. Confirm the public code-hygiene decision checklist and inspect every recorded decision before classifying findings.
 3. Run the non-mutating hygiene checks and scanners that are available: local unused checks, Knip for TS/JS, Periphery report-only for Swift, asset reference scans, TODO scans, and duplicate grouping.
 4. Check scanner calibration before classifying debt. In Knip, confirm package entrypoints, tool configs, scripts, seeds, public assets, generated files, fixtures, and framework-specific routes are configured before treating file findings as deletion candidates.
 5. Use report summaries and top-file sections to choose the next narrow category; do not turn large report-only surfaces into broad cleanup work.

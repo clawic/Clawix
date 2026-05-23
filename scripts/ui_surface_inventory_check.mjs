@@ -270,13 +270,13 @@ if (args.has("--simulate-v1-pattern-set-missing-baseline-coverage") && v1Pattern
   v1PatternSetDecision.publicEvidence = v1PatternSetDecision.publicEvidence.filter((evidencePath) => evidencePath !== surfaceBaselineCoveragePath);
 }
 if (args.has("--simulate-v1-pattern-set-missing-private-baseline") && v1PatternSetDecision) {
-  v1PatternSetDecision.privateEvidence = v1PatternSetDecision.privateEvidence.filter(
-    (evidenceReference) => evidenceReference !== "private-codex-ui-baselines:surfaces/*",
+  v1PatternSetDecision.externalEvidence = v1PatternSetDecision.externalEvidence.filter(
+    (evidenceReference) => evidenceReference !== "external-ui-baselines:surfaces/*",
   );
 }
 if (args.has("--simulate-v1-pattern-set-missing-private-geometry-platform") && v1PatternSetDecision) {
-  v1PatternSetDecision.privateEvidence = v1PatternSetDecision.privateEvidence.filter(
-    (evidenceReference) => evidenceReference !== "private-runtime-ui-rendered-geometry:web/*",
+  v1PatternSetDecision.externalEvidence = v1PatternSetDecision.externalEvidence.filter(
+    (evidenceReference) => evidenceReference !== "external-ui-rendered-geometry:web/*",
   );
 }
 if (args.has("--simulate-v1-pattern-set-missing-private-verifier") && v1PatternSetDecision) {
@@ -435,16 +435,16 @@ if (!v1PatternSetDecision) {
       fail(`${decisionVerificationPath}.decisions.v1_pattern_set.publicEvidence must include ${evidencePath}`);
     }
   }
-  const privateEvidence = new Set(Array.isArray(v1PatternSetDecision.privateEvidence) ? v1PatternSetDecision.privateEvidence : []);
+  const externalEvidence = new Set(Array.isArray(v1PatternSetDecision.externalEvidence) ? v1PatternSetDecision.externalEvidence : []);
   for (const evidenceReference of [
-    "private-codex-ui-baselines:surfaces/*",
-    "private-runtime-ui-rendered-geometry:macos/*",
-    "private-runtime-ui-rendered-geometry:ios/*",
-    "private-runtime-ui-rendered-geometry:android/*",
-    "private-runtime-ui-rendered-geometry:web/*",
+    "external-ui-baselines:surfaces/*",
+    "external-ui-rendered-geometry:macos/*",
+    "external-ui-rendered-geometry:ios/*",
+    "external-ui-rendered-geometry:android/*",
+    "external-ui-rendered-geometry:web/*",
   ]) {
-    if (!privateEvidence.has(evidenceReference)) {
-      fail(`${decisionVerificationPath}.decisions.v1_pattern_set.privateEvidence must include ${evidenceReference}`);
+    if (!externalEvidence.has(evidenceReference)) {
+      fail(`${decisionVerificationPath}.decisions.v1_pattern_set.externalEvidence must include ${evidenceReference}`);
     }
   }
   const blockingVerifiers = new Set(Array.isArray(v1PatternSetDecision.blockingVerifiers) ? v1PatternSetDecision.blockingVerifiers : []);
