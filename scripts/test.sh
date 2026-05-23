@@ -474,6 +474,7 @@ fast() {
   run node "$ROOT_DIR/scripts/surface_resource_contract_guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/surface_resource_contract_guard.mjs"
   run node "$ROOT_DIR/scripts/native_permission_broker_check.mjs"
+  run node "$ROOT_DIR/scripts/native_action_broker_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/native_action_broker_check.mjs"
   run node "$ROOT_DIR/scripts/verify-sdk-first-custom-surfaces-goal.mjs"
   run node "$ROOT_DIR/scripts/verify-system-telemetry-goal.mjs"

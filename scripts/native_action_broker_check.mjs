@@ -18,7 +18,26 @@ const patterns = [
   { id: "defaults", label: "defaults execution", pattern: /["']\/usr\/bin\/defaults["']/ },
   { id: "killall", label: "killall execution", pattern: /["']\/usr\/bin\/killall["']/ },
   { id: "osascript", label: "osascript execution", pattern: /["']\/usr\/bin\/osascript["']/ },
+  { id: "keyboardEventInjection", label: "keyboard event injection", pattern: /\bCGEvent\s*\(\s*keyboardEventSource:/ },
+  {
+    id: "crossAppPasteboardInjection",
+    label: "cross-app pasteboard injection",
+    pattern: (text) =>
+      /\bCGEvent\s*\(\s*keyboardEventSource:/.test(text) &&
+      /\bpasteboard\.(?:clearContents|setString)\s*\(/.test(text),
+  },
+  { id: "powerAssertion", label: "power assertion control", pattern: /\b(?:IOPMAssertionID|IOPMAssertionCreateWithName|IOPMAssertionRelease|kIOPMAssertionTypeNoIdleSleep)\b/ },
+  { id: "pointerControl", label: "pointer control", pattern: /\b(?:CGWarpMouseCursorPosition|CGAssociateMouseAndMouseCursorPosition)\b/ },
+  { id: "systemSettingsDeepLink", label: "System Settings deep link", pattern: /x-apple\.systempreferences:/ },
+  { id: "coreAudioWrite", label: "CoreAudio write", pattern: /\bAudioObjectSetPropertyData\b/ },
+  { id: "ioKitDisplayWrite", label: "IOKit display write", pattern: /\bIODisplaySetFloatParameter\b/ },
 ];
+
+const brokerOwnedPaths = new Set([
+  brokerPath,
+  wirePath,
+  "macos/Sources/Clawix/HostActions/NativeMacPermissionBroker.swift",
+]);
 
 function fail(message) {
   failures.push(message);
@@ -40,6 +59,73 @@ function listFiles(relativeDir, output = []) {
     }
   }
   return output;
+}
+
+function patternMatches(pattern, text, relativePath = "") {
+  if (typeof pattern.pattern === "function") {
+    return pattern.pattern(text, relativePath);
+  }
+  return pattern.pattern.test(text);
+}
+
+function runSelfTest() {
+  const fixtures = [
+    {
+      id: "keyboardEventInjection",
+      text: "let event = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)",
+    },
+    {
+      id: "crossAppPasteboardInjection",
+      text: "let pasteboard = NSPasteboard.general\npasteboard.clearContents()\npasteboard.setString(payload, forType: .string)\nlet event = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)",
+    },
+    {
+      id: "powerAssertion",
+      text: "let result = IOPMAssertionCreateWithName(kIOPMAssertionTypeNoIdleSleep as CFString, level, reason, &assertionID)",
+    },
+    {
+      id: "pointerControl",
+      text: "CGWarpMouseCursorPosition(CGPoint(x: 0, y: 0))",
+    },
+    {
+      id: "systemSettingsDeepLink",
+      text: "openSystemSettings(\"x-apple.systempreferences:com.apple.Sound-Settings.extension\")",
+    },
+    {
+      id: "coreAudioWrite",
+      text: "AudioObjectSetPropertyData(deviceID, &address, 0, nil, size, &value)",
+    },
+    {
+      id: "ioKitDisplayWrite",
+      text: "IODisplaySetFloatParameter(service, 0, kIODisplayBrightnessKey as CFString, brightness)",
+    },
+    {
+      id: "pmset",
+      text: "static let pmsetCLI = \"/usr/bin/pmset\"",
+    },
+  ];
+
+  const selfTestFailures = [];
+  for (const fixture of fixtures) {
+    const pattern = patterns.find((candidate) => candidate.id === fixture.id);
+    if (!pattern) {
+      selfTestFailures.push(`missing pattern ${fixture.id}`);
+      continue;
+    }
+    if (!patternMatches(pattern, fixture.text, "SelfTest.swift")) {
+      selfTestFailures.push(`pattern ${fixture.id} did not match its fixture`);
+    }
+  }
+
+  if (selfTestFailures.length > 0) {
+    console.error(`Native action broker check self-test failed:\n- ${selfTestFailures.join("\n- ")}`);
+    process.exit(1);
+  }
+  console.log("Native action broker check self-test passed");
+}
+
+if (process.argv.includes("--self-test")) {
+  runSelfTest();
+  process.exit(0);
 }
 
 const failures = [];
@@ -88,9 +174,10 @@ for (const [index, entry] of (allowlist.entries ?? []).entries()) {
 
 for (const relativePath of listFiles(sourceRoot)) {
   const text = fs.readFileSync(path.join(rootDir, relativePath), "utf8");
-  for (const { id, label, pattern } of patterns) {
-    if (!pattern.test(text)) continue;
-    if (relativePath === brokerPath) continue;
+  for (const pattern of patterns) {
+    const { id, label } = pattern;
+    if (!patternMatches(pattern, text, relativePath)) continue;
+    if (brokerOwnedPaths.has(relativePath)) continue;
     const allowedPatterns = allowlistByPath.get(relativePath);
     if (!allowedPatterns?.has(id)) {
       fail(`${relativePath} directly uses native action surface (${label}) without a ${allowlistPath} entry`);
