@@ -360,6 +360,17 @@ struct DBRecord: Codable, Equatable, Identifiable, Hashable {
     }
 }
 
+struct DBRecordWindow: Equatable {
+    let records: [DBRecord]
+    let total: Int
+    let limit: Int
+    let offset: Int
+
+    var loadedCount: Int { records.count }
+    var nextOffset: Int { offset + limit }
+    var hasNextPage: Bool { nextOffset < total }
+}
+
 private struct AnyKey: CodingKey {
     var stringValue: String
     var intValue: Int? { nil }

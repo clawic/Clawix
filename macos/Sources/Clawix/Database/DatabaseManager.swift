@@ -20,6 +20,7 @@ import ClawixCore
 @MainActor
 final class DatabaseManager: ObservableObject {
     typealias AdminTokenOperation = @MainActor () throws -> String
+    static let defaultRecordPageLimit = 100
 
     enum State: Equatable {
         case loading
@@ -34,10 +35,10 @@ final class DatabaseManager: ObservableObject {
     @Published private(set) var currentNamespace: String = "clawix-local"
     @Published private(set) var lastEventAt: Date?
 
-    /// Per-collection record cache. Keys are collection names; values are
-    /// the latest list returned by the server (filter-applied) plus any
-    /// realtime patches applied since.
-    @Published private(set) var recordsByCollection: [String: [DBRecord]] = [:]
+    /// Per-collection visible record windows. Keys are collection names; values
+    /// are bounded pages returned by the server plus realtime patches applied
+    /// inside the active window.
+    @Published private(set) var recordWindowsByCollection: [String: DBRecordWindow] = [:]
 
     /// Per-collection filter+sort state, persisted in UserDefaults.
     @Published var filterByCollection: [String: DBFilterState] = [:]
@@ -125,12 +126,12 @@ final class DatabaseManager: ObservableObject {
             case .crashed, .blocked, .idle, .daemonUnavailable:
                 self.cancelSurfaceWork(disconnectRealtime: true)
                 self.collections = []
-                self.recordsByCollection = [:]
+                self.recordWindowsByCollection = [:]
                 self.state = .failed(snap.state.unavailableReason ?? "Database service is unavailable.")
             case .availableOnDemand:
                 self.cancelSurfaceWork(disconnectRealtime: true)
                 self.collections = []
-                self.recordsByCollection = [:]
+                self.recordWindowsByCollection = [:]
                 self.state = .loading
             case .starting:
                 if case .ready = self.state { self.realtime.disconnect() }
@@ -193,8 +194,9 @@ final class DatabaseManager: ObservableObject {
         } catch is CancellationError {
         } catch {
             guard isCurrentBootstrap(generation) else { return }
-            state = .failed(error.localizedDescription)
-            lastError = error.localizedDescription
+            let message = Self.failureMessage(for: error, surface: "database.bootstrap")
+            state = .failed(message)
+            lastError = message
         }
         finishBootstrapIfCurrent(generation)
     }
@@ -283,6 +285,23 @@ final class DatabaseManager: ObservableObject {
     }
 
     func refreshRecords(collection name: String) async {
+        await loadRecordWindow(collection: name, offset: 0, appending: false)
+    }
+
+    func requestLoadNextRecordsPage(collection name: String) {
+        inFlight[name]?.cancel()
+        inFlight[name] = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.loadNextRecordsPage(collection: name)
+        }
+    }
+
+    func loadNextRecordsPage(collection name: String) async {
+        guard let window = recordWindowsByCollection[name], window.hasNextPage else { return }
+        await loadRecordWindow(collection: name, offset: window.nextOffset, appending: true)
+    }
+
+    private func loadRecordWindow(collection name: String, offset: Int, appending: Bool) async {
         guard let _ = collection(named: name) else { return }
         guard case .ready = state else { return }
         let filter = filterState(for: name)
@@ -296,13 +315,21 @@ final class DatabaseManager: ObservableObject {
                     collection: name,
                     filter: filter.backendFilterJSON(),
                     sort: filter.sortString(),
-                    limit: 500,
-                    offset: 0
+                    limit: Self.defaultRecordPageLimit,
+                    offset: offset
                 )
                 try Task.checkCancellation()
                 guard self.recordRefreshGeneration[name] == generation else { return }
                 let post = filter.clientSidePostFilter(records: response.items)
-                self.recordsByCollection[name] = post
+                let existing = appending ? self.recordWindowsByCollection[name]?.records ?? [] : []
+                let records = self.mergeRecords(existing + post, using: filter.sort)
+                let total = response.total ?? max(records.count, offset + response.items.count)
+                self.recordWindowsByCollection[name] = DBRecordWindow(
+                    records: records,
+                    total: total,
+                    limit: Self.defaultRecordPageLimit,
+                    offset: offset
+                )
                 self.inFlight[name] = nil
             } catch is CancellationError {
                 if self.recordRefreshGeneration[name] == generation {
@@ -310,7 +337,7 @@ final class DatabaseManager: ObservableObject {
                 }
             } catch {
                 if self.recordRefreshGeneration[name] == generation {
-                    self.lastError = error.localizedDescription
+                    self.lastError = Self.failureMessage(for: error, surface: "database.records.refresh")
                     self.inFlight[name] = nil
                 }
             }
@@ -362,9 +389,15 @@ final class DatabaseManager: ObservableObject {
         _ = try await performMutation(key: key, generation: generation) {
             try await self.client.deleteRecord(namespaceId: self.currentNamespace, collection: name, id: id)
         }
-        if var current = recordsByCollection[name] {
+        if let window = recordWindowsByCollection[name] {
+            var current = window.records
             current.removeAll { $0.id == id }
-            recordsByCollection[name] = current
+            recordWindowsByCollection[name] = DBRecordWindow(
+                records: current,
+                total: max(0, window.total - 1),
+                limit: window.limit,
+                offset: window.offset
+            )
         }
     }
 
@@ -411,16 +444,25 @@ final class DatabaseManager: ObservableObject {
             throw CancellationError()
         } catch {
             guard isCurrentMutation(key: key, generation: generation) else { throw CancellationError() }
-            lastError = error.localizedDescription
+            lastError = Self.failureMessage(for: error, surface: "database.mutation")
             finishMutationIfCurrent(key: key, generation: generation)
             throw error
         }
     }
 
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
+    }
+
     /// Returns a flat list of records with the current filter applied
     /// (server-side + client-side post filter). Used by views.
     func records(for collection: String) -> [DBRecord] {
-        recordsByCollection[collection] ?? []
+        recordWindowsByCollection[collection]?.records ?? []
+    }
+
+    func recordWindow(for collection: String) -> DBRecordWindow? {
+        recordWindowsByCollection[collection]
     }
 
     // MARK: - Realtime
@@ -428,7 +470,7 @@ final class DatabaseManager: ObservableObject {
     private func applyEvent(_ event: DBRecordEvent) {
         guard event.namespaceId == currentNamespace else { return }
         let name = event.collectionName
-        var current = recordsByCollection[name] ?? []
+        var current = recordWindowsByCollection[name]?.records ?? []
         switch event.type {
         case .created:
             if let record = event.record {
@@ -443,10 +485,20 @@ final class DatabaseManager: ObservableObject {
                 return
             }
         case .deleted:
+            let removedFromWindow = current.contains { $0.id == event.recordId }
             current.removeAll { $0.id == event.recordId }
             scheduleRealtimeRefresh(collection: name)
+            if let window = recordWindowsByCollection[name] {
+                recordWindowsByCollection[name] = DBRecordWindow(
+                    records: current,
+                    total: removedFromWindow ? max(0, window.total - 1) : window.total,
+                    limit: window.limit,
+                    offset: window.offset
+                )
+            }
+            lastEventAt = Date()
+            return
         }
-        recordsByCollection[name] = current
         lastEventAt = Date()
     }
 
@@ -465,13 +517,29 @@ final class DatabaseManager: ObservableObject {
     private func upsertRecordInCache(_ record: DBRecord, collection name: String) {
         let filter = filterState(for: name)
         let matches = !filter.clientSidePostFilter(records: [record]).isEmpty
-        var current = recordsByCollection[name] ?? []
+        let window = recordWindowsByCollection[name]
+        var current = window?.records ?? []
         current.removeAll { $0.id == record.id }
         if matches {
             current.insert(record, at: 0)
         }
-        recordsByCollection[name] = sortRecords(current, using: filter.sort)
+        recordWindowsByCollection[name] = DBRecordWindow(
+            records: mergeRecords(current, using: filter.sort),
+            total: max(window?.total ?? 0, current.count),
+            limit: window?.limit ?? Self.defaultRecordPageLimit,
+            offset: window?.offset ?? 0
+        )
         lastEventAt = Date()
+    }
+
+    private func mergeRecords(_ records: [DBRecord], using sort: DBFilterState.Sort?) -> [DBRecord] {
+        var seen = Set<String>()
+        let unique = records.filter { record in
+            guard !seen.contains(record.id) else { return false }
+            seen.insert(record.id)
+            return true
+        }
+        return sortRecords(unique, using: sort)
     }
 
     private func sortRecords(_ records: [DBRecord], using sort: DBFilterState.Sort?) -> [DBRecord] {

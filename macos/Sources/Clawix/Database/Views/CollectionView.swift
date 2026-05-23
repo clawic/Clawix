@@ -73,7 +73,7 @@ struct CollectionView: View {
                     .clipShape(Capsule())
                     .foregroundColor(Palette.textSecondary)
             }
-            Text("\(records.count)")
+            Text(recordCountLabel)
                 .font(BodyFont.system(size: 11.5))
                 .foregroundColor(Palette.textSecondary)
 
@@ -110,16 +110,34 @@ struct CollectionView: View {
     }
 
     private var tableArea: some View {
-        ZStack {
-            if records.isEmpty {
-                emptyState
-            } else {
-                RecordsTableView(
-                    collection: collection,
-                    records: records,
-                    selectedIds: $selectedIds,
-                    focusedId: $focusedId
-                )
+        VStack(spacing: 0) {
+            ZStack {
+                if records.isEmpty {
+                    emptyState
+                } else {
+                    RecordsTableView(
+                        collection: collection,
+                        records: records,
+                        selectedIds: $selectedIds,
+                        focusedId: $focusedId
+                    )
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            if let window = recordWindow, window.hasNextPage {
+                Divider().background(Color.white.opacity(0.07))
+                Button {
+                    manager.requestLoadNextRecordsPage(collection: collection.name)
+                } label: {
+                    Text(L10n.t("Load more"))
+                        .font(BodyFont.system(size: 12, wght: 600))
+                        .foregroundColor(Palette.textSecondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                }
+                .buttonStyle(.plain)
+                .help(L10n.t("Load the next page of records"))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -144,6 +162,17 @@ struct CollectionView: View {
 
     private var records: [DBRecord] {
         manager.records(for: collection.name)
+    }
+
+    private var recordWindow: DBRecordWindow? {
+        manager.recordWindow(for: collection.name)
+    }
+
+    private var recordCountLabel: String {
+        guard let window = recordWindow, window.total > records.count else {
+            return "\(records.count)"
+        }
+        return "\(records.count) of \(window.total)"
     }
 
     private var focusedRecord: DBRecord? {

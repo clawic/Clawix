@@ -89,6 +89,24 @@ final class DatabaseManagerCancellationTests: XCTestCase {
         XCTAssertTrue(manager.collections.isEmpty)
     }
 
+    func testBootstrapFailureUsesClassifiedLocalizedMessage() async throws {
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: FakeDatabaseClient(),
+            adminTokenOperation: {
+                throw TestFailure(errorDescription: "Could not reach database service: connection refused")
+            },
+            attachSupervisor: false,
+            initialState: .loading
+        )
+
+        await manager.bootstrap(force: true)
+
+        let expected = L10n.t("The background bridge is unavailable. Try again after it reconnects.")
+        XCTAssertEqual(manager.state, .failed(expected))
+        XCTAssertEqual(manager.lastError, expected)
+    }
+
     func testRecordReloadCancelsStaleCollectionRequest() async throws {
         let slowStarted = expectation(description: "Slow database request started")
         let slowCancelled = expectation(description: "Slow database request cancelled")
@@ -125,6 +143,72 @@ final class DatabaseManagerCancellationTests: XCTestCase {
         await fulfillment(of: [slowCancelled, fastReturned], timeout: 1)
         try await Task.sleep(nanoseconds: 10_000_000)
         XCTAssertEqual(manager.records(for: "tasks").map(\.id), ["fast"])
+    }
+
+    func testRecordRefreshFailureUsesClassifiedLocalizedMessage() async throws {
+        let client = FakeDatabaseClient()
+        client.onListRecords = { _, _, _, _, _, _ in
+            throw TestFailure(errorDescription: "The Internet connection appears to be offline.")
+        }
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: client,
+            attachSupervisor: false,
+            initialState: .ready,
+            initialCollections: [Self.collection(name: "tasks")]
+        )
+
+        await manager.refreshRecords(collection: "tasks")
+
+        XCTAssertEqual(
+            manager.lastError,
+            L10n.t("The network appears to be offline. Reconnect, then try again.")
+        )
+        XCTAssertTrue(manager.records(for: "tasks").isEmpty)
+    }
+
+    func testRecordRefreshUsesBoundedWindowsAndLoadsNextPageOnDemand() async throws {
+        var requests: [(limit: Int?, offset: Int?)] = []
+        let client = FakeDatabaseClient()
+        client.onListRecords = { _, _, _, _, limit, offset in
+            requests.append((limit: limit, offset: offset))
+            let start = offset ?? 0
+            let end = min(start + (limit ?? 0), 150)
+            let records = (start..<end).map { index in
+                makeDatabaseRecord(
+                    id: "record-\(index)",
+                    title: "Record \(index)"
+                )
+            }
+            return DBListResponse(total: 150, items: records)
+        }
+        let manager = DatabaseManager(
+            userDefaults: try makeDefaults(),
+            client: client,
+            attachSupervisor: false,
+            initialState: .ready,
+            initialCollections: [Self.collection(name: "tasks")]
+        )
+
+        await manager.refreshRecords(collection: "tasks")
+
+        XCTAssertEqual(requests.map(\.limit), [DatabaseManager.defaultRecordPageLimit])
+        XCTAssertEqual(requests.map(\.offset), [0])
+        XCTAssertEqual(manager.records(for: "tasks").count, DatabaseManager.defaultRecordPageLimit)
+        XCTAssertEqual(manager.recordWindow(for: "tasks")?.total, 150)
+        XCTAssertEqual(manager.recordWindow(for: "tasks")?.hasNextPage, true)
+
+        await manager.loadNextRecordsPage(collection: "tasks")
+
+        XCTAssertEqual(requests.map(\.limit), [
+            DatabaseManager.defaultRecordPageLimit,
+            DatabaseManager.defaultRecordPageLimit,
+        ])
+        XCTAssertEqual(requests.map(\.offset), [0, DatabaseManager.defaultRecordPageLimit])
+        XCTAssertEqual(manager.records(for: "tasks").count, 150)
+        XCTAssertEqual(manager.records(for: "tasks").first?.id, "record-0")
+        XCTAssertEqual(manager.records(for: "tasks").last?.id, "record-149")
+        XCTAssertEqual(manager.recordWindow(for: "tasks")?.hasNextPage, false)
     }
 
     func testCancelCollectionSurfaceWorkCancelsInFlightRecordRefresh() async throws {
@@ -495,4 +579,8 @@ private func makeDatabaseRecord(id: String, title: String) -> DBRecord {
         updatedAt: "2026-05-19T00:00:00Z",
         data: ["title": .string(title)]
     )
+}
+
+private struct TestFailure: LocalizedError {
+    let errorDescription: String?
 }
