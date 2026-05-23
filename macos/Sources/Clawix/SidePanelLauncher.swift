@@ -91,7 +91,7 @@ private struct LauncherTile: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
                 glyph
-                    .foregroundColor(enabled ? Color(white: 0.92) : Color(white: 0.45))
+                    .foregroundColor(enabled ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.50, dark: 0.45))
                     .frame(width: 22, height: 22)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)

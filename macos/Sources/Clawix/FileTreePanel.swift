@@ -63,7 +63,7 @@ struct FileTreePanel: View {
                 Spacer()
                 Button { onClose() } label: {
                     XIcon(size: 12)
-                        .foregroundColor(Color.white.opacity(0.5))
+                        .foregroundColor(Color.overlay(0.5))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -73,7 +73,7 @@ struct FileTreePanel: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 14)
 
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 1)
 
             if let path = appState.selectedProject?.path, !path.isEmpty {
                 TextField(L10n.t("Filter files"), text: $filter)
@@ -82,7 +82,7 @@ struct FileTreePanel: View {
                     .foregroundColor(Palette.textPrimary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
-                    .background(Capsule().fill(Color.white.opacity(0.06)))
+                    .background(Capsule().fill(Color.overlay(0.06)))
                     .padding(.horizontal, 14)
                     .padding(.top, 8)
                     .padding(.bottom, 4)
@@ -104,7 +104,7 @@ struct FileTreePanel: View {
             } else {
                 VStack(spacing: 8) {
                     LucideIcon(.folder, size: 28)
-                        .foregroundColor(Color.white.opacity(0.28))
+                        .foregroundColor(Color.overlay(0.28))
                     Text(L10n.t("No project selected"))
                         .font(BodyFont.system(size: 13))
                         .foregroundColor(Palette.textSecondary)
@@ -177,7 +177,7 @@ struct SidebarFileTreeView: View {
                     .foregroundColor(Palette.textPrimary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
-                    .background(Capsule().fill(Color.white.opacity(0.06)))
+                    .background(Capsule().fill(Color.overlay(0.06)))
                     .padding(.horizontal, 12)
                     .padding(.bottom, 6)
 
@@ -208,7 +208,7 @@ struct SidebarFileTreeView: View {
             } else {
                 VStack(spacing: 8) {
                     LucideIcon(.folder, size: 26)
-                        .foregroundColor(Color.white.opacity(0.28))
+                        .foregroundColor(Color.overlay(0.28))
                     Text(L10n.t("No project selected"))
                         .font(BodyFont.system(size: 13))
                         .foregroundColor(Palette.textSecondary)
@@ -252,14 +252,14 @@ private struct FileTreeEntry: View {
                 HStack(spacing: 6) {
                     if isDir {
                         LucideIcon(expanded ? .chevronDown : .chevronRight, size: 11)
-                            .foregroundColor(Color.white.opacity(0.45))
+                            .foregroundColor(Color.overlay(0.45))
                             .frame(width: 12)
                         LucideIcon(.folder, size: 13)
                             .foregroundColor(Palette.pastelBlue.opacity(0.85))
                     } else {
                         Spacer().frame(width: 12)
                         LucideIcon(.fileText, size: 13)
-                            .foregroundColor(Color.white.opacity(0.55))
+                            .foregroundColor(Color.overlay(0.55))
                     }
                     Text(url.lastPathComponent)
                         .font(BodyFont.system(size: 12.5))
@@ -273,7 +273,7 @@ private struct FileTreeEntry: View {
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(hovering ? 0.05 : 0.0))
+                        .fill(Color.overlay(hovering ? 0.05 : 0.0))
                         .padding(.horizontal, 6)
                 )
                 .contentShape(Rectangle())

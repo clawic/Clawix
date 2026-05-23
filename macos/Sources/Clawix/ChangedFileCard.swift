@@ -47,7 +47,7 @@ struct ChangedFileCard: View {
                             .truncationMode(.middle)
                         Text(verbatim: subtitle)
                             .font(BodyFont.system(size: 12.5, wght: 500))
-                            .foregroundColor(Color(white: 0.55))
+                            .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     }
                     Spacer(minLength: 8)
                 }
@@ -66,11 +66,11 @@ struct ChangedFileCard: View {
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(hovered ? 0.07 : 0.045))
+                .fill(Color.overlay(hovered ? 0.07 : 0.045))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                .stroke(Color.overlay(0.18), lineWidth: 0.5)
         )
         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .background(ChangedFileWindowFrameReader(frame: $cardWindowFrame))
@@ -94,10 +94,10 @@ struct ChangedFileCard: View {
     private var iconBadge: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(white: 0.07))
+                .fill(Color.gray(light: 0.955, dark: 0.07))
                 .frame(width: 44, height: 44)
             FileChipIcon(size: 18)
-                .foregroundColor(Color(white: 0.82))
+                .foregroundColor(Color.gray(light: 0.23, dark: 0.82))
         }
     }
 
@@ -111,11 +111,11 @@ struct ChangedFileCard: View {
                                   bundle: AppLocale.bundle,
                                   locale: AppLocale.current))
                 .font(BodyFont.system(size: 14, wght: 500))
-                .foregroundColor(Color(white: 0.94))
+                .foregroundColor(Color.gray(light: 0.12, dark: 0.94))
                 .allowsHitTesting(false)
 
             LucideIcon(.chevronDown, size: 11)
-                .foregroundColor(Color(white: 0.72))
+                .foregroundColor(Color.gray(light: 0.31, dark: 0.72))
                 .padding(.leading, 2)
                 .padding(.vertical, 4)
                 .allowsHitTesting(false)
@@ -137,7 +137,7 @@ struct ChangedFileCard: View {
         }
         .overlay(
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .stroke(Color.white.opacity(0.22), lineWidth: 0.5)
+                .stroke(Color.overlay(0.22), lineWidth: 0.5)
         )
         .overlay(OpenPillClickTarget(path: path))
         // Track the whole pill's window frame so the popup anchors on

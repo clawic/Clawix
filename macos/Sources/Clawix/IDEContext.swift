@@ -78,13 +78,13 @@ struct IDEContextChip: View {
                         CheckIcon(size: 9)
                     }
                 }
-                .foregroundColor(store.includeContext ? Palette.pastelBlue : Color.white.opacity(hovering ? 0.7 : 0.5))
+                .foregroundColor(store.includeContext ? Palette.pastelBlue : Color.overlay(hovering ? 0.7 : 0.5))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
                         .fill(store.includeContext ? Palette.pastelBlue.opacity(0.10)
-                                                   : Color.white.opacity(hovering ? 0.06 : 0.0))
+                                                   : Color.overlay(hovering ? 0.06 : 0.0))
                 )
                 .contentShape(Rectangle())
             }

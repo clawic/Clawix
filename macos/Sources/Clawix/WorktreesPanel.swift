@@ -98,7 +98,7 @@ struct WorktreesPanel: View {
                 Spacer()
                 Button { onClose() } label: {
                     XIcon(size: 12)
-                        .foregroundColor(Color.white.opacity(0.5))
+                        .foregroundColor(Color.overlay(0.5))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -108,12 +108,12 @@ struct WorktreesPanel: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 14)
 
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 1)
 
             if entries.isEmpty {
                 VStack(spacing: 8) {
                     LucideIcon(.workflow, size: 26)
-                        .foregroundColor(Color.white.opacity(0.28))
+                        .foregroundColor(Color.overlay(0.28))
                     Text(loaded ? L10n.t("No worktrees here") : L10n.t("Loading…"))
                         .font(BodyFont.system(size: 13))
                         .foregroundColor(Palette.textSecondary)
@@ -152,7 +152,7 @@ private struct WorktreeRow: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 LucideIcon(.folder, size: 13)
-                    .foregroundColor(entry.isMain ? Palette.pastelBlue.opacity(0.85) : Color.white.opacity(0.55))
+                    .foregroundColor(entry.isMain ? Palette.pastelBlue.opacity(0.85) : Color.overlay(0.55))
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(entry.name)
@@ -165,7 +165,7 @@ private struct WorktreeRow: View {
                                 .foregroundColor(Palette.textSecondary)
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
-                                .background(Capsule().fill(Color.white.opacity(0.08)))
+                                .background(Capsule().fill(Color.overlay(0.08)))
                         }
                     }
                     HStack(spacing: 6) {
@@ -185,7 +185,7 @@ private struct WorktreeRow: View {
             .padding(.vertical, 9)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(hovering ? 0.05 : 0.0))
+                    .fill(Color.overlay(hovering ? 0.05 : 0.0))
             )
             .contentShape(Rectangle())
         }

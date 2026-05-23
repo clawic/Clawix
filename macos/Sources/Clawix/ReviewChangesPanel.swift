@@ -84,7 +84,7 @@ struct ReviewChangesPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 1)
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -124,7 +124,7 @@ struct ReviewChangesPanel: View {
             }
             Button { model.reload() } label: {
                 LucideIcon(.refreshCw, size: 12)
-                    .foregroundColor(Color(white: model.loading ? 0.4 : 0.6))
+                    .foregroundColor((model.loading ? Color.gray(light: 0.54, dark: 0.4) : Color.gray(light: 0.42, dark: 0.6)))
                     .frame(width: 22, height: 22)
                     .contentShape(Rectangle())
             }
@@ -182,9 +182,9 @@ struct ReviewChangesPanel: View {
         VStack(spacing: 8) {
             Group {
                 if icon == "git" {
-                    GitCompareIcon(size: 26).foregroundColor(Color.white.opacity(0.28))
+                    GitCompareIcon(size: 26).foregroundColor(Color.overlay(0.28))
                 } else {
-                    LucideIcon(.circleCheck, size: 26).foregroundColor(Color.white.opacity(0.28))
+                    LucideIcon(.circleCheck, size: 26).foregroundColor(Color.overlay(0.28))
                 }
             }
             Text(title)
@@ -192,7 +192,7 @@ struct ReviewChangesPanel: View {
                 .foregroundColor(Palette.textSecondary)
             Text(subtitle)
                 .font(BodyFont.system(size: 11.5))
-                .foregroundColor(Color(white: 0.42))
+                .foregroundColor(Color.gray(light: 0.52, dark: 0.42))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 260)
         }
@@ -212,7 +212,7 @@ struct ReviewChangesPanel: View {
                 .foregroundColor(Palette.textSecondary)
             Text("\(count)")
                 .font(BodyFont.system(size: 10.5, weight: .semibold, design: .monospaced))
-                .foregroundColor(Color(white: 0.45))
+                .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
             Spacer(minLength: 0)
             ForEach(Array(actions.enumerated()), id: \.offset) { _, action in
                 SectionActionButton(label: action.label, destructive: action.destructive, run: action.run)
@@ -269,7 +269,7 @@ struct ReviewChangesPanel: View {
         )
     }
 
-    static let addColor = Color(red: 0.45, green: 0.78, blue: 0.50)
+    static let addColor = Palette.success
     static let delColor = Color(red: 0.88, green: 0.45, blue: 0.45)
 }
 
@@ -287,12 +287,12 @@ private struct SectionActionButton: View {
                 .font(BodyFont.system(size: 11, wght: 500))
                 .foregroundColor(destructive
                     ? ReviewChangesPanel.delColor.opacity(hovered ? 1 : 0.85)
-                    : Color(white: hovered ? 0.92 : 0.7))
+                    : (hovered ? Color.gray(light: 0.14, dark: 0.92) : Color.gray(light: 0.33, dark: 0.7)))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(hovered ? 0.07 : 0))
+                        .fill(Color.overlay(hovered ? 0.07 : 0))
                 )
                 .contentShape(Rectangle())
         }
@@ -321,7 +321,7 @@ private struct ReviewFileRow: View {
             Button(action: onToggle) {
                 HStack(spacing: 8) {
                     LucideIcon(expanded ? .chevronDown : .chevronRight, size: 11)
-                        .foregroundColor(Color.white.opacity(0.4))
+                        .foregroundColor(Color.overlay(0.4))
                         .frame(width: 12)
                     statusBadge
                     pathLabel
@@ -337,7 +337,7 @@ private struct ReviewFileRow: View {
                 .padding(.vertical, 5)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(hovered ? 0.05 : 0))
+                        .fill(Color.overlay(hovered ? 0.05 : 0))
                         .padding(.horizontal, 6)
                 )
                 .contentShape(Rectangle())
@@ -366,7 +366,7 @@ private struct ReviewFileRow: View {
             if !dir.isEmpty {
                 Text(dir)
                     .font(BodyFont.system(size: 11))
-                    .foregroundColor(Color(white: 0.45))
+                    .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
                     .lineLimit(1)
                     .truncationMode(.head)
             }
@@ -414,11 +414,11 @@ private struct ReviewFileRow: View {
     private func iconButton(_ icon: LucideIcon.Kind, label: String, destructive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             LucideIcon(icon, size: 12)
-                .foregroundColor(destructive ? ReviewChangesPanel.delColor.opacity(0.9) : Color(white: 0.72))
+                .foregroundColor(destructive ? ReviewChangesPanel.delColor.opacity(0.9) : Color.gray(light: 0.31, dark: 0.72))
                 .frame(width: 20, height: 20)
                 .background(
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.overlay(0.06))
                 )
                 .contentShape(Rectangle())
         }
@@ -433,14 +433,14 @@ private struct ReviewFileRow: View {
             if diff.isEmpty {
                 Text(L10n.t("No diff to display"))
                     .font(BodyFont.system(size: 11.5))
-                    .foregroundColor(Color(white: 0.45))
+                    .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
             } else {
                 DiffTextView(diff: diff)
             }
         } else {
             Text(L10n.t("Loading diff…"))
                 .font(BodyFont.system(size: 11.5))
-                .foregroundColor(Color(white: 0.45))
+                .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
         }
     }
 
@@ -462,7 +462,7 @@ private struct ReviewFileRow: View {
         case .added, .untracked, .copied: return ReviewChangesPanel.addColor
         case .deleted: return ReviewChangesPanel.delColor
         case .renamed, .typeChanged: return Palette.pastelBlue
-        case .unmerged: return Color(red: 0.95, green: 0.62, blue: 0.32)
+        case .unmerged: return Palette.warning
         case .modified: return Color(red: 0.85, green: 0.70, blue: 0.35)
         }
     }
@@ -506,12 +506,12 @@ private struct DiffTextView: View {
     }
 
     private func color(for text: String) -> Color {
-        if text.hasPrefix("+++") || text.hasPrefix("---") { return Color(white: 0.5) }
+        if text.hasPrefix("+++") || text.hasPrefix("---") { return Color.gray(light: 0.46, dark: 0.5) }
         if text.hasPrefix("@@") { return Palette.pastelBlue.opacity(0.85) }
         if text.hasPrefix("+") { return ReviewChangesPanel.addColor }
         if text.hasPrefix("-") { return ReviewChangesPanel.delColor }
-        if text.hasPrefix("diff ") || text.hasPrefix("index ") { return Color(white: 0.4) }
-        return Color(white: 0.7)
+        if text.hasPrefix("diff ") || text.hasPrefix("index ") { return Color.gray(light: 0.54, dark: 0.4) }
+        return Color.gray(light: 0.33, dark: 0.7)
     }
 
     private func background(for text: String) -> Color {

@@ -34,7 +34,7 @@ struct FindBarView: View {
             topRow
             if !appState.findQuery.isEmpty {
                 Divider()
-                    .overlay(Color.white.opacity(0.08))
+                    .overlay(Color.overlay(0.08))
                 bottomRow
             }
         }
@@ -75,14 +75,14 @@ struct FindBarView: View {
     private var topRow: some View {
         HStack(spacing: 10) {
             SearchIcon(size: 13)
-                .foregroundColor(Color.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
 
             TextField("Search chat…", text: Binding(
                 get: { appState.findQuery },
                 set: { appState.updateFindQuery($0) }
             ))
             .font(BodyFont.system(size: 13.5, wght: 500))
-            .foregroundColor(.white)
+            .foregroundColor(Palette.textPrimary)
             .textFieldStyle(.plain)
             .focused($fieldFocused)
             .onSubmit { appState.nextFindMatch() }
@@ -98,7 +98,7 @@ struct FindBarView: View {
                 appState.closeFindBar()
             } label: {
                 LucideIcon(.x, size: 13)
-                    .foregroundColor(Color.white.opacity(0.6))
+                    .foregroundColor(Color.overlay(0.6))
                     .frame(width: 18, height: 18)
                     .contentShape(Rectangle())
             }
@@ -122,7 +122,7 @@ struct FindBarView: View {
 
             Text(counterText)
                 .font(BodyFont.system(size: 11.5, wght: 500))
-                .foregroundColor(Color.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
         }
         .padding(.horizontal, horizontalPadding)
         .padding(.vertical, rowVerticalPadding)
@@ -133,8 +133,8 @@ struct FindBarView: View {
         Button(action: action) {
             LucideIcon.auto(systemName, size: 13)
                 .foregroundColor(appState.findMatches.isEmpty
-                                 ? Color.white.opacity(0.25)
-                                 : Color.white.opacity(0.75))
+                                 ? Color.overlay(0.25)
+                                 : Color.overlay(0.75))
                 .frame(width: 22, height: 20)
                 .contentShape(Rectangle())
         }
@@ -151,7 +151,7 @@ struct FindBarView: View {
 
     private var barBorder: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .stroke(Color.white.opacity(0.18), lineWidth: 0.7)
+            .stroke(Color.overlay(0.18), lineWidth: 0.7)
     }
 
     private var counterText: String {
@@ -177,11 +177,11 @@ private struct FindBarSpinner: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.18),
+                .stroke(Color.overlay(0.18),
                         style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
             Circle()
                 .trim(from: 0.0, to: 0.79)
-                .stroke(Color.white.opacity(0.75),
+                .stroke(Color.overlay(0.75),
                         style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
                 .rotationEffect(.degrees(rotation))
         }

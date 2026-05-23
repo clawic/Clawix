@@ -106,7 +106,7 @@ struct FileViewerPanel: View {
 
     private var divider: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.06))
+            .fill(Color.overlay(0.06))
             .frame(height: 0.5)
     }
 
@@ -116,14 +116,14 @@ struct FileViewerPanel: View {
         HStack(spacing: 6) {
             Text(folderName)
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 .lineLimit(1)
                 .truncationMode(.middle)
             LucideIcon(.chevronRight, size: 10)
-                .foregroundColor(Color(white: 0.35))
+                .foregroundColor(Color.gray(light: 0.58, dark: 0.35))
             Text(fileName)
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(Color(white: 0.85))
+                .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
                 .lineLimit(1)
                 .truncationMode(.middle)
 
@@ -194,10 +194,10 @@ struct FileViewerPanel: View {
         case .unavailable(let reason):
             VStack(spacing: 8) {
                 FileChipIcon(size: 30)
-                    .foregroundColor(Color(white: 0.40))
+                    .foregroundColor(Color.gray(light: 0.54, dark: 0.40))
                 Text(reason)
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -226,11 +226,11 @@ struct FileViewerPanel: View {
                                         @ViewBuilder icon: () -> Icon) -> some View {
         Button(action: action) {
             icon()
-                .foregroundColor(Color(white: hoverState.wrappedValue ? 0.85 : 0.55))
+                .foregroundColor((hoverState.wrappedValue ? Color.gray(light: 0.20, dark: 0.85) : Color.gray(light: 0.45, dark: 0.55)))
                 .frame(width: 26, height: 26)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.white.opacity(hoverState.wrappedValue ? 0.06 : 0))
+                        .fill(Color.overlay(hoverState.wrappedValue ? 0.06 : 0))
                 )
                 .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
@@ -526,8 +526,8 @@ private struct RawTextView: View {
     let syntax: Syntax
     let wordWrap: Bool
 
-    private static let body  = Color(white: 0.92)
-    private static let muted = Color(white: 0.40)
+    private static let body  = Color.gray(light: 0.14, dark: 0.92)
+    private static let muted = Color.gray(light: 0.54, dark: 0.40)
     private static let accent = Color(red: 0.96, green: 0.55, blue: 0.55)
 
     private var lines: [String] {

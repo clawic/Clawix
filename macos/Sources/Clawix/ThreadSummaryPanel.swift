@@ -30,13 +30,13 @@ struct ThreadSummaryToggleButton: View {
             LucideIcon(.info, size: 14)
                 .foregroundColor(isActive
                     ? Palette.textPrimary
-                    : Color(white: hovered ? 0.78 : 0.55))
+                    : (hovered ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.45, dark: 0.55)))
                 .frame(width: 24, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(isActive
-                            ? Color(white: 0.16)
-                            : (hovered ? Color(white: 0.12) : Color.clear))
+                            ? Color.gray(light: 0.92, dark: 0.16)
+                            : (hovered ? Color.gray(light: 0.945, dark: 0.12) : Color.clear))
                 )
                 .contentShape(Rectangle())
         }
@@ -68,7 +68,7 @@ struct ThreadSummaryPanel: View {
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            LucideIcon(.info, size: 26).foregroundColor(Color.white.opacity(0.28))
+            LucideIcon(.info, size: 26).foregroundColor(Color.overlay(0.28))
             Text(L10n.t("No conversation"))
                 .font(BodyFont.system(size: 13, wght: 600))
                 .foregroundColor(Palette.textSecondary)
@@ -132,7 +132,7 @@ private struct ThreadSummaryContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 1)
             if isEmpty {
                 emptyState
             } else {
@@ -174,13 +174,13 @@ private struct ThreadSummaryContent: View {
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            LucideIcon(.listChecks, size: 26).foregroundColor(Color.white.opacity(0.28))
+            LucideIcon(.listChecks, size: 26).foregroundColor(Color.overlay(0.28))
             Text(L10n.t("Nothing to summarize yet"))
                 .font(BodyFont.system(size: 13, wght: 600))
                 .foregroundColor(Palette.textSecondary)
             Text(L10n.t("Plans, changes, sources and outputs appear here as the agent works."))
                 .font(BodyFont.system(size: 11.5))
-                .foregroundColor(Color(white: 0.42))
+                .foregroundColor(Color.gray(light: 0.52, dark: 0.42))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 260)
         }
@@ -219,7 +219,7 @@ private struct ThreadSummaryContent: View {
             LucideIcon(.circleDot, size: 13).foregroundColor(Palette.pastelBlue)
         case .pending:
             Circle()
-                .stroke(Color(white: 0.4), lineWidth: 1.3)
+                .stroke(Color.gray(light: 0.54, dark: 0.4), lineWidth: 1.3)
                 .frame(width: 11, height: 11)
         }
     }
@@ -231,7 +231,7 @@ private struct ThreadSummaryContent: View {
                     Button { appState.openFileInSidebar(absolute(path)) } label: {
                         HStack(spacing: 7) {
                             FileChipIcon(size: 12)
-                                .foregroundColor(Color(white: 0.6))
+                                .foregroundColor(Color.gray(light: 0.42, dark: 0.6))
                                 .frame(width: 14, height: 14)
                             Text((path as NSString).lastPathComponent)
                                 .font(BodyFont.system(size: 12.5))
@@ -259,7 +259,7 @@ private struct ThreadSummaryContent: View {
                         }
                     } label: {
                         HStack(spacing: 7) {
-                            LucideIcon(.image, size: 13).foregroundColor(Color(white: 0.6))
+                            LucideIcon(.image, size: 13).foregroundColor(Color.gray(light: 0.42, dark: 0.6))
                                 .frame(width: 14, height: 14)
                             Text(L10n.t("Generated image") + " \(idx + 1)")
                                 .font(BodyFont.system(size: 12.5))
@@ -304,7 +304,7 @@ private struct ThreadSummaryContent: View {
 
     private func sourceRow(icon: LucideIcon.Kind, text: String) -> some View {
         HStack(spacing: 7) {
-            LucideIcon(icon, size: 13).foregroundColor(Color(white: 0.6))
+            LucideIcon(icon, size: 13).foregroundColor(Color.gray(light: 0.42, dark: 0.6))
                 .frame(width: 14, height: 14)
             Text(text)
                 .font(BodyFont.system(size: 12.5))
@@ -331,7 +331,7 @@ private struct ThreadSummaryContent: View {
                     Button(action: action.run) {
                         Text(action.label)
                             .font(BodyFont.system(size: 11, wght: 500))
-                            .foregroundColor(Color(white: 0.6))
+                            .foregroundColor(Color.gray(light: 0.42, dark: 0.6))
                     }
                     .buttonStyle(.plain)
                 }
@@ -348,5 +348,5 @@ private struct ThreadSummaryContent: View {
         return path
     }
 
-    static let doneColor = Color(red: 0.45, green: 0.78, blue: 0.50)
+    static let doneColor = Palette.success
 }
