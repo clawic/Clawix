@@ -29,6 +29,7 @@ struct UserFacingFailure: Equatable {
             "not connected to the internet",
             "internet connection appears to be offline",
             "network connection lost",
+            "network is unreachable",
             "cannot connect to host",
             "cannot find host",
             "timed out",
@@ -43,6 +44,12 @@ struct UserFacingFailure: Equatable {
             "permission was denied",
             "workspace is denied",
             "workspacedenied",
+            "forbidden",
+            "http 401",
+            "http 403",
+            "invalid api key",
+            "api key is invalid",
+            "authentication failed",
             "not authorized",
             "unauthorized"
         ]) {
@@ -54,6 +61,7 @@ struct UserFacingFailure: Equatable {
             "model is unavailable",
             "model not found",
             "unknown model",
+            "no model available",
             "not downloaded",
             "download a model",
             "no such model"
@@ -112,7 +120,7 @@ struct UserFacingFailure: Equatable {
         case .serviceUnavailable:
             return L10n.t("The service is unavailable. Try again in a moment.")
         case .unknown:
-            return rawMessage.isEmpty ? L10n.t("Request failed. Try again in a moment.") : rawMessage
+            return L10n.t("Request failed. Try again in a moment.")
         }
     }
 

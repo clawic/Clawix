@@ -29,12 +29,28 @@ final class UserFacingFailureTests: XCTestCase {
             .permissionDenied
         )
         XCTAssertEqual(
+            UserFacingFailure.classify("HTTP 401: invalid API key").kind,
+            .permissionDenied
+        )
+        XCTAssertEqual(
             UserFacingFailure.classify("model not found: local-test").kind,
+            .modelUnavailable
+        )
+        XCTAssertEqual(
+            UserFacingFailure.classify("No model available for this provider.").kind,
             .modelUnavailable
         )
         XCTAssertEqual(
             UserFacingFailure.classify("The Internet connection appears to be offline.").kind,
             .networkOffline
+        )
+        XCTAssertEqual(
+            UserFacingFailure.classify("Network is unreachable").kind,
+            .networkOffline
+        )
+        XCTAssertEqual(
+            UserFacingFailure.classify("opaque provider error").displayMessage,
+            L10n.t("Request failed. Try again in a moment.")
         )
     }
 
@@ -43,6 +59,7 @@ final class UserFacingFailureTests: XCTestCase {
         XCTAssertEqual(UserFacingEmptyState.chatsFiltered.message, L10n.t("No chats match the filter"))
         XCTAssertEqual(UserFacingEmptyState.projectChats.message, L10n.t("No chats in this project yet"))
         XCTAssertEqual(UserFacingEmptyState.searchPrompt.message, L10n.t("Search by chat title"))
+        XCTAssertEqual(UserFacingEmptyState.mcpServers.message, L10n.t("No MCP servers connected yet."))
         XCTAssertEqual(UserFacingEmptyState.providers.message, L10n.t("No providers match."))
         XCTAssertEqual(
             UserFacingEmptyState.providersQuery("local").message,

@@ -88,9 +88,9 @@ struct AccountListSection: View {
     private var emptyMessage: String {
         switch provider.authMethods.first {
         case .oauth, .deviceCode:
-            return "No accounts yet. Sign in to start using this provider."
+            return UserFacingEmptyState.providerOAuthAccounts.message
         default:
-            return "No accounts yet. Add an API key to start using this provider."
+            return UserFacingEmptyState.providerAPIKeyAccounts.message
         }
     }
 }

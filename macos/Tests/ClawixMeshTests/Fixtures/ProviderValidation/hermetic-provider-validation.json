@@ -1,0 +1,96 @@
+[
+  {
+    "name": "placeholder credential stays external pending",
+    "providerId": "openai",
+    "apiKey": "fixture-key",
+    "baseURL": null,
+    "credentialState": "placeholder",
+    "disposition": "externalPending",
+    "validationReportStatus": "EXTERNAL PENDING",
+    "uiStatusText": "Live validation pending",
+    "isComplete": false,
+    "externalPending": [
+      "provider_credential_placeholder",
+      "live_provider_validation_not_run"
+    ],
+    "providerError": null
+  },
+  {
+    "name": "present-shaped credential is still fixture only",
+    "providerId": "anthropic",
+    "apiKey": "sk-ant-present-shape",
+    "baseURL": null,
+    "credentialState": "present",
+    "disposition": "fixturePassed",
+    "validationReportStatus": "EXTERNAL PENDING",
+    "uiStatusText": "Fixture only",
+    "isComplete": false,
+    "externalPending": [
+      "live_provider_validation_not_run"
+    ],
+    "providerError": null
+  },
+  {
+    "name": "missing credential stays external pending",
+    "providerId": "openai",
+    "apiKey": "   ",
+    "baseURL": null,
+    "credentialState": "missing",
+    "disposition": "externalPending",
+    "validationReportStatus": "EXTERNAL PENDING",
+    "uiStatusText": "Live validation pending",
+    "isComplete": false,
+    "externalPending": [
+      "provider_credential_missing",
+      "live_provider_validation_not_run"
+    ],
+    "providerError": null
+  },
+  {
+    "name": "expired credential stays external pending",
+    "providerId": "openai",
+    "apiKey": "fixture-expired",
+    "baseURL": null,
+    "credentialState": "expired",
+    "disposition": "externalPending",
+    "validationReportStatus": "EXTERNAL PENDING",
+    "uiStatusText": "Live validation pending",
+    "isComplete": false,
+    "externalPending": [
+      "provider_credential_expired",
+      "live_provider_validation_not_run"
+    ],
+    "providerError": null
+  },
+  {
+    "name": "provider error is not completion",
+    "providerId": "openai",
+    "apiKey": "fixture-provider-error",
+    "baseURL": null,
+    "credentialState": "placeholder",
+    "disposition": "providerError",
+    "validationReportStatus": "EXTERNAL PENDING",
+    "uiStatusText": "Permission was denied. Review permissions, then try again.",
+    "isComplete": false,
+    "externalPending": [
+      "live_provider_validation_not_run"
+    ],
+    "providerError": "Permission was denied. Review permissions, then try again."
+  },
+  {
+    "name": "custom provider without base URL is blocked and pending",
+    "providerId": "openai_compatible_custom",
+    "apiKey": "sk-custom-present",
+    "baseURL": null,
+    "credentialState": "present",
+    "disposition": "blocked",
+    "validationReportStatus": "EXTERNAL PENDING",
+    "uiStatusText": "Base URL is required.",
+    "isComplete": false,
+    "externalPending": [
+      "custom_provider_base_url_missing",
+      "live_provider_validation_not_run"
+    ],
+    "providerError": null
+  }
+]

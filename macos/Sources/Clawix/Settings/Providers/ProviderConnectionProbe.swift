@@ -6,19 +6,23 @@ final class ProviderConnectionProbe: ObservableObject {
     enum State: Equatable {
         case idle
         case running
-        case ok
-        case failed(String)
+        case completed(ProviderValidationReport)
     }
 
-    typealias Operation = @MainActor (ProviderID, String, URL?) async throws -> Void
+    typealias Operation = @MainActor (ProviderID, String, URL?, ProviderValidationMode) async throws -> ProviderValidationReport
 
     @Published private(set) var state: State = .idle
 
     private let operation: Operation
+    private let mode: ProviderValidationMode
     private var task: Task<Void, Never>?
     private var generation = 0
 
-    init(operation: @escaping Operation = ProviderConnectionProbe.defaultOperation) {
+    init(
+        mode: ProviderValidationMode = .hermeticFixture,
+        operation: @escaping Operation = ProviderConnectionProbe.defaultOperation
+    ) {
+        self.mode = mode
         self.operation = operation
     }
 
@@ -34,10 +38,10 @@ final class ProviderConnectionProbe: ObservableObject {
         task = Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                try await operation(providerId, apiKey, baseURL)
+                let report = try await operation(providerId, apiKey, baseURL, mode)
                 try Task.checkCancellation()
                 guard currentGeneration == generation else { return }
-                state = .ok
+                state = .completed(report)
                 task = nil
             } catch is CancellationError {
                 guard currentGeneration == generation else { return }
@@ -45,11 +49,25 @@ final class ProviderConnectionProbe: ObservableObject {
                 task = nil
             } catch let error as AIClientError {
                 guard currentGeneration == generation else { return }
-                state = .failed(error.errorDescription ?? "Failed.")
+                state = .completed(
+                    ProviderValidationReport.providerError(
+                        providerId: providerId,
+                        apiKey: apiKey,
+                        mode: mode,
+                        detail: error.errorDescription ?? "Provider check failed."
+                    )
+                )
                 task = nil
             } catch {
                 guard currentGeneration == generation else { return }
-                state = .failed(error.localizedDescription)
+                state = .completed(
+                    ProviderValidationReport.providerError(
+                        providerId: providerId,
+                        apiKey: apiKey,
+                        mode: mode,
+                        detail: error.localizedDescription
+                    )
+                )
                 task = nil
             }
         }
@@ -64,12 +82,39 @@ final class ProviderConnectionProbe: ObservableObject {
         }
     }
 
-    private static func defaultOperation(providerId: ProviderID, apiKey: String, baseURL: URL?) async throws {
+    static func hermeticFixtureOperation(
+        providerId: ProviderID,
+        apiKey: String,
+        baseURL: URL?,
+        mode: ProviderValidationMode
+    ) async throws -> ProviderValidationReport {
+        precondition(mode == .hermeticFixture)
+        return try await ProviderValidationFixtureInterceptor.validate(
+            providerId: providerId,
+            apiKey: apiKey,
+            baseURL: baseURL
+        )
+    }
+
+    private static func defaultOperation(
+        providerId: ProviderID,
+        apiKey: String,
+        baseURL: URL?,
+        mode: ProviderValidationMode
+    ) async throws -> ProviderValidationReport {
+        if mode == .hermeticFixture {
+            return try await hermeticFixtureOperation(
+                providerId: providerId,
+                apiKey: apiKey,
+                baseURL: baseURL,
+                mode: mode
+            )
+        }
         let credentials = AIAccountCredentials(apiKey: apiKey)
         let model = ProviderCatalog.defaultModel(for: .chat, in: providerId)
             ?? ProviderCatalog.definition(for: providerId)?.models.first
         guard let model else {
-            throw AIClientError.provider("No model available for this provider.")
+            throw AIClientError.provider(L10n.t("No model available for this provider."))
         }
         let probeAccount = ProviderAccount(
             id: UUID(),
@@ -91,7 +136,7 @@ final class ProviderConnectionProbe: ObservableObject {
         case .ollama:
             client = OllamaClient(account: probeAccount, model: model, credentials: credentials)
         case .githubCopilot:
-            throw AIClientError.provider("Use 'Sign in with GitHub' to test Copilot.")
+            throw AIClientError.provider(L10n.t("Use Sign in with GitHub to test Copilot."))
         case .cursor:
             client = CursorClient(account: probeAccount, model: model, credentials: credentials)
         case .groq, .deepseek, .togetherAI, .glmZhipu, .xai, .mistral,
@@ -99,5 +144,6 @@ final class ProviderConnectionProbe: ObservableObject {
             client = OpenAICompatibleClient(account: probeAccount, model: model, credentials: credentials)
         }
         try await client.testConnection()
+        return ProviderValidationReport.livePassed(providerId: providerId, apiKey: apiKey)
     }
 }

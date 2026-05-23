@@ -63,7 +63,7 @@ struct ProvidersSettingsPage: View {
                 let visible = filteredProviders
                 if visible.isEmpty {
                     HStack {
-                        Text(query.isEmpty ? "No providers match." : "No providers match \"\(query)\".")
+                        Text(emptyProvidersMessage)
                             .font(BodyFont.system(size: 12))
                             .foregroundColor(Palette.textSecondary)
                         Spacer()
@@ -109,6 +109,12 @@ struct ProvidersSettingsPage: View {
                 )
         )
         .frame(maxWidth: 260)
+    }
+
+    private var emptyProvidersMessage: String {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return UserFacingEmptyState.providers.message }
+        return UserFacingEmptyState.providersQuery(trimmed).message
     }
 
     private var filteredProviders: [ProviderDefinition] {

@@ -6,6 +6,7 @@ enum UserFacingEmptyState: Equatable {
     case projectChats
     case pinnedChatsFiltered
     case tools
+    case mcpServers
     case searchPrompt
     case searchNoMatches
     case providers
@@ -25,6 +26,8 @@ enum UserFacingEmptyState: Equatable {
             return L10n.t("No pinned chats match the filter")
         case .tools:
             return L10n.t("No tools visible")
+        case .mcpServers:
+            return L10n.t("No MCP servers connected yet.")
         case .searchPrompt:
             return L10n.t("Search by chat title")
         case .searchNoMatches:

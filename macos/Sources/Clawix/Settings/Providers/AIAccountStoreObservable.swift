@@ -60,7 +60,7 @@ final class AIAccountStoreObservable: ObservableObject {
             } catch {
                 guard currentGeneration == refreshGeneration else { return }
                 accounts = []
-                lastError = (error as? AIAccountStoreError).map(humanize) ?? error.localizedDescription
+                lastError = humanize(error, surface: "settings.providers.refresh")
                 refreshTask = nil
             }
         }
@@ -84,7 +84,7 @@ final class AIAccountStoreObservable: ObservableObject {
             TokenRefreshService.shared.accountInventoryChanged()
             return account
         } catch {
-            lastError = humanize(error)
+            lastError = humanize(error, surface: "settings.providers.createAccount")
             return nil
         }
     }
@@ -101,7 +101,7 @@ final class AIAccountStoreObservable: ObservableObject {
             refresh()
             TokenRefreshService.shared.accountInventoryChanged()
         } catch {
-            lastError = humanize(error)
+            lastError = humanize(error, surface: "settings.providers.updateLabel")
         }
     }
 
@@ -117,7 +117,7 @@ final class AIAccountStoreObservable: ObservableObject {
             refresh()
             TokenRefreshService.shared.accountInventoryChanged()
         } catch {
-            lastError = humanize(error)
+            lastError = humanize(error, surface: "settings.providers.setEnabled")
         }
     }
 
@@ -133,7 +133,7 @@ final class AIAccountStoreObservable: ObservableObject {
             refresh()
             TokenRefreshService.shared.accountInventoryChanged()
         } catch {
-            lastError = humanize(error)
+            lastError = humanize(error, surface: "settings.providers.setBaseURL")
         }
     }
 
@@ -144,21 +144,42 @@ final class AIAccountStoreObservable: ObservableObject {
             refresh()
             TokenRefreshService.shared.accountInventoryChanged()
         } catch {
-            lastError = humanize(error)
+            lastError = humanize(error, surface: "settings.providers.deleteAccount")
         }
     }
 
-    private func humanize(_ error: Error) -> String {
+    private func humanize(_ error: Error, surface: String) -> String {
         if let storeError = error as? AIAccountStoreError {
             switch storeError {
-            case .vaultLocked: return "Secrets is locked. Unlock it in Settings → Secrets."
-            case .accountNotFound: return "This account no longer exists."
-            case .providerUnknown: return "Unknown provider."
-            case .credentialMissing: return "No credentials stored for this account."
-            case .duplicateLabel: return "Another account already uses this label."
-            case .underlying(let msg): return msg
+            case .vaultLocked:
+                return logSpecificFailure(L10n.t("Secrets is locked. Unlock it in Settings > Secrets."), surface: surface)
+            case .accountNotFound:
+                return logSpecificFailure(L10n.t("This account no longer exists."), surface: surface)
+            case .providerUnknown:
+                return logSpecificFailure(L10n.t("Unknown provider."), surface: surface)
+            case .credentialMissing:
+                return logSpecificFailure(L10n.t("No credentials stored for this account."), surface: surface)
+            case .duplicateLabel:
+                return logSpecificFailure(L10n.t("Another account already uses this label."), surface: surface)
+            case .underlying(let msg):
+                return classifiedFailure(msg, surface: surface)
             }
         }
-        return error.localizedDescription
+        return classifiedFailure(
+            (error as? LocalizedError)?.errorDescription ?? error.localizedDescription,
+            surface: surface
+        )
+    }
+
+    private func logSpecificFailure(_ message: String, surface: String) -> String {
+        let failure = UserFacingFailure.classify(message)
+        failure.log(surface: surface)
+        return message
+    }
+
+    private func classifiedFailure(_ message: String, surface: String) -> String {
+        let failure = UserFacingFailure.classify(message)
+        failure.log(surface: surface)
+        return failure.displayMessage
     }
 }
