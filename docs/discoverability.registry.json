@@ -2086,6 +2086,33 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-adoption-canonicity-check-projected-alias",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/adoption-canonicity-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "skills/adoption-canonicity-review/SKILL.md"
+      ],
+      "discoveryTerms": [
+        "adoption-canonicity-check",
+        "Adoption Canonicity Check",
+        "Adoption Canonicity Check projected alias"
+      ],
+      "searchQueries": [
+        {
+          "query": "adoption-canonicity-check",
+          "expectPath": "scripts/adoption-canonicity-check.mjs"
+        }
+      ],
+      "guard": "scripts/adoption-canonicity-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-adr-operational-coverage-check",
       "kind": "guardrail",
       "steward": "clawix",
@@ -2337,6 +2364,66 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-core-ux-reliability-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/core_ux_reliability_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "core_ux_reliability_check",
+        "Core Ux Reliability Check",
+        "Core UX Reliability Check",
+        "Core UX Reliability Gate",
+        "core-ux lane",
+        "macOS real-app P0 UX gate"
+      ],
+      "searchQueries": [
+        {
+          "query": "core_ux_reliability_check",
+          "expectPath": "scripts/core_ux_reliability_check.mjs"
+        },
+        {
+          "query": "Core UX Reliability Gate",
+          "expectPath": "docs/governance/core-ux-reliability.md"
+        }
+      ],
+      "guard": "scripts/core_ux_reliability_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-debt-control-baseline-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/debt_control_baseline_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/release-readiness.manifest.json"
+      ],
+      "discoveryTerms": [
+        "debt_control_baseline_check",
+        "Debt Control Baseline Check",
+        "release debt control baseline guard"
+      ],
+      "searchQueries": [
+        {
+          "query": "debt_control_baseline_check",
+          "expectPath": "scripts/debt_control_baseline_check.mjs"
+        }
+      ],
+      "guard": "scripts/debt_control_baseline_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-debt-ledger-projection-check",
       "kind": "guardrail",
       "steward": "clawix",
@@ -2412,6 +2499,33 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "guard-scripts-evolution-governance-check-projected-alias",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/evolution-governance-check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "skills/compatibility-evolution-work/SKILL.md"
+      ],
+      "discoveryTerms": [
+        "evolution-governance-check",
+        "Evolution Governance Check",
+        "Evolution Governance Check projected alias"
+      ],
+      "searchQueries": [
+        {
+          "query": "evolution-governance-check",
+          "expectPath": "scripts/evolution-governance-check.mjs"
+        }
+      ],
+      "guard": "scripts/evolution-governance-check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-goal-completion-gate-check",
       "kind": "guardrail",
       "steward": "clawix",
@@ -2433,38 +2547,6 @@
         }
       ],
       "guard": "scripts/goal_completion_gate_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
-      "id": "guard-scripts-core-ux-reliability-check",
-      "kind": "guardrail",
-      "steward": "clawix",
-      "canonicalSource": "scripts/core_ux_reliability_check.mjs",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md"
-      ],
-      "discoveryTerms": [
-        "core_ux_reliability_check",
-        "Core UX Reliability Check",
-        "Core UX Reliability Gate",
-        "core-ux lane",
-        "macOS real-app P0 UX gate"
-      ],
-      "searchQueries": [
-        {
-          "query": "core_ux_reliability_check",
-          "expectPath": "scripts/core_ux_reliability_check.mjs"
-        },
-        {
-          "query": "Core UX Reliability Gate",
-          "expectPath": "docs/governance/core-ux-reliability.md"
-        }
-      ],
-      "guard": "scripts/core_ux_reliability_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },
@@ -2676,6 +2758,37 @@
       "guard": "scripts/localization_surface_guard.mjs",
       "status": "enforced",
       "reviewDate": "2026-05-21"
+    },
+    {
+      "id": "guard-scripts-cross-platform-localization-guard",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/cross_platform_localization_guard.mjs",
+      "requiredEntrypoints": [
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "qa/scenarios/localization-backlog.md",
+        "playbooks/testing.md"
+      ],
+      "discoveryTerms": [
+        "cross_platform_localization_guard",
+        "Cross Platform Localization Guard",
+        "non-macOS localization baseline",
+        "iOS Android Web visible literal guard"
+      ],
+      "searchQueries": [
+        {
+          "query": "iOS Android Web visible literal guard",
+          "expectPath": "scripts/cross_platform_localization_guard.mjs"
+        },
+        {
+          "query": "non-macOS localization baseline",
+          "expectPath": "scripts/cross_platform_localization_guard.mjs"
+        }
+      ],
+      "guard": "scripts/cross_platform_localization_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-05-23"
     },
     {
       "id": "guard-scripts-naming-shape-check",
@@ -2965,33 +3078,6 @@
       "reviewDate": "2026-08-18"
     },
     {
-      "id": "guard-scripts-debt-control-baseline-check",
-      "kind": "guardrail",
-      "steward": "clawix",
-      "canonicalSource": "scripts/debt_control_baseline_check.mjs",
-      "requiredEntrypoints": [
-        "AGENTS.md",
-        "CLAUDE.md",
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/release-readiness.manifest.json"
-      ],
-      "discoveryTerms": [
-        "debt_control_baseline_check",
-        "Debt Control Baseline Check",
-        "release debt control baseline guard"
-      ],
-      "searchQueries": [
-        {
-          "query": "debt_control_baseline_check",
-          "expectPath": "scripts/debt_control_baseline_check.mjs"
-        }
-      ],
-      "guard": "scripts/debt_control_baseline_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18"
-    },
-    {
       "id": "guard-scripts-release-external-pending-gate",
       "kind": "guardrail",
       "steward": "clawix",
@@ -3115,6 +3201,62 @@
       "status": "enforced",
       "reviewDate": "2026-08-21",
       "canonicalName": "runtime-ecosystem-lens-check"
+    },
+    {
+      "id": "guard-scripts-privacy-artifact-safety-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/privacy_artifact_safety_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "privacy_artifact_safety_check",
+        "Privacy Artifact Safety Check",
+        "logs traces reports fixtures secrets redaction",
+        "sensitive artifact redaction fixtures"
+      ],
+      "searchQueries": [
+        {
+          "query": "logs traces reports fixtures secrets redaction",
+          "expectPath": "scripts/privacy_artifact_safety_check.mjs"
+        }
+      ],
+      "guard": "scripts/privacy_artifact_safety_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-23",
+      "canonicalName": "privacy-artifact-safety-check"
+    },
+    {
+      "id": "clawix-scale-lab-fixture-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/scale_lab_fixture_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/governance/performance-governance.md"
+      ],
+      "discoveryTerms": [
+        "scale_lab_fixture_check",
+        "Scale Lab Fixture Check",
+        "Clawix Scale Lab fixture check",
+        "ClawJS Scale Lab fixture consumer"
+      ],
+      "searchQueries": [
+        {
+          "query": "Clawix Scale Lab fixture check",
+          "expectPath": "scripts/scale_lab_fixture_check.mjs"
+        }
+      ],
+      "guard": "scripts/scale_lab_fixture_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
     },
     {
       "id": "guard-scripts-security-threat-model-check",
@@ -3286,12 +3428,17 @@
       "discoveryTerms": [
         "surface_narrative_guard",
         "Surface Narrative Guard",
-        "nueva superficie sin relato"
+        "nueva superficie sin relato",
+        "surface-narrative-clawix-baseline"
       ],
       "searchQueries": [
         {
           "query": "surface_narrative_guard",
           "expectPath": "scripts/surface_narrative_guard.mjs"
+        },
+        {
+          "query": "surface-narrative-clawix-baseline",
+          "expectPath": "docs/surface-narrative-clawix-baseline.json"
         }
       ],
       "guard": "scripts/surface_narrative_guard.mjs",
@@ -3311,12 +3458,17 @@
       ],
       "discoveryTerms": [
         "surface_resource_contract_guard",
-        "Surface Resource Contract Guard"
+        "Surface Resource Contract Guard",
+        "surface-resource-contract-clawix-baseline"
       ],
       "searchQueries": [
         {
           "query": "surface_resource_contract_guard",
           "expectPath": "scripts/surface_resource_contract_guard.mjs"
+        },
+        {
+          "query": "surface-resource-contract-clawix-baseline",
+          "expectPath": "docs/surface-resource-contract-clawix-baseline.json"
         }
       ],
       "guard": "scripts/surface_resource_contract_guard.mjs",
@@ -3336,12 +3488,17 @@
       ],
       "discoveryTerms": [
         "surface-evidence-projection-check",
-        "Surface Evidence Projection Check"
+        "Surface Evidence Projection Check",
+        "surface-evidence-projection-baseline"
       ],
       "searchQueries": [
         {
           "query": "surface-evidence-projection-check",
           "expectPath": "scripts/surface-evidence-projection-check.mjs"
+        },
+        {
+          "query": "surface-evidence-projection-baseline",
+          "expectPath": "docs/surface-evidence-projection-baseline.json"
         }
       ],
       "guard": "scripts/surface-evidence-projection-check.mjs",
@@ -5502,31 +5659,6 @@
       "guard": "scripts/verify-system-telemetry-goal.mjs",
       "status": "enforced",
       "reviewDate": "2026-05-20",
-      "steward": "clawix"
-    },
-    {
-      "id": "clawix-scale-lab-fixture-check",
-      "kind": "guardrail",
-      "canonicalSource": "scripts/scale_lab_fixture_check.mjs",
-      "requiredEntrypoints": [
-        "docs/discoverability.md",
-        "docs/decision-map.md",
-        "docs/governance/performance-governance.md"
-      ],
-      "discoveryTerms": [
-        "scale_lab_fixture_check",
-        "Clawix Scale Lab fixture check",
-        "ClawJS Scale Lab fixture consumer"
-      ],
-      "searchQueries": [
-        {
-          "query": "Clawix Scale Lab fixture check",
-          "expectPath": "scripts/scale_lab_fixture_check.mjs"
-        }
-      ],
-      "guard": "scripts/scale_lab_fixture_check.mjs",
-      "status": "enforced",
-      "reviewDate": "2026-08-18",
       "steward": "clawix"
     }
   ]

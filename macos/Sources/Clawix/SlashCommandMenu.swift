@@ -103,7 +103,11 @@ enum SlashCommandCatalog {
         SlashCommand(id: "memories",
                      label: "Memories",
                      description: "Open your memories",
-                     iconName: "brain")
+                     iconName: "brain"),
+        SlashCommand(id: "trace",
+                     label: "Performance trace",
+                     description: "Record a performance trace",
+                     iconName: "waveform.path.ecg")
     ]
 
     static func filter(_ query: String, isVisible: (AppFeature) -> Bool) -> [SlashCommand] {

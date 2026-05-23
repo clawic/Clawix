@@ -45,6 +45,8 @@ function requireArray(value, label, failures) {
   return value;
 }
 
+const allowedEdgeTypes = new Set(["consumes", "owns", "exposes", "brokers"]);
+
 function checkIdSummary(summary, label, failures) {
   if (!summary || typeof summary.count !== "number" || !hasText(summary.idsSha256)) {
     failures.push(`${label} must include count, idsSha256, and ids`);
@@ -98,6 +100,7 @@ function checkManifest(manifest, baseline, today = new Date().toISOString().slic
   const routes = requireArray(manifest.routes, "manifest.routes", failures);
   const nodeIds = new Set(nodes.map((node) => node.id));
   const edgeIds = new Set(edges.map((edge) => edge.id));
+  const edgeById = new Map(edges.map((edge) => [edge.id, edge]));
   const externalNodeRefs = new Set();
   const baselineEntry = baseline.entries?.find((entry) => entry.id === "clawix.generated-persistent-surface-source-locators");
 
@@ -129,6 +132,9 @@ function checkManifest(manifest, baseline, today = new Date().toISOString().slic
     for (const field of ["id", "fromId", "toId", "type", "surfaceSteward", "contractId", "transport", "validation"]) {
       if (!edge[field]) failures.push(`${edge.id || "<unknown edge>"} is missing ${field}`);
     }
+    if (edge.type && !allowedEdgeTypes.has(edge.type)) {
+      failures.push(`${edge.id} has invalid edge type ${edge.type}`);
+    }
     checkNodeRef(edge.fromId, `${edge.id} fromId`, nodeIds, externalNodeRefs, failures);
     checkNodeRef(edge.toId, `${edge.id} toId`, nodeIds, externalNodeRefs, failures);
     checkNodeRef(edge.contractId, `${edge.id} contractId`, nodeIds, externalNodeRefs, failures);
@@ -151,7 +157,23 @@ function checkManifest(manifest, baseline, today = new Date().toISOString().slic
       for (const field of ["edgeId", "fromId", "toId", "edgeType", "contractId", "surfaceSteward", "transport", "validation"]) {
         if (!step[field]) failures.push(`${route.id} step is missing ${field}`);
       }
+      if (step.edgeType && !allowedEdgeTypes.has(step.edgeType)) {
+        failures.push(`${route.id} step edgeType ${step.edgeType} is invalid`);
+      }
       if (step.edgeId && !edgeIds.has(step.edgeId)) failures.push(`${route.id} step edgeId ${step.edgeId} is not a registered edge`);
+      const edge = step.edgeId ? edgeById.get(step.edgeId) : null;
+      if (edge) {
+        for (const [stepField, edgeField] of [
+          ["fromId", "fromId"],
+          ["toId", "toId"],
+          ["edgeType", "type"],
+          ["contractId", "contractId"],
+        ]) {
+          if (step[stepField] !== edge[edgeField]) {
+            failures.push(`${route.id} step ${step.edgeId} ${stepField} ${step[stepField]} does not match edge ${edgeField} ${edge[edgeField]}`);
+          }
+        }
+      }
       checkNodeRef(step.fromId, `${route.id} step fromId`, nodeIds, externalNodeRefs, failures);
       checkNodeRef(step.toId, `${route.id} step toId`, nodeIds, externalNodeRefs, failures);
       checkNodeRef(step.contractId, `${route.id} step contractId`, nodeIds, externalNodeRefs, failures);
@@ -258,6 +280,13 @@ function runSelfTest() {
   );
   if (!negative.some((failure) => failure.includes("missing.edge"))) {
     throw new Error("negative fixture did not catch missing route edge reference");
+  }
+  const mismatchedStep = checkManifest(
+    { ...manifest, routes: [{ ...manifest.routes[0], steps: [{ ...manifest.routes[0].steps[0], edgeType: "owns" }] }] },
+    baseline,
+  );
+  if (!mismatchedStep.some((failure) => failure.includes("edgeType owns does not match edge type consumes"))) {
+    throw new Error("negative fixture did not catch route step edge classification drift");
   }
   const sourceDrift = checkManifest(
     { ...manifest, nodes: [...manifest.nodes, { id: "clawix.new.node", surfaceSteward: "clawix", kind: "preferenceKey" }] },

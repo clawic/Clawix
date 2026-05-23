@@ -81,6 +81,9 @@ Clawix route manifest entries must keep explicit steps, owner, transport,
 contract, validation, tests, and gaps when applicable. Host-real validation is
 still required for signed-host or native-permission behavior; hermetic route
 fixtures are partial for those paths.
+The generated route registry manifest lives in
+`docs/surface-route-registry.manifest.json` and is checked by
+`node scripts/generate-surface-route-registry.mjs --check`.
 New Clawix manifest nodes, routes, UI/interface surfaces, permissions, storage
 keys, and feature flags must also carry `surfaceNarrative`: the concept they
 implement, the decision authorizing them, the human/programmatic surface that

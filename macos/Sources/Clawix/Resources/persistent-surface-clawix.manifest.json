@@ -7814,5 +7814,41 @@
       "surfaceSteward" : "clawix"
     }
   ],
-  "version" : 1
+  "version" : 1,
+  "surfaceRouteRegistry" : {
+    "sourceManifest" : "docs/surface-route-registry.manifest.json",
+    "generatedSwift" : "macos/Sources/Clawix/SurfaceRouteRegistry.generated.swift",
+    "generator" : "scripts/generate-surface-route-registry.mjs",
+    "version" : 1,
+    "routeCount" : 50,
+    "modules" : [
+      "core",
+      "protected",
+      "apps",
+      "automation",
+      "data",
+      "drive",
+      "time",
+      "skills",
+      "iot",
+      "design",
+      "agents",
+      "publishing",
+      "life",
+      "network"
+    ],
+    "dependencies" : [
+      "languageModels",
+      "searchIndex",
+      "databaseBackfill",
+      "customApps",
+      "connectors",
+      "downloads",
+      "externalProviders"
+    ],
+    "readinessModes" : [
+      "immediateAfterFirstRender",
+      "childReported"
+    ]
+  }
 }

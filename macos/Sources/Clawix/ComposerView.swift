@@ -181,6 +181,8 @@ struct ComposerView: View {
                                     }
                                 } else if cmd.id == "memories" {
                                     appState.navigate(to: .memoryHome)
+                                } else if cmd.id == "trace" {
+                                    PerfTraceController.shared.toggle()
                                 }
                             },
                             onHover: { cmd in

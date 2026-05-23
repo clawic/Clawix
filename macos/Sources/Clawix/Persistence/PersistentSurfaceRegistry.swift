@@ -769,6 +769,9 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.publishing.workspace", "Publishing workspace", PublishingWorkspaceStore.workspaceKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.git.commitInstructions", "Git commit instructions", ClawixPersistentSurfaceKeys.gitCommitInstructions, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.featureFlags.developerSurfaces", "Developer-only surface flag", ClawixPersistentSurfaceKeys.featureFlagsDeveloperSurfaces, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.sync.archiveWithCodex", "Sync archived chats with Codex runtime", SyncSettings.archiveKey, PersistentSurfaceKind.appStorageKey),
+            ("clawix.prefs.sync.renamesWithCodex", "Sync chat renames with Codex runtime", SyncSettings.renamesKey, PersistentSurfaceKind.appStorageKey),
+            ("clawix.prefs.sync.autoReloadOnFocus", "Auto-refresh chats on focus", SyncSettings.autoReloadKey, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.life.enabledVerticals", "Life enabled verticals", ClawixPersistentSurfaceKeys.lifeEnabledVerticals, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.life.hiddenVerticals", "Life hidden verticals", ClawixPersistentSurfaceKeys.lifeHiddenVerticals, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.relay.refresh", "Relay refresh token pattern", ClawixPersistentSurfaceKeys.relayRefreshPattern, PersistentSurfaceKind.preferenceKey),
@@ -786,6 +789,8 @@ enum ClawixPersistentSurfaceRegistry {
             ("clawix.prefs.updater.pendingBuild", "Pending update build", UpdaterController.pendingBuildKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.updater.pendingDisplay", "Pending update display", UpdaterController.pendingDisplayKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.quickAsk.hotkey", "Quick Ask hotkey", QuickAskHotkeyRegistrar.defaultsKey, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.quickAsk.defaultModel", "Quick Ask default model", QuickAskController.defaultModelKey, PersistentSurfaceKind.preferenceKey),
+            ("clawix.prefs.quickAsk.advancedExpanded", "Quick Ask advanced expanded", ClawixPersistentSurfaceKeys.quickAskAdvancedExpanded, PersistentSurfaceKind.appStorageKey),
             ("clawix.prefs.quickAsk.bottomCenter", "Quick Ask panel bottom center", QuickAskController.bottomCenterKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.quickAsk.activeChatId", "Quick Ask active chat id", QuickAskController.chatIdKey, PersistentSurfaceKind.preferenceKey),
             ("clawix.prefs.quickAsk.clipboardLastSeen", "Quick Ask clipboard last seen", QuickAskClipboardSniffer.lastSeenKey, PersistentSurfaceKind.preferenceKey),
@@ -1017,6 +1022,8 @@ enum ClawixPersistentSurfaceKeys {
     static let binaryPath = "ClawixBinaryPath"
     static let backgroundBridgeWasEnabled = "clawix.backgroundBridge.wasEnabled"
     static let appleLanguages = "AppleLanguages"
+    static let quickAskDefaultModel = "quickAsk.defaultModel"
+    static let quickAskAdvancedExpanded = "quickAsk.advancedExpanded"
     static let swiftSurfaceRunnerEnv = "CLAWIX_SWIFT_SURFACE_RUNNER"
     static let systemTelemetryHostCommandEnv = "CLAW_SYSTEM_TELEMETRY_HOST_COMMAND"
 }
