@@ -189,10 +189,13 @@ struct MacControlSettingsPage: View {
             SettingsCard {
                 let capabilities = MacControlSettingsCapability.capabilities(in: family)
                 ForEach(Array(capabilities.enumerated()), id: \.element.id) { index, capability in
+                    let localBlockReason = localRunBlockReason(for: capability)
                     MacControlCapabilityRow(
                         capability: capability,
+                        localBlockReason: localBlockReason,
                         onPlan: { center.plan(capability, arguments: arguments(for: capability)) },
-                        onRun: { pendingCapability = capability }
+                        onRun: { pendingCapability = capability },
+                        canRunAction: localBlockReason == nil
                     )
                     if index < capabilities.count - 1 {
                         CardDivider()
@@ -278,6 +281,25 @@ struct MacControlSettingsPage: View {
         )
     }
 
+    private func localRunBlockReason(for capability: MacControlSettingsCapability) -> String? {
+        switch capability.id {
+        case "mac.wifi.connect":
+            return wifiSSID.trimmedForMacControl.isEmpty ? "Wi-Fi connect requires an explicit SSID." : nil
+        case "mac.window.move":
+            return windowX.macControlInteger == nil || windowY.macControlInteger == nil
+                ? "Window move requires integer x and y arguments."
+                : nil
+        case "mac.window.resize":
+            return windowWidth.macControlPositiveInteger == nil || windowHeight.macControlPositiveInteger == nil
+                ? "Window resize requires positive integer width and height arguments."
+                : nil
+        case "mac.shortcut.run":
+            return shortcutName.trimmedForMacControl.isEmpty ? "Shortcut run requires a shortcut name." : nil
+        default:
+            return nil
+        }
+    }
+
     private func openSettings(for permission: MacControlPermissionSnapshot) {
         guard let permissionID = NativeMacPermissionBroker.PermissionID(rawValue: permission.id),
               permission.settingsURLString != nil else {
@@ -350,12 +372,17 @@ private enum MacControlTimelineFilter: String, CaseIterable, Identifiable {
 
 private struct MacControlCapabilityRow: View {
     let capability: MacControlSettingsCapability
+    let localBlockReason: String?
     let onPlan: () -> Void
     let onRun: () -> Void
+    let canRunAction: Bool
 
     var body: some View {
         SettingsRow {
-            RowLabel(title: LocalizedStringKey(capability.title), detail: LocalizedStringKey(capability.detail))
+            RowLabel(
+                title: LocalizedStringKey(capability.title),
+                detail: LocalizedStringKey(localBlockReason ?? capability.detail)
+            )
         } trailing: {
             HStack(spacing: 7) {
                 Button("Plan", action: onPlan)
@@ -365,6 +392,8 @@ private struct MacControlCapabilityRow: View {
                     Button("Run", action: onRun)
                         .buttonStyle(.borderless)
                         .controlSize(.small)
+                        .disabled(!canRunAction)
+                        .accessibilityHint(Text(localBlockReason ?? "Runs this Mac Control capability through the signed host broker."))
                 }
             }
         }
@@ -477,5 +506,20 @@ private struct MacControlTimelineRow: View {
                     .lineLimit(1)
             }
         }
+    }
+}
+
+private extension String {
+    var trimmedForMacControl: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var macControlInteger: Int? {
+        Int(trimmedForMacControl)
+    }
+
+    var macControlPositiveInteger: Int? {
+        guard let value = macControlInteger, value > 0 else { return nil }
+        return value
     }
 }
