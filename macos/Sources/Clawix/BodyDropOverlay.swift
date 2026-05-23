@@ -22,6 +22,36 @@ extension View {
     }
 }
 
+enum ComposerFileDropPolicy {
+    static func accepts(route: SidebarRoute) -> Bool {
+        switch route {
+        case .home, .search, .plugins, .project, .chat:
+            return true
+        case .automations, .settings, .rescue, .secretsHome, .databaseHome, .databaseWorkbench, .databaseCollection, .memoryHome,
+             .indexHome, .macCare, .marketplaceHome,
+             .calendarHome, .contactsHome, .networkControl,
+             .driveAdmin, .drivePhotos, .driveDocuments, .driveRecent, .driveFolder,
+             .app, .appsHome, .skills, .skillDetail,
+             .iotHome, .iotDeviceDetail,
+             .designStylesHome, .designStyleDetail, .designTemplatesHome,
+             .designTemplateDetail, .designReferencesHome, .designEditor,
+             .agentsHome, .agentDetail, .personalitiesHome, .personalityDetail,
+             .skillCollectionsHome, .skillCollectionDetail,
+             .connectionsHome, .connectionDetail,
+             .publishingHome, .publishingComposer, .publishingChannels,
+             .lifeHome, .lifeVertical, .lifeSettings:
+            return false
+        }
+    }
+
+    @MainActor
+    static func stageDroppedFiles(_ urls: [URL], into appState: AppState) -> Bool {
+        guard !urls.isEmpty else { return false }
+        appState.addComposerAttachments(urls)
+        return true
+    }
+}
+
 private struct BodyDropTarget: ViewModifier {
     let enabled: Bool
     @EnvironmentObject var appState: AppState
@@ -45,7 +75,7 @@ private struct BodyDropTarget: ViewModifier {
                         guard !urls.isEmpty else { return false }
                         DispatchQueue.main.async {
                             withAnimation(.easeOut(duration: 0.16)) {
-                                appState.addComposerAttachments(urls)
+                                _ = ComposerFileDropPolicy.stageDroppedFiles(urls, into: appState)
                             }
                         }
                         return true

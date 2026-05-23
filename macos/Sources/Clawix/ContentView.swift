@@ -122,24 +122,7 @@ struct ContentView: View {
     /// files as composer attachments. Settings and Automations don't
     /// host the composer, so dropping there is silently ignored.
     private var routeAcceptsFileDrops: Bool {
-        switch visibleRoute {
-        case .home, .search, .plugins, .project, .chat:
-            return true
-        case .automations, .settings, .rescue, .secretsHome, .databaseHome, .databaseWorkbench, .databaseCollection, .memoryHome,
-             .indexHome, .macCare, .marketplaceHome,
-             .calendarHome, .contactsHome, .networkControl,
-             .driveAdmin, .drivePhotos, .driveDocuments, .driveRecent, .driveFolder,
-             .app, .appsHome, .skills, .skillDetail,
-             .iotHome, .iotDeviceDetail,
-             .designStylesHome, .designStyleDetail, .designTemplatesHome,
-             .designTemplateDetail, .designReferencesHome, .designEditor,
-             .agentsHome, .agentDetail, .personalitiesHome, .personalityDetail,
-             .skillCollectionsHome, .skillCollectionDetail,
-             .connectionsHome, .connectionDetail,
-             .publishingHome, .publishingComposer, .publishingChannels,
-             .lifeHome, .lifeVertical, .lifeSettings:
-            return false
-        }
+        ComposerFileDropPolicy.accepts(route: visibleRoute)
     }
 
     private var routeRenderID: String {
