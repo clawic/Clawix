@@ -20,6 +20,8 @@ struct AppsSettingsPage: View {
     @State private var pendingDelete: AppRecord?
     @State private var trustAuditSheet: AppsSettingsTrustAuditSheetModel?
     @State private var highRiskAuditSheet: AppsSettingsHighRiskAuditSheetModel?
+    @State private var actionInFlight: Set<UUID> = []
+    @State private var appsError: String?
 
     private var totalSizeBytes: Int {
         appsStore.apps.reduce(0) { partial, record in
@@ -28,27 +30,26 @@ struct AppsSettingsPage: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: 0) {
             header
 
-            VStack(alignment: .leading, spacing: 14) {
-                Toggle(isOn: $appsFeatureEnabled) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Enable Apps")
-                            .font(BodyFont.system(size: 14, wght: 600))
-                        Text("Show the Apps section in the sidebar and let the agent create new ones.")
-                            .font(BodyFont.system(size: 12.5, wght: 400))
-                            .foregroundColor(Color(white: 0.6))
-                    }
-                }
-                .toggleStyle(.switch)
+            SectionLabel(title: "General")
+            SettingsCard {
+                ToggleRow(
+                    title: "Enable Apps",
+                    detail: "Show the Apps section in the sidebar and let the agent create new ones.",
+                    isOn: $appsFeatureEnabled
+                )
             }
-            .padding(16)
-            .background(cardBackground)
 
-            VStack(alignment: .leading, spacing: 0) {
+            SectionLabel(title: "Installed")
+            SettingsCard {
                 tableHeader
-                Divider().opacity(0.18)
+                CardDivider()
+                if let appsError {
+                    InfoBanner(text: appsError, kind: .error)
+                        .padding(12)
+                }
                 if appsStore.apps.isEmpty {
                     emptyTable
                 } else {
@@ -57,8 +58,9 @@ struct AppsSettingsPage: View {
                             AppsSettingsRow(
                                 record: record,
                                 variantDefault: variantDefaultPresentation(for: record),
+                                isBusy: actionInFlight.contains(record.id),
                                 onOpen: { appState.navigate(to: .app(record.id)) },
-                                onTogglePin: { appsStore.togglePinned(record) },
+                                onTogglePin: { togglePinned(record) },
                                 onToggleInternet: { toggleInternet(record) },
                                 onSetUserDefault: { setVariantDefault(record, scope: .user) },
                                 onSetWorkspaceDefault: { setVariantDefault(record, scope: .workspace) },
@@ -69,48 +71,46 @@ struct AppsSettingsPage: View {
                                 onDelete: { pendingDelete = record },
                                 sizeOnDisk: appSizeOnDisk(record)
                             )
-                            Divider().opacity(0.10)
+                            if record.id != appsStore.sortedApps.last?.id {
+                                CardDivider()
+                            }
                         }
                     }
                 }
             }
-            .background(cardBackground)
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Defaults for new apps")
-                    .font(BodyFont.system(size: 13, wght: 600))
-                    .foregroundColor(Color(white: 0.85))
-                Toggle(isOn: $defaultInternetAllowed) {
-                    Text("Internet access")
-                        .font(BodyFont.system(size: 13, wght: 500))
-                }
-                .toggleStyle(.switch)
-                Toggle(isOn: $defaultCallAgent) {
-                    Text("Allow apps to send messages to the agent")
-                        .font(BodyFont.system(size: 13, wght: 500))
-                }
-                .toggleStyle(.switch)
+            SectionLabel(title: "Defaults for new apps")
+            SettingsCard {
+                ToggleRow(
+                    title: "Internet access",
+                    detail: nil,
+                    isOn: $defaultInternetAllowed
+                )
+                CardDivider()
+                ToggleRow(
+                    title: "Allow apps to send messages to the agent",
+                    detail: nil,
+                    isOn: $defaultCallAgent
+                )
             }
-            .padding(16)
-            .background(cardBackground)
 
             HStack {
                 Text("Storage used: \(formatBytes(totalSizeBytes))")
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundColor(Palette.textSecondary)
                 Spacer()
-                Button("Open Apps folder") {
+                IconChipButton(symbol: "folder", label: "Open Apps folder") {
                     NSWorkspace.shared.activateFileViewerSelecting([AppsStore.defaultRootURL()])
                 }
-                .buttonStyle(.link)
             }
+            .padding(.top, 18)
         }
         .alert(item: $pendingDelete) { record in
             Alert(
                 title: Text("Delete \"\(record.name)\"?"),
                 message: Text("The app folder will be removed from disk. This cannot be undone."),
                 primaryButton: .destructive(Text("Delete")) {
-                    try? appsStore.delete(record)
+                    delete(record)
                 },
                 secondaryButton: .cancel()
             )
@@ -127,33 +127,27 @@ struct AppsSettingsPage: View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Apps")
-                    .font(BodyFont.system(size: 20, wght: 700))
+                    .font(BodyFont.system(size: 22, weight: .semibold))
                     .foregroundColor(Palette.textPrimary)
-                Text("Mini web apps your agent has built. They live under \(AppsStore.defaultRootURL().path) and you can sync that folder with anything that knows about file paths.")
-                    .font(BodyFont.system(size: 13, wght: 400))
-                    .foregroundColor(Color(white: 0.62))
+                Text(String(
+                    format: L10n.t("Mini web apps your agent has built. They live under %@; Settings only opens and edits the local managed folder."),
+                    locale: AppLocale.current,
+                    AppsStore.defaultRootURL().path
+                ))
+                    .font(BodyFont.system(size: 12.5))
+                    .foregroundColor(Palette.textSecondary)
             }
 
             Spacer()
 
-            HStack(spacing: 10) {
-                Button(action: showAllTrustAudit) {
-                    Image(systemName: "shield.lefthalf.filled")
-                        .font(.system(size: 14, weight: .semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundColor(Color(white: 0.72))
-                .help("Trust audit")
-
-                Button(action: showAllHighRiskAudit) {
-                    Image(systemName: "exclamationmark.shield")
-                        .font(.system(size: 14, weight: .semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundColor(Color(white: 0.72))
-                .help("High-risk action audit")
+            HStack(spacing: 8) {
+                IconChipButton(symbol: "badge.check", action: showAllTrustAudit)
+                    .help("Trust audit")
+                IconChipButton(symbol: "exclamationmark.shield", action: showAllHighRiskAudit)
+                    .help("High-risk action audit")
             }
         }
+        .padding(.bottom, 26)
     }
 
     private var tableHeader: some View {
@@ -176,11 +170,9 @@ struct AppsSettingsPage: View {
                 .frame(width: 140)
         }
         .font(BodyFont.system(size: 11.5, wght: 600))
-        .foregroundColor(Color(white: 0.5))
-        .textCase(.uppercase)
-        .tracking(0.4)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .foregroundColor(Palette.textSecondary)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
     }
 
     private var emptyTable: some View {
@@ -188,38 +180,59 @@ struct AppsSettingsPage: View {
             Spacer()
             Text("No apps yet")
                 .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Palette.textSecondary)
             Spacer()
         }
         .padding(.vertical, 32)
     }
 
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .fill(Color.white.opacity(0.025))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.white.opacity(0.07), lineWidth: 0.7)
-            )
-    }
-
     private func toggleInternet(_ record: AppRecord) {
         var updated = record
         if !updated.permissions.internet {
-            // Going from offline → online: ask the user explicitly. We
-            // already gate by file path so a JSON edit on disk would
-            // not trigger this dialog, but the Settings UI funnel
-            // should always pause.
             AppPermissionPrompt.shared.requestInternetApproval(appName: record.name) { allowed in
                 guard allowed else { return }
-                var copy = record
-                copy.permissions.internet = true
-                try? appsStore.update(copy)
+                Task { @MainActor in
+                    var copy = record
+                    copy.permissions.internet = true
+                    runAppMutation(record) {
+                        try appsStore.update(copy)
+                    }
+                }
             }
             return
         }
         updated.permissions.internet = false
-        try? appsStore.update(updated)
+        runAppMutation(record) {
+            try appsStore.update(updated)
+        }
+    }
+
+    private func togglePinned(_ record: AppRecord) {
+        var updated = record
+        updated.pinned.toggle()
+        runAppMutation(record) {
+            try appsStore.update(updated)
+        }
+    }
+
+    private func delete(_ record: AppRecord) {
+        runAppMutation(record) {
+            try appsStore.delete(record)
+        }
+    }
+
+    private func runAppMutation(_ record: AppRecord, operation: @escaping @MainActor () throws -> Void) {
+        appsError = nil
+        actionInFlight.insert(record.id)
+        Task { @MainActor in
+            await Task.yield()
+            do {
+                try operation()
+            } catch {
+                appsError = SettingsUtilities.failureMessage(for: error, surface: "settings.apps.mutation")
+            }
+            actionInFlight.remove(record.id)
+        }
     }
 
     private func variantDefaultPresentation(for record: AppRecord) -> AppsSettingsVariantDefaultPresentation {
@@ -243,7 +256,7 @@ struct AppsSettingsPage: View {
             )
             ToastCenter.shared.show(scope == .workspace ? "Workspace variant default set" : "User variant default set")
         } catch {
-            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+            ToastCenter.shared.show(SettingsUtilities.failureMessage(for: error, surface: "settings.apps.variantDefault"), icon: .error)
         }
     }
 
@@ -262,7 +275,7 @@ struct AppsSettingsPage: View {
             let events = try AppTrustAudit.read(from: appsStore.trustAuditURL(for: record))
             trustAuditSheet = AppsSettingsTrustAuditSheetModel(record: record, events: events)
         } catch {
-            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+            ToastCenter.shared.show(SettingsUtilities.failureMessage(for: error, surface: "settings.apps.trustAudit"), icon: .error)
         }
     }
 
@@ -274,7 +287,7 @@ struct AppsSettingsPage: View {
             }
             trustAuditSheet = AppsSettingsTrustAuditSheetModel(entries: entries)
         } catch {
-            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+            ToastCenter.shared.show(SettingsUtilities.failureMessage(for: error, surface: "settings.apps.trustAuditAll"), icon: .error)
         }
     }
 
@@ -283,7 +296,7 @@ struct AppsSettingsPage: View {
             let receipts = try AppHighRiskActionAudit.read(from: appsStore.highRiskActionAuditURL(for: record))
             highRiskAuditSheet = AppsSettingsHighRiskAuditSheetModel(record: record, receipts: receipts)
         } catch {
-            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+            ToastCenter.shared.show(SettingsUtilities.failureMessage(for: error, surface: "settings.apps.highRiskAudit"), icon: .error)
         }
     }
 
@@ -295,7 +308,7 @@ struct AppsSettingsPage: View {
             }
             highRiskAuditSheet = AppsSettingsHighRiskAuditSheetModel(entries: entries)
         } catch {
-            ToastCenter.shared.show(error.localizedDescription, icon: .error)
+            ToastCenter.shared.show(SettingsUtilities.failureMessage(for: error, surface: "settings.apps.highRiskAuditAll"), icon: .error)
         }
     }
 
@@ -326,6 +339,7 @@ struct AppsSettingsPage: View {
 private struct AppsSettingsRow: View {
     let record: AppRecord
     let variantDefault: AppsSettingsVariantDefaultPresentation
+    let isBusy: Bool
     let onOpen: () -> Void
     let onTogglePin: () -> Void
     let onToggleInternet: () -> Void
@@ -349,11 +363,11 @@ private struct AppsSettingsRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(record.name)
                         .font(BodyFont.system(size: 13.5, wght: 600))
-                        .foregroundColor(Color(white: 0.92))
+                        .foregroundColor(Palette.textPrimary)
                         .lineLimit(1)
                     Text(record.slug)
                         .font(BodyFont.system(size: 11.5, wght: 500))
-                        .foregroundColor(Color(white: 0.45))
+                        .foregroundColor(Palette.textTertiary)
                         .lineLimit(1)
                 }
             }
@@ -361,27 +375,32 @@ private struct AppsSettingsRow: View {
 
             Text(projectName)
                 .font(BodyFont.system(size: 12.5, wght: 500))
-                .foregroundColor(Color(white: 0.62))
+                .foregroundColor(Palette.textSecondary)
                 .frame(width: 130, alignment: .leading)
                 .lineLimit(1)
 
             Text(lastOpenedText)
                 .font(BodyFont.system(size: 12.5, wght: 500))
-                .foregroundColor(Color(white: 0.62))
+                .foregroundColor(Palette.textSecondary)
                 .frame(width: 130, alignment: .leading)
 
             Text(formatBytes(sizeOnDisk))
                 .font(BodyFont.system(size: 12.5, wght: 500))
-                .foregroundColor(Color(white: 0.62))
+                .foregroundColor(Palette.textSecondary)
                 .frame(width: 80, alignment: .trailing)
 
             Button(action: onToggleInternet) {
-                Image(systemName: record.permissions.internet ? "globe" : "globe.badge.chevron.backward")
-                    .foregroundColor(record.permissions.internet ? .green.opacity(0.8) : Color(white: 0.4))
-                    .font(.system(size: 13, weight: .semibold))
+                if isBusy {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    IconImage("globe", size: 13)
+                        .foregroundColor(record.permissions.internet ? Self.internetOnColor : Palette.textTertiary)
+                }
             }
             .buttonStyle(.plain)
             .frame(width: 50, alignment: .center)
+            .disabled(isBusy)
             .help(record.permissions.internet ? "Internet access enabled. Click to revoke." : "Offline. Click to allow internet.")
 
             trustControl
@@ -390,52 +409,59 @@ private struct AppsSettingsRow: View {
             variantDefaultControl
                 .frame(width: 86, alignment: .center)
 
-            HStack(spacing: 4) {
+            HStack(spacing: 6) {
                 Button(action: onOpen) {
-                    Image(systemName: "arrow.up.right.square")
+                    IconImage("arrow.up.right.square", size: 13)
                 }
                 .buttonStyle(.plain)
+                .disabled(isBusy)
                 .help("Open")
 
                 Button(action: onTogglePin) {
-                    Image(systemName: record.pinned ? "pin.fill" : "pin")
+                    IconImage(record.pinned ? "pin.fill" : "pin", size: 13)
+                        .foregroundColor(record.pinned ? Palette.textPrimary : Palette.textSecondary)
                 }
                 .buttonStyle(.plain)
+                .disabled(isBusy)
                 .help(record.pinned ? "Unpin" : "Pin")
 
                 Button(action: onShowTrustAudit) {
-                    Image(systemName: "shield.lefthalf.filled")
+                    IconImage("badge.check", size: 13)
                 }
                 .buttonStyle(.plain)
+                .disabled(isBusy)
                 .help("Trust audit")
 
                 Button(action: onShowHighRiskAudit) {
-                    Image(systemName: "exclamationmark.shield")
+                    IconImage("exclamationmark.shield", size: 13)
                 }
                 .buttonStyle(.plain)
+                .disabled(isBusy)
                 .help("High-risk action audit")
 
                 Button(action: onDelete) {
-                    Image(systemName: "trash")
+                    IconImage("trash", size: 13)
+                        .foregroundColor(Self.destructiveColor)
                 }
                 .buttonStyle(.plain)
+                .disabled(isBusy)
                 .help("Delete")
-                .foregroundColor(.red.opacity(0.8))
             }
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundColor(Color(white: 0.7))
+            .foregroundColor(Palette.textSecondary)
             .frame(width: 140, alignment: .trailing)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
     }
+
+    private static let internetOnColor = Color(red: 0.45, green: 0.78, blue: 0.55)
+    private static let destructiveColor = Color.red.opacity(0.8)
 
     @ViewBuilder
     private var trustControl: some View {
         let trust = AppsSettingsTrustPresentation(record: record)
         HStack(spacing: 5) {
-            Image(systemName: trust.symbolName)
-                .font(.system(size: 12, weight: .semibold))
+            IconImage(trust.symbolName, size: 12)
             Text(trust.statusLabel)
                 .font(BodyFont.system(size: 11.5, wght: 600))
                 .lineLimit(1)
@@ -459,20 +485,19 @@ private struct AppsSettingsRow: View {
                     .disabled(!variantDefault.isWorkspaceDefault)
             } label: {
                 HStack(spacing: 5) {
-                    Image(systemName: variantDefault.symbolName)
-                        .font(.system(size: 12, weight: .semibold))
+                    IconImage(variantDefault.symbolName, size: 12)
                     Text(variantDefault.statusLabel)
                         .font(BodyFont.system(size: 11.5, wght: 600))
                         .lineLimit(1)
                 }
-                .foregroundColor(variantDefault.canManageDefaults ? Color(white: 0.78) : Color(white: 0.42))
+                .foregroundColor(variantDefault.canManageDefaults ? Palette.textSecondary : Palette.textTertiary)
             }
             .buttonStyle(.plain)
             .help(variantDefault.helpText)
         } else {
             Text("—")
                 .font(BodyFont.system(size: 12.5, wght: 500))
-                .foregroundColor(Color(white: 0.34))
+                .foregroundColor(Palette.textTertiary)
         }
     }
 
@@ -612,53 +637,68 @@ private struct AppsTrustAuditSheet: View {
                     .foregroundColor(Palette.textPrimary)
                 Text(model.subtitle)
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(Color(white: 0.58))
+                    .foregroundColor(Palette.textSecondary)
             }
 
             if model.rows.isEmpty {
                 Text(model.emptyMessage)
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.58))
+                    .foregroundColor(Palette.textSecondary)
                     .frame(maxWidth: .infinity, minHeight: 120)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
                         ForEach(model.rows) { row in
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: row.symbolName)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(Color(white: 0.75))
-                                    .frame(width: 20, height: 20)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack {
-                                        Text(row.title)
-                                            .font(BodyFont.system(size: 13.5, wght: 650))
-                                            .foregroundColor(Color(white: 0.90))
-                                        Spacer()
-                                        Text(row.subtitle)
-                                            .font(BodyFont.system(size: 11.5, wght: 500))
-                                            .foregroundColor(Color(white: 0.48))
-                                    }
-                                    Text(row.detail)
-                                        .font(BodyFont.system(size: 12, wght: 400))
-                                        .foregroundColor(Color(white: 0.62))
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                            .padding(12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(Color.white.opacity(0.035))
-                            )
+                            AppsAuditRow(symbolName: row.symbolName,
+                                         title: row.title,
+                                         subtitle: row.subtitle,
+                                         detail: row.detail)
                         }
                     }
                 }
                 .frame(minHeight: 160, maxHeight: 360)
+                .thinScrollers()
             }
         }
         .padding(22)
         .frame(width: 560)
         .background(Palette.background)
+    }
+}
+
+/// Shared row for the trust / high-risk audit sheets.
+private struct AppsAuditRow: View {
+    let symbolName: String
+    let title: String
+    let subtitle: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            IconImage(symbolName, size: 13)
+                .foregroundColor(Palette.textSecondary)
+                .frame(width: 20, height: 20)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(title)
+                        .font(BodyFont.system(size: 13.5, wght: 600))
+                        .foregroundColor(Palette.textPrimary)
+                    Spacer()
+                    Text(subtitle)
+                        .font(BodyFont.system(size: 11.5, wght: 500))
+                        .foregroundColor(Palette.textTertiary)
+                }
+                Text(detail)
+                    .font(BodyFont.system(size: 12, wght: 400))
+                    .foregroundColor(Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.white.opacity(0.04))
+        )
     }
 }
 
@@ -737,48 +777,27 @@ private struct AppsHighRiskAuditSheet: View {
                     .foregroundColor(Palette.textPrimary)
                 Text(model.subtitle)
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(Color(white: 0.58))
+                    .foregroundColor(Palette.textSecondary)
             }
 
             if model.rows.isEmpty {
                 Text(model.emptyMessage)
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.58))
+                    .foregroundColor(Palette.textSecondary)
                     .frame(maxWidth: .infinity, minHeight: 120)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
                         ForEach(model.rows) { row in
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: row.symbolName)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(Color(white: 0.75))
-                                    .frame(width: 20, height: 20)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack {
-                                        Text(row.title)
-                                            .font(BodyFont.system(size: 13.5, wght: 650))
-                                            .foregroundColor(Color(white: 0.90))
-                                        Spacer()
-                                        Text(row.subtitle)
-                                            .font(BodyFont.system(size: 11.5, wght: 500))
-                                            .foregroundColor(Color(white: 0.48))
-                                    }
-                                    Text(row.detail)
-                                        .font(BodyFont.system(size: 12, wght: 400))
-                                        .foregroundColor(Color(white: 0.62))
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                            .padding(12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(Color.white.opacity(0.035))
-                            )
+                            AppsAuditRow(symbolName: row.symbolName,
+                                         title: row.title,
+                                         subtitle: row.subtitle,
+                                         detail: row.detail)
                         }
                     }
                 }
                 .frame(minHeight: 160, maxHeight: 360)
+                .thinScrollers()
             }
         }
         .padding(22)
@@ -802,11 +821,11 @@ struct AppsSettingsTrustPresentation: Equatable {
     var tint: Color {
         switch tone {
         case .normal:
-            return Color(white: 0.72)
+            return Palette.textSecondary
         case .warning:
             return Color(red: 0.95, green: 0.62, blue: 0.30)
         case .muted:
-            return Color(white: 0.50)
+            return Palette.textTertiary
         }
     }
 
