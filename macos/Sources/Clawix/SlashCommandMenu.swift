@@ -71,7 +71,11 @@ enum SlashCommandCatalog {
         SlashCommand(id: "rapido",
                      label: "Fast",
                      description: "Speed up inference across chats, subagents and compaction. Uses more of your plan quota.",
-                     iconName: "bolt")
+                     iconName: "bolt"),
+        SlashCommand(id: "goal",
+                     label: "Goal",
+                     description: "Set a budgeted goal for this chat",
+                     iconName: "target")
     ]
 
     static func filter(_ query: String, isVisible: (AppFeature) -> Bool) -> [SlashCommand] {

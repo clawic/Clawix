@@ -103,6 +103,9 @@ struct ChatView: View {
                             .frame(maxWidth: chatRailMaxWidth)
                         }
 
+                        GoalBannerView(chatId: chatId)
+                            .frame(maxWidth: chatRailMaxWidth)
+
                         ComposerView(
                             chatMode: true,
                             sideChatId: isSideChat ? chatId : nil
