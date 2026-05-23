@@ -193,7 +193,7 @@ if (args.has("--simulate-wrong-freeze-contract-value") && protectedSurfaces) {
 for (const [field, expected] of [
   ["privateBaselineAlias", "private-codex-ui-baselines"],
   ["privateCopyAlias", "private-codex-ui-copy-snapshots"],
-  ["privateGeometryAlias", "private-codex-ui-rendered-geometry"],
+  ["privateGeometryAlias", "private-runtime-ui-rendered-geometry"],
   ["freezeContractValue", "stable"],
 ]) {
   if (protectedSurfaces?.[field] !== expected) fail(`${protectedPath}.${field} must be ${expected}`);
@@ -247,7 +247,7 @@ function simulatedProtectedSurface(overrides = {}) {
     privateBaselineHash: hash,
     copySnapshotReference: "private-codex-ui-copy-snapshots:simulated",
     copySnapshotHash: hash,
-    geometryEvidenceReference: "private-codex-ui-rendered-geometry:simulated",
+    geometryEvidenceReference: "private-runtime-ui-rendered-geometry:simulated",
     geometryEvidenceHash: hash,
     changePolicy: {
       requiresExplicitUserApproval: true,

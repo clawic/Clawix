@@ -301,7 +301,7 @@ const expectedRootAliases = [
     manifestAliasField: "privateRootAlias",
   },
   {
-    alias: "private-codex-ui-rendered-geometry",
+    alias: "private-runtime-ui-rendered-geometry",
     env: "CLAWIX_UI_PRIVATE_GEOMETRY_ROOT",
     manifestPath: "docs/ui/rendered-geometry.manifest.json",
     manifestAliasField: "privateGeometryAlias",

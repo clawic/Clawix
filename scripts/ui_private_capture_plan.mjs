@@ -98,7 +98,7 @@ const verifierByAlias = new Map([
     "node scripts/ui_private_baseline_verify.mjs --require-approved",
     "node scripts/ui_private_performance_budget_verify.mjs --require-approved",
   ]],
-  ["private-codex-ui-rendered-geometry", ["node scripts/ui_private_geometry_verify.mjs --require-approved"]],
+  ["private-runtime-ui-rendered-geometry", ["node scripts/ui_private_geometry_verify.mjs --require-approved"]],
   ["private-codex-ui-copy-snapshots", ["node scripts/ui_private_copy_verify.mjs --require-approved"]],
   ["private-codex-ui-rendered-drift", ["node scripts/ui_private_drift_verify.mjs --require-approved"]],
   ["private-codex-ui-debt-audit", ["node scripts/ui_private_debt_audit_verify.mjs --require-approved"]],

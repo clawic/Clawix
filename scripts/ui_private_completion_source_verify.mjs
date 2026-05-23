@@ -262,27 +262,30 @@ const normalizedGoalSource = normalizeText(goalSource);
 const normalizedSessionSource = normalizeText(sessionSource);
 const normalizedPreGoalSessionSource = normalizeText(sourceBeforeFirstGoalEvent(sessionRecords));
 const sourceSessionRequirements = manifest.sourceSessionRequirements || {};
+const sessionMeta = sessionRecords.find((record) => record?.type === "session_meta");
+const privateConversationId = sessionMeta?.payload?.id ? String(sessionMeta.payload.id) : "";
 
 for (const snippet of [
-  manifest.expectedConversationId,
   "Required Decision Verification Checklist",
   "Do not mark the associated goal complete",
   "update_goal(status:",
 ]) {
   if (!goalSource.includes(snippet)) fail(`${goalEnv} must include ${snippet}`);
 }
-if (!sessionSource.includes(manifest.expectedConversationId)) {
-  fail(`${sessionEnv} must include the expected conversation id`);
+if (privateConversationId && !goalSource.includes(privateConversationId)) {
+  fail(`${goalEnv} must include the private source conversation id`);
+}
+if (privateConversationId && !sessionSource.includes(privateConversationId)) {
+  fail(`${sessionEnv} must include the private source conversation id`);
 }
 if (sessionFile && countJsonlRecords(sessionFile) < manifest.expectedDecisionCount) {
   fail(`${sessionEnv} must contain enough JSONL records to cover the source conversation`);
 }
 if (sourceSessionRequirements.sessionMetaIdMatchesConversation) {
-  const sessionMeta = sessionRecords.find((record) => record?.type === "session_meta");
   if (!sessionMeta) {
     fail(`${sessionEnv} must contain a session_meta record`);
-  } else if (sessionMeta.payload?.id !== manifest.expectedConversationId) {
-    fail(`${sessionEnv} session_meta id must match the expected conversation id`);
+  } else if (!privateConversationId) {
+    fail(`${sessionEnv} session_meta id must be a non-empty private conversation id`);
   }
 }
 const userMessageCount = sessionRecords.filter((record) => recordTypeKey(record) === "event_msg:user_message").length;

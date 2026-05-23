@@ -30,8 +30,8 @@
     "$schema": { "const": "docs/governance/system-telemetry/external-validation.manifest.schema.json" },
     "schemaVersion": { "const": 1 },
     "id": { "const": "clawix-system-telemetry-external-validation-manifest" },
-    "conversationId": { "const": "019e359b-c0ab-7dc1-ba94-11a49d11dc76" },
-    "planId": { "const": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan" },
+    "conversationId": { "const": "private-runtime-conversation:system-telemetry" },
+    "planId": { "const": "private-runtime-plan:system-telemetry" },
     "status": { "const": "active_goal_not_complete" },
     "completionPolicy": {
       "type": "object",

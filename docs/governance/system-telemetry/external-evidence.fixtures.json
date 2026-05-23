@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "artifactId": "clawix-system-telemetry-external-evidence-fixtures",
   "status": "synthetic_templates_not_evidence",
-  "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
-  "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+  "conversationId": "private-runtime-conversation:system-telemetry",
+  "planId": "private-runtime-plan:system-telemetry",
   "schemaPath": "docs/governance/system-telemetry/external-evidence.schema.json",
   "validSyntheticPackets": [
     {
       "schemaVersion": 1,
-      "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
-      "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "conversationId": "private-runtime-conversation:system-telemetry",
+      "planId": "private-runtime-plan:system-telemetry",
       "laneId": "CLX-SYS-TEL-EXT-003",
       "repoScope": "clawix-app",
       "runAuthorization": {
@@ -95,8 +95,8 @@
     },
     {
       "schemaVersion": 1,
-      "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
-      "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "conversationId": "private-runtime-conversation:system-telemetry",
+      "planId": "private-runtime-plan:system-telemetry",
       "laneId": "CLX-SYS-TEL-EXT-004",
       "repoScope": "clawix-app",
       "runAuthorization": {
@@ -180,8 +180,8 @@
     },
     {
       "schemaVersion": 1,
-      "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
-      "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "conversationId": "private-runtime-conversation:system-telemetry",
+      "planId": "private-runtime-plan:system-telemetry",
       "laneId": "CLX-SYS-TEL-EXT-005",
       "repoScope": "clawix-app",
       "runAuthorization": {
@@ -271,8 +271,8 @@
       "mutation": "appMenuEvidenceRefs is empty",
       "packet": {
         "schemaVersion": 1,
-        "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
-        "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+        "conversationId": "private-runtime-conversation:system-telemetry",
+        "planId": "private-runtime-plan:system-telemetry",
         "laneId": "CLX-SYS-TEL-EXT-003",
         "repoScope": "clawix-app",
         "runAuthorization": {
@@ -361,8 +361,8 @@
       "mutation": "credentialLeaseRefs is empty",
       "packet": {
         "schemaVersion": 1,
-        "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
-        "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+        "conversationId": "private-runtime-conversation:system-telemetry",
+        "planId": "private-runtime-plan:system-telemetry",
         "laneId": "CLX-SYS-TEL-EXT-004",
         "repoScope": "clawix-app",
         "runAuthorization": {
@@ -474,8 +474,8 @@
       "mutation": "failedApprovedRun is true",
       "packet": {
         "schemaVersion": 1,
-        "conversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
-        "planId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+        "conversationId": "private-runtime-conversation:system-telemetry",
+        "planId": "private-runtime-plan:system-telemetry",
         "laneId": "CLX-SYS-TEL-EXT-005",
         "repoScope": "clawix-app",
         "runAuthorization": {

@@ -20,7 +20,7 @@ windows/
 ├── Clawix.Core/            ← wire protocol + models (C# port of packages/ClawixCore)
 ├── Clawix.Engine/          ← bridge server, pairing, mDNS (C# port of packages/ClawixEngine)
 ├── Clawix.Bridged/         ← clawix-bridge.exe daemon
-├── Clawix.Secrets/         ← vault crypto + persistence (port of packages/Secrets*)
+├── Clawix.Secrets/         ← legacy vault scaffold; not app-wired
 ├── Clawix.Tests/           ← xUnit, round-trip JSON against Swift fixtures
 ├── scripts/                ← dev.ps1, build-app.ps1, public_hygiene_check.ps1
 ├── VERSION                 ← semver
@@ -45,6 +45,13 @@ By default, do not touch `../macos/` or `../ios/`. Legitimate exceptions:
 ## Shared Cross-Platform Code
 
 `packages/*` (Swift) remains the source for `Clawix.Core` and `Clawix.Engine`. Any change in `BridgeProtocol`, bridge models, or `PairingService` starts in Swift and is mirrored here. `Clawix.Tests/Fixtures/` must match the Swift test fixtures byte for byte.
+
+## Secrets Boundary
+
+`Clawix.Secrets/` is not a live Windows app dependency. Do not wire it into
+`Clawix.App` as a Windows-local vault. Windows Secrets must project ClawJS Secrets
+when implemented; host-native `PasswordVault` may hold only bootstrap
+credentials.
 
 ## Releases
 

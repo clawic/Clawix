@@ -81,7 +81,7 @@
       "targets": ["local-delete"],
       "status": "verified",
       "confirmation": "destructive confirmation sheet with itemized counts",
-      "recoveryOrReport": ["reload from framework state", "Codex data explicitly unaffected"],
+      "recoveryOrReport": ["reload from framework state", "external source data explicitly unaffected"],
       "sourcePatterns": [
         { "pathPattern": "SettingsView\\+GeneralPage\\.swift", "linePattern": "(Permanently delete|permanently delete|Reset local overrides|Local archive entries|onConfirm: \\{ appState\\.resetLocalOverrides)" },
         { "pathPattern": "Persistence/Database\\.swift", "linePattern": "DELETE FROM (pinned_threads|projects|chat_project_overrides|projectless_threads|local_archives|session_titles|hidden_codex_roots|sidebar_snapshot|sidebar_snapshot_project|project_sort_order|app_state_outbox|app_state_sync_receipts|meta)" },

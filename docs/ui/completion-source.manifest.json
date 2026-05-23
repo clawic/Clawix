@@ -3,11 +3,11 @@
   "status": "active",
   "policy": "Goal completion requires re-reading the private goal reference and source session before all decisions can be marked complete. Public records store only aliases, expected decision IDs, expected choices, and verifier commands.",
   "goalReferenceAlias": "private-codex-goal:clawix-interface-governance-plan-2026-05-15.md",
-  "sourceSessionAlias": "private-codex-session:019e2b5e-fe48-7231-8e13-49411999b001",
+  "sourceSessionAlias": "private-codex-session:interface-governance-source",
   "privateGoalFileEnv": "CLAWIX_UI_PRIVATE_COMPLETION_GOAL_FILE",
   "privateSourceSessionFileEnv": "CLAWIX_UI_PRIVATE_COMPLETION_SOURCE_SESSION_FILE",
   "verificationCommand": "CLAWIX_UI_PRIVATE_COMPLETION_GOAL_FILE=<private-goal-file> CLAWIX_UI_PRIVATE_COMPLETION_SOURCE_SESSION_FILE=<private-source-session-jsonl> node scripts/ui_private_completion_source_verify.mjs --require-approved",
-  "expectedConversationId": "019e2b5e-fe48-7231-8e13-49411999b001",
+  "expectedConversationId": "private-runtime-conversation:interface-governance",
   "expectedDecisionCount": 39,
   "sourceSessionRequirements": {
     "sessionMetaIdMatchesConversation": true,

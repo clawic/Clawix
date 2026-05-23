@@ -185,7 +185,7 @@ if (manifest) {
   }
   if (args.has("--simulate-alignment-decision-missing-platform-evidence") && alignmentValidationDecision) {
     alignmentValidationDecision.privateEvidence = alignmentValidationDecision.privateEvidence.filter(
-      (evidenceReference) => evidenceReference !== "private-codex-ui-rendered-geometry:web/*",
+      (evidenceReference) => evidenceReference !== "private-runtime-ui-rendered-geometry:web/*",
     );
   }
   if (args.has("--simulate-alignment-decision-premature-complete") && alignmentValidationDecision) {
@@ -215,8 +215,8 @@ requireFields(manifest, manifestPath, [
 if (!["pending-private-capture", "approved-private-geometry"].includes(manifest?.status)) {
   fail(`${manifestPath}.status must be pending-private-capture or approved-private-geometry`);
 }
-if (manifest?.privateGeometryAlias !== "private-codex-ui-rendered-geometry") {
-  fail(`${manifestPath}.privateGeometryAlias must be private-codex-ui-rendered-geometry`);
+if (manifest?.privateGeometryAlias !== "private-runtime-ui-rendered-geometry") {
+  fail(`${manifestPath}.privateGeometryAlias must be private-runtime-ui-rendered-geometry`);
 }
 if (manifest?.evidenceFilename !== "geometry-evidence.json") {
   fail(`${manifestPath}.evidenceFilename must be geometry-evidence.json`);
@@ -251,7 +251,7 @@ const registry = readJson(manifest?.patternSource || "");
 requireArray(registry, manifest?.patternSource || "patternSource", "patterns");
 scanForLocalPaths(manifest, manifestPath);
 
-const privateGeometryAlias = manifest?.privateGeometryAlias || "private-codex-ui-rendered-geometry";
+const privateGeometryAlias = manifest?.privateGeometryAlias || "private-runtime-ui-rendered-geometry";
 if (!alignmentValidationDecision) {
   fail(`${decisionVerificationPath}.decisions must include alignment_validation`);
 } else {
@@ -319,7 +319,7 @@ if (errors.length > 0) {
 if (!isSelfTest && rawArgs.length === 0) {
   const selfTests = [
     ["--unknown-flag", "received unknown flag --unknown-flag"],
-    ["--simulate-wrong-private-alias", "privateGeometryAlias must be private-codex-ui-rendered-geometry"],
+    ["--simulate-wrong-private-alias", "privateGeometryAlias must be private-runtime-ui-rendered-geometry"],
     ["--simulate-verifier-without-approval", "verificationCommand must require approved private geometry evidence"],
     ["--simulate-local-path-reference", "must not contain a local path"],
     ["--simulate-alignment-decision-missing-private-geometry-verifier", "publicEvidence must include scripts/ui_private_geometry_verify.mjs"],

@@ -10,8 +10,8 @@ Clawix is the human interface and embedded signed host for the same product
 whose framework side is ClawJS. Agents should interact with reusable framework
 logic through the public `claw` CLI, not through Clawix UI internals or
 duplicated app-local stores. The ClawJS decision thread
-`019e26ab-3d52-72b2-8653-08569db30681` and active goal
-`019e26b6-1bbd-7d10-b68c-84d815b655e2` define the CLI as the complete,
+`private-runtime-conversation:cli-agent-interface` and active goal
+`private-codex-goal:cli-agent-interface` define the CLI as the complete,
 discoverable, registry-driven, test-enforced agent interface.
 
 This ADR mirrors the ClawJS decision so Clawix does not grow a competing

@@ -1,6 +1,6 @@
 # V1 Surface Closure Completion Audit
 
-Source conversation: `019e2727-cf2b-7c41-9feb-1fd2b5c77554`
+Source conversation: `private-runtime-conversation:v1-surface-closure`
 Source session: private session, not published
 
 This audit records the required one-by-one review of the private source

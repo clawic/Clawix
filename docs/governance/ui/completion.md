@@ -7,7 +7,7 @@ external-pending ledger, and the private goal reference plus source session are
 re-read one by one.
 
 - Goal reference: `private-codex-goal:clawix-interface-governance-plan-2026-05-15.md`
-- Source session: `private-codex-session:019e2b5e-fe48-7231-8e13-49411999b001`
+- Source session: `private-codex-session:interface-governance-source`
 - Private source policy: private session, not published.
 - Private source session shape: `session_meta`, `event_msg:user_message`,
   `response_item:message`, and `event_msg:thread_goal_updated` records

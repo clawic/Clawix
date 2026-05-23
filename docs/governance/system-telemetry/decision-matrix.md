@@ -1,8 +1,8 @@
 # System Telemetry Decision Matrix
 
-Source conversation: `019e359b-c0ab-7dc1-ba94-11a49d11dc76`
+Source conversation: `private-runtime-conversation:system-telemetry`
 
-Plan item: `019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan`
+Plan item: `private-runtime-plan:system-telemetry`
 
 Status: `active_goal_not_complete`
 

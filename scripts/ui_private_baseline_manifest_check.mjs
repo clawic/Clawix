@@ -203,7 +203,7 @@ if (manifest) {
     manifest.status = "active";
   }
   if (args.has("--simulate-wrong-private-root-alias")) {
-    manifest.privateRootAlias = "private-codex-ui-rendered-geometry";
+    manifest.privateRootAlias = "private-runtime-ui-rendered-geometry";
   }
   if (args.has("--simulate-verifier-without-approval")) {
     manifest.verificationCommand = "CLAWIX_UI_PRIVATE_BASELINE_ROOT=<private-root> node scripts/ui_private_baseline_verify.mjs";

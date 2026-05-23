@@ -310,7 +310,7 @@ if (args.has("--simulate-duplicate-blocking-verifier") && Array.isArray(decision
   }
 }
 
-if (decisionVerification?.conversationId !== "019e2b5e-fe48-7231-8e13-49411999b001") {
+if (decisionVerification?.conversationId !== "private-runtime-conversation:interface-governance") {
   fail(`${decisionPath}.conversationId must stay pinned to the source conversation`);
 }
 if (!isSafePrivateAliasReference(decisionVerification?.goalReference, "private-codex-goal")) {

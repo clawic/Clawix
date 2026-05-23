@@ -12,6 +12,12 @@ const SECRET_PATTERNS = [
     replacement: "<redacted:codex-session>",
   },
   {
+    category: "codex_record_id",
+    description: "private Codex conversation or plan id",
+    pattern: /\b019e[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:-plan)?\b/gi,
+    replacement: "<redacted:codex-id>",
+  },
+  {
     category: "private_path",
     description: "private filesystem path",
     pattern: /(?:\/Users\/(?!example(?:\/|\b)|demo(?:\/|\b)|me(?:\/|\b)|tester(?:\/|\b)|alice(?:\/|\b)|person(?:\/|\b)|private(?:\/|\b)|<redacted>(?:\/|\b))[A-Za-z0-9._-]+|~\/|[A-Z]:\\)[^\s"'`)},\]]*/g,

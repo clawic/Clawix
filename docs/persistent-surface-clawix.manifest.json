@@ -4369,6 +4369,20 @@
     },
     {
       "canonicality" : "hostOnly",
+      "id" : "clawix.prefs.localModels.advancedExpanded",
+      "key" : "localModels.advancedExpanded",
+      "kind" : "appStorageKey",
+      "language" : "swift",
+      "lifecycle" : "durable",
+      "name" : "Local models advanced expanded",
+      "privacy" : "userData",
+      "project" : "macos",
+      "repo" : "Clawix",
+      "storageClass" : "nativeAppData",
+      "surfaceSteward" : "clawix"
+    },
+    {
+      "canonicality" : "hostOnly",
       "id" : "clawix.prefs.updater.pendingBuild",
       "key" : "ClawixPendingUpdateBuild",
       "kind" : "preferenceKey",

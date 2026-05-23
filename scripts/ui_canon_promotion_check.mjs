@@ -193,7 +193,7 @@ for (const [field, expected] of [
   ["privateApprovalAlias", "private-codex-ui-approval"],
   ["privateBaselineAlias", "private-codex-ui-baselines"],
   ["privateCopyAlias", "private-codex-ui-copy-snapshots"],
-  ["privateGeometryAlias", "private-codex-ui-rendered-geometry"],
+  ["privateGeometryAlias", "private-runtime-ui-rendered-geometry"],
 ]) {
   if (manifest?.[field] !== expected) fail(`${manifestPath}.${field} must be ${expected}`);
 }
@@ -243,7 +243,7 @@ const simulatedProtectedSurface = {
   privateBaselineHash: args.has("--simulate-approved-protected-hash-mismatch") ? simulatedOtherHash : simulatedHash,
   copySnapshotReference: "private-codex-ui-copy-snapshots:surfaces/simulated/copy.json",
   copySnapshotHash: simulatedHash,
-  geometryEvidenceReference: "private-codex-ui-rendered-geometry:surfaces/simulated/geometry.json",
+  geometryEvidenceReference: "private-runtime-ui-rendered-geometry:surfaces/simulated/geometry.json",
   geometryEvidenceHash: simulatedHash,
   changePolicy: "explicit-user-approval-required",
 };
@@ -260,7 +260,7 @@ const simulatedPromotion = {
   privateBaselineHash: simulatedHash,
   copySnapshotReference: "private-codex-ui-copy-snapshots:surfaces/simulated/copy.json",
   copySnapshotHash: simulatedHash,
-  geometryEvidenceReference: "private-codex-ui-rendered-geometry:surfaces/simulated/geometry.json",
+  geometryEvidenceReference: "private-runtime-ui-rendered-geometry:surfaces/simulated/geometry.json",
   geometryEvidenceHash: simulatedHash,
   protectedSurfaceId: "simulated-protected-surface",
   adoptionCanonicityPacketId: "simulated-ui-canon-promotion-packet",

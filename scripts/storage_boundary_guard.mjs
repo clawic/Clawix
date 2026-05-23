@@ -52,6 +52,22 @@ const requiredSnippets = [
   ["macos/Sources/Clawix/HostActions/HostActionPolicy.swift", "Requires explicit host approval."],
   ["macos/Sources/Clawix/MacUtilities/MacUtilitiesController.swift", "HostActionPolicy.authorize"],
   ["macos/Sources/Clawix/ScreenTools/ScreenToolService+HostPolicy.swift", "HostActionPolicy.authorize"],
+  ["macos/Sources/Clawix/LocalModels/LocalModelsDaemon.swift", "`HOME` is reset to our Application Support directory"],
+  ["macos/Sources/Clawix/LocalModels/LocalModelsDaemon.swift", "ClawixRedactedProcessLogSink"],
+  ["macos/Sources/Clawix/LocalModels/LocalModelsRuntimeInstaller.swift", "pinnedSHA256Base64"],
+  ["macos/Sources/Clawix/MCP/MCPServersStore.swift", "Clawix never parses or"],
+  ["macos/Sources/Clawix/MCP/MCPServersStore.swift", "mutates Codex-owned TOML directly"],
+  ["macos/Sources/Clawix/MCP/ClawJSMCPClient.swift", "\"mcp\", \"upsert\""],
+  ["packages/ClawixCore/Sources/ClawixCore/SnapshotCache.swift", "maxChats = 30"],
+  ["packages/ClawixCore/Sources/ClawixCore/SnapshotCache.swift", "maxMessagesPerChat = 80"],
+  ["android/app/src/main/java/com/example/clawix/android/core/SnapshotCache.kt", "private val maxChats = 30"],
+  ["android/app/src/main/java/com/example/clawix/android/core/SnapshotCache.kt", "private val maxMessages = 80"],
+  ["android/app/src/main/java/com/example/clawix/android/bridge/Credentials.kt", "EncryptedSharedPreferences-backed credential store"],
+  ["android/app/src/main/java/com/example/clawix/android/bridge/Credentials.kt", "MasterKey.KeyScheme.AES256_GCM"],
+  ["ios/Sources/Clawix/Bridge/ProjectLabelsCache.swift", "When the bridge eventually grows a"],
+  ["ios/Sources/Clawix/Bridge/UnreadChatsCache.swift", "lives entirely on the"],
+  ["android/app/src/main/java/com/example/clawix/android/bridge/ProjectLabelsCache.kt", "cold-start"],
+  ["android/app/src/main/java/com/example/clawix/android/bridge/UnreadChatsCache.kt", "plain SharedPreferences (no secrets)"],
   ["docs/interface-matrix.md", "Reject App Support as canonical Apps path"],
   ["docs/interface-matrix.md", "Framework workspace storage"],
 ];
@@ -259,6 +275,74 @@ for (const codeRoot of codeRoots) {
     if (/["'`]~?\/?\.clawjs\b/.test(source) || /["'`][^"'`]*\/\.clawjs\b/.test(source)) {
       fail(`${relativePath} references retired .clawjs workspace storage; new canonical writes must use .claw/ or framework storage`);
     }
+  }
+}
+
+for (const relativePath of listFiles("linux/app/src-tauri/src", [".rs"])) {
+  const source = read(relativePath);
+  const mutatingSessionSql = /\b(?:INSERT\s+(?:OR\s+\w+\s+)?INTO|UPDATE|DELETE\s+FROM)\s+(?:chats|messages)\b/iu;
+  if (mutatingSessionSql.test(source)) {
+    fail(`${relativePath} writes Linux host-local chats/messages tables; sessions must remain daemon/framework owned or use a bounded snapshot-cache contract`);
+  }
+  const localSecretsSql = /\bCREATE\s+TABLE\b[\s\S]{0,240}\b(?:secret|secrets|vault)\b|\b(?:INSERT\s+(?:OR\s+\w+\s+)?INTO|UPDATE|DELETE\s+FROM)\s+(?:secret|secrets|vault)\b/iu;
+  if (localSecretsSql.test(source)) {
+    fail(`${relativePath} defines or writes Linux host-local Secrets/Vault storage; secrets must project ClawJS Secrets or carry an explicit blocked migration design`);
+  }
+}
+
+for (const relativePath of listFiles("web/src/screens/secrets", [".ts", ".tsx", ".js", ".jsx"])) {
+  const source = read(relativePath);
+  if (/\b(?:localStorage|sessionStorage|indexedDB|openDatabase)\b|\bcaches\.open\b/.test(source)) {
+    fail(`${relativePath} persists data from the web Secrets companion; web may keep pairing/UI prefs only, not secret or vault state`);
+  }
+}
+
+const allowedWebStorageFiles = new Set(["web/src/lib/storage.ts", "web/src/bridge/client.ts"]);
+for (const relativePath of listFiles("web/src", [".ts", ".tsx", ".js", ".jsx"])) {
+  const source = read(relativePath);
+  if (/\b(?:localStorage|sessionStorage|indexedDB|openDatabase)\b|\bcaches\.open\b/.test(source) && !allowedWebStorageFiles.has(relativePath)) {
+    fail(`${relativePath} uses browser persistence outside the approved pairing/UI storage wrappers; web must not persist framework sessions, messages, secrets, or search state`);
+  }
+}
+
+if (!read("web/src/lib/storage.ts").includes("Never used for secrets, chats")) {
+  fail("web/src/lib/storage.ts must keep documenting that browser storage is not used for secrets, chats, or messages");
+}
+if (!read("web/src/bridge/client.ts").includes("stable client ids")) {
+  fail("web/src/bridge/client.ts localStorage use must remain limited to stable bridge client identifiers");
+}
+if (!read("web/src/screens/mcp/mcp-view.tsx").includes("ClawJS MCP route")) {
+  fail("web/src/screens/mcp/mcp-view.tsx must describe MCP as a ClawJS route projection, not a web-owned backend");
+}
+if (read("web/src/screens/mcp/mcp-view.tsx").includes("configuration is owned by the Mac app")) {
+  fail("web/src/screens/mcp/mcp-view.tsx must not describe MCP config as Mac-app-owned authority");
+}
+
+const linuxVaultView = read("linux/app/src/views/VaultManagement.tsx");
+if (/\b(?:localStorage|sessionStorage|indexedDB|openDatabase|invoke)\b|\bcaches\.open\b/.test(linuxVaultView)) {
+  fail("linux/app/src/views/VaultManagement.tsx wires local persistence or Tauri commands for the Vault placeholder; implement a ClawJS Secrets projection or update the blocked migration design first");
+}
+
+const windowsAppProject = read("windows/Clawix.App/Clawix.App.csproj");
+if (windowsAppProject.includes("Clawix.Secrets")) {
+  fail("windows/Clawix.App must not reference Clawix.Secrets; Windows Secrets must project ClawJS Secrets or remain explicitly blocked");
+}
+
+for (const relativePath of listFiles("windows/Clawix.App", [".cs", ".xaml"])) {
+  const source = read(relativePath);
+  if (/\bClawix\.Secrets\b|\bnew\s+Vault\s*\(|\busing\s+Clawix\.Secrets\b/.test(source)) {
+    fail(`${relativePath} wires Windows-local Secrets vault code into the app; use a ClawJS Secrets projection or keep the migration blocked`);
+  }
+}
+
+for (const [relativePath, snippet] of [
+  ["windows/README.md", "legacy scaffold only"],
+  ["windows/README.md", "must project the ClawJS Secrets service"],
+  ["windows/CLAUDE.md", "not a live Windows app dependency"],
+  ["windows/CLAUDE.md", "Windows Secrets must project ClawJS Secrets"],
+]) {
+  if (!read(relativePath).includes(snippet)) {
+    fail(`${relativePath} must document the Windows Secrets host/framework boundary snippet ${JSON.stringify(snippet)}`);
   }
 }
 

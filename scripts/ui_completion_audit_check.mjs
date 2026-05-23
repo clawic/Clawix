@@ -291,7 +291,7 @@ if (!arrayEquals(allowedStatuses, ["open", "blocked-external-pending", "verified
 
 for (const required of [
   "private-codex-goal:clawix-interface-governance-plan-2026-05-15.md",
-  "private-codex-session:019e2b5e-fe48-7231-8e13-49411999b001",
+  "private-codex-session:interface-governance-source",
   "private session, not published",
   "Do not call update_goal",
 ]) {

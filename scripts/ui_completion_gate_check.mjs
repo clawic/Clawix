@@ -187,7 +187,7 @@ function withTemporaryPrivatePlaceholderRoots(callback) {
     }
     return callback({
       CLAWIX_UI_PRIVATE_BASELINE_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-baselines"),
-      CLAWIX_UI_PRIVATE_GEOMETRY_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-rendered-geometry"),
+      CLAWIX_UI_PRIVATE_GEOMETRY_ROOT: path.join(evidenceTemplateRoot, "private-runtime-ui-rendered-geometry"),
       CLAWIX_UI_PRIVATE_COPY_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-copy-snapshots"),
       CLAWIX_UI_PRIVATE_DRIFT_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-rendered-drift"),
       CLAWIX_UI_PRIVATE_DEBT_AUDIT_ROOT: path.join(evidenceTemplateRoot, "private-codex-ui-debt-audit"),

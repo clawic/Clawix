@@ -22,7 +22,7 @@
     {
       "id": "ui-governance-decision-verification",
       "artifactPath": "docs/ui/decision-verification.json",
-      "sourceConversationId": "019e2b5e-fe48-7231-8e13-49411999b001",
+      "sourceConversationId": "private-runtime-conversation:interface-governance",
       "artifactKind": "json-decision-verification",
       "minimumDecisionRows": 39,
       "legacyStateField": "status",
@@ -44,8 +44,8 @@
     {
       "id": "system-telemetry-source-review",
       "artifactPath": "docs/governance/system-telemetry/source-review.json",
-      "sourceConversationId": "019e359b-c0ab-7dc1-ba94-11a49d11dc76",
-      "sourcePlanId": "019e3b6c-3dd8-76d2-bf1e-f50a23db7b07-plan",
+      "sourceConversationId": "private-runtime-conversation:system-telemetry",
+      "sourcePlanId": "private-runtime-plan:system-telemetry",
       "artifactKind": "json-source-review",
       "minimumDecisionRows": 12,
       "legacyStateField": "disposition",
@@ -69,7 +69,7 @@
     {
       "id": "v1-surface-closure-decisions",
       "artifactPath": "docs/governance/v1-surface-closure/decisions.json",
-      "sourceConversationId": "019e2727-cf2b-7c41-9feb-1fd2b5c77554",
+      "sourceConversationId": "private-runtime-conversation:v1-surface-closure",
       "artifactKind": "json-decision-review",
       "minimumDecisionRows": 37,
       "normalizedStates": ["implemented", "blocked"],
@@ -100,7 +100,7 @@
     {
       "id": "legal-closure-selective-backfill",
       "artifactPath": "docs/governance/legal/source-audit.md",
-      "sourceConversationId": "019e3a44-1175-7930-b45c-252f342b5ec2",
+      "sourceConversationId": "private-runtime-conversation:legal-safety",
       "artifactKind": "markdown-source-audit",
       "markdownRowPrefix": "LCA",
       "minimumDecisionRows": 33,

@@ -2,7 +2,7 @@
 
 This ledger records code hygiene campaigns, exceptions, and validation evidence.
 
-Source conversation: `019e2bee-b635-7c51-b569-bd31b3cca875`
+Source conversation: `private-runtime-conversation:code-hygiene`
 Source session: private session, not published
 
 ## 2026-05-17 - Program bootstrap

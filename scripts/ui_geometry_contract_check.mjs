@@ -156,10 +156,10 @@ if (args.has("--simulate-size-contracts-decision-missing-private-blocker") && si
   sizeContractsDecision.blockingVerifiers = sizeContractsDecision.blockingVerifiers.filter((verifier) => verifier !== "scripts/ui_private_geometry_verify.mjs");
 }
 if (args.has("--simulate-size-contracts-decision-missing-private-platform") && sizeContractsDecision) {
-  sizeContractsDecision.privateEvidence = sizeContractsDecision.privateEvidence.filter((evidence) => evidence !== "private-codex-ui-rendered-geometry:web/*");
+  sizeContractsDecision.privateEvidence = sizeContractsDecision.privateEvidence.filter((evidence) => evidence !== "private-runtime-ui-rendered-geometry:web/*");
 }
 if (args.has("--simulate-size-contracts-decision-missing-sidebar-row-private") && sizeContractsDecision) {
-  sizeContractsDecision.privateEvidence = sizeContractsDecision.privateEvidence.filter((evidence) => evidence !== "private-codex-ui-rendered-geometry:macos/sidebar-row");
+  sizeContractsDecision.privateEvidence = sizeContractsDecision.privateEvidence.filter((evidence) => evidence !== "private-runtime-ui-rendered-geometry:macos/sidebar-row");
 }
 if (args.has("--simulate-size-contracts-decision-premature-complete") && sizeContractsDecision) {
   sizeContractsDecision.status = "verified-complete";
@@ -247,11 +247,11 @@ if (!sizeContractsDecision) {
   }
   const privateEvidence = new Set(Array.isArray(sizeContractsDecision.privateEvidence) ? sizeContractsDecision.privateEvidence : []);
   for (const evidence of [
-    "private-codex-ui-rendered-geometry:macos/*",
-    "private-codex-ui-rendered-geometry:ios/*",
-    "private-codex-ui-rendered-geometry:android/*",
-    "private-codex-ui-rendered-geometry:web/*",
-    "private-codex-ui-rendered-geometry:macos/sidebar-row",
+    "private-runtime-ui-rendered-geometry:macos/*",
+    "private-runtime-ui-rendered-geometry:ios/*",
+    "private-runtime-ui-rendered-geometry:android/*",
+    "private-runtime-ui-rendered-geometry:web/*",
+    "private-runtime-ui-rendered-geometry:macos/sidebar-row",
   ]) {
     if (!privateEvidence.has(evidence)) {
       fail(`${decisionVerificationPath}.decisions.size_contracts.privateEvidence must include ${evidence}`);
@@ -288,8 +288,8 @@ if (errors.length === 0 && !isSelfTest && args.size === 0) {
     ["--simulate-size-contracts-decision-missing-pattern-file", "decisions.size_contracts.publicEvidence must include docs/ui/pattern-registry/patterns/sidebar-row.pattern.json"],
     ["--simulate-size-contracts-decision-missing-evidence-plan", "decisions.size_contracts.publicEvidence must include scripts/ui_private_evidence_plan_check.mjs"],
     ["--simulate-size-contracts-decision-missing-private-blocker", "decisions.size_contracts.blockingVerifiers must include scripts/ui_private_geometry_verify.mjs"],
-    ["--simulate-size-contracts-decision-missing-private-platform", "decisions.size_contracts.privateEvidence must include private-codex-ui-rendered-geometry:web/*"],
-    ["--simulate-size-contracts-decision-missing-sidebar-row-private", "decisions.size_contracts.privateEvidence must include private-codex-ui-rendered-geometry:macos/sidebar-row"],
+    ["--simulate-size-contracts-decision-missing-private-platform", "decisions.size_contracts.privateEvidence must include private-runtime-ui-rendered-geometry:web/*"],
+    ["--simulate-size-contracts-decision-missing-sidebar-row-private", "decisions.size_contracts.privateEvidence must include private-runtime-ui-rendered-geometry:macos/sidebar-row"],
     ["--simulate-size-contracts-decision-premature-complete", "decisions.size_contracts.status must remain open or blocked-external-pending while geometry clauses are pending private measurement"],
     ["--simulate-extra-platform-geometry", "geometry.windows must be listed in"],
     ["--simulate-negative-measurement", "geometry.height must be a finite non-negative number"],

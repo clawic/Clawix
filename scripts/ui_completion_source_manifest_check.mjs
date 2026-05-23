@@ -112,7 +112,7 @@ function runFailureSelfTests() {
     [["--simulate-duplicate-expected-decision-id"], "expectedDecisionIds must contain expectedDecisionCount entries"],
     [["--simulate-wrong-expected-decision-choice"], "expectedDecisions[0].choice must be"],
     [["--simulate-wrong-decision-conversation-id"], "expectedConversationId must match docs/ui/decision-verification.json.conversationId"],
-    [["--simulate-audit-missing-source-alias"], "docs/governance/ui/completion.md must include private-codex-session:019e2b5e-fe48-7231-8e13-49411999b001"],
+    [["--simulate-audit-missing-source-alias"], "docs/governance/ui/completion.md must include private-codex-session:interface-governance-source"],
     [["--simulate-private-verifier-missing-snippet"], "ui_private_completion_source_verify.mjs must include sourceBeforeFirstGoalEvent"],
   ];
 
@@ -207,7 +207,7 @@ scanPublicSafety(manifest, manifestPath);
 if (manifest?.goalReferenceAlias !== "private-codex-goal:clawix-interface-governance-plan-2026-05-15.md") {
   fail(`${manifestPath}.goalReferenceAlias must match the private goal alias`);
 }
-if (manifest?.sourceSessionAlias !== "private-codex-session:019e2b5e-fe48-7231-8e13-49411999b001") {
+if (manifest?.sourceSessionAlias !== "private-codex-session:interface-governance-source") {
   fail(`${manifestPath}.sourceSessionAlias must match the private source session alias`);
 }
 if (manifest?.privateGoalFileEnv !== "CLAWIX_UI_PRIVATE_COMPLETION_GOAL_FILE") {
@@ -312,7 +312,7 @@ for (const snippet of [
   "process.exit(2)",
   "expectedDecisionIds",
   "expectedDecisions",
-  "expectedConversationId",
+  "privateConversationId",
   "expectedDecisionCount",
   "sourceSessionRequirements",
   "session_meta",

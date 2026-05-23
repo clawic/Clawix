@@ -39,6 +39,12 @@
             "2026-05-23T10-11-12-123-01234567-89ab-cdef-0123-456789abcdef.jsonl"
           ]
         },
+        "conversationId": {
+          "segments": ["019e1234-5678-", "7abc-9def-", "0123456789ab"]
+        },
+        "planId": {
+          "segments": ["019e1234-5678-", "7abc-9def-", "0123456789ab", "-plan"]
+        },
         "bundle_id": {
           "segments": ["com.", "clawix.private.real"]
         },
@@ -51,6 +57,7 @@
         "Bearer <redacted:secret>",
         "<redacted:secret-ref>",
         "<redacted:codex-session>",
+        "<redacted:codex-id>",
         "<redacted:bundle-id>",
         "<redacted:team-id>"
       ]

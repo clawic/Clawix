@@ -276,7 +276,7 @@ if (args.has("--simulate-v1-pattern-set-missing-private-baseline") && v1PatternS
 }
 if (args.has("--simulate-v1-pattern-set-missing-private-geometry-platform") && v1PatternSetDecision) {
   v1PatternSetDecision.privateEvidence = v1PatternSetDecision.privateEvidence.filter(
-    (evidenceReference) => evidenceReference !== "private-codex-ui-rendered-geometry:web/*",
+    (evidenceReference) => evidenceReference !== "private-runtime-ui-rendered-geometry:web/*",
   );
 }
 if (args.has("--simulate-v1-pattern-set-missing-private-verifier") && v1PatternSetDecision) {
@@ -438,10 +438,10 @@ if (!v1PatternSetDecision) {
   const privateEvidence = new Set(Array.isArray(v1PatternSetDecision.privateEvidence) ? v1PatternSetDecision.privateEvidence : []);
   for (const evidenceReference of [
     "private-codex-ui-baselines:surfaces/*",
-    "private-codex-ui-rendered-geometry:macos/*",
-    "private-codex-ui-rendered-geometry:ios/*",
-    "private-codex-ui-rendered-geometry:android/*",
-    "private-codex-ui-rendered-geometry:web/*",
+    "private-runtime-ui-rendered-geometry:macos/*",
+    "private-runtime-ui-rendered-geometry:ios/*",
+    "private-runtime-ui-rendered-geometry:android/*",
+    "private-runtime-ui-rendered-geometry:web/*",
   ]) {
     if (!privateEvidence.has(evidenceReference)) {
       fail(`${decisionVerificationPath}.decisions.v1_pattern_set.privateEvidence must include ${evidenceReference}`);

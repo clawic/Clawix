@@ -5,7 +5,7 @@
   "privateApprovalAlias": "private-codex-ui-approval",
   "privateBaselineAlias": "private-codex-ui-baselines",
   "privateCopyAlias": "private-codex-ui-copy-snapshots",
-  "privateGeometryAlias": "private-codex-ui-rendered-geometry",
+  "privateGeometryAlias": "private-runtime-ui-rendered-geometry",
   "promotionStatuses": ["approved", "revoked", "superseded"],
   "requiredPromotionFields": [
     "id",

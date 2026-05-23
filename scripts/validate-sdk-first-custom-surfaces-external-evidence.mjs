@@ -172,7 +172,7 @@ export function validatePacket(packet, compiledSchema = compileSchema()) {
   const reviewer = requireOnlyKeys(packet.reviewer, reviewerKeys, "reviewer");
 
   if (packet.schemaVersion !== 1) fail("schemaVersion must be 1");
-  if (packet.conversationId !== "019e403c-3837-7f02-9b78-532c43cdd997") fail("conversationId mismatch");
+  if (packet.conversationId !== "private-runtime-conversation:sdk-first-custom-surfaces") fail("conversationId mismatch");
   if (packet.goal !== "sdk-first-custom-surfaces") fail("goal mismatch");
   if (packet.status !== "accepted_external_evidence") fail("status must be accepted_external_evidence");
   if (!expectedRows[packet.laneId]) fail("laneId is not a known SDK-first external lane");

@@ -1,6 +1,6 @@
 # Code Hygiene Decision Checklist
 
-Source conversation: `019e2bee-b635-7c51-b569-bd31b3cca875`
+Source conversation: `private-runtime-conversation:code-hygiene`
 
 This checklist is required before the code hygiene goal can be closed. Every
 decision must be marked `implemented`, `validated`, `documented`, or `blocked`

@@ -266,7 +266,7 @@ the public repo.
     second checklist. Run
     `node scripts/ui_private_evidence_plan_check.mjs --capture-plan` to group
     records by `privateReference` alias and private root environment:
-    `private-codex-ui-baselines`, `private-codex-ui-rendered-geometry`,
+    `private-codex-ui-baselines`, `private-runtime-ui-rendered-geometry`,
     `private-codex-ui-copy-snapshots`, `private-codex-ui-rendered-drift`, and
     `private-codex-ui-debt-audit`. For each record, create the matching private
     root suffix plus its `evidenceFilename`; use the emitted

@@ -172,7 +172,7 @@ if (!isSelfTest && !includePending) {
 
 const manifest = readJson("docs/ui/rendered-geometry.manifest.json");
 const approvedScopeContract = loadApprovedScopeContract(rootDir, fail);
-const privateGeometryAlias = manifest?.privateGeometryAlias || "private-codex-ui-rendered-geometry";
+const privateGeometryAlias = manifest?.privateGeometryAlias || "private-runtime-ui-rendered-geometry";
 const privateRootEnv = privateRootEnvForAlias(rootDir, privateGeometryAlias);
 const privateRootArg = optionValue("--root");
 const privateRootRaw = privateRootArg || process.env[privateRootEnv] || "";

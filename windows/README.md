@@ -40,7 +40,7 @@ windows/
 |-- Clawix.Core/                  Wire protocol + models (port of packages/ClawixCore)
 |-- Clawix.Engine/                Bridge server + pairing + mDNS (port of packages/ClawixEngine)
 |-- Clawix.Bridged/               clawix-bridge.exe daemon
-|-- Clawix.Secrets/               Vault crypto + persistence
+|-- Clawix.Secrets/               Legacy vault scaffold; not app-wired
 |-- Clawix.Tests/                 xUnit, round-trip JSON against Swift fixtures
 |-- scripts/                      dev.ps1, build-app.ps1, build-release.ps1, public_hygiene_check.ps1
 |-- VERSION                       Semver
@@ -67,6 +67,13 @@ windows/
   the Codex CLI as a JSON-RPC subprocess, owns the WebSocket server.
 - **Auto-update**: NetSparkle reads the same `appcast.xml` Sparkle uses
   on macOS, filtered by `sparkle:os="windows"`. Same EdDSA signing key.
+
+## Boundary note: Secrets
+
+`Clawix.Secrets/` is legacy scaffold only. The Windows GUI must not reference
+it as a live vault or write Windows-local Secrets storage. When the Windows
+Secrets screen is enabled, it must project the ClawJS Secrets service and keep
+only host-native bootstrap credentials in `PasswordVault`.
 
 ## Where to start when adding a feature
 

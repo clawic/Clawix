@@ -51,7 +51,7 @@ function countOccurrences(text, token) {
 
 const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
 if (registry.version !== 1) fail("interface registry version must be 1");
-if (registry.sourceConversationId !== "019e2727-cf2b-7c41-9feb-1fd2b5c77554") {
+if (registry.sourceConversationId !== "private-runtime-conversation:v1-surface-closure") {
   fail("interface registry must reference the source conversation id");
 }
 requireSnippet("docs/pre-v1-version-governance.md", "claw inspect version-governance --json");
