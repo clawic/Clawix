@@ -17,6 +17,8 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         TrySetMicaBackdrop();
         ExtendsContentIntoTitleBar = true;
+        LoginGate.SignInRequested += OpenAccountSettings;
+        LoginGate.ContinueRequested += ShowShell;
         Activated += OnActivated;
         Closed += (_, _) => _hotkeyHook?.Dispose();
         DispatcherQueue.TryEnqueue(BootShellAsync);
@@ -42,8 +44,20 @@ public sealed partial class MainWindow : Window
             LoginGate.Visibility = Visibility.Visible;
             return;
         }
+        ShowShell();
+    }
+
+    private void ShowShell()
+    {
         Splash.Visibility = Visibility.Collapsed;
+        LoginGate.Visibility = Visibility.Collapsed;
         Shell.Visibility = Visibility.Visible;
+    }
+
+    private void OpenAccountSettings()
+    {
+        var win = new SettingsWindow("account");
+        win.Activate();
     }
 
     private void WireSystemTray()
