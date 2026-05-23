@@ -1,11 +1,10 @@
 import Foundation
 import ClawixCore
-import SecretsCrypto
 
 /// Non-main actor that owns ClawJS sidecar process supervision.
 ///
-/// `commandLine(for:)` maps each service to the concrete command that
-/// the bundled ClawJS runtime actually exposes. Services whose launch
+/// `ClawJSServiceLaunchAdapter` maps each service to the concrete command
+/// that the bundled ClawJS runtime actually exposes. Services whose launch
 /// surface is missing publish `.blocked(reason:)` instead of crashing.
 ///
 /// When a background bridge daemon is actually reachable, the GUI first
@@ -20,61 +19,21 @@ actor ClawJSServiceSupervisor {
     /// Restart budget per service. After this many crashes inside one
     /// boot the manager gives up and parks the service in `.crashed`
     /// with an explanatory reason instead of looping forever.
-    static let restartBudget = 5
+    static let restartBudget = ClawJSServiceSupervisorPolicy.restartBudget
 
     /// Backoff schedule (seconds): 1, 2, 4, 8, 16, capped at 60. Used
     /// when a process crashes; reset to zero after the service stays
     /// healthy for `healthyResetWindow`.
-    private static let backoffSchedule: [UInt64] = [1, 2, 4, 8, 16, 32, 60]
-    private static let healthyResetWindow: TimeInterval = 60
+    private static let backoffSchedule = ClawJSServiceSupervisorPolicy.backoffSchedule
+    private static let healthyResetWindow = ClawJSServiceSupervisorPolicy.healthyResetWindow
 
     private var processes: [ClawJSService: Process] = [:]
     private var logHandles: [ClawJSService: FileHandle] = [:]
     private var monitorTask: Task<Void, Never>?
-    private var serviceMonitors: [ClawJSService: ServiceMonitor] = [:]
+    private var serviceMonitors: [ClawJSService: ClawJSServiceMonitor] = [:]
     private var restartTasks: [ClawJSService: Task<Void, Never>] = [:]
     private var lastReadyAt: [ClawJSService: Date] = [:]
-
-    /// Per-session admin tokens (32-byte URL-safe random) injected to the
-    /// daemons that authenticate admin requests. Generated lazily the first
-    /// time the GUI spawns each daemon. Replaces the previous Keychain-backed
-    /// admin password so the app never touches the system Keychain.
-    private var sessionAdminTokens: [ClawJSService: String] = [:]
-    private var sessionSignedHostTokens: [ClawJSService: String] = [:]
-    private var sessionHostAssertionKeys: [ClawJSService: String] = [:]
-
-    /// Services that need a per-session bearer/shared token. The token is
-    /// bootstrapped over anonymous stdin, never process environment or disk.
-    private static let adminTokenEnvVar: [ClawJSService: String] = [
-        .runtime: "RUNTIME_SHARED_SECRET",
-        .database: "CLAW_DATABASE_ADMIN_TOKEN",
-        .drive: "CLAW_DRIVE_ADMIN_TOKEN",
-        .secrets: "CLAW_SECRETS_ADMIN_TOKEN",
-        .audio: "CLAW_AUDIO_SHARED_SECRET",
-        .index: "CLAW_SEARCH_ADMIN_TOKEN",
-        .sessions: "CLAW_SESSIONS_SHARED_SECRET",
-        .publishing: "CLAW_PUBLISHING_TOKEN",
-    ]
-
-    private enum ServiceMonitorMode: Equatable {
-        case local(pid: pid_t)
-        case daemonOwned
-    }
-
-    private struct ServiceMonitor: Equatable {
-        var mode: ServiceMonitorMode
-        var readyDeadline: Date
-        var hasReachedReady: Bool
-        var consecutiveFailures: Int
-        var nextProbeAt: Date
-        var lastDaemonUpdateAt: Date?
-    }
-
-    private static let localStartupProbeInterval: TimeInterval = 1
-    private static let localReadyProbeInterval: TimeInterval = 5
-    private static let daemonStartupProbeInterval: TimeInterval = 1
-    private static let daemonFallbackProbeInterval: TimeInterval = 15
-    private static let daemonPushFreshWindow: TimeInterval = 30
+    private var tokenVault = ClawJSServiceTokenVault()
 
     init(
         snapshots: [ClawJSService: ClawJSServiceSnapshot],
@@ -93,11 +52,7 @@ actor ClawJSServiceSupervisor {
     }
 
     func sessionTokens() -> ClawJSSessionTokenSnapshot {
-        ClawJSSessionTokenSnapshot(
-            adminTokens: sessionAdminTokens,
-            signedHostTokens: sessionSignedHostTokens,
-            hostAssertionKeys: sessionHostAssertionKeys
-        )
+        tokenVault.snapshot()
     }
 
     func applyDaemonServiceStatuses(
@@ -297,7 +252,7 @@ actor ClawJSServiceSupervisor {
             return
         }
 
-        guard commandLine(for: service) != nil else {
+        guard ClawJSServiceLaunchAdapter.commandLine(for: service) != nil else {
             update(service) {
                 $0.state = .blocked(reason:
                     "@clawjs/cli@\(ClawJSRuntime.expectedVersion) does not expose a launch command for \(service.displayName)")
@@ -367,7 +322,7 @@ actor ClawJSServiceSupervisor {
             _ = await stopTrackedProcess(for: service)
             update(service) {
                 $0.lastError = nil
-                $0.state = Self.availableOnDemandState(for: service)
+                $0.state = ClawJSServiceSupervisorPolicy.availableOnDemandState(for: service)
             }
         }
         if serviceMonitors.isEmpty {
@@ -391,7 +346,7 @@ actor ClawJSServiceSupervisor {
                 if snapshots[service]?.state == .readyFromDaemon(port: service.port) {
                     monitorDaemonOwnedService(service, readyTimeout: 6, reachedReady: true)
                 }
-            } else if ClawJSRuntime.isAvailable, commandLine(for: service) != nil {
+            } else if ClawJSRuntime.isAvailable, ClawJSServiceLaunchAdapter.commandLine(for: service) != nil {
                 await launchLocal(service, force: true)
             } else {
                 let reason = "\(service.displayName) is not reachable on 127.0.0.1:\(service.port) while the bridge daemon is active."
@@ -408,16 +363,9 @@ actor ClawJSServiceSupervisor {
         readyTimeout: TimeInterval,
         reachedReady: Bool = false
     ) {
-        let now = Date()
-        serviceMonitors[service] = ServiceMonitor(
-            mode: .daemonOwned,
-            readyDeadline: now.addingTimeInterval(readyTimeout),
-            hasReachedReady: reachedReady,
-            consecutiveFailures: 0,
-            nextProbeAt: reachedReady
-                ? now.addingTimeInterval(Self.daemonFallbackProbeInterval)
-                : now,
-            lastDaemonUpdateAt: reachedReady ? now : nil
+        serviceMonitors[service] = ClawJSServiceHealthMonitor.daemonMonitor(
+            readyTimeout: readyTimeout,
+            reachedReady: reachedReady
         )
         ensureMonitorTask()
     }
@@ -469,166 +417,29 @@ actor ClawJSServiceSupervisor {
         return true
     }
 
-    /// Argv (without the leading node binary) to launch `service` as a
-    /// long-lived HTTP server on `service.port`. Returns `nil` while the
-    /// bundled runtime lacks that service's surface.
-    private func commandLine(for service: ClawJSService) -> [String]? {
-        // IoT does not flow through @clawjs/cli; the dedicated `spawnIot`
-        // path owns its argv. Returning nil here keeps the existing
-        // `commandLine(for:) != nil` guard a no-op for IoT.
-        if service == .iot { return nil }
-        // Publishing lives at `node_modules/publishing/dist/server.js`; it has no
-        // launcher under `@clawjs/cli/bin/`. Spawn the server entry directly
-        // with the bundled node binary so the rest of the supervisor (env,
-        // logs, healthz) keeps working as-is.
-        if service == .publishing {
-            let serverJs = ClawJSRuntime.bundleRootURL
-                .appendingPathComponent("node_modules/publishing/dist/server.js", isDirectory: false)
-            guard FileManager.default.fileExists(atPath: serverJs.path) else { return nil }
-            return [serverJs.path]
-        }
-        if service == .runtime {
-            let packageURL = ClawJSRuntime.bundleRootURL
-                .appendingPathComponent("node_modules/@clawjs/runtime/package.json", isDirectory: false)
-            guard FileManager.default.fileExists(atPath: packageURL.path) else { return nil }
-            return [
-                "--input-type=module",
-                "--eval",
-                """
-                import { buildRuntimeApp } from '@clawjs/runtime';
-                const app = buildRuntimeApp();
-                const host = process.env.RUNTIME_HOST || process.env.HOST || '127.0.0.1';
-                const port = Number(process.env.RUNTIME_PORT || process.env.PORT || '24100');
-                await app.listen({ host, port });
-                """
-            ]
-        }
-
-        guard Self.bundledLauncherScript(for: service) != nil else { return nil }
-
-        var arguments = [
-            ClawJSRuntime.cliScriptURL.path,
-            "open", service.rawValue,
-            "--host", "127.0.0.1",
-            "--port", String(service.port),
-            "--workspace", Self.workspaceURL.path,
-            "--status-file", Self.statusFileURL(for: service).path,
-        ]
-
-        switch service {
-        case .runtime:
-            return arguments
-        case .database:
-            arguments += [
-                "--data-dir", Self.mainDataDirectoryURL.path,
-                "--db-path", Self.mainDatabaseURL.path,
-                "--files-dir", Self.mainFilesDirectoryURL.path,
-            ]
-            return arguments
-        case .secrets, .telegram:
-            return arguments
-        case .memory, .drive, .sessions:
-            arguments += ["--data-dir", Self.dataDirectoryURL(for: service).path]
-            if service == .sessions {
-                arguments += [
-                    "--db-path", Self.dataDirectoryURL(for: service)
-                        .appendingPathComponent(ClawixPersistentSurfacePaths.components.sessionsDatabase, isDirectory: false).path,
-                ]
-            }
-            return arguments
-        case .audio:
-            arguments += [
-                "--data-dir", Self.dataDirectoryURL(for: service).path,
-                "--blobs-dir", Self.dataDirectoryURL(for: service)
-                    .appendingPathComponent(ClawixPersistentSurfacePaths.components.blobs, isDirectory: true).path,
-            ]
-            return arguments
-        case .index:
-            arguments += [
-                "--data-dir", Self.dataDirectoryURL(for: service).path,
-                "--db-path", Self.dataDirectoryURL(for: service)
-                    .appendingPathComponent(ClawixPersistentSurfacePaths.components.indexDatabase, isDirectory: false).path,
-            ]
-            return arguments
-        case .iot, .publishing:
-            // Unreachable: both are guarded above with dedicated launch
-            // paths. Kept for switch exhaustiveness.
-            return nil
-        }
-    }
-
     // MARK: - Spawn + supervise
 
     /// Full spawn pipeline. Dormant today (commandLine returns nil), but
     /// fully wired so flipping that one method enables the whole flow.
     private func spawnAndSupervise(_ service: ClawJSService) async {
-        guard let extraArgs = commandLine(for: service) else { return }
-        update(service) { $0.state = .starting; $0.lastError = nil }
-
         do {
-            try Self.prepareDirectories(for: service)
+            guard let plan = try ClawJSServiceLaunchAdapter.plan(for: service, tokenVault: &tokenVault) else { return }
+            update(service) { $0.state = .starting; $0.lastError = nil }
+            try ClawJSServiceDirectoryResolver.prepareDirectories(for: service)
 
-            let adminToken = ensureAdminToken(for: service)
-            let signedHostToken = ensureSignedHostToken(for: service)
-            let hostAssertionKey = ensureHostAssertionKey(for: service)
-
-            let process = Process()
-            process.executableURL = ClawJSRuntime.nodeBinaryURL
-            process.arguments = extraArgs
-            process.currentDirectoryURL = Self.workingDirectoryURL(for: service)
-            process.environment = Self.environment(
-                for: service,
-                adminToken: adminToken,
-                signedHostToken: signedHostToken
-            )
-            let bootstrapPipe: Pipe?
-            let bootstrapData: Data?
-            if service == .secrets {
-                bootstrapPipe = Pipe()
-                bootstrapData = try Self.secretsBootstrapPayload(
-                    adminToken: adminToken,
-                    signedHostToken: signedHostToken,
-                    hostAssertionKeyBase64: hostAssertionKey,
-                    platformKey: try SecretsPlatformKey.loadOrCreate()
-                )
-                process.standardInput = bootstrapPipe
-            } else if let adminToken {
-                bootstrapPipe = Pipe()
-                bootstrapData = try Self.localAdminBootstrapPayload(adminToken: adminToken)
-                process.standardInput = bootstrapPipe
-            } else {
-                bootstrapPipe = nil
-                bootstrapData = nil
-            }
-
-            let logURL = Self.logFileURL(for: service)
-            if !FileManager.default.fileExists(atPath: logURL.path) {
-                FileManager.default.createFile(atPath: logURL.path, contents: nil)
-            }
-            let handle = try FileHandle(forWritingTo: logURL)
-            try handle.seekToEnd()
-            process.standardOutput = handle
-            process.standardError = handle
-            logHandles[service] = handle
-
-            process.terminationHandler = { [weak self] proc in
+            let spawned = try ClawJSServiceSpawner.spawn(plan) { [weak self] proc in
                 Task { [weak self] in
                     await self?.handleTermination(of: service, process: proc)
                 }
             }
-
-            try process.run()
-            if let bootstrapPipe, let bootstrapData {
-                bootstrapPipe.fileHandleForWriting.write(bootstrapData)
-                try? bootstrapPipe.fileHandleForWriting.close()
-            }
-            processes[service] = process
-            processRegistry.register(process, for: service)
+            processes[service] = spawned.process
+            logHandles[service] = spawned.logHandle
+            processRegistry.register(spawned.process, for: service)
 
             // The aggregate monitor flips state to `.ready` once the
             // service responds; it also detects soft hangs (process alive
             // but no longer answering) and triggers a restart.
-            monitorLocalService(service, pid: process.processIdentifier)
+            monitorLocalService(service, pid: spawned.process.processIdentifier)
         } catch {
             update(service) {
                 $0.state = .crashed(reason: "spawn failed: \(error.localizedDescription)")
@@ -675,7 +486,7 @@ actor ClawJSServiceSupervisor {
             }
             return
         }
-        let delay = Self.backoffSchedule[min(snap.restartCount, Self.backoffSchedule.count - 1)]
+        let delay = ClawJSServiceSupervisorPolicy.restartDelay(for: snap.restartCount)
         update(service) { $0.restartCount += 1 }
 
         restartTasks[service]?.cancel()
@@ -689,15 +500,7 @@ actor ClawJSServiceSupervisor {
     // MARK: - Aggregate health supervision
 
     private func monitorLocalService(_ service: ClawJSService, pid: pid_t) {
-        let now = Date()
-        serviceMonitors[service] = ServiceMonitor(
-            mode: .local(pid: pid),
-            readyDeadline: now.addingTimeInterval(15),
-            hasReachedReady: false,
-            consecutiveFailures: 0,
-            nextProbeAt: now,
-            lastDaemonUpdateAt: nil
-        )
+        serviceMonitors[service] = ClawJSServiceHealthMonitor.localMonitor(pid: pid)
         ensureMonitorTask()
     }
 
@@ -733,14 +536,12 @@ actor ClawJSServiceSupervisor {
             await probeMonitoredService(service, now: Date())
         }
 
-        guard !serviceMonitors.isEmpty else { return nil }
-        let next = serviceMonitors.values.map(\.nextProbeAt).min() ?? Date().addingTimeInterval(1)
-        return max(0.05, next.timeIntervalSince(Date()))
+        return ClawJSServiceHealthMonitor.nextSleepInterval(monitors: serviceMonitors)
     }
 
     private func probeMonitoredService(_ service: ClawJSService, now: Date) async {
         guard let monitor = serviceMonitors[service] else { return }
-        let updated: ServiceMonitor?
+        let updated: ClawJSServiceMonitor?
         switch monitor.mode {
         case .local(let pid):
             updated = await probeLocalService(service, pid: pid, monitor: monitor, now: now)
@@ -757,86 +558,78 @@ actor ClawJSServiceSupervisor {
     private func probeLocalService(
         _ service: ClawJSService,
         pid: pid_t,
-        monitor: ServiceMonitor,
+        monitor: ClawJSServiceMonitor,
         now: Date
-    ) async -> ServiceMonitor? {
-        var monitor = monitor
+    ) async -> ClawJSServiceMonitor? {
+        let monitor = monitor
         guard let process = processes[service], process.isRunning else {
             return nil
         }
 
         let alive = await pingService(service)
-        if alive {
-            monitor.consecutiveFailures = 0
-            if !monitor.hasReachedReady {
-                monitor.hasReachedReady = true
-                lastReadyAt[service] = now
-                update(service) { $0.state = .ready(pid: pid, port: service.port) }
-            }
-            monitor.nextProbeAt = now.addingTimeInterval(Self.localReadyProbeInterval)
-            return monitor
-        }
-
-        monitor.consecutiveFailures += 1
-        monitor.nextProbeAt = now.addingTimeInterval(Self.localStartupProbeInterval)
-        if !monitor.hasReachedReady, now > monitor.readyDeadline {
+        let outcome = ClawJSServiceHealthMonitor.probeLocalService(
+            service: service,
+            pid: pid,
+            monitor: monitor,
+            now: now,
+            alive: alive
+        )
+        switch outcome.action {
+        case .none:
+            break
+        case .markReady(let pid, let port):
+            lastReadyAt[service] = now
+            update(service) { $0.state = .ready(pid: pid, port: port) }
+        case .terminate(let reason):
             update(service) {
-                $0.state = .crashed(reason: "did not become ready within 15s")
+                $0.state = .crashed(reason: reason)
             }
             process.terminate()
-            return nil
         }
-        if monitor.hasReachedReady, monitor.consecutiveFailures >= 5 {
-            update(service) {
-                $0.state = .crashed(reason: "\(service.healthPath) silent for 5 consecutive checks")
-            }
-            process.terminate()
-            return nil
-        }
-        return monitor
+        return outcome.monitor
     }
 
     private func probeDaemonOwnedService(
         _ service: ClawJSService,
-        monitor: ServiceMonitor,
+        monitor: ClawJSServiceMonitor,
         now: Date
-    ) async -> ServiceMonitor? {
-        var monitor = monitor
-        if let lastDaemonUpdateAt = monitor.lastDaemonUpdateAt,
-           now.timeIntervalSince(lastDaemonUpdateAt) < Self.daemonPushFreshWindow {
-            monitor.nextProbeAt = lastDaemonUpdateAt.addingTimeInterval(Self.daemonPushFreshWindow)
+    ) async -> ClawJSServiceMonitor? {
+        if let fresh = ClawJSServiceHealthMonitor.daemonPushFreshOutcome(monitor: monitor, now: now) {
             PerfSignpost.serviceSupervisor.event("monitor.daemon_push_fresh")
-            return monitor
+            return fresh.monitor
         }
 
-        PerfSignpost.serviceSupervisor.event("daemon_fallback_probe")
         let alive = await pingService(service)
-        if alive {
-            monitor.consecutiveFailures = 0
-            monitor.hasReachedReady = true
-            if Self.canAdoptExistingService(service) {
-                publishDaemonReady(service)
-            } else {
-                markReachableServiceUnavailable(service)
-            }
-            monitor.nextProbeAt = now.addingTimeInterval(Self.daemonFallbackProbeInterval)
-            return monitor
+        let outcome = ClawJSServiceHealthMonitor.probeDaemonOwnedService(
+            service: service,
+            monitor: monitor,
+            now: now,
+            alive: alive,
+            canAdopt: Self.canAdoptExistingService(service),
+            canLaunchLocal: ClawJSRuntime.isAvailable && ClawJSServiceLaunchAdapter.commandLine(for: service) != nil
+        )
+        if outcome.action != .daemonPushFresh {
+            PerfSignpost.serviceSupervisor.event("daemon_fallback_probe")
         }
-
-        monitor.consecutiveFailures += 1
-        monitor.nextProbeAt = now.addingTimeInterval(Self.daemonStartupProbeInterval)
-        if monitor.hasReachedReady || now > monitor.readyDeadline {
-            if ClawJSRuntime.isAvailable, commandLine(for: service) != nil {
-                await launchLocal(service, force: true)
-                return nil
-            }
-            let reason = "\(service.displayName) is not reachable on 127.0.0.1:\(service.port) while the bridge daemon is active."
+        switch outcome.action {
+        case .none:
+            break
+        case .daemonPushFresh:
+            PerfSignpost.serviceSupervisor.event("monitor.daemon_push_fresh")
+        case .publishDaemonReady:
+            publishDaemonReady(service)
+        case .markReachableUnavailable:
+            markReachableServiceUnavailable(service)
+        case .launchLocal:
+            await launchLocal(service, force: true)
+            return nil
+        case .markDaemonUnavailable(let reason):
             update(service) {
                 $0.state = .daemonUnavailable(reason: reason)
                 $0.lastError = reason
             }
         }
-        return monitor
+        return outcome.monitor
     }
 
     private func pingService(_ service: ClawJSService) async -> Bool {
@@ -860,63 +653,43 @@ actor ClawJSServiceSupervisor {
     /// Single workspace shared by services for process cwd and runtime
     /// artifacts that are not the canonical ClawJS data store.
     nonisolated static var workspaceURL: URL {
-        applicationSupportRoot.appendingPathComponent("workspace", isDirectory: true)
+        ClawJSServiceSupervisorRoutes.workspaceURL(applicationSupportRoot: applicationSupportRoot)
     }
 
     nonisolated static var applicationSupportRoot: URL {
-        let env = ProcessInfo.processInfo.environment
-        if env[ClawixEnv.dummyMode] == "1", let root = env[ClawixEnv.backendHome], !root.isEmpty {
-            return URL(fileURLWithPath: root, isDirectory: true)
-        }
-        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawjs, isDirectory: true)
+        ClawJSServiceSupervisorRoutes.applicationSupportRoot()
     }
 
     nonisolated static func workingDirectoryURL(for service: ClawJSService) -> URL {
-        if service == .runtime {
-            return ClawJSRuntime.bundleRootURL
-        }
-        return workspaceURL
+        ClawJSServiceDirectoryResolver.workingDirectoryURL(for: service)
     }
 
     nonisolated static var mainDataDirectoryURL: URL {
-        applicationSupportRoot
+        ClawJSServiceDirectoryResolver.mainDataDirectoryURL
     }
 
     nonisolated static var mainDatabaseURL: URL {
-        mainDataDirectoryURL.appendingPathComponent(ClawixPersistentSurfacePaths.components.sqlite, isDirectory: false)
+        ClawJSServiceSupervisorRoutes.mainDatabaseURL(mainDataDirectoryURL: mainDataDirectoryURL)
     }
 
     nonisolated static var mainFilesDirectoryURL: URL {
-        mainDataDirectoryURL.appendingPathComponent(ClawixPersistentSurfacePaths.components.files, isDirectory: true)
+        ClawJSServiceSupervisorRoutes.mainFilesDirectoryURL(mainDataDirectoryURL: mainDataDirectoryURL)
     }
 
     private nonisolated static var frameworkGlobalRootURL: URL {
-        let env = ProcessInfo.processInfo.environment
-        if let override = env[ClawEnv.home], !override.isEmpty {
-            return URL(fileURLWithPath: (override as NSString).expandingTildeInPath, isDirectory: true)
-        }
-        return FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawWorkspace, isDirectory: true)
+        ClawJSServiceSupervisorRoutes.frameworkGlobalRoot()
     }
 
     private nonisolated static var frameworkSecretsDirectoryURL: URL {
-        frameworkGlobalRootURL
-            .appendingPathComponent("secrets", isDirectory: true)
+        ClawJSServiceSupervisorRoutes.frameworkSecretsDirectory(frameworkGlobalRoot: frameworkGlobalRootURL)
     }
 
     nonisolated static func logFileURL(for service: ClawJSService) -> URL {
-        let logs = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.logs, isDirectory: true)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
-        return logs.appendingPathComponent("clawjs-\(service.rawValue).log", isDirectory: false)
+        ClawJSServiceSupervisorRoutes.logFileURL(service: service)
     }
 
     nonisolated static func statusFileURL(for service: ClawJSService) -> URL {
-        applicationSupportRoot
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.status, isDirectory: true)
-            .appendingPathComponent("\(service.rawValue).json", isDirectory: false)
+        ClawJSServiceSupervisorRoutes.statusFileURL(service: service, applicationSupportRoot: applicationSupportRoot)
     }
 
     private nonisolated static func prepareDirectories(for service: ClawJSService) throws {
@@ -935,7 +708,7 @@ actor ClawJSServiceSupervisor {
             withIntermediateDirectories: true
         )
         try? fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: dataDirectoryURL(for: service).path)
-        if Self.adminTokenEnvVar[service] != nil {
+        if ClawJSServiceSupervisorPolicy.adminTokenEnvVar[service] != nil {
             for tokenURL in staleAdminTokenURLs(for: service) {
                 try? fm.removeItem(at: tokenURL)
             }
@@ -956,13 +729,13 @@ actor ClawJSServiceSupervisor {
         signedHostToken: String?
     ) -> [String: String] {
         var env = ProcessInfo.processInfo.environment
-        for tokenEnvVar in adminTokenEnvVar.values {
+        for tokenEnvVar in ClawJSServiceSupervisorPolicy.adminTokenEnvVar.values {
             env.removeValue(forKey: tokenEnvVar)
         }
         env.removeValue(forKey: "CLAW_SECRETS_TOKEN")
         env.removeValue(forKey: "CLAW_SECRETS_KEK_BASE64")
         env.removeValue(forKey: "CLAW_SECRETS_HOST_ASSERTION_KEY_BASE64")
-        env["HOME"] = applicationSupportRoot.appendingPathComponent("home").path
+        env["HOME"] = ClawJSServiceSupervisorRoutes.homeURL(applicationSupportRoot: applicationSupportRoot).path
         env["CLAW_WORKSPACE"] = workspaceURL.path
         env["CLAW_HOME"] = frameworkGlobalRootURL.path
         env["CLAW_DATA_DIR"] = mainDataDirectoryURL.path
@@ -973,15 +746,14 @@ actor ClawJSServiceSupervisor {
         env["RUNTIME_HOST"] = "127.0.0.1"
         env["RUNTIME_PORT"] = String(ClawJSService.runtime.port)
         env["RUNTIME_DATA_DIR"] = dataDirectoryURL(for: .runtime).path
-        env["RUNTIME_DB_PATH"] = dataDirectoryURL(for: .runtime)
-            .appendingPathComponent("runtime.sqlite", isDirectory: false).path
+        env["RUNTIME_DB_PATH"] = ClawJSServiceSupervisorRoutes.runtimeDatabaseURL(
+            runtimeDataDirectoryURL: dataDirectoryURL(for: .runtime)
+        ).path
         env["CLAW_RUNTIME_SESSIONS_URL"] = "http://127.0.0.1:\(ClawJSService.sessions.port)"
         for (key, value) in ClawJSActorAssertion.environment() {
             env[key] = value
         }
-        env["CLAW_SECRETS_PROXY_PATH"] = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("bin/secrets-proxy", isDirectory: false)
-            .path
+        env["CLAW_SECRETS_PROXY_PATH"] = ClawJSServiceSupervisorRoutes.secretsProxyURL().path
         env["PORT"] = String(service.port)
         env["HOST"] = "127.0.0.1"
         env["CLAW_DATABASE_HOST"] = "127.0.0.1"
@@ -995,13 +767,15 @@ actor ClawJSServiceSupervisor {
         env["CLAW_SESSIONS_HOST"] = "127.0.0.1"
         env["CLAW_SESSIONS_PORT"] = String(ClawJSService.sessions.port)
         env["CLAW_SESSIONS_DATA_DIR"] = dataDirectoryURL(for: .sessions).path
-        env["CLAW_SESSIONS_DB_PATH"] = dataDirectoryURL(for: .sessions)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.sessionsDatabase, isDirectory: false).path
+        env["CLAW_SESSIONS_DB_PATH"] = ClawJSServiceSupervisorRoutes.sessionsDatabaseURL(
+            dataDirectoryURL: dataDirectoryURL(for: .sessions)
+        ).path
         env["CLAW_SECRETS_HOST"] = "127.0.0.1"
         env["CLAW_SECRETS_PORT"] = String(ClawJSService.secrets.port)
         env["CLAW_SECRETS_DATA_DIR"] = dataDirectoryURL(for: .secrets).path
-        env["CLAW_SECRETS_DB_PATH"] = dataDirectoryURL(for: .secrets)
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.secretsDatabase, isDirectory: false).path
+        env["CLAW_SECRETS_DB_PATH"] = ClawJSServiceSupervisorRoutes.secretsDatabaseURL(
+            dataDirectoryURL: dataDirectoryURL(for: .secrets)
+        ).path
         env["CLAW_SECRETS_BASE_URL"] = "http://127.0.0.1:\(ClawJSService.secrets.port)"
         env["CLAW_SECRETS_TENANT_ID"] = ClawJSSecretsClient.defaultTenantId
         // The Telegram surface reads its own variables (the CLI normally
@@ -1020,7 +794,7 @@ actor ClawJSServiceSupervisor {
             env["CLAW_PUBLISHING_DATA_DIR"] = publishingData
             env["CLAW_PUBLISHING_STATUS_FILE"] = statusFileURL(for: service).path
         }
-        if adminToken != nil, adminTokenEnvVar[service] != nil {
+        if adminToken != nil, ClawJSServiceSupervisorPolicy.adminTokenEnvVar[service] != nil {
             if service == .runtime {
                 env["RUNTIME_SHARED_SECRET"] = adminToken
             } else if service == .secrets {
@@ -1067,7 +841,7 @@ actor ClawJSServiceSupervisor {
     /// daemon. `nil` for services without admin auth, or when the GUI is
     /// not the daemon steward (e.g., background bridge mode).
     func adminTokenIfSpawned(for service: ClawJSService) -> String? {
-        sessionAdminTokens[service]
+        tokenVault.adminTokenIfSpawned(for: service)
     }
 
     /// Signed-host token for the Secrets service only when this Clawix
@@ -1075,43 +849,11 @@ actor ClawJSServiceSupervisor {
     /// `.admin-token` fallback, because sibling local processes must not gain
     /// host-only lifecycle, reveal, or metadata privileges by reading disk.
     func signedHostTokenIfSpawned(for service: ClawJSService) -> String? {
-        sessionSignedHostTokens[service]
+        tokenVault.signedHostTokenIfSpawned(for: service)
     }
 
     func hostAssertionKeyIfSpawned(for service: ClawJSService) -> String? {
-        sessionHostAssertionKeys[service]
-    }
-
-    /// Returns the existing per-session token or generates a fresh one and
-    /// stores it. `nil` for services that don't authenticate admin via token.
-    private func ensureAdminToken(for service: ClawJSService) -> String? {
-        guard Self.adminTokenEnvVar[service] != nil else { return nil }
-        if let existing = sessionAdminTokens[service] { return existing }
-        let token = SecureRandom.bytes(32).base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
-        sessionAdminTokens[service] = token
-        return token
-    }
-
-    private func ensureSignedHostToken(for service: ClawJSService) -> String? {
-        guard service == .secrets else { return nil }
-        if let existing = sessionSignedHostTokens[service] { return existing }
-        let token = SecureRandom.bytes(32).base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
-        sessionSignedHostTokens[service] = token
-        return token
-    }
-
-    private func ensureHostAssertionKey(for service: ClawJSService) -> String? {
-        guard service == .secrets else { return nil }
-        if let existing = sessionHostAssertionKeys[service] { return existing }
-        let key = SecureRandom.bytes(32).base64EncodedString()
-        sessionHostAssertionKeys[service] = key
-        return key
+        tokenVault.hostAssertionKeyIfSpawned(for: service)
     }
 
     /// Filesystem token lookup only for services with an explicit
@@ -1119,32 +861,11 @@ actor ClawJSServiceSupervisor {
     /// have no disk lookup: same-user local processes can read user files,
     /// so v1 host identity must stay in-memory/native.
     nonisolated static func adminTokenFromTokenFile(for service: ClawJSService) throws -> String {
-        if adminTokenEnvVar[service] != nil {
-            throw NSError(domain: "ClawJSServiceManager", code: 3, userInfo: [
-                NSLocalizedDescriptionKey: "\(service.displayName) admin token is host-session only and is never read from disk."
-            ])
-        }
-        let url = dataDirectoryURL(for: service).appendingPathComponent(".admin-token", isDirectory: false)
-        let attrs = try FileManager.default.attributesOfItem(atPath: url.path)
-        if let mode = attrs[.posixPermissions] as? NSNumber,
-           mode.intValue & 0o077 != 0 {
-            throw NSError(domain: "ClawJSServiceManager", code: 2, userInfo: [
-                NSLocalizedDescriptionKey: "Admin token at \(url.path) must be readable only by the current user."
-            ])
-        }
-        let raw = try String(contentsOf: url, encoding: .utf8)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard raw.count >= 32 else {
-            throw NSError(domain: "ClawJSServiceManager", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: "Admin token at \(url.path) is too short."
-        ])
-        }
-        return raw
+        try ClawJSServiceDirectoryResolver.adminTokenFromTokenFile(for: service)
     }
 
     private nonisolated static func canAdoptExistingService(_ service: ClawJSService) -> Bool {
-        if adminTokenEnvVar[service] != nil { return false }
-        return true
+        ClawJSServiceSupervisorPolicy.canAdoptExistingService(service)
     }
 
     private nonisolated static func listenerPID(on port: UInt16) async -> pid_t? {
@@ -1175,18 +896,24 @@ actor ClawJSServiceSupervisor {
         if service == .secrets {
             return frameworkSecretsDirectoryURL
         }
-        return workspaceURL
-            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawWorkspace, isDirectory: true)
-            .appendingPathComponent(service.rawValue, isDirectory: true)
+        return ClawJSServiceSupervisorRoutes.serviceDataDirectoryURL(
+            service: service,
+            workspaceURL: workspaceURL,
+            mainDataDirectoryURL: mainDataDirectoryURL,
+            frameworkSecretsDirectoryURL: frameworkSecretsDirectoryURL
+        )
     }
 
     private nonisolated static func staleAdminTokenURLs(for service: ClawJSService) -> [URL] {
         [
             dataDirectoryURL(for: service),
-            workspaceURL
-                .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawWorkspace, isDirectory: true)
-                .appendingPathComponent(service.rawValue, isDirectory: true),
-        ].map { $0.appendingPathComponent(".admin-token", isDirectory: false) }
+            ClawJSServiceSupervisorRoutes.serviceDataDirectoryURL(
+                service: service,
+                workspaceURL: workspaceURL,
+                mainDataDirectoryURL: mainDataDirectoryURL,
+                frameworkSecretsDirectoryURL: frameworkSecretsDirectoryURL
+            ),
+        ].map { ClawJSServiceSupervisorRoutes.adminTokenURL(dataDirectoryURL: $0) }
     }
 
     private nonisolated static func bundledLauncherScript(for service: ClawJSService) -> URL? {
@@ -1218,20 +945,10 @@ actor ClawJSServiceSupervisor {
             return
         }
 
-        var monitor = serviceMonitors[service] ?? ServiceMonitor(
-            mode: .daemonOwned,
-            readyDeadline: Date().addingTimeInterval(6),
-            hasReachedReady: mappedState.isReady,
-            consecutiveFailures: 0,
-            nextProbeAt: Date().addingTimeInterval(Self.daemonPushFreshWindow),
-            lastDaemonUpdateAt: Date()
+        serviceMonitors[service] = ClawJSServiceHealthMonitor.daemonPushMonitor(
+            existing: serviceMonitors[service],
+            mappedState: mappedState
         )
-        monitor.mode = .daemonOwned
-        monitor.hasReachedReady = monitor.hasReachedReady || mappedState.isReady
-        monitor.consecutiveFailures = 0
-        monitor.lastDaemonUpdateAt = Date()
-        monitor.nextProbeAt = Date().addingTimeInterval(Self.daemonPushFreshWindow)
-        serviceMonitors[service] = monitor
         ensureMonitorTask()
     }
 
@@ -1240,7 +957,7 @@ actor ClawJSServiceSupervisor {
         case "idle":
             return .idle
         case "availableOnDemand":
-            return Self.availableOnDemandState(for: service)
+            return ClawJSServiceSupervisorPolicy.availableOnDemandState(for: service)
         case "starting":
             return .starting
         case "ready", "readyFromDaemon", "running", "healthy":
@@ -1254,10 +971,6 @@ actor ClawJSServiceSupervisor {
         default:
             return .daemonUnavailable(reason: wire.lastError ?? "\(service.displayName) is unavailable from the daemon.")
         }
-    }
-
-    private static func availableOnDemandState(for service: ClawJSService) -> ClawJSServiceState {
-        .availableOnDemand(trigger: ClawJSServiceDemandPolicy.onDemandTrigger(for: service) ?? service.rawValue)
     }
 
     private func update(
@@ -1287,39 +1000,22 @@ actor ClawJSServiceSupervisor {
     /// because IoT lives outside @clawjs/cli: its argv, cwd, and the
     /// node binary all differ from the bundled-runtime services.
     private func spawnIot(projectDir: URL) async {
-        let serverJs = projectDir.appendingPathComponent("dist/server.js", isDirectory: false)
         update(.iot) { $0.state = .starting; $0.lastError = nil }
 
         do {
             try Self.prepareDirectories(for: .iot)
 
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            process.arguments = ["node", serverJs.path]
-            process.currentDirectoryURL = projectDir
-            process.environment = Self.iotEnvironment()
-
-            let logURL = Self.logFileURL(for: .iot)
-            if !FileManager.default.fileExists(atPath: logURL.path) {
-                FileManager.default.createFile(atPath: logURL.path, contents: nil)
-            }
-            let handle = try FileHandle(forWritingTo: logURL)
-            try handle.seekToEnd()
-            process.standardOutput = handle
-            process.standardError = handle
-            logHandles[.iot] = handle
-
-            process.terminationHandler = { [weak self] proc in
+            let plan = ClawJSServiceLaunchAdapter.iotPlan(projectDir: projectDir)
+            let spawned = try ClawJSServiceSpawner.spawn(plan) { [weak self] proc in
                 Task { [weak self] in
                     await self?.handleTermination(of: .iot, process: proc)
                 }
             }
+            processes[.iot] = spawned.process
+            logHandles[.iot] = spawned.logHandle
+            processRegistry.register(spawned.process, for: .iot)
 
-            try process.run()
-            processes[.iot] = process
-            processRegistry.register(process, for: .iot)
-
-            monitorLocalService(.iot, pid: process.processIdentifier)
+            monitorLocalService(.iot, pid: spawned.process.processIdentifier)
         } catch {
             update(.iot) {
                 $0.state = .crashed(reason: "spawn failed: \(error.localizedDescription)")
@@ -1335,9 +1031,7 @@ actor ClawJSServiceSupervisor {
     /// when neither location is present or the dist/server.js is
     /// missing, which keeps the service `.blocked` rather than crashing.
     private func iotProjectDirectory() -> URL? {
-        let pointerURL = Self.applicationSupportRoot
-            .appendingPathComponent("dev-pointers", isDirectory: true)
-            .appendingPathComponent("iot.dir", isDirectory: false)
+        let pointerURL = ClawJSServiceSupervisorRoutes.iotPointerURL(applicationSupportRoot: Self.applicationSupportRoot)
         if let raw = try? String(contentsOf: pointerURL, encoding: .utf8) {
             let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
