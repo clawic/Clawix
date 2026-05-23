@@ -83,22 +83,7 @@ public sealed partial class DaemonEngineHost
 
     public Task<(string? DataBase64, string? MimeType, string? Error)> HandleRequestGeneratedImageAsync(string path, CancellationToken ct)
     {
-        try
-        {
-            var root = Path.GetFullPath(Paths.CodexGeneratedImages);
-            var full = Path.GetFullPath(path);
-            if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
-                return Task.FromResult<(string?, string?, string?)>((null, null, "denied"));
-            if (!File.Exists(full))
-                return Task.FromResult<(string?, string?, string?)>((null, null, "File not found"));
-            var bytes = File.ReadAllBytes(full);
-            var mime = full.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "image/png" : "application/octet-stream";
-            return Task.FromResult<(string?, string?, string?)>((Convert.ToBase64String(bytes), mime, null));
-        }
-        catch (Exception ex)
-        {
-            return Task.FromResult<(string?, string?, string?)>((null, null, ex.Message));
-        }
+        return Task.FromResult(GeneratedImageReader.Read(path));
     }
 
     public Task<(WireAudioAssetWithTranscripts? Asset, string? Error)> HandleAudioRegisterAsync(string requestId, WireAudioRegisterRequest request, CancellationToken ct)
