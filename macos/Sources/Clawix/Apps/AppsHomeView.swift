@@ -69,8 +69,9 @@ struct AppsHomeView: View {
             filterBar
                 .padding(.horizontal, 32)
                 .padding(.bottom, 18)
-            Divider()
-                .opacity(0.2)
+            Rectangle()
+                .fill(Palette.popupStroke)
+                .frame(height: 0.5)
             ScrollView {
                 if filteredApps.isEmpty {
                     emptyState
@@ -90,6 +91,7 @@ struct AppsHomeView: View {
                     .padding(32)
                 }
             }
+            .thinScrollers()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Palette.background)
@@ -113,45 +115,43 @@ struct AppsHomeView: View {
                     .foregroundColor(Palette.textPrimary)
                 Text("Mini apps your agent has built")
                     .font(BodyFont.system(size: 13.5, wght: 400))
-                    .foregroundColor(Color(white: 0.62))
+                    .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
             }
             Spacer()
             Button {
                 importPackage()
             } label: {
-                Image(systemName: "square.and.arrow.down")
-                    .font(.system(size: 12, weight: .semibold))
+                IconImage("square.and.arrow.down", size: 12)
                     .frame(width: 26, height: 26)
             }
             .buttonStyle(.plain)
             .help("Import app package")
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(white: 0.10))
+                    .fill(Color.gray(light: 0.95, dark: 0.10))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                    .stroke(Color.overlay(0.10), lineWidth: 0.7)
             )
-            .foregroundColor(Color(white: 0.86))
+            .foregroundColor(Color.gray(light: 0.19, dark: 0.86))
             HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(white: 0.55))
+                IconImage("magnifyingglass", size: 12)
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                 TextField("Search", text: $query)
                     .textFieldStyle(.plain)
-                    .foregroundColor(Color(white: 0.92))
+                    .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
                     .frame(width: 200)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(white: 0.10))
+                    .fill(Color.gray(light: 0.95, dark: 0.10))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                    .stroke(Color.overlay(0.10), lineWidth: 0.7)
             )
         }
         .padding(.horizontal, 32)
@@ -187,58 +187,42 @@ struct AppsHomeView: View {
             Spacer()
             Text("\(filteredApps.count) of \(appsStore.apps.count)")
                 .font(BodyFont.system(size: 12, wght: 500))
-                .foregroundColor(Color(white: 0.55))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
         }
     }
 
     private var sortMenu: some View {
-        Menu {
-            ForEach(AppsSortMode.allCases) { mode in
-                Button(mode.label) { sortMode = mode }
+        AppsFilterDropdown(
+            chipText: "Sort: \(sortMode.label)",
+            options: AppsSortMode.allCases.map { mode in
+                AppsFilterOption(title: mode.label, isSelected: mode == sortMode) { sortMode = mode }
             }
-        } label: {
-            FilterChipLabel(text: "Sort: \(sortMode.label)")
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
+        )
     }
 
     private var projectMenu: some View {
-        Menu {
-            Button("All projects") { selectedProjectId = nil }
-            Divider()
-            ForEach(appState.projects) { project in
-                Button(project.name) { selectedProjectId = project.id }
-            }
-        } label: {
-            let label = selectedProjectId.flatMap { pid in
-                appState.projects.first(where: { $0.id == pid })?.name
-            } ?? "All projects"
-            FilterChipLabel(text: "Project: \(label)")
+        let label = selectedProjectId.flatMap { pid in
+            appState.projects.first(where: { $0.id == pid })?.name
+        } ?? "All projects"
+        var options = [AppsFilterOption(title: "All projects", isSelected: selectedProjectId == nil) { selectedProjectId = nil }]
+        options += appState.projects.map { project in
+            AppsFilterOption(title: project.name, isSelected: selectedProjectId == project.id) { selectedProjectId = project.id }
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
+        return AppsFilterDropdown(chipText: "Project: \(label)", options: options)
     }
 
     private var tagMenu: some View {
-        Menu {
-            Button("All tags") { selectedTag = "" }
-            Divider()
-            ForEach(allTags, id: \.self) { tag in
-                Button(tag) { selectedTag = tag }
-            }
-        } label: {
-            FilterChipLabel(text: selectedTag.isEmpty ? "Tag: All" : "Tag: \(selectedTag)")
+        var options = [AppsFilterOption(title: "All tags", isSelected: selectedTag.isEmpty) { selectedTag = "" }]
+        options += allTags.map { tag in
+            AppsFilterOption(title: tag, isSelected: selectedTag == tag) { selectedTag = tag }
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
+        return AppsFilterDropdown(chipText: selectedTag.isEmpty ? "Tag: All" : "Tag: \(selectedTag)", options: options)
     }
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            Image(systemName: "square.grid.2x2")
-                .font(.system(size: 28))
-                .foregroundColor(Color(white: 0.45))
+            IconImage("app.dashed", size: 30)
+                .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
             Text(appsStore.apps.isEmpty
                  ? "No apps yet"
                  : "No apps match your filters")
@@ -248,32 +232,117 @@ struct AppsHomeView: View {
                  ? "Ask the agent: \"Build me a mini app that…\""
                  : "Try clearing the search or filter.")
                 .font(BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(Color(white: 0.6))
+                .foregroundColor(Color.gray(light: 0.42, dark: 0.6))
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 24)
     }
 }
 
+private struct AppsFilterOption: Identifiable {
+    let id = UUID()
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+}
+
+/// Filter dropdown for the Apps catalog header. Replaces the system
+/// `Menu` (which renders un-themed macOS popups) with the canon dropdown
+/// chrome: anchored popup, `menuStandardBackground`, `MenuRowHover`,
+/// `softNudge` transition. (STYLE 6.3.)
+private struct AppsFilterDropdown: View {
+    let chipText: String
+    let options: [AppsFilterOption]
+
+    @State private var isOpen = false
+    @State private var hoveredIndex: Int? = nil
+
+    var body: some View {
+        Button { isOpen.toggle() } label: {
+            FilterChipLabel(text: chipText)
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+        .anchorPreference(key: AppsFilterAnchorKey.self, value: .bounds) { $0 }
+        .overlayPreferenceValue(AppsFilterAnchorKey.self) { anchor in
+            GeometryReader { proxy in
+                if isOpen, let anchor {
+                    popup
+                        .anchoredPopupPlacement(
+                            buttonFrame: proxy[anchor],
+                            proxy: proxy,
+                            horizontal: .leading()
+                        )
+                        .transition(.softNudge(y: 4))
+                }
+            }
+            .allowsHitTesting(isOpen)
+        }
+        .animation(MenuStyle.openAnimation, value: isOpen)
+    }
+
+    private var popup: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(options.enumerated()), id: \.offset) { idx, opt in
+                Button {
+                    opt.action()
+                    isOpen = false
+                } label: {
+                    HStack(spacing: 10) {
+                        Text(opt.title)
+                            .font(BodyFont.system(size: 12.5))
+                            .foregroundColor(MenuStyle.rowText)
+                            .lineLimit(1)
+                        Spacer(minLength: 16)
+                        if opt.isSelected {
+                            CheckIcon(size: 11)
+                                .foregroundColor(MenuStyle.rowText)
+                        }
+                    }
+                    .padding(.horizontal, MenuStyle.rowHorizontalPadding)
+                    .padding(.vertical, MenuStyle.rowVerticalPadding)
+                    .background(MenuRowHover(active: hoveredIndex == idx))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    if hovering { hoveredIndex = idx }
+                    else if hoveredIndex == idx { hoveredIndex = nil }
+                }
+            }
+        }
+        .frame(minWidth: 170, alignment: .leading)
+        .padding(.vertical, MenuStyle.menuVerticalPadding)
+        .menuStandardBackground()
+        .background(MenuOutsideClickWatcher(isPresented: $isOpen))
+    }
+}
+
+private struct AppsFilterAnchorKey: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>? = nil
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = value ?? nextValue()
+    }
+}
+
 private struct FilterChipLabel: View {
     let text: String
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 5) {
             Text(text)
                 .font(BodyFont.system(size: 12.5, wght: 500))
-            Image(systemName: "chevron.down")
-                .font(.system(size: 9, weight: .semibold))
+            LucideIcon(.chevronDown, size: 9)
         }
-        .foregroundColor(Color(white: 0.85))
+        .foregroundColor(Color.gray(light: 0.20, dark: 0.85))
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color(white: 0.10))
+                .fill(Color.gray(light: 0.95, dark: 0.10))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                .stroke(Color.overlay(0.10), lineWidth: 0.7)
         )
     }
 }
@@ -293,9 +362,8 @@ private struct AppCard: View {
                     iconTile
                         .frame(maxWidth: .infinity, minHeight: 110, maxHeight: 110)
                     if record.pinned {
-                        Image(systemName: "pin.fill")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.white.opacity(0.85))
+                        IconImage("pin.fill", size: 11)
+                            .foregroundColor(Color.overlay(0.85))
                             .padding(8)
                     }
                 }
@@ -307,7 +375,7 @@ private struct AppCard: View {
                     if !record.description.isEmpty {
                         Text(record.description)
                             .font(BodyFont.system(size: 12.5, wght: 400))
-                            .foregroundColor(Color(white: 0.6))
+                            .foregroundColor(Color.gray(light: 0.42, dark: 0.6))
                             .lineLimit(2)
                     }
                     if !record.tags.isEmpty {
@@ -315,11 +383,11 @@ private struct AppCard: View {
                             ForEach(record.tags.prefix(3), id: \.self) { tag in
                                 Text(tag)
                                     .font(BodyFont.system(size: 10.5, wght: 500))
-                                    .foregroundColor(Color(white: 0.7))
+                                    .foregroundColor(Color.gray(light: 0.33, dark: 0.7))
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
                                     .background(
-                                        Capsule().fill(Color.white.opacity(0.06))
+                                        Capsule().fill(Color.overlay(0.06))
                                     )
                             }
                         }
@@ -330,11 +398,11 @@ private struct AppCard: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(white: 0.10))
+                    .fill(Color.gray(light: 0.95, dark: 0.10))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.white.opacity(hovered ? 0.20 : 0.08), lineWidth: 0.8)
+                    .stroke(Color.overlay(hovered ? 0.20 : 0.08), lineWidth: 0.8)
             )
         }
         .buttonStyle(.plain)
@@ -363,7 +431,7 @@ private struct AppCard: View {
             } else {
                 Text(initials(for: record.name))
                     .font(BodyFont.system(size: 26, wght: 700))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
             }
         }
         .clipShape(

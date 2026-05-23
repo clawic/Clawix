@@ -113,11 +113,10 @@ struct AppSurfaceView: View {
                 .foregroundColor(Palette.textPrimary)
             Text("This app may have been removed.")
                 .font(BodyFont.system(size: 13.5, wght: 400))
-                .foregroundColor(Color(white: 0.65))
-            Button("Back to home") {
+                .foregroundColor(Color.gray(light: 0.38, dark: 0.65))
+            IconChipButton(symbol: "arrow.left", label: "Back to home") {
                 appState.currentRoute = .home
             }
-            .buttonStyle(.link)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -128,8 +127,7 @@ struct AppSurfaceView: View {
                 loadState = .loading
                 reloadToken &+= 1
             } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 11, weight: .semibold))
+                IconImage("arrow.clockwise", size: 12)
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -138,8 +136,7 @@ struct AppSurfaceView: View {
             Button {
                 appState.navigate(to: .appsHome)
             } label: {
-                Image(systemName: "square.grid.2x2")
-                    .font(.system(size: 11, weight: .semibold))
+                IconImage("app.dashed", size: 12)
                     .frame(width: 22, height: 22)
             }
             .buttonStyle(.plain)
@@ -148,13 +145,13 @@ struct AppSurfaceView: View {
         .padding(6)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(white: 0.10).opacity(0.85))
+                .fill(Color.gray(light: 0.95, dark: 0.10).opacity(0.85))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                .stroke(Color.overlay(0.10), lineWidth: 0.7)
         )
-        .foregroundColor(Color(white: 0.92))
+        .foregroundColor(Color.gray(light: 0.14, dark: 0.92))
     }
 
     private func approve(_ record: AppRecord, riskMap: AppCapabilityRiskMap) {
@@ -202,36 +199,34 @@ struct AppSurfaceView: View {
                     .controlSize(.small)
                 Text("Loading app")
                     .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(Color(white: 0.72))
+                    .foregroundColor(Color.gray(light: 0.31, dark: 0.72))
             }
             .padding(18)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(white: 0.08).opacity(0.86))
+                    .fill(Color.gray(light: 0.955, dark: 0.08).opacity(0.86))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                    .stroke(Color.overlay(0.10), lineWidth: 0.7)
             )
             .allowsHitTesting(false)
         case .failed(let message):
             VStack(spacing: 12) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+                IconImage("exclamationmark.triangle", size: 24)
+                    .foregroundColor(Palette.warning)
                 Text("App failed to load")
                     .font(BodyFont.system(size: 17, wght: 600))
                     .foregroundColor(Palette.textPrimary)
                 Text(message)
                     .font(BodyFont.system(size: 13.5, wght: 400))
-                    .foregroundColor(Color(white: 0.66))
+                    .foregroundColor(Color.gray(light: 0.37, dark: 0.66))
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 360)
-                Button("Reload") {
+                IconChipButton(symbol: "arrow.clockwise", label: "Reload") {
                     loadState = .loading
                     reloadToken &+= 1
                 }
-                .buttonStyle(.bordered)
             }
             .padding(24)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -261,7 +256,7 @@ private struct AppSwiftSurfaceHostView: View {
                         .controlSize(.small)
                     Text("Loading Swift surface")
                         .font(BodyFont.system(size: 13, wght: 500))
-                        .foregroundColor(Color(white: 0.72))
+                        .foregroundColor(Color.gray(light: 0.31, dark: 0.72))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .ready(let presentation):
@@ -270,15 +265,14 @@ private struct AppSwiftSurfaceHostView: View {
                 }
             case .failed(let message):
                 VStack(spacing: 12) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+                    IconImage("exclamationmark.triangle", size: 24)
+                        .foregroundColor(Palette.warning)
                     Text("Swift surface unavailable")
                         .font(BodyFont.system(size: 17, wght: 600))
                         .foregroundColor(Palette.textPrimary)
                     Text(message)
                         .font(BodyFont.system(size: 13.5, wght: 400))
-                        .foregroundColor(Color(white: 0.66))
+                        .foregroundColor(Color.gray(light: 0.37, dark: 0.66))
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: 420)
                 }
@@ -425,7 +419,7 @@ private struct AppSwiftSurfaceRenderedManifestView: View {
                         .foregroundColor(Palette.textPrimary)
                     Text(presentation.capabilitiesSummary)
                         .font(BodyFont.system(size: 12.5, wght: 400))
-                        .foregroundColor(Color(white: 0.56))
+                        .foregroundColor(Color.gray(light: 0.44, dark: 0.56))
                 }
                 AppSwiftSurfaceRenderedNodeView(node: presentation.root, onAction: onAction)
             }
@@ -455,7 +449,7 @@ private struct AppSwiftSurfaceRenderedNodeView: View {
                 } label: {
                     Text(node.label)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(AppSurfaceButtonStyle())
                 .disabled(node.action == nil)
                 if let action = node.action {
                     AppSwiftSurfaceActionLabel(action: action)
@@ -466,7 +460,7 @@ private struct AppSwiftSurfaceRenderedNodeView: View {
                 if let dataSource = node.dataSource {
                     Text(dataSource)
                         .font(BodyFont.system(size: 12.5, wght: 600))
-                        .foregroundColor(Color(white: 0.62))
+                        .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
                 }
                 ForEach(node.children) { child in
                     AppSwiftSurfaceRenderedNodeView(node: child, onAction: onAction)
@@ -494,7 +488,7 @@ private struct AppSwiftSurfaceActionLabel: View {
             }
         }
         .font(BodyFont.system(size: 11.5, wght: 500))
-        .foregroundColor(Color(white: 0.54))
+        .foregroundColor(Color.gray(light: 0.44, dark: 0.54))
     }
 }
 
@@ -736,7 +730,7 @@ private struct AppActivationReviewGate: View {
                 .foregroundColor(Palette.textPrimary)
             Text("Review this app before activation.")
                 .font(BodyFont.system(size: 14, wght: 450))
-                .foregroundColor(Color(white: 0.68))
+                .foregroundColor(Color.gray(light: 0.36, dark: 0.68))
 
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(presentation.lines) { line in
@@ -749,7 +743,7 @@ private struct AppActivationReviewGate: View {
                     .buttonStyle(.borderedProminent)
                 Text("High-risk actions still require approval when used.")
                     .font(BodyFont.system(size: 12.5, wght: 400))
-                    .foregroundColor(Color(white: 0.56))
+                    .foregroundColor(Color.gray(light: 0.44, dark: 0.56))
             }
         }
         .padding(28)
@@ -762,10 +756,10 @@ private struct AppActivationReviewGate: View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
                 .font(BodyFont.system(size: 12, wght: 650))
-                .foregroundColor(Color(white: 0.82))
+                .foregroundColor(Color.gray(light: 0.23, dark: 0.82))
             Text(value)
                 .font(BodyFont.system(size: 13, wght: 400))
-                .foregroundColor(Color(white: 0.62))
+                .foregroundColor(Color.gray(light: 0.40, dark: 0.62))
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -777,15 +771,14 @@ private struct AppActivationBlockedGate: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "lock.trianglebadge.exclamationmark")
-                .font(.system(size: 24, weight: .medium))
-                .foregroundColor(Color(red: 0.95, green: 0.62, blue: 0.30))
+            IconImage("lock", size: 26)
+                .foregroundColor(Palette.warning)
             Text("App cannot be activated")
                 .font(BodyFont.system(size: 18, wght: 650))
                 .foregroundColor(Palette.textPrimary)
             Text("\(record.name) requests unsupported capabilities: \(unknownCapabilities.joined(separator: ", ")).")
                 .font(BodyFont.system(size: 13.5, wght: 400))
-                .foregroundColor(Color(white: 0.66))
+                .foregroundColor(Color.gray(light: 0.37, dark: 0.66))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 460)
         }
@@ -798,6 +791,41 @@ private struct AppActivationBlockedGate: View {
 private extension String {
     var nilIfEmpty: String? {
         isEmpty ? nil : self
+    }
+}
+
+/// Canon secondary button for rendered sub-app surfaces. Capsule with a
+/// dynamic additive fill + hairline, replacing the system `.bordered`
+/// look so manifest buttons match the app chrome in both modes.
+private struct AppSurfaceButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        AppSurfaceButtonLabel(configuration: configuration)
+    }
+}
+
+private struct AppSurfaceButtonLabel: View {
+    let configuration: ButtonStyle.Configuration
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hovered = false
+
+    var body: some View {
+        configuration.label
+            .font(BodyFont.system(size: 12.5, wght: 600))
+            .foregroundColor(Palette.textPrimary)
+            .padding(.horizontal, 13)
+            .padding(.vertical, 7)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.overlay(configuration.isPressed ? 0.12 : (hovered ? 0.10 : 0.06)))
+                    .overlay(
+                        Capsule(style: .continuous)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
+                    )
+            )
+            .contentShape(Capsule(style: .continuous))
+            .opacity(isEnabled ? 1 : 0.45)
+            .onHover { hovered = $0 }
+            .animation(.easeOut(duration: 0.12), value: hovered)
     }
 }
 
