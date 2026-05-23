@@ -81,6 +81,24 @@ private enum PaletteCatalog {
                             $0.settingsCategory = .personalization
                             $0.currentRoute = .settings
                         }),
+            PaletteItem(id: "skills", icon: "wrench.and.screwdriver",
+                        title: "Skills", shortcut: nil,
+                        action: {
+                            $0.settingsCategory = .skills
+                            $0.currentRoute = .settings
+                        }),
+            PaletteItem(id: "mcp-servers", icon: "puzzlepiece.extension",
+                        title: "MCP servers", shortcut: nil,
+                        action: {
+                            $0.settingsCategory = .mcp
+                            $0.currentRoute = .settings
+                        }),
+            PaletteItem(id: "git-settings", icon: "arrow.triangle.branch",
+                        title: "Git", shortcut: nil,
+                        action: {
+                            $0.settingsCategory = .git
+                            $0.currentRoute = .settings
+                        }),
         ]),
         PaletteSection(id: "aplicacion", title: "App", items: [
             // Automations row kept commented out for now.
