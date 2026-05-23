@@ -26,6 +26,8 @@ import { DatabaseView } from "../database/database-view";
 import { PomodoroView } from "../pomodoro/pomodoro-view";
 import { McpView } from "../mcp/mcp-view";
 import { LocalModelsView } from "../local-models/local-models-view";
+import { CollectionView } from "../collections/collection-view";
+import { collectionForRoute } from "../collections/collection-model";
 import { SurfaceRouteView } from "../surfaces/surface-route-view";
 import { OfflineBridgeBanner, VersionMismatchBanner } from "./version-mismatch";
 
@@ -73,6 +75,7 @@ export function MainShell() {
 
   const isSettings = route === "settings";
   const leftWidth = isSettings ? SETTINGS_SIDEBAR : sidebarWidth;
+  const collection = collectionForRoute(route);
 
   return (
     // Backdrop: sidebar blur fills the entire window so the content
@@ -132,6 +135,7 @@ export function MainShell() {
           {route === "projects" && <ProjectsView />}
           {route === "memory" && <MemoryView />}
           {route === "secrets" && <SecretsView />}
+          {collection && <CollectionView collection={collection} />}
           {route === "database" && <DatabaseView />}
           {route === "pomodoro" && <PomodoroView />}
           {route === "mcp" && <McpView />}
@@ -167,6 +171,9 @@ function isCatalogSurfaceRoute(route: AppRoute): boolean {
     "network",
     "automations",
     "plugins",
+    "tasks",
+    "goals",
+    "notes",
     "projects",
     "memory",
     "secrets",

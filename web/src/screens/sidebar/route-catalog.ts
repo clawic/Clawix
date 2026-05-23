@@ -54,9 +54,9 @@ export const PRIMARY_ROUTE_ENTRIES: RouteCatalogEntry[] = [
 
 export const MAC_SIDEBAR_TOOL_ENTRIES: RouteCatalogEntry[] = [
   { route: "home", label: "Home", section: "tools", macToolId: "home", macRoute: "iotHome", webSurface: "companion" },
-  { route: "tasks", label: "Tasks", section: "tools", macToolId: "tasks", macRoute: "databaseCollection(tasks)", webSurface: "companion" },
-  { route: "goals", label: "Goals", section: "tools", macToolId: "goals", macRoute: "databaseCollection(goals)", webSurface: "companion" },
-  { route: "notes", label: "Notes", section: "tools", macToolId: "notes", macRoute: "databaseCollection(notes)", webSurface: "companion" },
+  { route: "tasks", label: "Tasks", section: "tools", macToolId: "tasks", macRoute: "databaseCollection(tasks)", webSurface: "implemented" },
+  { route: "goals", label: "Goals", section: "tools", macToolId: "goals", macRoute: "databaseCollection(goals)", webSurface: "implemented" },
+  { route: "notes", label: "Notes", section: "tools", macToolId: "notes", macRoute: "databaseCollection(notes)", webSurface: "implemented" },
   { route: "calendar", label: "Calendar", section: "tools", macToolId: "calendar", macRoute: "calendarHome", webSurface: "companion" },
   { route: "contacts", label: "Contacts", section: "tools", macToolId: "contacts", macRoute: "contactsHome", webSurface: "companion" },
   { route: "projects", label: "Projects", section: "tools", macToolId: "projects", macRoute: "databaseCollection(projects)", webSurface: "implemented" },
