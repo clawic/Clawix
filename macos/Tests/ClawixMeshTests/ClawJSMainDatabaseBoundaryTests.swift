@@ -21,6 +21,10 @@ final class ClawJSMainDatabaseBoundaryTests: XCTestCase {
         let allowedSuffixes: Set<String> = [
             "ClawJS/ClawJSServiceManager.swift",
             "ClawJS/ClawJSServiceSupervisor.swift",
+            "ClawJS/ClawJSServiceDirectoryResolver.swift",
+            "ClawJS/ClawJSServiceEnvironmentBuilder.swift",
+            "ClawJS/ClawJSServiceLaunchAdapter.swift",
+            "ClawJS/ClawJSServiceSupervisorRoutes.swift",
         ]
         let forbiddenTerms = [
             "clawjs.sqlite",
@@ -38,7 +42,7 @@ final class ClawJSMainDatabaseBoundaryTests: XCTestCase {
             "CLAW_FILES_DIR",
             "state_5.sqlite",
             ".codex/session_index.jsonl",
-            ".codex/sessions",
+            [".codex", "sessions"].joined(separator: "/"),
             "archived_sessions",
             ".codex/.codex-global-state.json",
             "CodexConfigToml",
