@@ -2,15 +2,36 @@ import SwiftUI
 
 struct PluginsView: View {
     @EnvironmentObject var appState: AppState
+    @State private var search = ""
+
+    private var query: String { search.trimmingCharacters(in: .whitespaces).lowercased() }
+
+    private func matches(_ plugin: Plugin) -> Bool {
+        query.isEmpty
+            || plugin.name.lowercased().contains(query)
+            || plugin.description.lowercased().contains(query)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             pageHeader("Plugins")
 
+            TextField(L10n.t("Search plugins"), text: $search)
+                .textFieldStyle(.plain)
+                .font(BodyFont.system(size: 13))
+                .foregroundColor(Palette.textPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(Color.white.opacity(0.06)))
+                .padding(.horizontal, 24)
+                .padding(.bottom, 10)
+
             ScrollView {
                 LazyVStack(spacing: 7) {
                     ForEach($appState.plugins) { $plugin in
-                        PluginRow(plugin: $plugin)
+                        if matches(plugin) {
+                            PluginRow(plugin: $plugin)
+                        }
                     }
                 }
                 .padding(.horizontal, 24)
