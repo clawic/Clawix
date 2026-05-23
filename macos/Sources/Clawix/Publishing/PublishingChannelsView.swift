@@ -58,14 +58,14 @@ struct PublishingChannelsView: View {
                             row(for: family)
                             if family.id != entry.families.last?.id {
                                 Divider()
-                                    .background(Color.white.opacity(0.05))
+                                    .background(Color.overlay(0.05))
                                     .padding(.horizontal, 24)
                             }
                         }
                     }
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color.white.opacity(0.03))
+                            .fill(Color.overlay(0.03))
                             .padding(.horizontal, 18)
                     )
                 }
@@ -102,7 +102,7 @@ struct PublishingChannelsView: View {
                         .padding(.vertical, 5)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.white.opacity(0.10))
+                                .fill(Color.overlay(0.10))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -147,7 +147,7 @@ struct PublishingChannelsView: View {
             .frame(width: 30, height: 30)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.07))
+                    .fill(Color.overlay(0.07))
             )
     }
 

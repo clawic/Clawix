@@ -48,7 +48,7 @@ struct PublishingCalendarView: View {
     var body: some View {
         VStack(spacing: 0) {
             controls
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(Color.overlay(0.06))
             switch store.state {
             case .ready:
                 grid
@@ -76,7 +76,7 @@ struct PublishingCalendarView: View {
             .frame(width: 26, height: 26)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
             )
 
             Button { anchorDate = Date() } label: {
@@ -88,7 +88,7 @@ struct PublishingCalendarView: View {
             .padding(.vertical, 5)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
             )
             .foregroundColor(Palette.textPrimary)
 
@@ -99,7 +99,7 @@ struct PublishingCalendarView: View {
             .frame(width: 26, height: 26)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
             )
 
             Text(verbatim: monthTitle)
@@ -203,11 +203,11 @@ struct PublishingCalendarView: View {
             .frame(maxWidth: .infinity, minHeight: 90, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(Color.overlay(0.04))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.06), lineWidth: 0.5)
             )
         }
         .buttonStyle(.plain)
@@ -225,7 +225,7 @@ struct PublishingCalendarView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
             )
     }
 
@@ -301,7 +301,7 @@ struct PublishingCalendarView: View {
                         .font(BodyFont.system(size: 12, wght: 500))
                         .foregroundColor(Palette.textPrimary)
                         .padding(.horizontal, 14).frame(height: 28)
-                        .background(Capsule(style: .continuous).fill(Color.white.opacity(0.10)))
+                        .background(Capsule(style: .continuous).fill(Color.overlay(0.10)))
                 }
                 .buttonStyle(.plain)
             }

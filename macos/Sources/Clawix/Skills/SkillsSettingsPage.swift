@@ -140,7 +140,7 @@ private struct StatusBadge: View {
     let text: String
     var tone: Tone = .neutral
 
-    private static let positiveColor = Color(red: 0.45, green: 0.78, blue: 0.55)
+    private static let positiveColor = Palette.success
 
     var body: some View {
         Text(text)
@@ -152,12 +152,12 @@ private struct StatusBadge: View {
                 Capsule(style: .continuous)
                     .fill(tone == .positive
                           ? Self.positiveColor.opacity(0.12)
-                          : Color.white.opacity(0.06))
+                          : Color.overlay(0.06))
                     .overlay(
                         Capsule(style: .continuous)
                             .stroke(tone == .positive
                                     ? Self.positiveColor.opacity(0.22)
-                                    : Color.white.opacity(0.10),
+                                    : Color.overlay(0.10),
                                     lineWidth: 0.5)
                     )
             )

@@ -72,21 +72,21 @@ struct LocalModelsPage: View {
                 runtimeStateRow
 
                 if shouldShowDaemonControls {
-                    Divider().background(Color.white.opacity(0.07))
+                    Divider().background(Color.overlay(0.07))
                     daemonToggleRow
-                    Divider().background(Color.white.opacity(0.07))
+                    Divider().background(Color.overlay(0.07))
                     startAtLoginRow
                 }
 
                 if case .installed = service.runtimeState {
-                    Divider().background(Color.white.opacity(0.07))
+                    Divider().background(Color.overlay(0.07))
                     HStack {
                         Spacer()
                         Button("Uninstall runtime") {
                             showUninstallConfirm = true
                         }
                         .buttonStyle(.borderless)
-                        .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
+                        .foregroundColor(Palette.danger)
                         .font(BodyFont.system(size: 11.5, wght: 500))
                     }
                 }
@@ -159,7 +159,7 @@ struct LocalModelsPage: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Setup failed")
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
+                    .foregroundColor(Palette.danger)
                 Text(message)
                     .font(BodyFont.system(size: 11))
                     .foregroundColor(Palette.textSecondary)

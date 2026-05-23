@@ -22,7 +22,7 @@ struct PublishingHomeView: View {
         VStack(spacing: 0) {
             header
             Divider()
-                .background(Color.white.opacity(0.06))
+                .background(Color.overlay(0.06))
             Group {
                 switch tab.wrappedValue {
                 case .calendar: PublishingCalendarView()
@@ -70,7 +70,7 @@ struct PublishingHomeView: View {
                     .padding(.vertical, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color.white.opacity(0.10))
+                            .fill(Color.overlay(0.10))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)

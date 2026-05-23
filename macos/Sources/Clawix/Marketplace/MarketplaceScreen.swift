@@ -75,10 +75,10 @@ private struct MarketplaceHeaderBar: View {
             HStack(alignment: .center, spacing: 12) {
                 HStack(spacing: 8) {
                     LucideIcon.auto("handshake", size: 18)
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(Color.overlay(0.9))
                     Text("Marketplace")
                         .font(BodyFont.system(size: 17, wght: 600))
-                        .foregroundColor(.white)
+                        .foregroundColor(Palette.textPrimary)
                     let unread = manager.inbound.filter { $0.readAt == nil }.count
                     if unread > 0 {
                         Text("\(unread)")
@@ -92,11 +92,11 @@ private struct MarketplaceHeaderBar: View {
                 Spacer()
                 Button(action: { Task { await manager.refresh() } }) {
                     LucideIcon.auto("arrow.triangle.2.circlepath", size: 12)
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(Color.overlay(0.7))
                         .padding(6)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.04))
+                                .fill(Color.overlay(0.04))
                         )
                 }
                 .buttonStyle(.plain)
@@ -130,10 +130,10 @@ private struct MarketplaceHeaderBar: View {
 private struct MarketplaceLoadingView: View {
     var body: some View {
         VStack(spacing: 8) {
-            ProgressView().controlSize(.regular).tint(.white.opacity(0.7))
+            ProgressView().controlSize(.regular).tint(Color.overlay(0.7))
             Text("Loading Marketplace…")
                 .font(BodyFont.system(size: 12, wght: 400))
-                .foregroundColor(.white.opacity(0.6))
+                .foregroundColor(Color.overlay(0.6))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -146,14 +146,14 @@ private struct MarketplaceEmptyState: View {
     var body: some View {
         VStack(spacing: 8) {
             LucideIcon.auto(systemImage, size: 28)
-                .foregroundColor(.white.opacity(0.30))
+                .foregroundColor(Color.overlay(0.30))
                 .frame(width: 36, height: 36)
             Text(title)
                 .font(BodyFont.system(size: 13, wght: 600))
-                .foregroundColor(.white.opacity(0.68))
+                .foregroundColor(Color.overlay(0.68))
             Text(description)
                 .font(BodyFont.system(size: 11, wght: 400))
-                .foregroundColor(.white.opacity(0.42))
+                .foregroundColor(Color.overlay(0.42))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 360)
         }
@@ -282,7 +282,7 @@ private struct IntentListView: View {
 }
 
 private struct IntentRow: View {
-    static let positiveColor = Color(red: 0.45, green: 0.78, blue: 0.55)
+    static let positiveColor = Palette.success
     let intent: ClawJSMarketplaceClient.Intent
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -290,9 +290,9 @@ private struct IntentRow: View {
                 HStack(spacing: 6) {
                     Text(intent.vertical)
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(.white.opacity(0.55))
+                        .foregroundColor(Color.overlay(0.55))
                     Text("·")
-                        .foregroundColor(.white.opacity(0.30))
+                        .foregroundColor(Color.overlay(0.30))
                     Text(intent.status)
                         .font(BodyFont.system(size: 11, wght: 500))
                         .foregroundColor(intent.status == "published" ? Self.positiveColor : Palette.textTertiary)
@@ -307,17 +307,17 @@ private struct IntentRow: View {
                             .font(BodyFont.system(size: 10, wght: 600))
                             .foregroundColor(Palette.textSecondary)
                             .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(Capsule(style: .continuous).fill(Color.white.opacity(0.08)))
+                            .background(Capsule(style: .continuous).fill(Color.overlay(0.08)))
                     }
                 }
                 let title = intent.payload.string("title") ?? intent.payload.string("summary") ?? intent.id
                 Text(title)
                     .font(BodyFont.system(size: 13.5, wght: 600))
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(Color.overlay(0.92))
                 if let summary = intent.payload.string("summary") {
                     Text(summary)
                         .font(BodyFont.system(size: 12, wght: 400))
-                        .foregroundColor(.white.opacity(0.60))
+                        .foregroundColor(Color.overlay(0.60))
                         .lineLimit(2)
                 }
                 HStack(spacing: 8) {
@@ -341,19 +341,19 @@ private struct ProspectRow: View {
     var body: some View {
         HStack(spacing: 10) {
             ZStack {
-                Circle().fill(Color.white.opacity(0.08))
+                Circle().fill(Color.overlay(0.08))
                 Text("L\(peer.currentLevel)")
                     .font(BodyFont.system(size: 12, wght: 600))
-                    .foregroundColor(.white.opacity(0.88))
+                    .foregroundColor(Color.overlay(0.88))
             }
             .frame(width: 36, height: 36)
             VStack(alignment: .leading, spacing: 2) {
                 Text(String(peer.peerPubkey.prefix(16)) + "…")
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(.white.opacity(0.88))
+                    .foregroundColor(Color.overlay(0.88))
                 Text("Last update " + peer.lastUpdatedAt.prefix(16))
                     .font(BodyFont.system(size: 11, wght: 400))
-                    .foregroundColor(.white.opacity(0.50))
+                    .foregroundColor(Color.overlay(0.50))
             }
             Spacer()
             ProgressView(value: Double(peer.currentLevel) / 5.0)
@@ -371,7 +371,7 @@ private struct ReceiptRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             LucideIcon.auto("scroll", size: 16)
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(Color.overlay(0.55))
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
@@ -379,18 +379,18 @@ private struct ReceiptRow: View {
                         .font(BodyFont.system(size: 11, wght: 600))
                         .foregroundColor(receiptColor(receipt.status))
                     Text("·")
-                        .foregroundColor(.white.opacity(0.30))
+                        .foregroundColor(Color.overlay(0.30))
                     Text("level \(receipt.reachedLevel)")
                         .font(BodyFont.system(size: 11, wght: 500))
-                        .foregroundColor(.white.opacity(0.55))
+                        .foregroundColor(Color.overlay(0.55))
                 }
                 Text("Peer " + receipt.peerRolePubkey.prefix(16) + "…")
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(.white.opacity(0.88))
+                    .foregroundColor(Color.overlay(0.88))
                 if !receipt.fieldsRevealed.isEmpty {
                     Text("Revealed: " + receipt.fieldsRevealed.joined(separator: ", "))
                         .font(BodyFont.system(size: 11, wght: 400))
-                        .foregroundColor(.white.opacity(0.55))
+                        .foregroundColor(Color.overlay(0.55))
                 }
             }
             Spacer()
@@ -404,7 +404,7 @@ private struct ReceiptRow: View {
         case "signed": return .green.opacity(0.85)
         case "awaiting_human_approval", "proposed_by_peer": return .orange.opacity(0.85)
         case "rejected", "expired": return .red.opacity(0.70)
-        default: return .white.opacity(0.70)
+        default: return Color.overlay(0.70)
         }
     }
 }
@@ -415,27 +415,27 @@ private struct InboundRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Circle()
-                .fill(message.readAt == nil ? Palette.pastelBlue : Color.white.opacity(0.20))
+                .fill(message.readAt == nil ? Palette.pastelBlue : Color.overlay(0.20))
                 .frame(width: 8, height: 8)
                 .padding(.top, 6)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(message.kind)
                         .font(BodyFont.system(size: 11, wght: 600))
-                        .foregroundColor(.white.opacity(0.75))
+                        .foregroundColor(Color.overlay(0.75))
                     Text("·")
-                        .foregroundColor(.white.opacity(0.30))
+                        .foregroundColor(Color.overlay(0.30))
                     Text(message.receivedAt.prefix(16))
                         .font(BodyFont.system(size: 11, wght: 400))
-                        .foregroundColor(.white.opacity(0.50))
+                        .foregroundColor(Color.overlay(0.50))
                 }
                 Text(String(message.senderPubkey.prefix(20)) + "…")
                     .font(BodyFont.system(size: 12.5, wght: 500))
-                    .foregroundColor(.white.opacity(0.88))
+                    .foregroundColor(Color.overlay(0.88))
                 if let text = message.plaintext.string("text") {
                     Text(text)
                         .font(BodyFont.system(size: 12, wght: 400))
-                        .foregroundColor(.white.opacity(0.70))
+                        .foregroundColor(Color.overlay(0.70))
                         .lineLimit(3)
                 }
             }
@@ -473,7 +473,7 @@ private struct Tag: View {
     var body: some View {
         Text(text)
             .font(BodyFont.system(size: 10, wght: 600))
-            .foregroundColor(.white.opacity(0.90))
+            .foregroundColor(Color.overlay(0.90))
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(Capsule(style: .continuous).fill(color.opacity(0.30)))
     }

@@ -55,7 +55,7 @@ extension LocalModelsPage {
             .foregroundColor(Palette.textPrimary.opacity(0.85))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(Capsule().fill(Color.white.opacity(0.10)))
+            .background(Capsule().fill(Color.overlay(0.10)))
     }
 
     func humanSize(_ bytes: Int64) -> String {
@@ -90,11 +90,11 @@ struct SectionCard<Content: View>: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(white: 0.085))
+                    .fill(Color.gray(light: 0.95, dark: 0.085))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 0.6)
+                    .stroke(Color.overlay(0.10), lineWidth: 0.6)
             )
         }
     }

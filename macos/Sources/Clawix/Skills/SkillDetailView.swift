@@ -93,7 +93,7 @@ struct SkillDetailView: View {
                 .frame(width: 44, height: 44)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.overlay(0.06))
                 )
             VStack(alignment: .leading, spacing: 4) {
                 Text(skill.name)
@@ -104,7 +104,7 @@ struct SkillDetailView: View {
                         .font(BodyFont.system(size: 11, wght: 500))
                         .foregroundColor(Palette.textSecondary)
                         .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Capsule().fill(Color.white.opacity(0.06)))
+                        .background(Capsule().fill(Color.overlay(0.06)))
                     Text("v\(skill.version)").font(BodyFont.system(size: 11)).foregroundColor(Palette.textSecondary)
                     if let author = skill.author {
                         Text("·").foregroundColor(Palette.textSecondary)
@@ -181,9 +181,9 @@ struct SkillDetailView: View {
                     } label: {
                         Text("Save as my skill")
                             .font(BodyFont.system(size: 12, wght: 600))
-                            .foregroundColor(Color.black)
+                            .foregroundColor(Palette.background)
                             .padding(.horizontal, 14).frame(height: 28)
-                            .background(Capsule(style: .continuous).fill(Color.white.opacity(0.92)))
+                            .background(Capsule(style: .continuous).fill(Color.overlay(0.92)))
                     }
                     .buttonStyle(.plain)
                     Button {
@@ -197,8 +197,8 @@ struct SkillDetailView: View {
                             .padding(.horizontal, 14).frame(height: 28)
                             .background(
                                 Capsule(style: .continuous)
-                                    .fill(Color.white.opacity(0.10))
-                                    .overlay(Capsule(style: .continuous).stroke(Color.white.opacity(0.10), lineWidth: 0.5))
+                                    .fill(Color.overlay(0.10))
+                                    .overlay(Capsule(style: .continuous).stroke(Color.overlay(0.10), lineWidth: 0.5))
                             )
                     }
                     .buttonStyle(.plain)
@@ -218,7 +218,7 @@ struct SkillDetailView: View {
                         .font(BodyFont.system(size: 9.5, wght: 600))
                         .foregroundColor(Palette.textSecondary)
                         .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(Capsule().fill(Color.white.opacity(0.06)))
+                        .background(Capsule().fill(Color.overlay(0.06)))
                 }
             }
             paramControl(param)
@@ -293,7 +293,7 @@ struct SkillDetailView: View {
                         .font(BodyFont.system(size: 11, wght: 600))
                         .foregroundColor(Palette.textPrimary)
                         .padding(.horizontal, 12).frame(height: 26)
-                        .background(Capsule(style: .continuous).fill(Color.white.opacity(0.10)))
+                        .background(Capsule(style: .continuous).fill(Color.overlay(0.10)))
                 }
                 .buttonStyle(.plain)
             }
@@ -346,7 +346,7 @@ struct SkillDetailView: View {
                         }
                         .padding(.horizontal, 10).padding(.vertical, 7)
                         .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.06))
+                            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.overlay(0.06))
                         )
                     }
                     .buttonStyle(.plain)
@@ -396,9 +396,9 @@ struct SkillDetailView: View {
                         } label: {
                             Text("Freeze")
                                 .font(BodyFont.system(size: 12, wght: 600))
-                                .foregroundColor(Color.black)
+                                .foregroundColor(Palette.background)
                                 .padding(.horizontal, 14).frame(height: 28)
-                                .background(Capsule(style: .continuous).fill(Color.white.opacity(0.92)))
+                                .background(Capsule(style: .continuous).fill(Color.overlay(0.92)))
                         }
                         .buttonStyle(.plain)
                     }
@@ -451,10 +451,10 @@ struct SkillDetailView: View {
                     .frame(minHeight: 240)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
                             )
                     )
             } else {
@@ -493,9 +493,9 @@ struct SkillDetailView: View {
                     } label: {
                         Text("Save")
                             .font(BodyFont.system(size: 11, wght: 600))
-                            .foregroundColor(Color.black)
+                            .foregroundColor(Palette.background)
                             .padding(.horizontal, 12).frame(height: 24)
-                            .background(Capsule(style: .continuous).fill(Color.white.opacity(0.92)))
+                            .background(Capsule(style: .continuous).fill(Color.overlay(0.92)))
                     }
                     .buttonStyle(.plain)
                 }
@@ -547,7 +547,7 @@ struct SkillDetailView: View {
                     .font(BodyFont.system(size: 12, wght: 500))
                     .foregroundColor(Palette.textPrimary)
                     .padding(.horizontal, 14).frame(height: 28)
-                    .background(Capsule(style: .continuous).fill(Color.white.opacity(0.10)))
+                    .background(Capsule(style: .continuous).fill(Color.overlay(0.10)))
             }
             .buttonStyle(.plain)
         }
@@ -621,11 +621,11 @@ struct SkillDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                .stroke(Color.overlay(0.10), lineWidth: 0.5)
         )
     }
 }
@@ -639,10 +639,10 @@ private struct DetailFieldChrome: ViewModifier {
             .padding(.vertical, 7)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
             )
     }

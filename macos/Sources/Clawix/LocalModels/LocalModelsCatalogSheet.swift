@@ -19,7 +19,7 @@ struct LocalModelsCatalogSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider().background(Color.white.opacity(0.07))
+            Divider().background(Color.overlay(0.07))
             ScrollView {
                 LazyVGrid(
                     columns: [GridItem(.flexible(), spacing: 14),
@@ -59,7 +59,7 @@ struct LocalModelsCatalogSheet: View {
                     .foregroundColor(Palette.textSecondary)
                     .padding(8)
                     .background(
-                        Circle().fill(Color.white.opacity(0.06))
+                        Circle().fill(Color.overlay(0.06))
                     )
             }
             .buttonStyle(.plain)
@@ -121,7 +121,7 @@ struct LocalModelsCatalogSheet: View {
                         .foregroundColor(Palette.textSecondary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
-                        .background(Capsule().fill(Color.white.opacity(0.05)))
+                        .background(Capsule().fill(Color.overlay(0.05)))
                 } else {
                     Button {
                         onPick(pullName)
@@ -131,7 +131,7 @@ struct LocalModelsCatalogSheet: View {
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
-                                Capsule().fill(Color(white: 0.15))
+                                Capsule().fill(Color.gray(light: 0.93, dark: 0.15))
                             )
                             .foregroundColor(Palette.textPrimary)
                     }
@@ -143,11 +143,11 @@ struct LocalModelsCatalogSheet: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(white: 0.085))
+                .fill(Color.gray(light: 0.95, dark: 0.085))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 0.6)
+                .stroke(Color.overlay(0.10), lineWidth: 0.6)
         )
     }
 
@@ -159,7 +159,7 @@ struct LocalModelsCatalogSheet: View {
                     .foregroundColor(Palette.textPrimary.opacity(0.85))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Capsule().fill(Color.white.opacity(0.08)))
+                    .background(Capsule().fill(Color.overlay(0.08)))
             }
         }
     }
@@ -177,7 +177,7 @@ struct LocalModelsCatalogSheet: View {
                 .padding(.vertical, 4)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.white.opacity(0.85) : Color.white.opacity(0.05))
+                        .fill(isSelected ? Color.overlay(0.85) : Color.overlay(0.05))
                 )
         }
         .buttonStyle(.plain)

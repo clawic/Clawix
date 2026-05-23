@@ -14,7 +14,7 @@ extension LocalModelsPage {
                     HStack(spacing: 8) {
                         Text(actionError)
                             .font(BodyFont.system(size: 11))
-                            .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
+                            .foregroundColor(Palette.danger)
                             .lineLimit(3)
                         Spacer()
                         Button("Dismiss") { service.dismissActionError() }
@@ -39,7 +39,7 @@ extension LocalModelsPage {
                     }
                 }
 
-                Divider().background(Color.white.opacity(0.07))
+                Divider().background(Color.overlay(0.07))
                 browseAndPullRow
             }
         }
@@ -56,7 +56,7 @@ extension LocalModelsPage {
                     .font(BodyFont.system(size: 11.5, wght: 600))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Capsule().fill(Color(white: 0.15)))
+                    .background(Capsule().fill(Color.gray(light: 0.93, dark: 0.15)))
                     .foregroundColor(Palette.textPrimary)
             }
             .buttonStyle(.plain)
@@ -106,7 +106,7 @@ extension LocalModelsPage {
                 Task { await service.delete(model: model.name) }
             } label: {
                 LucideIcon(.trash, size: 11)
-                    .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
+                    .foregroundColor(Palette.danger)
             }
             .buttonStyle(.borderless)
         }
@@ -156,7 +156,7 @@ extension LocalModelsPage {
             case .failed(let message):
                 Text(message)
                     .font(BodyFont.system(size: 11))
-                    .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
+                    .foregroundColor(Palette.danger)
                     .lineLimit(3)
             }
         }

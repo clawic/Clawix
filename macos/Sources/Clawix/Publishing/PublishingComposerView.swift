@@ -45,18 +45,18 @@ struct PublishingComposerView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(Color.overlay(0.06))
             ScrollView {
                 VStack(spacing: 0) {
                     accountsSection
-                    Divider().background(Color.white.opacity(0.06))
+                    Divider().background(Color.overlay(0.06))
                     variantsSection
-                    Divider().background(Color.white.opacity(0.06))
+                    Divider().background(Color.overlay(0.06))
                     scheduleSection
                 }
             }
             .thinScrollers()
-            Divider().background(Color.white.opacity(0.06))
+            Divider().background(Color.overlay(0.06))
             footer
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -89,7 +89,7 @@ struct PublishingComposerView: View {
                 .padding(.vertical, 5)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Color.overlay(0.06))
                 )
                 .foregroundColor(Palette.textPrimary)
             }
@@ -122,7 +122,7 @@ struct PublishingComposerView: View {
                         .padding(.vertical, 5)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.10))
+                                .fill(Color.overlay(0.10))
                         )
                         .foregroundColor(Palette.textPrimary)
                 }
@@ -152,7 +152,7 @@ struct PublishingComposerView: View {
         } label: {
             HStack(spacing: 8) {
                 Circle()
-                    .fill(selected ? Palette.pastelBlue : Color.white.opacity(0.16))
+                    .fill(selected ? Palette.pastelBlue : Color.overlay(0.16))
                     .frame(width: 7, height: 7)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(verbatim: account.displayName)
@@ -169,7 +169,7 @@ struct PublishingComposerView: View {
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(selected ? Color.white.opacity(0.12) : Color.white.opacity(0.05))
+                    .fill(selected ? Color.overlay(0.12) : Color.overlay(0.05))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -191,7 +191,7 @@ struct PublishingComposerView: View {
                 .padding(10)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(Color.overlay(0.04))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -276,9 +276,9 @@ struct PublishingComposerView: View {
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(canSubmit ? Color.white.opacity(0.92) : Color.white.opacity(0.18))
+                            .fill(canSubmit ? Color.overlay(0.92) : Color.overlay(0.18))
                     )
-                    .foregroundColor(canSubmit ? Color.black : Color.white.opacity(0.55))
+                    .foregroundColor(canSubmit ? Palette.background : Color.overlay(0.55))
             }
             .buttonStyle(.plain)
             .disabled(!canSubmit)

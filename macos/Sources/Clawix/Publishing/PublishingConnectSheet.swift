@@ -104,7 +104,7 @@ struct PublishingConnectSheet: View {
             .padding(.vertical, 7)
             .background(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(Color.white.opacity(0.05))
+                    .fill(Color.overlay(0.05))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)

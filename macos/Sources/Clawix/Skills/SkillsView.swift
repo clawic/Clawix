@@ -98,7 +98,7 @@ struct SkillsView: View {
         .frame(height: 28)
         .background(
             Capsule(style: .continuous)
-                .fill(Color.white.opacity(searchFocused ? 0.08 : 0.06))
+                .fill(Color.overlay(searchFocused ? 0.08 : 0.06))
                 .overlay(
                     Capsule(style: .continuous)
                         .stroke(searchFocused ? Palette.pastelBlue.opacity(0.6) : .clear, lineWidth: 1)
@@ -119,8 +119,8 @@ struct SkillsView: View {
                 .frame(height: 28)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color(white: 0.135))
-                        .overlay(Capsule(style: .continuous).stroke(Color.white.opacity(0.10), lineWidth: 0.5))
+                        .fill(Color.gray(light: 0.94, dark: 0.135))
+                        .overlay(Capsule(style: .continuous).stroke(Color.overlay(0.10), lineWidth: 0.5))
                 )
                 .help(syncHelpText)
             } else {
@@ -266,7 +266,7 @@ private struct SkillCardView: View {
                         .frame(width: 22, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.white.opacity(0.06))
+                                .fill(Color.overlay(0.06))
                         )
                     Text(skill.name)
                         .font(BodyFont.system(size: 13.5, weight: .semibold))
@@ -332,7 +332,7 @@ private struct SkillCardView: View {
             .foregroundColor(Palette.textSecondary)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(Capsule().fill(Color.white.opacity(0.06)))
+            .background(Capsule().fill(Color.overlay(0.06)))
     }
 }
 
@@ -408,10 +408,10 @@ private struct SkillNewSheet: View {
                     .frame(minHeight: 160)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
                             )
                     )
             }
@@ -423,12 +423,12 @@ private struct SkillNewSheet: View {
                 } label: {
                     Text("Create")
                         .font(BodyFont.system(size: 13, wght: 600))
-                        .foregroundColor(canSubmit ? Color.black : Color.white.opacity(0.55))
+                        .foregroundColor(canSubmit ? Color.black : Color.overlay(0.55))
                         .padding(.horizontal, 18)
                         .frame(height: 30)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(canSubmit ? Color.white.opacity(0.92) : Color.white.opacity(0.18))
+                                .fill(canSubmit ? Color.overlay(0.92) : Color.overlay(0.18))
                         )
                 }
                 .buttonStyle(.plain)
@@ -483,10 +483,10 @@ private struct SheetFieldChrome: ViewModifier {
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.overlay(0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
             )
     }
