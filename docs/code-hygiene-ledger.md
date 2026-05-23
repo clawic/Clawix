@@ -22,6 +22,15 @@ Source session: private session, not published
 - Latest summary: 1,909 files scanned; 0 TODO/FIXME/HACK/XXX findings; 6 duplicate asset groups covering 12 files; 0 unreferenced asset candidates.
 - Calibration: generated bundles and public/platform asset surfaces are excluded from actionable cleanup candidates.
 
+## 2026-05-22 - Reproducible audit scope normalization
+
+- Status: ACTIVE
+- Scope: Clawix code hygiene auditor and checker.
+- Work recorded: canonical audit scope changed to tracked source inventory from `git ls-files`; working-tree scans remain available only as exploratory evidence for dirty or untracked files.
+- Latest tracked summary: 2,273 files scanned; 0 TODO/FIXME/HACK/XXX findings; 6 duplicate asset groups covering 12 files; 0 unreferenced asset candidates.
+- Inventory hash: `sha256:7f6f40d3d039080252014fc66b22e580af08fe2beaf4164a0c92c220f90701c7`.
+- Safety rule: cleanup batches may start only from the tracked canonical report; untracked or ignored working-tree findings require separate classification before any deletion.
+
 ## 2026-05-17 - Knip report-only calibration
 
 - Status: PARTIAL

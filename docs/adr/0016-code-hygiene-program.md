@@ -18,6 +18,8 @@ Public APIs, package entrypoints, CLI/router/registry/protocol surfaces, canonic
 
 Generated and baseline material is not exempt by marker alone. Any large generated or baseline refresh must carry generated provenance with `generator`, `command`, `source`, `upstreamHash`, `regenerationMode`, `deltaSummary`, `debtImpact`, and `debtImpactReason` when debt is neutral or increasing. The delta summary must explain what changed, and the debt impact must state whether the refresh decreases, preserves, or increases cleanup debt.
 
+The canonical local audit is reproducible over tracked source only. `scripts/code-hygiene-audit.mjs --scope tracked` builds its file inventory from `git ls-files`, records the inventory count and path hash, and is the only audit scope that may feed `scripts/code-hygiene-check.mjs` or cleanup decisions. `--scope working-tree` is exploratory for dirty-tree review and must not authorize deletion or refresh the canonical summary.
+
 ## Performance Impact
 
 Clawix hygiene checks run during validation and do not add app runtime cost. Removing stale assets, orphaned files, unused code, and invalid baselines can reduce build size, test cost, and accidental startup/import work. Visual assets, Swift dynamic references, public APIs, and protected UI surfaces stay guarded so cleanup does not become destructive.
@@ -31,7 +33,7 @@ Clawix hygiene checks run during validation and do not add app runtime cost. Rem
 
 ## Guardrail
 
-`scripts/code-hygiene-check.mjs` validates the decision checklist, baseline schema, expiration policy, ledger, JSON/Markdown report pair, and required skills. Knip is the pinned TS/JS scanner after entrypoints are configured. Periphery is the versioned Swift scanner, report-only until calibrated.
+`scripts/code-hygiene-check.mjs` validates the decision checklist, baseline schema, expiration policy, ledger, JSON/Markdown report pair, tracked audit inventory hash, and required skills. Knip is the pinned TS/JS scanner after entrypoints are configured. Periphery is the versioned Swift scanner, report-only until calibrated.
 
 ## Consequences
 

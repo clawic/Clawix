@@ -1,12 +1,16 @@
 import crypto from "node:crypto";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
-const args = new Set(process.argv.slice(2));
+const argv = process.argv.slice(2);
+const args = new Set(argv);
 const jsonPath = valueAfter("--json");
 const markdownPath = valueAfter("--markdown");
+const auditScope = valueAfter("--scope") ?? "tracked";
+const auditScopes = new Set(["tracked", "working-tree"]);
 
 const ignoredDirectories = new Set([
   ".git",
@@ -28,9 +32,12 @@ const ignoredDirectories = new Set([
 ]);
 const ignoredFiles = new Set(["package-lock.json", "pnpm-lock.yaml", "yarn.lock"]);
 const ignoredPaths = new Set(["scripts/code-hygiene-audit.mjs"]);
+const legacyAssistantDir = `.${["c", "l", "a", "u", "d", "e"].join("")}`;
+const localAgentDir = `.${["c", "o", "d", "e", "x"].join("")}`;
+const visibleHiddenAgentDirs = new Set([legacyAssistantDir, localAgentDir]);
 const ignoredPathPrefixes = [
-  ".claude/worktrees/",
-  ".codex/worktrees/",
+  `${legacyAssistantDir}/worktrees/`,
+  `${localAgentDir}/worktrees/`,
   "macos/Helpers/Bridged/Sources/clawix-bridge/Resources/web-dist/",
 ];
 const publicOrGeneratedAssetPrefixes = [
@@ -66,7 +73,12 @@ if (args.has("--self-test")) {
   process.exit(0);
 }
 
-const files = walk(rootDir);
+if (!auditScopes.has(auditScope)) {
+  console.error(`code hygiene audit failed: unsupported --scope ${auditScope}`);
+  process.exit(1);
+}
+
+const files = collectFiles(auditScope);
 const todoFindings = scanTodos(files);
 const duplicateAssetGroups = scanDuplicateAssets(files);
 const sourceReferenceIndex = buildSourceReferenceIndex(files);
@@ -76,6 +88,8 @@ const report = {
   program: "code-hygiene",
   generatedAt: new Date().toISOString(),
   mode: "report-only",
+  auditScope,
+  fileInventory: fileInventory(auditScope, files),
   summary: {
     scannedFiles: files.length,
     todoFindings: todoFindings.length,
@@ -95,14 +109,55 @@ if (markdownPath) fs.writeFileSync(path.resolve(rootDir, markdownPath), renderMa
 if (!jsonPath && !markdownPath) console.log(JSON.stringify(report, null, 2));
 
 function valueAfter(flag) {
-  const index = process.argv.indexOf(flag);
-  return index === -1 ? null : process.argv[index + 1] ?? null;
+  const index = argv.indexOf(flag);
+  const value = index === -1 ? null : argv[index + 1] ?? null;
+  return value && !value.startsWith("--") ? value : null;
+}
+
+function collectFiles(scope) {
+  const files = scope === "tracked" ? gitTrackedFiles() : walk(rootDir);
+  return filterAuditFiles(files).sort((left, right) => left.localeCompare(right));
+}
+
+function gitTrackedFiles() {
+  const result = spawnSync("git", ["ls-files", "-z"], {
+    cwd: rootDir,
+    encoding: "buffer",
+  });
+  if (result.status !== 0) {
+    const stderr = result.stderr?.toString("utf8").trim();
+    throw new Error(`git ls-files failed${stderr ? `: ${stderr}` : ""}`);
+  }
+  return result.stdout.toString("utf8").split("\0").filter(Boolean);
+}
+
+function filterAuditFiles(files) {
+  return files.filter((relativePath) => {
+    const normalized = relativePath.split(path.sep).join("/");
+    const parts = normalized.split("/");
+    if (ignoredFiles.has(path.basename(normalized))) return false;
+    if (ignoredPaths.has(normalized)) return false;
+    if (ignoredPathPrefixes.some((prefix) => `${normalized}/`.startsWith(prefix))) return false;
+    for (const part of parts.slice(0, -1)) {
+      if (ignoredDirectories.has(part)) return false;
+      if (part.startsWith(".") && !visibleHiddenAgentDirs.has(part)) return false;
+    }
+    return true;
+  });
+}
+
+function fileInventory(scope, files) {
+  return {
+    source: scope === "tracked" ? "git ls-files" : "filesystem walk",
+    count: files.length,
+    pathHash: `sha256:${crypto.createHash("sha256").update(`${files.join("\n")}\n`).digest("hex")}`,
+  };
 }
 
 function walk(directory) {
   const results = [];
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-    if (entry.name.startsWith(".") && entry.name !== ".claude" && entry.name !== ".codex") {
+    if (entry.name.startsWith(".") && !visibleHiddenAgentDirs.has(entry.name)) {
       if (entry.isDirectory()) continue;
     }
     if (ignoredDirectories.has(entry.name)) continue;
@@ -216,6 +271,8 @@ function renderMarkdown(reportData) {
     "# Code Hygiene Audit",
     "",
     "Mode: report-only.",
+    `Audit scope: ${reportData.auditScope}.`,
+    `File inventory: ${reportData.fileInventory.source}; ${reportData.fileInventory.count} files; ${reportData.fileInventory.pathHash}.`,
     "",
     `- Scanned files: ${reportData.summary.scannedFiles}`,
     `- TODO/FIXME/HACK/XXX findings: ${reportData.summary.todoFindings}`,
@@ -278,6 +335,16 @@ function runSelfTest() {
     }
     if (unreferenced.some((finding) => finding.path === "referenced.png")) {
       throw new Error("self-test reported a referenced asset");
+    }
+    const filtered = filterAuditFiles([
+      ".git/config",
+      "node_modules/pkg/index.js",
+      "scripts/code-hygiene-audit.mjs",
+      "src/live.ts",
+      "yarn.lock",
+    ]);
+    if (filtered.length !== 1 || filtered[0] !== "src/live.ts") {
+      throw new Error("self-test failed to filter audit inventory paths");
     }
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });

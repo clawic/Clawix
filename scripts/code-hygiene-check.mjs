@@ -5,6 +5,12 @@ import { spawnSync } from "node:child_process";
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const errors = [];
 
+if (process.argv.includes("--self-test")) {
+  runSelfTest();
+  console.log("code hygiene check self-test passed");
+  process.exit(0);
+}
+
 function readText(relativePath) {
   return fs.readFileSync(path.join(rootDir, relativePath), "utf8");
 }
@@ -60,17 +66,19 @@ const completionAudit = readText("docs/governance/code-hygiene/completion.md");
 const auditSkill = readText("skills/code-hygiene-audit/SKILL.md");
 const cleanupSkill = readText("skills/code-hygiene-cleanup/SKILL.md");
 const knipConfigPath = fs.existsSync(path.join(rootDir, "web", "knip.json")) ? "web/knip.json" : "knip.json";
-const auditResult = spawnSync("node", ["scripts/code-hygiene-audit.mjs", "--json"], {
+const auditResult = spawnSync("node", ["scripts/code-hygiene-audit.mjs", "--json", "--scope", "tracked"], {
   cwd: rootDir,
   encoding: "utf8",
   maxBuffer: 50 * 1024 * 1024,
 });
 let auditSummary = null;
+let auditReport = null;
 if (auditResult.status !== 0) {
   fail("code hygiene audit must run successfully from the checker");
 } else {
   try {
-    auditSummary = JSON.parse(auditResult.stdout).summary;
+    auditReport = JSON.parse(auditResult.stdout);
+    auditSummary = auditReport.summary;
   } catch {
     fail("code hygiene audit output must be valid JSON");
   }
@@ -150,6 +158,17 @@ if (!hasKnipDependency) fail("Knip must be pinned as a dev dependency");
 if (report.schemaVersion !== 1) fail("code hygiene report schemaVersion must be 1");
 if (report.program !== "code-hygiene") fail("code hygiene report program must be code-hygiene");
 if (!report.generatedAt) fail("code hygiene report must include generatedAt");
+if (report.auditScope !== "tracked") fail("code hygiene report auditScope must be tracked");
+if (auditReport && auditReport.auditScope !== "tracked") fail("code hygiene checker must run the tracked audit scope");
+if (report.fileInventory?.source !== "git ls-files") fail("code hygiene report fileInventory source must be git ls-files");
+if (typeof report.fileInventory?.count !== "number") fail("code hygiene report fileInventory must include numeric count");
+if (typeof report.fileInventory?.pathHash !== "string" || !/^sha256:[a-f0-9]{64}$/.test(report.fileInventory.pathHash)) {
+  fail("code hygiene report fileInventory must include sha256 pathHash");
+}
+if (auditReport?.fileInventory) {
+  if (report.fileInventory?.count !== auditReport.fileInventory.count) fail("code hygiene report fileInventory.count must match current tracked audit");
+  if (report.fileInventory?.pathHash !== auditReport.fileInventory.pathHash) fail("code hygiene report fileInventory.pathHash must match current tracked audit");
+}
 if (!report.lastAuditSummary) fail("code hygiene report must include lastAuditSummary");
 if (typeof report.baselinedFindings !== "number") fail("code hygiene report must include baselinedFindings");
 if (report.baselinedFindings !== (baseline.entries ?? []).length) fail("code hygiene report baselinedFindings must match baseline entry count");
@@ -179,6 +198,7 @@ if (peripheryReport.status === "external-pending" && !report.externalPending?.so
   fail("code hygiene report must record Periphery external pending separately");
 }
 if (!reportMarkdown.includes("docs/code-hygiene-report.json")) fail("code hygiene Markdown report must link the JSON pair");
+if (!reportMarkdown.includes("Audit scope: tracked")) fail("code hygiene Markdown report must record tracked audit scope");
 if (!reportMarkdown.includes("unreferenced asset candidates")) fail("code hygiene Markdown report must mention unreferenced asset candidates");
 if (knipReport.schemaVersion !== 1) fail("code hygiene Knip report schemaVersion must be 1");
 if (knipReport.program !== "code-hygiene") fail("code hygiene Knip report program must be code-hygiene");
@@ -251,4 +271,25 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(process.argv.includes("--self-test") ? "code hygiene check self-test passed" : "code hygiene check passed");
+console.log("code hygiene check passed");
+
+function runSelfTest() {
+  const validGenerated = {
+    generator: "fixture-generator",
+    command: "node fixture-generator.mjs",
+    source: "fixture-source",
+    upstreamHash: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    regenerationMode: "deterministic",
+    deltaSummary: "fixture delta",
+    debtImpact: "decreases",
+  };
+  validateGeneratedProvenance(validGenerated, "self-test valid generated entry");
+  if (errors.length > 0) {
+    throw new Error(`self-test unexpectedly rejected valid generated provenance: ${errors.join("; ")}`);
+  }
+  validateGeneratedProvenance({ ...validGenerated, debtImpact: "neutral" }, "self-test neutral generated entry");
+  if (!errors.some((error) => error.includes("debtImpactReason"))) {
+    throw new Error("self-test failed to require debtImpactReason for neutral generated provenance");
+  }
+  errors.length = 0;
+}

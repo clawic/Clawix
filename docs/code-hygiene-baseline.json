@@ -32,7 +32,29 @@
       "reason": "Bridge frame and wire schemas are compatibility contract with Swift bridge protocol and external frame validation; unused export/type findings stay report-only until protocol consumers are re-audited.",
       "ownerArea": "web-bridge",
       "reference": "docs/adr/0016-code-hygiene-program.md#decision",
-      "expiresAt": "2026-08-15"
+      "expiresAt": "2026-08-15",
+      "debtControl": {
+        "ownerArea": "web-bridge",
+        "expiresAt": "2026-08-15",
+        "severity": "P2",
+        "budget": {
+          "metric": "baselined_code_hygiene_findings",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/code-hygiene-check.mjs",
+          "reason": "Code hygiene debt must shrink or keep blocking new matching findings."
+        }
+      }
     },
     {
       "id": "clawix-web-ui-component-barrel-2026-05-17",
@@ -53,7 +75,29 @@
       "reason": "UI components mirror native Clawix chrome and are retained as a reviewed web component surface; unused exports require design/component ownership review before removal.",
       "ownerArea": "web-ui",
       "reference": "docs/adr/0016-code-hygiene-program.md#decision",
-      "expiresAt": "2026-08-15"
+      "expiresAt": "2026-08-15",
+      "debtControl": {
+        "ownerArea": "web-ui",
+        "expiresAt": "2026-08-15",
+        "severity": "P2",
+        "budget": {
+          "metric": "baselined_code_hygiene_findings",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/code-hygiene-check.mjs",
+          "reason": "Code hygiene debt must shrink or keep blocking new matching findings."
+        }
+      }
     },
     {
       "id": "clawix-web-icon-barrel-2026-05-17",
@@ -79,7 +123,29 @@
       "reason": "Custom icons mirror native Swift symbols and are retained as asset/public visual surface; removal needs a separate icon inventory review.",
       "ownerArea": "web-icons",
       "reference": "docs/adr/0016-code-hygiene-program.md#decision",
-      "expiresAt": "2026-08-15"
+      "expiresAt": "2026-08-15",
+      "debtControl": {
+        "ownerArea": "web-icons",
+        "expiresAt": "2026-08-15",
+        "severity": "P2",
+        "budget": {
+          "metric": "baselined_code_hygiene_findings",
+          "unit": "entry",
+          "current": 1,
+          "maxAllowed": 1,
+          "nextMaxAllowed": 0,
+          "target": 0,
+          "cadence": "expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/code-hygiene-check.mjs",
+          "reason": "Code hygiene debt must shrink or keep blocking new matching findings."
+        }
+      }
     }
   ]
 }

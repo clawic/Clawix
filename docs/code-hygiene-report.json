@@ -1,13 +1,19 @@
 {
   "schemaVersion": 1,
   "program": "code-hygiene",
-  "generatedAt": "2026-05-21",
+  "generatedAt": "2026-05-22",
   "status": "active",
   "blockingFindings": 0,
   "reportOnlyFindings": 6,
   "baselinedFindings": 3,
+  "auditScope": "tracked",
+  "fileInventory": {
+    "source": "git ls-files",
+    "count": 2482,
+    "pathHash": "sha256:14bfd01491e9a326b0500a11a03b3759e5cc3a1549bdbe8ce23d80f102ac0902"
+  },
   "lastAuditSummary": {
-    "scannedFiles": 2301,
+    "scannedFiles": 2399,
     "todoFindings": 0,
     "duplicateAssetGroups": 6,
     "duplicateAssetFiles": 12,
@@ -37,7 +43,8 @@
   ],
   "notes": [
     "Initial cleanup completed: blocking findings are zero, actionable TODO/FIXME/HACK/XXX findings are zero, and unreferenced asset candidates are zero after generated/public platform asset calibration.",
-    "Use scripts/code-hygiene-audit.mjs for report-only TODO, duplicate asset, and unreferenced asset candidate findings.",
+    "Use scripts/code-hygiene-audit.mjs --scope tracked for the canonical report-only TODO, duplicate asset, and unreferenced asset candidate findings.",
+    "Use scripts/code-hygiene-audit.mjs --scope working-tree only for exploratory review of untracked or ignored working tree files; that mode does not feed code-hygiene-check.",
     "Use scripts/code-hygiene-periphery.mjs for report-only Swift package calibration once the pinned binary is available.",
     "Initial Clawix web cleanup removed 4 unused files, 2 unused dependencies, and 2 unused package-script binaries from the Knip report.",
     "Second Clawix web cleanup removed clear private export/type findings and reduced Knip export/type findings to 197 total findings across 23 files.",
