@@ -104,19 +104,41 @@ struct DriveScreen: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            Text(headerTitle).font(.system(size: 20, weight: .semibold))
+            Text(headerTitle)
+                .font(BodyFont.system(size: 20, weight: .semibold))
+                .foregroundColor(Palette.textPrimary)
             Spacer()
-            TextField("Search", text: Binding(get: { store.query }, set: { store.setQuery($0) }))
-                .textFieldStyle(.roundedBorder)
-                .frame(maxWidth: 280)
-            Picker("", selection: $viewMode) {
-                ForEach(ViewMode.allCases, id: \.self) { Text($0.rawValue.capitalized).tag($0) }
+            HStack(spacing: 6) {
+                IconImage("magnifyingglass", size: 12)
+                    .foregroundColor(Palette.textSecondary)
+                TextField("Search", text: Binding(get: { store.query }, set: { store.setQuery($0) }))
+                    .textFieldStyle(.plain)
+                    .font(BodyFont.system(size: 12.5))
+                    .foregroundColor(Palette.textPrimary)
             }
-            .pickerStyle(.segmented)
+            .padding(.horizontal, 12)
+            .frame(height: 28)
+            .frame(maxWidth: 280)
+            .background(Capsule(style: .continuous).fill(Color.white.opacity(0.06)))
+            SlidingSegmented(
+                selection: $viewMode,
+                options: ViewMode.allCases.map { ($0, $0.rawValue.capitalized) },
+                height: 28,
+                fontSize: 11.5
+            )
             .frame(width: 180)
             Button { isUploadDialogPresented = true } label: {
-                Label("Upload", systemImage: "plus")
+                HStack(spacing: 4) {
+                    IconImage("plus", size: 11)
+                    Text("Upload")
+                }
+                .font(BodyFont.system(size: 12, wght: 600))
+                .foregroundColor(canUpload ? Color.black : Color.white.opacity(0.55))
+                .padding(.horizontal, 12)
+                .frame(height: 28)
+                .background(Capsule(style: .continuous).fill(canUpload ? Color.white.opacity(0.92) : Color.white.opacity(0.18)))
             }
+            .buttonStyle(.plain)
             .disabled(!canUpload)
         }
         .padding(12)
