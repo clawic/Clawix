@@ -148,6 +148,25 @@ struct ComposerView: View {
                                     showInbox = true
                                 } else if cmd.id == "estado" {
                                     showStatus = true
+                                } else if cmd.id == "rapido" {
+                                    appState.selectedSpeed = appState.selectedSpeed == .fast ? .standard : .fast
+                                } else if cmd.id == "razonamiento" {
+                                    let levels = IntelligenceLevel.allCases
+                                    if let index = levels.firstIndex(of: appState.selectedIntelligence) {
+                                        appState.selectedIntelligence = levels[(index + 1) % levels.count]
+                                    }
+                                } else if cmd.id == "personalidad" {
+                                    appState.settingsCategory = .personalization
+                                    appState.currentRoute = .settings
+                                } else if cmd.id == "mcp" {
+                                    appState.settingsCategory = .mcp
+                                    appState.currentRoute = .settings
+                                } else if cmd.id == "proyecto" {
+                                    projectMenuOpen = true
+                                } else if cmd.id == "modelo" {
+                                    modelMenuOpen = true
+                                } else if cmd.id == "chat" {
+                                    appState.selectedProject = nil
                                 }
                             },
                             onHover: { cmd in
