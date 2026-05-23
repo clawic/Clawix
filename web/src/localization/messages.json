@@ -13,18 +13,6 @@
     "zh-Hans"
   ],
   "strings": {
-    "+5 min": {
-      "de": "+5 min",
-      "en": "+5 min",
-      "es": "+5 min",
-      "fr": "+5 min",
-      "it": "+5 min",
-      "ja": "+5 min",
-      "ko": "+5 min",
-      "pt-BR": "+5 min",
-      "ru": "+5 min",
-      "zh-Hans": "+5 min"
-    },
     "- Paste plain text tasks&#10;- One per line": {
       "de": "- Paste plain text tasks&#10;- One per line",
       "en": "- Paste plain text tasks&#10;- One per line",
@@ -49,6 +37,18 @@
       "ru": "-5 min",
       "zh-Hans": "-5 min"
     },
+    "+5 min": {
+      "de": "+5 min",
+      "en": "+5 min",
+      "es": "+5 min",
+      "fr": "+5 min",
+      "it": "+5 min",
+      "ja": "+5 min",
+      "ko": "+5 min",
+      "pt-BR": "+5 min",
+      "ru": "+5 min",
+      "zh-Hans": "+5 min"
+    },
     "Abandon": {
       "de": "Abandon",
       "en": "Abandon",
@@ -60,6 +60,18 @@
       "pt-BR": "Abandon",
       "ru": "Abandon",
       "zh-Hans": "Abandon"
+    },
+    "Access to the system terminal": {
+      "de": "Zugriff auf das Systemterminal",
+      "en": "Access to the system terminal",
+      "es": "Acceso al terminal del sistema",
+      "fr": "Accès au terminal système",
+      "it": "Accesso al terminale di sistema",
+      "ja": "システムターミナルへのアクセス",
+      "ko": "시스템 터미널 접근",
+      "pt-BR": "Acesso ao terminal do sistema",
+      "ru": "Доступ к системному терминалу",
+      "zh-Hans": "访问系统终端"
     },
     "Account and support": {
       "de": "Account and support",
@@ -73,6 +85,30 @@
       "ru": "Account and support",
       "zh-Hans": "Account and support"
     },
+    "Accounts": {
+      "en": "Accounts",
+      "de": "Konten",
+      "es": "Cuentas",
+      "fr": "Comptes",
+      "it": "Account",
+      "ja": "アカウント",
+      "ko": "계정",
+      "pt-BR": "Contas",
+      "ru": "Аккаунты",
+      "zh-Hans": "帐户"
+    },
+    "Accounts, groups, contacts, and selected contact detail.": {
+      "en": "Accounts, groups, contacts, and selected contact detail.",
+      "de": "Konten, Gruppen, Kontakte und Details zum ausgewählten Kontakt.",
+      "es": "Cuentas, grupos, contactos y detalle del contacto seleccionado.",
+      "fr": "Comptes, groupes, contacts et détail du contact sélectionné.",
+      "it": "Account, gruppi, contatti e dettaglio del contatto selezionato.",
+      "ja": "アカウント、グループ、連絡先、選択した連絡先の詳細。",
+      "ko": "계정, 그룹, 연락처 및 선택한 연락처 세부 정보.",
+      "pt-BR": "Contas, grupos, contatos e detalhes do contato selecionado.",
+      "ru": "Аккаунты, группы, контакты и сведения о выбранном контакте.",
+      "zh-Hans": "帐户、分组、联系人和所选联系人详情。"
+    },
     "Actions": {
       "de": "Aktionen",
       "en": "Actions",
@@ -84,6 +120,18 @@
       "pt-BR": "Ações",
       "ru": "Действия",
       "zh-Hans": "操作"
+    },
+    "Active": {
+      "de": "Aktiv",
+      "en": "Active",
+      "es": "Activo",
+      "fr": "Actif",
+      "it": "Attiva",
+      "ja": "有効",
+      "ko": "활성",
+      "pt-BR": "Ativo",
+      "ru": "Активен",
+      "zh-Hans": "活跃"
     },
     "Active blockers": {
       "de": "Active blockers",
@@ -108,6 +156,18 @@
       "pt-BR": "Active categories",
       "ru": "Active categories",
       "zh-Hans": "Active categories"
+    },
+    "Adapters": {
+      "en": "Adapters",
+      "de": "Adapter",
+      "es": "Adaptadores",
+      "fr": "Adaptateurs",
+      "it": "Adattatori",
+      "ja": "アダプター",
+      "ko": "어댑터",
+      "pt-BR": "Adaptadores",
+      "ru": "Адаптеры",
+      "zh-Hans": "适配器"
     },
     "Add": {
       "de": "Hinzufügen",
@@ -169,6 +229,30 @@
       "ru": "Add tracker rule",
       "zh-Hans": "Add tracker rule"
     },
+    "Agent Library": {
+      "en": "Agent Library",
+      "de": "Agentenbibliothek",
+      "es": "Biblioteca de agentes",
+      "fr": "Bibliothèque d’agents",
+      "it": "Libreria agenti",
+      "ja": "エージェントライブラリ",
+      "ko": "에이전트 라이브러리",
+      "pt-BR": "Biblioteca de agentes",
+      "ru": "Библиотека агентов",
+      "zh-Hans": "智能体库"
+    },
+    "Aggregate": {
+      "en": "Aggregate",
+      "de": "Aggregiert",
+      "es": "Agregado",
+      "fr": "Agrégé",
+      "it": "Aggregato",
+      "ja": "集計",
+      "ko": "집계",
+      "pt-BR": "Agregado",
+      "ru": "Агрегировано",
+      "zh-Hans": "聚合"
+    },
     "All": {
       "de": "All",
       "en": "All",
@@ -180,6 +264,30 @@
       "pt-BR": "All",
       "ru": "All",
       "zh-Hans": "All"
+    },
+    "all day": {
+      "en": "all day",
+      "de": "ganztägig",
+      "es": "todo el día",
+      "fr": "toute la journée",
+      "it": "tutto il giorno",
+      "ja": "終日",
+      "ko": "하루 종일",
+      "pt-BR": "dia inteiro",
+      "ru": "весь день",
+      "zh-Hans": "全天"
+    },
+    "All kinds": {
+      "de": "Alle Arten",
+      "en": "All kinds",
+      "es": "Todos los tipos",
+      "fr": "Tous les types",
+      "it": "Tutti i tipi",
+      "ja": "すべての種類",
+      "ko": "모든 종류",
+      "pt-BR": "Todos os tipos",
+      "ru": "Все типы",
+      "zh-Hans": "所有类型"
     },
     "Always dark": {
       "de": "Always dark",
@@ -229,18 +337,6 @@
       "ru": "App name per line",
       "zh-Hans": "App name per line"
     },
-    "System reminders integration": {
-      "de": "System reminders integration",
-      "en": "System reminders integration",
-      "es": "System reminders integration",
-      "fr": "System reminders integration",
-      "it": "System reminders integration",
-      "ja": "System reminders integration",
-      "ko": "System reminders integration",
-      "pt-BR": "System reminders integration",
-      "ru": "System reminders integration",
-      "zh-Hans": "System reminders integration"
-    },
     "Ask for reflection when Session has ended": {
       "de": "Ask for reflection when Session has ended",
       "en": "Ask for reflection when Session has ended",
@@ -252,6 +348,42 @@
       "pt-BR": "Ask for reflection when Session has ended",
       "ru": "Ask for reflection when Session has ended",
       "zh-Hans": "Ask for reflection when Session has ended"
+    },
+    "Auth": {
+      "en": "Auth",
+      "de": "Authentifizierung",
+      "es": "Autenticación",
+      "fr": "Authentification",
+      "it": "Autenticazione",
+      "ja": "認証",
+      "ko": "인증",
+      "pt-BR": "Autenticação",
+      "ru": "Аутентификация",
+      "zh-Hans": "身份验证"
+    },
+    "Authority": {
+      "en": "Authority",
+      "de": "Autorität",
+      "es": "Autoridad",
+      "fr": "Autorité",
+      "it": "Autorità",
+      "ja": "権限",
+      "ko": "권한",
+      "pt-BR": "Autoridade",
+      "ru": "Полномочия",
+      "zh-Hans": "权限"
+    },
+    "Auto-start break after Session ends": {
+      "de": "Auto-start break after Session ends",
+      "en": "Auto-start break after Session ends",
+      "es": "Auto-start break after Session ends",
+      "fr": "Auto-start break after Session ends",
+      "it": "Auto-start break after Session ends",
+      "ja": "Auto-start break after Session ends",
+      "ko": "Auto-start break after Session ends",
+      "pt-BR": "Auto-start break after Session ends",
+      "ru": "Auto-start break after Session ends",
+      "zh-Hans": "Auto-start break after Session ends"
     },
     "Auto-start Session after break ends": {
       "de": "Auto-start Session after break ends",
@@ -277,18 +409,6 @@
       "ru": "Auto-start Session when suggestion is selected",
       "zh-Hans": "Auto-start Session when suggestion is selected"
     },
-    "Auto-start break after Session ends": {
-      "de": "Auto-start break after Session ends",
-      "en": "Auto-start break after Session ends",
-      "es": "Auto-start break after Session ends",
-      "fr": "Auto-start break after Session ends",
-      "it": "Auto-start break after Session ends",
-      "ja": "Auto-start break after Session ends",
-      "ko": "Auto-start break after Session ends",
-      "pt-BR": "Auto-start break after Session ends",
-      "ru": "Auto-start break after Session ends",
-      "zh-Hans": "Auto-start break after Session ends"
-    },
     "Automation": {
       "de": "Automation",
       "en": "Automation",
@@ -300,6 +420,30 @@
       "pt-BR": "Automation",
       "ru": "Automation",
       "zh-Hans": "Automation"
+    },
+    "Automations": {
+      "en": "Automations",
+      "de": "Automatisierungen",
+      "es": "Automatizaciones",
+      "fr": "Automatisations",
+      "it": "Automazioni",
+      "ja": "自動化",
+      "ko": "자동화",
+      "pt-BR": "Automações",
+      "ru": "Автоматизации",
+      "zh-Hans": "自动化"
+    },
+    "Autonomy": {
+      "en": "Autonomy",
+      "de": "Autonomie",
+      "es": "Autonomía",
+      "fr": "Autonomie",
+      "it": "Autonomia",
+      "ja": "自律性",
+      "ko": "자율성",
+      "pt-BR": "Autonomia",
+      "ru": "Автономность",
+      "zh-Hans": "自主性"
     },
     "Background sound": {
       "de": "Background sound",
@@ -324,6 +468,18 @@
       "pt-BR": "Blockers",
       "ru": "Blockers",
       "zh-Hans": "Blockers"
+    },
+    "Bound agents": {
+      "en": "Bound agents",
+      "de": "Gebundene Agenten",
+      "es": "Agentes vinculados",
+      "fr": "Agents liés",
+      "it": "Agenti associati",
+      "ja": "紐付け済みエージェント",
+      "ko": "연결된 에이전트",
+      "pt-BR": "Agentes vinculados",
+      "ru": "Связанные агенты",
+      "zh-Hans": "已绑定智能体"
     },
     "Break": {
       "de": "Break",
@@ -457,6 +613,18 @@
       "ru": "Bridge runtime",
       "zh-Hans": "Bridge runtime"
     },
+    "Built-in": {
+      "de": "Integriert",
+      "en": "Built-in",
+      "es": "Integrado",
+      "fr": "Intégré",
+      "it": "Integrata",
+      "ja": "組み込み",
+      "ko": "내장",
+      "pt-BR": "Integrado",
+      "ru": "Встроенный",
+      "zh-Hans": "内置"
+    },
     "Calendar": {
       "de": "Calendar",
       "en": "Calendar",
@@ -480,6 +648,54 @@
       "pt-BR": "Calendar integration",
       "ru": "Calendar integration",
       "zh-Hans": "Calendar integration"
+    },
+    "Calendars": {
+      "en": "Calendars",
+      "de": "Kalender",
+      "es": "Calendarios",
+      "fr": "Calendriers",
+      "it": "Calendari",
+      "ja": "カレンダー",
+      "ko": "캘린더",
+      "pt-BR": "Calendários",
+      "ru": "Календари",
+      "zh-Hans": "日历"
+    },
+    "Cancel": {
+      "de": "Abbrechen",
+      "en": "Cancel",
+      "es": "Cancelar",
+      "fr": "Annuler",
+      "it": "Annulla",
+      "ja": "キャンセル",
+      "ko": "취소",
+      "pt-BR": "Cancelar",
+      "ru": "Отмена",
+      "zh-Hans": "取消"
+    },
+    "Candidates": {
+      "en": "Candidates",
+      "de": "Kandidaten",
+      "es": "Candidatos",
+      "fr": "Candidats",
+      "it": "Candidati",
+      "ja": "候補",
+      "ko": "후보",
+      "pt-BR": "Candidatos",
+      "ru": "Кандидаты",
+      "zh-Hans": "候选项"
+    },
+    "Catalog, saved searches, monitors, runs, and alerts.": {
+      "en": "Catalog, saved searches, monitors, runs, and alerts.",
+      "de": "Katalog, gespeicherte Suchen, Monitore, Läufe und Hinweise.",
+      "es": "Catálogo, búsquedas guardadas, monitores, ejecuciones y alertas.",
+      "fr": "Catalogue, recherches enregistrées, surveillances, exécutions et alertes.",
+      "it": "Catalogo, ricerche salvate, monitoraggi, esecuzioni e avvisi.",
+      "ja": "カタログ、保存済み検索、モニター、実行、アラート。",
+      "ko": "카탈로그, 저장된 검색, 모니터, 실행 및 알림.",
+      "pt-BR": "Catálogo, pesquisas salvas, monitores, execuções e alertas.",
+      "ru": "Каталог, сохраненные поиски, мониторы, запуски и оповещения.",
+      "zh-Hans": "目录、已保存搜索、监视器、运行和提醒。"
     },
     "Categories": {
       "de": "Categories",
@@ -517,6 +733,18 @@
       "ru": "Category name",
       "zh-Hans": "Category name"
     },
+    "Chat": {
+      "de": "Chat",
+      "en": "Chat",
+      "es": "Chat",
+      "fr": "Chat",
+      "it": "Chat",
+      "ja": "チャット",
+      "ko": "채팅",
+      "pt-BR": "Chat",
+      "ru": "Чат",
+      "zh-Hans": "聊天"
+    },
     "Chat count": {
       "de": "Chat count",
       "en": "Chat count",
@@ -540,6 +768,18 @@
       "pt-BR": "Chrome",
       "ru": "Chrome",
       "zh-Hans": "Chrome"
+    },
+    "Clear search": {
+      "de": "Suche leeren",
+      "en": "Clear search",
+      "es": "Borrar búsqueda",
+      "fr": "Effacer la recherche",
+      "it": "Cancella ricerca",
+      "ja": "検索をクリア",
+      "ko": "검색 지우기",
+      "pt-BR": "Limpar pesquisa",
+      "ru": "Очистить поиск",
+      "zh-Hans": "清除搜索"
     },
     "Close mini player": {
       "de": "Close mini player",
@@ -565,6 +805,30 @@
       "ru": "Color scheme",
       "zh-Hans": "Color scheme"
     },
+    "Connect": {
+      "de": "Connect",
+      "en": "Connect",
+      "es": "Connect",
+      "fr": "Connect",
+      "it": "Connect",
+      "ja": "Connect",
+      "ko": "Connect",
+      "pt-BR": "Connect",
+      "ru": "Connect",
+      "zh-Hans": "Connect"
+    },
+    "Connecting...": {
+      "de": "Connecting...",
+      "en": "Connecting...",
+      "es": "Connecting...",
+      "fr": "Connecting...",
+      "it": "Connecting...",
+      "ja": "Connecting...",
+      "ko": "Connecting...",
+      "pt-BR": "Connecting...",
+      "ru": "Connecting...",
+      "zh-Hans": "Connecting..."
+    },
     "Connection": {
       "de": "Connection",
       "en": "Connection",
@@ -577,6 +841,42 @@
       "ru": "Connection",
       "zh-Hans": "Connection"
     },
+    "Connections": {
+      "en": "Connections",
+      "de": "Verbindungen",
+      "es": "Conexiones",
+      "fr": "Connexions",
+      "it": "Connessioni",
+      "ja": "接続",
+      "ko": "연결",
+      "pt-BR": "Conexões",
+      "ru": "Подключения",
+      "zh-Hans": "连接"
+    },
+    "Contact": {
+      "en": "Contact",
+      "de": "Kontakt",
+      "es": "Contacto",
+      "fr": "Fiche contact",
+      "it": "Contatto",
+      "ja": "連絡先",
+      "ko": "연락처",
+      "pt-BR": "Contato",
+      "ru": "Контакт",
+      "zh-Hans": "联系人"
+    },
+    "Contacts": {
+      "en": "Contacts",
+      "de": "Kontakte",
+      "es": "Contactos",
+      "fr": "Liste des contacts",
+      "it": "Contatti",
+      "ja": "連絡先",
+      "ko": "연락처",
+      "pt-BR": "Contatos",
+      "ru": "Контакты",
+      "zh-Hans": "联系人"
+    },
     "Copy source": {
       "de": "Copy source",
       "en": "Copy source",
@@ -588,6 +888,30 @@
       "pt-BR": "Copy source",
       "ru": "Copy source",
       "zh-Hans": "Copy source"
+    },
+    "Create": {
+      "de": "Erstellen",
+      "en": "Create",
+      "es": "Crear",
+      "fr": "Créer",
+      "it": "Crea",
+      "ja": "作成",
+      "ko": "만들기",
+      "pt-BR": "Criar",
+      "ru": "Создать",
+      "zh-Hans": "创建"
+    },
+    "Create your first skill.": {
+      "de": "Erstelle deinen ersten Skill.",
+      "en": "Create your first skill.",
+      "es": "Crea tu primer skill.",
+      "fr": "Créez votre premier skill.",
+      "it": "Crea la tua prima skill.",
+      "ja": "最初のスキルを作成してください。",
+      "ko": "첫 스킬을 만드세요.",
+      "pt-BR": "Crie seu primeiro skill.",
+      "ru": "Создайте первый навык.",
+      "zh-Hans": "创建你的第一个技能。"
     },
     "Create, filter, edit color, archive, and use category IDs for URL-scheme style starts.": {
       "de": "Create, filter, edit color, archive, and use category IDs for URL-scheme style starts.",
@@ -612,6 +936,18 @@
       "pt-BR": "Credits",
       "ru": "Credits",
       "zh-Hans": "Credits"
+    },
+    "Current": {
+      "en": "Current",
+      "de": "Aktuell",
+      "es": "Actual",
+      "fr": "Actuel",
+      "it": "Corrente",
+      "ja": "現在",
+      "ko": "현재",
+      "pt-BR": "Atual",
+      "ru": "Текущие",
+      "zh-Hans": "当前"
     },
     "Current Session JSON": {
       "de": "Current Session JSON",
@@ -745,6 +1081,18 @@
       "ru": "Default profile",
       "zh-Hans": "Default profile"
     },
+    "Default redaction": {
+      "en": "Default redaction",
+      "de": "Standardredaktion",
+      "es": "Redacción predeterminada",
+      "fr": "Masquage par défaut",
+      "it": "Redazione predefinita",
+      "ja": "既定の墨消し",
+      "ko": "기본 비식별화",
+      "pt-BR": "Redação padrão",
+      "ru": "Редактирование по умолчанию",
+      "zh-Hans": "默认遮盖"
+    },
     "Delete scheduled Session": {
       "de": "Delete scheduled Session",
       "en": "Delete scheduled Session",
@@ -781,6 +1129,42 @@
       "ru": "Delete tracker rule",
       "zh-Hans": "Delete tracker rule"
     },
+    "Description": {
+      "de": "Beschreibung",
+      "en": "Description",
+      "es": "Descripción",
+      "fr": "Description",
+      "it": "Descrizione",
+      "ja": "説明",
+      "ko": "설명",
+      "pt-BR": "Descrição",
+      "ru": "Описание",
+      "zh-Hans": "描述"
+    },
+    "Detail": {
+      "en": "Detail",
+      "de": "Einzeldetail",
+      "es": "Detalle",
+      "fr": "Détail",
+      "it": "Dettaglio",
+      "ja": "詳細",
+      "ko": "세부 정보",
+      "pt-BR": "Detalhe",
+      "ru": "Деталь",
+      "zh-Hans": "详情"
+    },
+    "Details": {
+      "en": "Details",
+      "de": "Detailangaben",
+      "es": "Detalles",
+      "fr": "Détails",
+      "it": "Dettagli",
+      "ja": "詳細",
+      "ko": "세부 정보",
+      "pt-BR": "Detalhes",
+      "ru": "Сведения",
+      "zh-Hans": "详情"
+    },
     "Device label": {
       "de": "Device label",
       "en": "Device label",
@@ -792,6 +1176,30 @@
       "pt-BR": "Device label",
       "ru": "Device label",
       "zh-Hans": "Device label"
+    },
+    "disabled": {
+      "en": "disabled",
+      "de": "deaktiviert",
+      "es": "desactivado",
+      "fr": "désactivé",
+      "it": "disabilitato",
+      "ja": "無効",
+      "ko": "비활성화됨",
+      "pt-BR": "desativado",
+      "ru": "отключено",
+      "zh-Hans": "已禁用"
+    },
+    "Disabled": {
+      "de": "Deaktiviert",
+      "en": "Disabled",
+      "es": "Desactivado",
+      "fr": "Désactivé",
+      "it": "Disabilitato",
+      "ja": "無効",
+      "ko": "비활성화됨",
+      "pt-BR": "Desativado",
+      "ru": "Отключено",
+      "zh-Hans": "已停用"
     },
     "Dismiss notification": {
       "de": "Dismiss notification",
@@ -829,6 +1237,18 @@
       "ru": "Distracted",
       "zh-Hans": "Distracted"
     },
+    "Email": {
+      "en": "Email",
+      "de": "E-Mail",
+      "es": "Correo",
+      "fr": "E-mail",
+      "it": "Posta elettronica",
+      "ja": "メール",
+      "ko": "이메일",
+      "pt-BR": "E-mail",
+      "ru": "Эл. почта",
+      "zh-Hans": "电子邮件"
+    },
     "Enable app blocker": {
       "de": "Enable app blocker",
       "en": "Enable app blocker",
@@ -864,6 +1284,30 @@
       "pt-BR": "Enable window tracker",
       "ru": "Enable window tracker",
       "zh-Hans": "Enable window tracker"
+    },
+    "enabled": {
+      "en": "enabled",
+      "de": "aktiviert",
+      "es": "activado",
+      "fr": "activé",
+      "it": "abilitato",
+      "ja": "有効",
+      "ko": "활성화됨",
+      "pt-BR": "ativado",
+      "ru": "включено",
+      "zh-Hans": "已启用"
+    },
+    "Enabled": {
+      "de": "Aktiviert",
+      "en": "Enabled",
+      "es": "Activado",
+      "fr": "Activé",
+      "it": "Abilitato",
+      "ja": "有効",
+      "ko": "활성화됨",
+      "pt-BR": "Ativado",
+      "ru": "Включено",
+      "zh-Hans": "已启用"
     },
     "Ending soon duration (min)": {
       "de": "Ending soon duration (min)",
@@ -913,6 +1357,30 @@
       "ru": "Example rules",
       "zh-Hans": "Example rules"
     },
+    "example.com&#10;social.example": {
+      "de": "example.com&#10;social.example",
+      "en": "example.com&#10;social.example",
+      "es": "example.com&#10;social.example",
+      "fr": "example.com&#10;social.example",
+      "it": "example.com&#10;social.example",
+      "ja": "example.com&#10;social.example",
+      "ko": "example.com&#10;social.example",
+      "pt-BR": "example.com&#10;social.example",
+      "ru": "example.com&#10;social.example",
+      "zh-Hans": "example.com&#10;social.example"
+    },
+    "Execution": {
+      "en": "Execution",
+      "de": "Ausführung",
+      "es": "Ejecución",
+      "fr": "Exécution",
+      "it": "Esecuzione",
+      "ja": "実行",
+      "ko": "실행",
+      "pt-BR": "Execução",
+      "ru": "Выполнение",
+      "zh-Hans": "执行"
+    },
     "Export data": {
       "de": "Export data",
       "en": "Export data",
@@ -936,6 +1404,18 @@
       "pt-BR": "Filter categories",
       "ru": "Filter categories",
       "zh-Hans": "Filter categories"
+    },
+    "Finalizer preview": {
+      "en": "Finalizer preview",
+      "de": "Finalizer-Vorschau",
+      "es": "Vista previa del finalizador",
+      "fr": "Aperçu du finaliseur",
+      "it": "Anteprima finalizzatore",
+      "ja": "ファイナライザーのプレビュー",
+      "ko": "마무리 작업 미리보기",
+      "pt-BR": "Prévia do finalizador",
+      "ru": "Предпросмотр финализатора",
+      "zh-Hans": "终结器预览"
     },
     "Finish": {
       "de": "Finish",
@@ -1045,6 +1525,30 @@
       "ru": "Global keyboard shortcuts",
       "zh-Hans": "Global keyboard shortcuts"
     },
+    "Groups": {
+      "en": "Groups",
+      "de": "Gruppen",
+      "es": "Grupos",
+      "fr": "Groupes",
+      "it": "Gruppi",
+      "ja": "グループ",
+      "ko": "그룹",
+      "pt-BR": "Grupos",
+      "ru": "Группы",
+      "zh-Hans": "分组"
+    },
+    "Import": {
+      "en": "Import",
+      "de": "Importieren",
+      "es": "Importar",
+      "fr": "Importer",
+      "it": "Importa",
+      "ja": "インポート",
+      "ko": "가져오기",
+      "pt-BR": "Importar",
+      "ru": "Импорт",
+      "zh-Hans": "导入"
+    },
     "Import plain text": {
       "de": "Import plain text",
       "en": "Import plain text",
@@ -1057,6 +1561,30 @@
       "ru": "Import plain text",
       "zh-Hans": "Import plain text"
     },
+    "Index": {
+      "en": "Index",
+      "de": "Suchindex",
+      "es": "Índice",
+      "fr": "Indexation",
+      "it": "Indice",
+      "ja": "インデックス",
+      "ko": "인덱스",
+      "pt-BR": "Índice",
+      "ru": "Индекс",
+      "zh-Hans": "索引"
+    },
+    "Integration with code repositories": {
+      "de": "Integration mit Code-Repositories",
+      "en": "Integration with code repositories",
+      "es": "Integración con repositorios de código",
+      "fr": "Intégration avec des dépôts de code",
+      "it": "Integrazione con repository di codice",
+      "ja": "コードリポジトリとの連携",
+      "ko": "코드 저장소와 연동",
+      "pt-BR": "Integração com repositórios de código",
+      "ru": "Интеграция с репозиториями кода",
+      "zh-Hans": "与代码仓库集成"
+    },
     "Issue import": {
       "de": "Issue import",
       "en": "Issue import",
@@ -1068,6 +1596,18 @@
       "pt-BR": "Issue import",
       "ru": "Issue import",
       "zh-Hans": "Issue import"
+    },
+    "Items": {
+      "en": "Items",
+      "de": "Einträge",
+      "es": "Elementos",
+      "fr": "Éléments",
+      "it": "Elementi",
+      "ja": "項目",
+      "ko": "항목",
+      "pt-BR": "Itens",
+      "ru": "Элементы",
+      "zh-Hans": "项目"
     },
     "Keep app on top": {
       "de": "Keep app on top",
@@ -1117,6 +1657,30 @@
       "ru": "Launch at login",
       "zh-Hans": "Launch at login"
     },
+    "Library": {
+      "en": "Library",
+      "de": "Bibliothek",
+      "es": "Biblioteca",
+      "fr": "Bibliothèque",
+      "it": "Libreria",
+      "ja": "ライブラリ",
+      "ko": "라이브러리",
+      "pt-BR": "Biblioteca",
+      "ru": "Библиотека",
+      "zh-Hans": "库"
+    },
+    "Loading older...": {
+      "de": "Loading older...",
+      "en": "Loading older...",
+      "es": "Loading older...",
+      "fr": "Loading older...",
+      "it": "Loading older...",
+      "ja": "Loading older...",
+      "ko": "Loading older...",
+      "pt-BR": "Loading older...",
+      "ru": "Loading older...",
+      "zh-Hans": "Loading older..."
+    },
     "Local": {
       "de": "Local",
       "en": "Local",
@@ -1128,6 +1692,18 @@
       "pt-BR": "Local",
       "ru": "Local",
       "zh-Hans": "Local"
+    },
+    "Local calendar sources and upcoming events.": {
+      "en": "Local calendar sources and upcoming events.",
+      "de": "Lokale Kalenderquellen und anstehende Ereignisse.",
+      "es": "Fuentes de calendario locales y próximos eventos.",
+      "fr": "Sources de calendrier locales et événements à venir.",
+      "it": "Origini calendario locali ed eventi imminenti.",
+      "ja": "ローカルカレンダーソースと今後の予定。",
+      "ko": "로컬 캘린더 소스와 예정된 이벤트.",
+      "pt-BR": "Fontes de calendário locais e próximos eventos.",
+      "ru": "Локальные источники календаря и предстоящие события.",
+      "zh-Hans": "本地日历来源和即将发生的事件。"
     },
     "Local command URLs": {
       "de": "Local command URLs",
@@ -1177,6 +1753,18 @@
       "ru": "Local task planning with plain-text imports and local-only session notes.",
       "zh-Hans": "Local task planning with plain-text imports and local-only session notes."
     },
+    "Local-first crypto with Mac parity.": {
+      "de": "Local-first crypto with Mac parity.",
+      "en": "Local-first crypto with Mac parity.",
+      "es": "Local-first crypto with Mac parity.",
+      "fr": "Local-first crypto with Mac parity.",
+      "it": "Local-first crypto with Mac parity.",
+      "ja": "Local-first crypto with Mac parity.",
+      "ko": "Local-first crypto with Mac parity.",
+      "pt-BR": "Local-first crypto with Mac parity.",
+      "ru": "Local-first crypto with Mac parity.",
+      "zh-Hans": "Local-first crypto with Mac parity."
+    },
     "Local, in-app equivalents for website, app, and team-chat blockers. No OS or browser permissions are changed.": {
       "de": "Local, in-app equivalents for website, app, and team-chat blockers. No OS or browser permissions are changed.",
       "en": "Local, in-app equivalents for website, app, and team-chat blockers. No OS or browser permissions are changed.",
@@ -1189,17 +1777,17 @@
       "ru": "Local, in-app equivalents for website, app, and team-chat blockers. No OS or browser permissions are changed.",
       "zh-Hans": "Local, in-app equivalents for website, app, and team-chat blockers. No OS or browser permissions are changed."
     },
-    "Local-first crypto with Mac parity.": {
-      "de": "Local-first crypto with Mac parity.",
-      "en": "Local-first crypto with Mac parity.",
-      "es": "Local-first crypto with Mac parity.",
-      "fr": "Local-first crypto with Mac parity.",
-      "it": "Local-first crypto with Mac parity.",
-      "ja": "Local-first crypto with Mac parity.",
-      "ko": "Local-first crypto with Mac parity.",
-      "pt-BR": "Local-first crypto with Mac parity.",
-      "ru": "Local-first crypto with Mac parity.",
-      "zh-Hans": "Local-first crypto with Mac parity."
+    "Location": {
+      "en": "Location",
+      "de": "Ort",
+      "es": "Ubicación",
+      "fr": "Emplacement",
+      "it": "Posizione",
+      "ja": "場所",
+      "ko": "위치",
+      "pt-BR": "Local",
+      "ru": "Расположение",
+      "zh-Hans": "位置"
     },
     "Long break (min)": {
       "de": "Long break (min)",
@@ -1225,17 +1813,17 @@
       "ru": "Long break after focus (min)",
       "zh-Hans": "Long break after focus (min)"
     },
-    "MCP servers": {
-      "de": "MCP-Server",
-      "en": "MCP servers",
-      "es": "Servidores MCP",
-      "fr": "Serveurs MCP",
-      "it": "Server MCP",
-      "ja": "MCP サーバー",
-      "ko": "MCP 서버",
-      "pt-BR": "Servidores MCP",
-      "ru": "Серверы MCP",
-      "zh-Hans": "MCP 服务器"
+    "Mac Care": {
+      "en": "Mac Care",
+      "de": "Mac-Pflege",
+      "es": "Cuidado del Mac",
+      "fr": "Entretien du Mac",
+      "it": "Cura del Mac",
+      "ja": "Macケア",
+      "ko": "Mac 관리",
+      "pt-BR": "Cuidados do Mac",
+      "ru": "Обслуживание Mac",
+      "zh-Hans": "Mac 维护"
     },
     "Manage on Mac": {
       "de": "Manage on Mac",
@@ -1260,6 +1848,30 @@
       "pt-BR": "Managed datasets exposed by the daemon.",
       "ru": "Managed datasets exposed by the daemon.",
       "zh-Hans": "Managed datasets exposed by the daemon."
+    },
+    "Marketplace": {
+      "en": "Marketplace",
+      "de": "Marktplatz",
+      "es": "Mercado",
+      "fr": "Place de marché",
+      "it": "Mercato",
+      "ja": "マーケットプレイス",
+      "ko": "마켓플레이스",
+      "pt-BR": "Mercado",
+      "ru": "Маркетплейс",
+      "zh-Hans": "市场"
+    },
+    "MCP servers": {
+      "de": "MCP-Server",
+      "en": "MCP servers",
+      "es": "Servidores MCP",
+      "fr": "Serveurs MCP",
+      "it": "Server MCP",
+      "ja": "MCP サーバー",
+      "ko": "MCP 서버",
+      "pt-BR": "Servidores MCP",
+      "ru": "Серверы MCP",
+      "zh-Hans": "MCP 服务器"
     },
     "Memory": {
       "de": "Memory",
@@ -1297,17 +1909,17 @@
       "ru": "Menubar and Dock",
       "zh-Hans": "Menubar and Dock"
     },
-    "Mini Player": {
-      "de": "Mini Player",
-      "en": "Mini Player",
-      "es": "Mini Player",
-      "fr": "Mini Player",
-      "it": "Mini Player",
-      "ja": "Mini Player",
-      "ko": "Mini Player",
-      "pt-BR": "Mini Player",
-      "ru": "Mini Player",
-      "zh-Hans": "Mini Player"
+    "Message": {
+      "de": "Nachricht",
+      "en": "Message",
+      "es": "Mensaje",
+      "fr": "Message",
+      "it": "Messaggio",
+      "ja": "メッセージ",
+      "ko": "메시지",
+      "pt-BR": "Mensagem",
+      "ru": "Сообщение",
+      "zh-Hans": "消息"
     },
     "Mini player": {
       "de": "Mini player",
@@ -1320,6 +1932,18 @@
       "pt-BR": "Mini player",
       "ru": "Mini player",
       "zh-Hans": "Mini player"
+    },
+    "Mini Player": {
+      "de": "Mini Player",
+      "en": "Mini Player",
+      "es": "Mini Player",
+      "fr": "Mini Player",
+      "it": "Mini Player",
+      "ja": "Mini Player",
+      "ko": "Mini Player",
+      "pt-BR": "Mini Player",
+      "ru": "Mini Player",
+      "zh-Hans": "Mini Player"
     },
     "Minimize when Session starts": {
       "de": "Minimize when Session starts",
@@ -1344,6 +1968,18 @@
       "pt-BR": "Model Context Protocol endpoints.",
       "ru": "Model Context Protocol endpoints.",
       "zh-Hans": "Model Context Protocol endpoints."
+    },
+    "Modified": {
+      "en": "Modified",
+      "de": "Geändert",
+      "es": "Modificado",
+      "fr": "Modifié",
+      "it": "Modificato",
+      "ja": "変更済み",
+      "ko": "수정됨",
+      "pt-BR": "Modificado",
+      "ru": "Изменено",
+      "zh-Hans": "已修改"
     },
     "Month": {
       "de": "Month",
@@ -1381,6 +2017,30 @@
       "ru": "Mute selected chat teams",
       "zh-Hans": "Mute selected chat teams"
     },
+    "Name": {
+      "de": "Name",
+      "en": "Name",
+      "es": "Nombre",
+      "fr": "Nom",
+      "it": "Nome",
+      "ja": "名前",
+      "ko": "이름",
+      "pt-BR": "Nome",
+      "ru": "Название",
+      "zh-Hans": "名称"
+    },
+    "Network": {
+      "en": "Network",
+      "de": "Netzwerk",
+      "es": "Red",
+      "fr": "Réseau",
+      "it": "Rete",
+      "ja": "ネットワーク",
+      "ko": "네트워크",
+      "pt-BR": "Rede",
+      "ru": "Сеть",
+      "zh-Hans": "网络"
+    },
     "Neutral": {
       "de": "Neutral",
       "en": "Neutral",
@@ -1417,6 +2077,66 @@
       "ru": "Новый чат",
       "zh-Hans": "新对话"
     },
+    "New contact": {
+      "en": "New contact",
+      "de": "Neuer Kontakt",
+      "es": "Nuevo contacto",
+      "fr": "Nouveau contact",
+      "it": "Nuovo contatto",
+      "ja": "新しい連絡先",
+      "ko": "새 연락처",
+      "pt-BR": "Novo contato",
+      "ru": "Новый контакт",
+      "zh-Hans": "新联系人"
+    },
+    "New event": {
+      "en": "New event",
+      "de": "Neues Ereignis",
+      "es": "Nuevo evento",
+      "fr": "Nouvel événement",
+      "it": "Nuovo evento",
+      "ja": "新しい予定",
+      "ko": "새 이벤트",
+      "pt-BR": "Novo evento",
+      "ru": "Новое событие",
+      "zh-Hans": "新事件"
+    },
+    "New folder": {
+      "en": "New folder",
+      "de": "Neuer Ordner",
+      "es": "Nueva carpeta",
+      "fr": "Nouveau dossier",
+      "it": "Nuova cartella",
+      "ja": "新しいフォルダ",
+      "ko": "새 폴더",
+      "pt-BR": "Nova pasta",
+      "ru": "Новая папка",
+      "zh-Hans": "新建文件夹"
+    },
+    "New search": {
+      "en": "New search",
+      "de": "Neue Suche",
+      "es": "Nueva búsqueda",
+      "fr": "Nouvelle recherche",
+      "it": "Nuova ricerca",
+      "ja": "新しい検索",
+      "ko": "새 검색",
+      "pt-BR": "Nova pesquisa",
+      "ru": "Новый поиск",
+      "zh-Hans": "新搜索"
+    },
+    "New skill": {
+      "de": "Neuer Skill",
+      "en": "New skill",
+      "es": "Nuevo skill",
+      "fr": "Nouveau skill",
+      "it": "Nuova skill",
+      "ja": "新しいスキル",
+      "ko": "새 스킬",
+      "pt-BR": "Novo skill",
+      "ru": "Новый навык",
+      "zh-Hans": "新技能"
+    },
     "Next day": {
       "de": "Next day",
       "en": "Next day",
@@ -1441,6 +2161,18 @@
       "ru": "No active blocker for the current timer state.",
       "zh-Hans": "No active blocker for the current timer state."
     },
+    "No catalog results": {
+      "en": "No catalog results",
+      "de": "Keine Katalogergebnisse",
+      "es": "Sin resultados de catálogo",
+      "fr": "Aucun résultat dans le catalogue",
+      "it": "Nessun risultato nel catalogo",
+      "ja": "カタログ結果はありません",
+      "ko": "카탈로그 결과 없음",
+      "pt-BR": "Nenhum resultado no catálogo",
+      "ru": "Нет результатов каталога",
+      "zh-Hans": "没有目录结果"
+    },
     "No chats yet": {
       "de": "No chats yet",
       "en": "No chats yet",
@@ -1452,6 +2184,42 @@
       "pt-BR": "No chats yet",
       "ru": "No chats yet",
       "zh-Hans": "No chats yet"
+    },
+    "No Contact Selected": {
+      "en": "No Contact Selected",
+      "de": "Kein Kontakt ausgewählt",
+      "es": "Ningún contacto seleccionado",
+      "fr": "Aucun contact sélectionné",
+      "it": "Nessun contatto selezionato",
+      "ja": "連絡先が選択されていません",
+      "ko": "선택한 연락처 없음",
+      "pt-BR": "Nenhum contato selecionado",
+      "ru": "Контакт не выбран",
+      "zh-Hans": "未选择联系人"
+    },
+    "No data yet.": {
+      "de": "No data yet.",
+      "en": "No data yet.",
+      "es": "No data yet.",
+      "fr": "No data yet.",
+      "it": "No data yet.",
+      "ja": "No data yet.",
+      "ko": "No data yet.",
+      "pt-BR": "No data yet.",
+      "ru": "No data yet.",
+      "zh-Hans": "No data yet."
+    },
+    "No file selected": {
+      "en": "No file selected",
+      "de": "Keine Datei ausgewählt",
+      "es": "Ningún archivo seleccionado",
+      "fr": "Aucun fichier sélectionné",
+      "it": "Nessun file selezionato",
+      "ja": "ファイルが選択されていません",
+      "ko": "선택한 파일 없음",
+      "pt-BR": "Nenhum arquivo selecionado",
+      "ru": "Файл не выбран",
+      "zh-Hans": "未选择文件"
     },
     "No focus distribution yet.": {
       "de": "No focus distribution yet.",
@@ -1465,6 +2233,54 @@
       "ru": "No focus distribution yet.",
       "zh-Hans": "No focus distribution yet."
     },
+    "No messages yet": {
+      "de": "No messages yet",
+      "en": "No messages yet",
+      "es": "No messages yet",
+      "fr": "No messages yet",
+      "it": "No messages yet",
+      "ja": "No messages yet",
+      "ko": "No messages yet",
+      "pt-BR": "No messages yet",
+      "ru": "No messages yet",
+      "zh-Hans": "No messages yet"
+    },
+    "No plugins match": {
+      "de": "Keine passenden Plugins",
+      "en": "No plugins match",
+      "es": "No hay plugins coincidentes",
+      "fr": "Aucun plugin ne correspond",
+      "it": "Nessun plugin corrisponde",
+      "ja": "一致するプラグインはありません",
+      "ko": "일치하는 플러그인이 없습니다",
+      "pt-BR": "Nenhum plugin corresponde",
+      "ru": "Нет подходящих плагинов",
+      "zh-Hans": "没有匹配的插件"
+    },
+    "No projects yet. Start a chat with a working directory to see it here.": {
+      "de": "No projects yet. Start a chat with a working directory to see it here.",
+      "en": "No projects yet. Start a chat with a working directory to see it here.",
+      "es": "No projects yet. Start a chat with a working directory to see it here.",
+      "fr": "No projects yet. Start a chat with a working directory to see it here.",
+      "it": "No projects yet. Start a chat with a working directory to see it here.",
+      "ja": "No projects yet. Start a chat with a working directory to see it here.",
+      "ko": "No projects yet. Start a chat with a working directory to see it here.",
+      "pt-BR": "No projects yet. Start a chat with a working directory to see it here.",
+      "ru": "No projects yet. Start a chat with a working directory to see it here.",
+      "zh-Hans": "No projects yet. Start a chat with a working directory to see it here."
+    },
+    "No results for": {
+      "de": "Keine Ergebnisse für",
+      "en": "No results for",
+      "es": "No hay resultados para",
+      "fr": "Aucun résultat pour",
+      "it": "Nessun risultato per",
+      "ja": "結果なし:",
+      "ko": "결과 없음:",
+      "pt-BR": "Nenhum resultado para",
+      "ru": "Нет результатов для",
+      "zh-Hans": "没有结果:"
+    },
     "No scheduled Sessions for this day.": {
       "de": "No scheduled Sessions for this day.",
       "en": "No scheduled Sessions for this day.",
@@ -1477,6 +2293,18 @@
       "ru": "No scheduled Sessions for this day.",
       "zh-Hans": "No scheduled Sessions for this day."
     },
+    "No secret": {
+      "en": "No secret",
+      "de": "Kein Secret",
+      "es": "Sin secreto",
+      "fr": "Aucun secret",
+      "it": "Nessun segreto",
+      "ja": "シークレットなし",
+      "ko": "비밀 없음",
+      "pt-BR": "Nenhum segredo",
+      "ru": "Нет секрета",
+      "zh-Hans": "无密钥"
+    },
     "No sessions match this range/filter.": {
       "de": "No sessions match this range/filter.",
       "en": "No sessions match this range/filter.",
@@ -1488,6 +2316,30 @@
       "pt-BR": "No sessions match this range/filter.",
       "ru": "No sessions match this range/filter.",
       "zh-Hans": "No sessions match this range/filter."
+    },
+    "No skills match these filters.": {
+      "de": "Keine Skills passen zu diesen Filtern.",
+      "en": "No skills match these filters.",
+      "es": "Ningún skill coincide con estos filtros.",
+      "fr": "Aucun skill ne correspond à ces filtres.",
+      "it": "Nessuna skill corrisponde a questi filtri.",
+      "ja": "これらのフィルターに一致するスキルはありません。",
+      "ko": "이 필터와 일치하는 스킬이 없습니다.",
+      "pt-BR": "Nenhum skill corresponde a estes filtros.",
+      "ru": "Нет навыков для этих фильтров.",
+      "zh-Hans": "没有技能匹配这些筛选条件。"
+    },
+    "No skills yet.": {
+      "de": "Noch keine Skills.",
+      "en": "No skills yet.",
+      "es": "Aún no hay skills.",
+      "fr": "Aucun skill pour le moment.",
+      "it": "Ancora nessuna skill.",
+      "ja": "まだスキルはありません。",
+      "ko": "아직 스킬이 없습니다.",
+      "pt-BR": "Ainda não há skills.",
+      "ru": "Навыков пока нет.",
+      "zh-Hans": "还没有技能。"
     },
     "No tasks yet.": {
       "de": "No tasks yet.",
@@ -1525,6 +2377,18 @@
       "ru": "No website, app, or team-chat blocker is active for this timer state.",
       "zh-Hans": "No website, app, or team-chat blocker is active for this timer state."
     },
+    "Not synced": {
+      "en": "Not synced",
+      "de": "Nicht synchronisiert",
+      "es": "No sincronizado",
+      "fr": "Non synchronisé",
+      "it": "Non sincronizzato",
+      "ja": "未同期",
+      "ko": "동기화되지 않음",
+      "pt-BR": "Não sincronizado",
+      "ru": "Не синхронизировано",
+      "zh-Hans": "未同步"
+    },
     "Notes": {
       "de": "Notes",
       "en": "Notes",
@@ -1561,6 +2425,18 @@
       "ru": "Notification profile",
       "zh-Hans": "Notification profile"
     },
+    "Offers, wants, prospects, receipts, and encrypted peer inbox.": {
+      "en": "Offers, wants, prospects, receipts, and encrypted peer inbox.",
+      "de": "Angebote, Gesuche, Interessenten, Belege und verschlüsselter Peer-Posteingang.",
+      "es": "Ofertas, solicitudes, prospectos, recibos y bandeja cifrada entre pares.",
+      "fr": "Offres, demandes, prospects, reçus et boîte de réception pair à pair chiffrée.",
+      "it": "Offerte, richieste, prospect, ricevute e inbox peer cifrata.",
+      "ja": "オファー、募集、見込み、受領書、暗号化されたピア受信箱。",
+      "ko": "제안, 요청, 잠재 대상, 영수증 및 암호화된 피어 받은편지함.",
+      "pt-BR": "Ofertas, demandas, prospects, recibos e caixa de entrada peer criptografada.",
+      "ru": "Предложения, запросы, перспективы, квитанции и зашифрованный peer-входящий ящик.",
+      "zh-Hans": "供给、需求、潜在对象、收据和加密对等收件箱。"
+    },
     "Ollama runtime exposed via the bridge.": {
       "de": "Ollama runtime exposed via the bridge.",
       "en": "Ollama runtime exposed via the bridge.",
@@ -1584,6 +2460,18 @@
       "pt-BR": "Open at login",
       "ru": "Open at login",
       "zh-Hans": "Open at login"
+    },
+    "Organization": {
+      "en": "Organization",
+      "de": "Organisation",
+      "es": "Organización",
+      "fr": "Organisation",
+      "it": "Organizzazione",
+      "ja": "組織",
+      "ko": "조직",
+      "pt-BR": "Organização",
+      "ru": "Организация",
+      "zh-Hans": "组织"
     },
     "Overflow": {
       "de": "Overflow",
@@ -1633,6 +2521,90 @@
       "ru": "Pause overflow",
       "zh-Hans": "Pause overflow"
     },
+    "Paused": {
+      "en": "Paused",
+      "de": "Pausiert",
+      "es": "Pausadas",
+      "fr": "En pause",
+      "it": "In pausa",
+      "ja": "一時停止中",
+      "ko": "일시 정지됨",
+      "pt-BR": "Pausadas",
+      "ru": "Приостановлено",
+      "zh-Hans": "已暂停"
+    },
+    "Permission was denied. Review permissions, then try again.": {
+      "de": "Permission was denied. Review permissions, then try again.",
+      "en": "Permission was denied. Review permissions, then try again.",
+      "es": "Permission was denied. Review permissions, then try again.",
+      "fr": "Permission was denied. Review permissions, then try again.",
+      "it": "Permission was denied. Review permissions, then try again.",
+      "ja": "Permission was denied. Review permissions, then try again.",
+      "ko": "Permission was denied. Review permissions, then try again.",
+      "pt-BR": "Permission was denied. Review permissions, then try again.",
+      "ru": "Permission was denied. Review permissions, then try again.",
+      "zh-Hans": "Permission was denied. Review permissions, then try again."
+    },
+    "Persistent context the assistant can recall across chats.": {
+      "de": "Persistent context the assistant can recall across chats.",
+      "en": "Persistent context the assistant can recall across chats.",
+      "es": "Persistent context the assistant can recall across chats.",
+      "fr": "Persistent context the assistant can recall across chats.",
+      "it": "Persistent context the assistant can recall across chats.",
+      "ja": "Persistent context the assistant can recall across chats.",
+      "ko": "Persistent context the assistant can recall across chats.",
+      "pt-BR": "Persistent context the assistant can recall across chats.",
+      "ru": "Persistent context the assistant can recall across chats.",
+      "zh-Hans": "Persistent context the assistant can recall across chats."
+    },
+    "Personalities": {
+      "en": "Personalities",
+      "de": "Persönlichkeiten",
+      "es": "Personalidades",
+      "fr": "Personnalités",
+      "it": "Personalità",
+      "ja": "パーソナリティ",
+      "ko": "페르소나",
+      "pt-BR": "Personalidades",
+      "ru": "Персональности",
+      "zh-Hans": "人格"
+    },
+    "Personality": {
+      "de": "Persönlichkeit",
+      "en": "Personality",
+      "es": "Personalidad",
+      "fr": "Personnalité",
+      "it": "Personalità",
+      "ja": "パーソナリティ",
+      "ko": "성격",
+      "pt-BR": "Personalidade",
+      "ru": "Личность",
+      "zh-Hans": "人格"
+    },
+    "Phone": {
+      "en": "Phone",
+      "de": "Telefon",
+      "es": "Teléfono",
+      "fr": "Téléphone",
+      "it": "Telefono",
+      "ja": "電話",
+      "ko": "전화",
+      "pt-BR": "Telefone",
+      "ru": "Телефон",
+      "zh-Hans": "电话"
+    },
+    "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.": {
+      "de": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
+      "en": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
+      "es": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
+      "fr": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
+      "it": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
+      "ja": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
+      "ko": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
+      "pt-BR": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
+      "ru": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
+      "zh-Hans": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it."
+    },
     "Pinned": {
       "de": "Angeheftet",
       "en": "Pinned",
@@ -1668,6 +2640,18 @@
       "pt-BR": "Play background sound",
       "ru": "Play background sound",
       "zh-Hans": "Play background sound"
+    },
+    "Plugins": {
+      "de": "Plugins",
+      "en": "Plugins",
+      "es": "Plugins",
+      "fr": "Plugins",
+      "it": "Plugin",
+      "ja": "プラグイン",
+      "ko": "플러그인",
+      "pt-BR": "Plugins",
+      "ru": "Плагины",
+      "zh-Hans": "插件"
     },
     "Pomodoro": {
       "de": "Pomodoro",
@@ -1765,17 +2749,17 @@
       "ru": "Primary window",
       "zh-Hans": "Primary window"
     },
-    "Profile Settings": {
-      "de": "Profile Settings",
-      "en": "Profile Settings",
-      "es": "Profile Settings",
-      "fr": "Profile Settings",
-      "it": "Profile Settings",
-      "ja": "Profile Settings",
-      "ko": "Profile Settings",
-      "pt-BR": "Profile Settings",
-      "ru": "Profile Settings",
-      "zh-Hans": "Profile Settings"
+    "Procedure": {
+      "de": "Prozedur",
+      "en": "Procedure",
+      "es": "Procedimiento",
+      "fr": "Procédure",
+      "it": "Procedura",
+      "ja": "手順",
+      "ko": "절차",
+      "pt-BR": "Procedimento",
+      "ru": "Процедура",
+      "zh-Hans": "流程"
     },
     "Profile settings": {
       "de": "Profile settings",
@@ -1789,6 +2773,18 @@
       "ru": "Profile settings",
       "zh-Hans": "Profile settings"
     },
+    "Profile Settings": {
+      "de": "Profile Settings",
+      "en": "Profile Settings",
+      "es": "Profile Settings",
+      "fr": "Profile Settings",
+      "it": "Profile Settings",
+      "ja": "Profile Settings",
+      "ko": "Profile Settings",
+      "pt-BR": "Profile Settings",
+      "ru": "Profile Settings",
+      "zh-Hans": "Profile Settings"
+    },
     "Projects": {
       "de": "Projekte",
       "en": "Projects",
@@ -1800,6 +2796,30 @@
       "pt-BR": "Projetos",
       "ru": "Проекты",
       "zh-Hans": "项目"
+    },
+    "Prompt": {
+      "en": "Prompt",
+      "de": "Eingabeaufforderung",
+      "es": "Instrucción",
+      "fr": "Instruction",
+      "it": "Istruzione",
+      "ja": "プロンプト",
+      "ko": "프롬프트",
+      "pt-BR": "Instrução",
+      "ru": "Промпт",
+      "zh-Hans": "提示词"
+    },
+    "Protocol": {
+      "de": "Protocol",
+      "en": "Protocol",
+      "es": "Protocol",
+      "fr": "Protocol",
+      "it": "Protocol",
+      "ja": "Protocol",
+      "ko": "Protocol",
+      "pt-BR": "Protocol",
+      "ru": "Protocol",
+      "zh-Hans": "Protocol"
     },
     "Rate limits": {
       "de": "Rate limits",
@@ -1813,6 +2833,30 @@
       "ru": "Rate limits",
       "zh-Hans": "Rate limits"
     },
+    "read-only": {
+      "en": "read-only",
+      "de": "schreibgeschützt",
+      "es": "solo lectura",
+      "fr": "lecture seule",
+      "it": "sola lettura",
+      "ja": "読み取り専用",
+      "ko": "읽기 전용",
+      "pt-BR": "somente leitura",
+      "ru": "только чтение",
+      "zh-Hans": "只读"
+    },
+    "Read-only reports from the framework atlas and persisted scan history.": {
+      "en": "Read-only reports from the framework atlas and persisted scan history.",
+      "de": "Schreibgeschützte Berichte aus dem Framework-Atlas und gespeicherter Scan-Historie.",
+      "es": "Informes de solo lectura del atlas del framework y del historial de escaneos persistido.",
+      "fr": "Rapports en lecture seule issus de l’atlas du framework et de l’historique des analyses conservé.",
+      "it": "Report di sola lettura dall’atlante del framework e dalla cronologia scansioni persistita.",
+      "ja": "フレームワークアトラスと保存済みスキャン履歴からの読み取り専用レポート。",
+      "ko": "프레임워크 아틀라스와 저장된 스캔 기록의 읽기 전용 보고서.",
+      "pt-BR": "Relatórios somente leitura do atlas do framework e do histórico de varreduras persistido.",
+      "ru": "Отчеты только для чтения из атласа фреймворка и сохраненной истории сканирования.",
+      "zh-Hans": "来自框架图谱和持久化扫描历史的只读报告。"
+    },
     "Rebuild analytics data": {
       "de": "Rebuild analytics data",
       "en": "Rebuild analytics data",
@@ -1824,6 +2868,30 @@
       "pt-BR": "Rebuild analytics data",
       "ru": "Rebuild analytics data",
       "zh-Hans": "Rebuild analytics data"
+    },
+    "Receipt": {
+      "en": "Receipt",
+      "de": "Beleg",
+      "es": "Recibo",
+      "fr": "Reçu",
+      "it": "Ricevuta",
+      "ja": "受領書",
+      "ko": "영수증",
+      "pt-BR": "Recibo",
+      "ru": "Квитанция",
+      "zh-Hans": "收据"
+    },
+    "Receipts": {
+      "en": "Receipts",
+      "de": "Belege",
+      "es": "Recibos",
+      "fr": "Reçus",
+      "it": "Ricevute",
+      "ja": "受領書",
+      "ko": "영수증",
+      "pt-BR": "Recibos",
+      "ru": "Квитанции",
+      "zh-Hans": "收据"
     },
     "Recent": {
       "de": "Recent",
@@ -1849,6 +2917,54 @@
       "ru": "Reflection mood",
       "zh-Hans": "Reflection mood"
     },
+    "Refresh": {
+      "en": "Refresh",
+      "de": "Aktualisieren",
+      "es": "Actualizar",
+      "fr": "Actualiser",
+      "it": "Aggiorna",
+      "ja": "更新",
+      "ko": "새로 고침",
+      "pt-BR": "Atualizar",
+      "ru": "Обновить",
+      "zh-Hans": "刷新"
+    },
+    "Refreshed": {
+      "en": "Refreshed",
+      "de": "Aktualisiert",
+      "es": "Actualizado",
+      "fr": "Actualisé",
+      "it": "Aggiornato",
+      "ja": "更新済み",
+      "ko": "새로 고침됨",
+      "pt-BR": "Atualizado",
+      "ru": "Обновлено",
+      "zh-Hans": "已刷新"
+    },
+    "Reload": {
+      "de": "Reload",
+      "en": "Reload",
+      "es": "Reload",
+      "fr": "Reload",
+      "it": "Reload",
+      "ja": "Reload",
+      "ko": "Reload",
+      "pt-BR": "Reload",
+      "ru": "Reload",
+      "zh-Hans": "Reload"
+    },
+    "Reload this page after the Mac app finishes launching the new daemon.": {
+      "de": "Reload this page after the Mac app finishes launching the new daemon.",
+      "en": "Reload this page after the Mac app finishes launching the new daemon.",
+      "es": "Reload this page after the Mac app finishes launching the new daemon.",
+      "fr": "Reload this page after the Mac app finishes launching the new daemon.",
+      "it": "Reload this page after the Mac app finishes launching the new daemon.",
+      "ja": "Reload this page after the Mac app finishes launching the new daemon.",
+      "ko": "Reload this page after the Mac app finishes launching the new daemon.",
+      "pt-BR": "Reload this page after the Mac app finishes launching the new daemon.",
+      "ru": "Reload this page after the Mac app finishes launching the new daemon.",
+      "zh-Hans": "Reload this page after the Mac app finishes launching the new daemon."
+    },
     "Remove attachment": {
       "de": "Anhang entfernen",
       "en": "Remove attachment",
@@ -1873,6 +2989,42 @@
       "ru": "Repeat",
       "zh-Hans": "Repeat"
     },
+    "Repository": {
+      "de": "Repository",
+      "en": "Repository",
+      "es": "Repositorio",
+      "fr": "Dépôt",
+      "it": "Repository",
+      "ja": "リポジトリ",
+      "ko": "저장소",
+      "pt-BR": "Repositório",
+      "ru": "Репозиторий",
+      "zh-Hans": "代码仓库"
+    },
+    "Request failed. Try again in a moment.": {
+      "de": "Request failed. Try again in a moment.",
+      "en": "Request failed. Try again in a moment.",
+      "es": "Request failed. Try again in a moment.",
+      "fr": "Request failed. Try again in a moment.",
+      "it": "Request failed. Try again in a moment.",
+      "ja": "Request failed. Try again in a moment.",
+      "ko": "Request failed. Try again in a moment.",
+      "pt-BR": "Request failed. Try again in a moment.",
+      "ru": "Request failed. Try again in a moment.",
+      "zh-Hans": "Request failed. Try again in a moment."
+    },
+    "Reset filters": {
+      "de": "Filter zurücksetzen",
+      "en": "Reset filters",
+      "es": "Restablecer filtros",
+      "fr": "Réinitialiser les filtres",
+      "it": "Reimposta filtri",
+      "ja": "フィルターをリセット",
+      "ko": "필터 초기화",
+      "pt-BR": "Redefinir filtros",
+      "ru": "Сбросить фильтры",
+      "zh-Hans": "重置筛选"
+    },
     "Resume": {
       "de": "Resume",
       "en": "Resume",
@@ -1884,6 +3036,102 @@
       "pt-BR": "Resume",
       "ru": "Resume",
       "zh-Hans": "Resume"
+    },
+    "Retry": {
+      "de": "Retry",
+      "en": "Retry",
+      "es": "Retry",
+      "fr": "Retry",
+      "it": "Retry",
+      "ja": "Retry",
+      "ko": "Retry",
+      "pt-BR": "Retry",
+      "ru": "Retry",
+      "zh-Hans": "Retry"
+    },
+    "Retrying automatically.": {
+      "de": "Retrying automatically.",
+      "en": "Retrying automatically.",
+      "es": "Retrying automatically.",
+      "fr": "Retrying automatically.",
+      "it": "Retrying automatically.",
+      "ja": "Retrying automatically.",
+      "ko": "Retrying automatically.",
+      "pt-BR": "Retrying automatically.",
+      "ru": "Retrying automatically.",
+      "zh-Hans": "Retrying automatically."
+    },
+    "Role": {
+      "de": "Rolle",
+      "en": "Role",
+      "es": "Rol",
+      "fr": "Rôle",
+      "it": "Ruolo",
+      "ja": "ロール",
+      "ko": "역할",
+      "pt-BR": "Função",
+      "ru": "Роль",
+      "zh-Hans": "角色"
+    },
+    "Rollback": {
+      "en": "Rollback",
+      "de": "Zurücksetzung",
+      "es": "Reversión",
+      "fr": "Restauration",
+      "it": "Ripristino",
+      "ja": "ロールバック",
+      "ko": "롤백",
+      "pt-BR": "Reversão",
+      "ru": "Откат",
+      "zh-Hans": "回滚"
+    },
+    "Route atlas": {
+      "en": "Route atlas",
+      "de": "Routenatlas",
+      "es": "Atlas de rutas",
+      "fr": "Atlas des routes",
+      "it": "Atlante route",
+      "ja": "ルートアトラス",
+      "ko": "경로 아틀라스",
+      "pt-BR": "Atlas de rotas",
+      "ru": "Атлас маршрутов",
+      "zh-Hans": "路由图谱"
+    },
+    "Route policy, adapters, rules, and recent decisions.": {
+      "en": "Route policy, adapters, rules, and recent decisions.",
+      "de": "Routenrichtlinie, Adapter, Regeln und aktuelle Entscheidungen.",
+      "es": "Política de rutas, adaptadores, reglas y decisiones recientes.",
+      "fr": "Politique de routage, adaptateurs, règles et décisions récentes.",
+      "it": "Policy route, adattatori, regole e decisioni recenti.",
+      "ja": "ルートポリシー、アダプター、ルール、最近の判断。",
+      "ko": "경로 정책, 어댑터, 규칙 및 최근 결정.",
+      "pt-BR": "Política de rotas, adaptadores, regras e decisões recentes.",
+      "ru": "Политика маршрутов, адаптеры, правила и недавние решения.",
+      "zh-Hans": "路由策略、适配器、规则和最近决策。"
+    },
+    "Routes": {
+      "en": "Routes",
+      "de": "Routen",
+      "es": "Rutas",
+      "fr": "Itinéraires",
+      "it": "Route",
+      "ja": "ルート",
+      "ko": "경로",
+      "pt-BR": "Rotas",
+      "ru": "Маршруты",
+      "zh-Hans": "路由"
+    },
+    "Rules": {
+      "en": "Rules",
+      "de": "Regeln",
+      "es": "Reglas",
+      "fr": "Règles",
+      "it": "Regole",
+      "ja": "ルール",
+      "ko": "규칙",
+      "pt-BR": "Regras",
+      "ru": "Правила",
+      "zh-Hans": "规则"
     },
     "Rules can tune duration, notifications, website blockers and app blockers by intention/category.": {
       "de": "Rules can tune duration, notifications, website blockers and app blockers by intention/category.",
@@ -1897,6 +3145,30 @@
       "ru": "Rules can tune duration, notifications, website blockers and app blockers by intention/category.",
       "zh-Hans": "Rules can tune duration, notifications, website blockers and app blockers by intention/category."
     },
+    "Runtime": {
+      "en": "Runtime",
+      "de": "Laufzeit",
+      "es": "Entorno de ejecución",
+      "fr": "Environnement d’exécution",
+      "it": "Ambiente di esecuzione",
+      "ja": "ランタイム",
+      "ko": "런타임",
+      "pt-BR": "Ambiente de execução",
+      "ru": "Среда выполнения",
+      "zh-Hans": "运行时"
+    },
+    "Safety": {
+      "en": "Safety",
+      "de": "Sicherheit",
+      "es": "Seguridad",
+      "fr": "Sécurité",
+      "it": "Sicurezza",
+      "ja": "安全性",
+      "ko": "안전",
+      "pt-BR": "Segurança",
+      "ru": "Безопасность",
+      "zh-Hans": "安全"
+    },
     "Save Break": {
       "de": "Save Break",
       "en": "Save Break",
@@ -1908,6 +3180,42 @@
       "pt-BR": "Save Break",
       "ru": "Save Break",
       "zh-Hans": "Save Break"
+    },
+    "Scan history": {
+      "en": "Scan history",
+      "de": "Scan-Historie",
+      "es": "Historial de escaneos",
+      "fr": "Historique des analyses",
+      "it": "Cronologia scansioni",
+      "ja": "スキャン履歴",
+      "ko": "스캔 기록",
+      "pt-BR": "Histórico de varreduras",
+      "ru": "История сканирования",
+      "zh-Hans": "扫描历史"
+    },
+    "Scans": {
+      "en": "Scans",
+      "de": "Prüfläufe",
+      "es": "Escaneos",
+      "fr": "Analyses",
+      "it": "Scansioni",
+      "ja": "スキャン",
+      "ko": "스캔",
+      "pt-BR": "Varreduras",
+      "ru": "Сканирования",
+      "zh-Hans": "扫描"
+    },
+    "Schedule recurring chats so routine work runs on its own.": {
+      "en": "Schedule recurring chats so routine work runs on its own.",
+      "de": "Plane wiederkehrende Chats, damit Routinearbeit selbstständig läuft.",
+      "es": "Programa chats recurrentes para que el trabajo rutinario se ejecute solo.",
+      "fr": "Planifiez des discussions récurrentes pour automatiser le travail courant.",
+      "it": "Programma chat ricorrenti così il lavoro di routine procede da solo.",
+      "ja": "定型作業が自動で進むように定期チャットをスケジュールします。",
+      "ko": "반복 채팅을 예약해 일상 작업이 자동으로 실행되게 합니다.",
+      "pt-BR": "Agende chats recorrentes para que o trabalho de rotina rode sozinho.",
+      "ru": "Планируйте повторяющиеся чаты, чтобы рутинная работа выполнялась сама.",
+      "zh-Hans": "安排周期性聊天，让例行工作自动运行。"
     },
     "Schedule Session": {
       "de": "Schedule Session",
@@ -1933,6 +3241,126 @@
       "ru": "Поиск",
       "zh-Hans": "搜索"
     },
+    "Search catalog": {
+      "en": "Search catalog",
+      "de": "Katalog durchsuchen",
+      "es": "Buscar en catálogo",
+      "fr": "Rechercher dans le catalogue",
+      "it": "Cerca nel catalogo",
+      "ja": "カタログを検索",
+      "ko": "카탈로그 검색",
+      "pt-BR": "Pesquisar catálogo",
+      "ru": "Поиск по каталогу",
+      "zh-Hans": "搜索目录"
+    },
+    "Search contacts": {
+      "en": "Search contacts",
+      "de": "Kontakte suchen",
+      "es": "Buscar contactos",
+      "fr": "Rechercher des contacts",
+      "it": "Cerca contatti",
+      "ja": "連絡先を検索",
+      "ko": "연락처 검색",
+      "pt-BR": "Pesquisar contatos",
+      "ru": "Поиск контактов",
+      "zh-Hans": "搜索联系人"
+    },
+    "Search events": {
+      "en": "Search events",
+      "de": "Ereignisse suchen",
+      "es": "Buscar eventos",
+      "fr": "Rechercher des événements",
+      "it": "Cerca eventi",
+      "ja": "予定を検索",
+      "ko": "이벤트 검색",
+      "pt-BR": "Pesquisar eventos",
+      "ru": "Поиск событий",
+      "zh-Hans": "搜索事件"
+    },
+    "Search field": {
+      "de": "Suchfeld",
+      "en": "Search field",
+      "es": "Campo de búsqueda",
+      "fr": "Champ de recherche",
+      "it": "Campo di ricerca",
+      "ja": "検索フィールド",
+      "ko": "검색 필드",
+      "pt-BR": "Campo de pesquisa",
+      "ru": "Поле поиска",
+      "zh-Hans": "搜索字段"
+    },
+    "Search in conversations...": {
+      "de": "In Unterhaltungen suchen...",
+      "en": "Search in conversations...",
+      "es": "Buscar en conversaciones...",
+      "fr": "Rechercher dans les conversations...",
+      "it": "Cerca nelle conversazioni...",
+      "ja": "会話内を検索...",
+      "ko": "대화에서 검색...",
+      "pt-BR": "Pesquisar nas conversas...",
+      "ru": "Искать в разговорах...",
+      "zh-Hans": "在对话中搜索..."
+    },
+    "Search marketplace": {
+      "en": "Search marketplace",
+      "de": "Marktplatz durchsuchen",
+      "es": "Buscar en marketplace",
+      "fr": "Rechercher dans la place de marché",
+      "it": "Cerca nel marketplace",
+      "ja": "マーケットプレイスを検索",
+      "ko": "마켓플레이스 검색",
+      "pt-BR": "Pesquisar marketplace",
+      "ru": "Поиск по маркетплейсу",
+      "zh-Hans": "搜索市场"
+    },
+    "Search plugins": {
+      "de": "Plugins suchen",
+      "en": "Search plugins",
+      "es": "Buscar plugins",
+      "fr": "Rechercher des plugins",
+      "it": "Cerca plugin",
+      "ja": "プラグインを検索",
+      "ko": "플러그인 검색",
+      "pt-BR": "Pesquisar plugins",
+      "ru": "Искать плагины",
+      "zh-Hans": "搜索插件"
+    },
+    "Search records": {
+      "en": "Search records",
+      "de": "Datensätze suchen",
+      "es": "Buscar registros",
+      "fr": "Rechercher des enregistrements",
+      "it": "Cerca record",
+      "ja": "レコードを検索",
+      "ko": "레코드 검색",
+      "pt-BR": "Pesquisar registros",
+      "ru": "Поиск записей",
+      "zh-Hans": "搜索记录"
+    },
+    "Search skills...": {
+      "de": "Skills suchen...",
+      "en": "Search skills...",
+      "es": "Buscar skills...",
+      "fr": "Rechercher des skills...",
+      "it": "Cerca skill...",
+      "ja": "スキルを検索...",
+      "ko": "스킬 검색...",
+      "pt-BR": "Pesquisar skills...",
+      "ru": "Искать навыки...",
+      "zh-Hans": "搜索技能..."
+    },
+    "Search the web for information": {
+      "de": "Das Web nach Informationen durchsuchen",
+      "en": "Search the web for information",
+      "es": "Buscar información en la web",
+      "fr": "Rechercher des informations sur le web",
+      "it": "Cerca informazioni sul web",
+      "ja": "Webで情報を検索",
+      "ko": "웹에서 정보 검색",
+      "pt-BR": "Pesquisar informações na web",
+      "ru": "Поиск информации в интернете",
+      "zh-Hans": "在网页上搜索信息"
+    },
     "Secondary window": {
       "de": "Secondary window",
       "en": "Secondary window",
@@ -1944,6 +3372,18 @@
       "pt-BR": "Secondary window",
       "ru": "Secondary window",
       "zh-Hans": "Secondary window"
+    },
+    "Secret stored": {
+      "en": "Secret stored",
+      "de": "Secret gespeichert",
+      "es": "Secreto guardado",
+      "fr": "Secret enregistré",
+      "it": "Segreto salvato",
+      "ja": "シークレット保存済み",
+      "ko": "비밀 저장됨",
+      "pt-BR": "Segredo armazenado",
+      "ru": "Секрет сохранен",
+      "zh-Hans": "密钥已存储"
     },
     "Secrets vault": {
       "de": "Secrets vault",
@@ -1957,6 +3397,18 @@
       "ru": "Secrets vault",
       "zh-Hans": "Secrets vault"
     },
+    "Selected scan": {
+      "en": "Selected scan",
+      "de": "Ausgewählter Scan",
+      "es": "Escaneo seleccionado",
+      "fr": "Analyse sélectionnée",
+      "it": "Scansione selezionata",
+      "ja": "選択したスキャン",
+      "ko": "선택한 스캔",
+      "pt-BR": "Varredura selecionada",
+      "ru": "Выбранное сканирование",
+      "zh-Hans": "所选扫描"
+    },
     "Send": {
       "de": "Senden",
       "en": "Send",
@@ -1968,6 +3420,18 @@
       "pt-BR": "Enviar",
       "ru": "Отправить",
       "zh-Hans": "发送"
+    },
+    "Service": {
+      "en": "Service",
+      "de": "Dienst",
+      "es": "Servicio",
+      "fr": "Service connecté",
+      "it": "Servizio",
+      "ja": "サービス",
+      "ko": "서비스",
+      "pt-BR": "Serviço",
+      "ru": "Сервис",
+      "zh-Hans": "服务"
     },
     "Session": {
       "de": "Sitzung",
@@ -2089,6 +3553,18 @@
       "ru": "Session volume",
       "zh-Hans": "Session volume"
     },
+    "session://": {
+      "de": "session://",
+      "en": "session://",
+      "es": "session://",
+      "fr": "session://",
+      "it": "session://",
+      "ja": "session://",
+      "ko": "session://",
+      "pt-BR": "session://",
+      "ru": "session://",
+      "zh-Hans": "session://"
+    },
     "Settings": {
       "de": "Einstellungen",
       "en": "Settings",
@@ -2124,6 +3600,18 @@
       "pt-BR": "Short code",
       "ru": "Short code",
       "zh-Hans": "Short code"
+    },
+    "Short code must be 9 letters/digits": {
+      "de": "Short code must be 9 letters/digits",
+      "en": "Short code must be 9 letters/digits",
+      "es": "Short code must be 9 letters/digits",
+      "fr": "Short code must be 9 letters/digits",
+      "it": "Short code must be 9 letters/digits",
+      "ja": "Short code must be 9 letters/digits",
+      "ko": "Short code must be 9 letters/digits",
+      "pt-BR": "Short code must be 9 letters/digits",
+      "ru": "Short code must be 9 letters/digits",
+      "zh-Hans": "Short code must be 9 letters/digits"
     },
     "Shortcuts": {
       "de": "Shortcuts",
@@ -2209,6 +3697,30 @@
       "ru": "Show on all spaces",
       "zh-Hans": "Show on all spaces"
     },
+    "Show Sessions on Apple calendar": {
+      "de": "Show Sessions on Apple calendar",
+      "en": "Show Sessions on Apple calendar",
+      "es": "Show Sessions on Apple calendar",
+      "fr": "Show Sessions on Apple calendar",
+      "it": "Show Sessions on Apple calendar",
+      "ja": "Show Sessions on Apple calendar",
+      "ko": "Show Sessions on Apple calendar",
+      "pt-BR": "Show Sessions on Apple calendar",
+      "ru": "Show Sessions on Apple calendar",
+      "zh-Hans": "Show Sessions on Apple calendar"
+    },
+    "Show Sessions on system calendar": {
+      "de": "Show Sessions on system calendar",
+      "en": "Show Sessions on system calendar",
+      "es": "Show Sessions on system calendar",
+      "fr": "Show Sessions on system calendar",
+      "it": "Show Sessions on system calendar",
+      "ja": "Show Sessions on system calendar",
+      "ko": "Show Sessions on system calendar",
+      "pt-BR": "Show Sessions on system calendar",
+      "ru": "Show Sessions on system calendar",
+      "zh-Hans": "Show Sessions on system calendar"
+    },
     "Show total focus time today": {
       "de": "Show total focus time today",
       "en": "Show total focus time today",
@@ -2233,6 +3745,42 @@
       "ru": "Simulate Reminders sync",
       "zh-Hans": "Simulate Reminders sync"
     },
+    "Size": {
+      "en": "Size",
+      "de": "Größe",
+      "es": "Tamaño",
+      "fr": "Taille",
+      "it": "Dimensione",
+      "ja": "サイズ",
+      "ko": "크기",
+      "pt-BR": "Tamanho",
+      "ru": "Размер",
+      "zh-Hans": "大小"
+    },
+    "Skills": {
+      "de": "Skills",
+      "en": "Skills",
+      "es": "Skills",
+      "fr": "Skills",
+      "it": "Skill",
+      "ja": "スキル",
+      "ko": "스킬",
+      "pt-BR": "Skills",
+      "ru": "Навыки",
+      "zh-Hans": "技能"
+    },
+    "smart": {
+      "en": "smart",
+      "de": "intelligent",
+      "es": "inteligente",
+      "fr": "intelligent",
+      "it": "intelligente",
+      "ja": "スマート",
+      "ko": "스마트",
+      "pt-BR": "inteligente",
+      "ru": "умный",
+      "zh-Hans": "智能"
+    },
     "Snap timer interval (min)": {
       "de": "Snap timer interval (min)",
       "en": "Snap timer interval (min)",
@@ -2244,6 +3792,18 @@
       "pt-BR": "Snap timer interval (min)",
       "ru": "Snap timer interval (min)",
       "zh-Hans": "Snap timer interval (min)"
+    },
+    "Snippet": {
+      "de": "Snippet",
+      "en": "Snippet",
+      "es": "Fragmento",
+      "fr": "Extrait",
+      "it": "Snippet",
+      "ja": "スニペット",
+      "ko": "스니펫",
+      "pt-BR": "Snippet",
+      "ru": "Фрагмент",
+      "zh-Hans": "片段"
     },
     "Start": {
       "de": "Start",
@@ -2257,6 +3817,18 @@
       "ru": "Start",
       "zh-Hans": "Start"
     },
+    "Start a new conversation": {
+      "de": "Start a new conversation",
+      "en": "Start a new conversation",
+      "es": "Start a new conversation",
+      "fr": "Start a new conversation",
+      "it": "Start a new conversation",
+      "ja": "Start a new conversation",
+      "ko": "Start a new conversation",
+      "pt-BR": "Start a new conversation",
+      "ru": "Start a new conversation",
+      "zh-Hans": "Start a new conversation"
+    },
     "Start Session": {
       "de": "Start Session",
       "en": "Start Session",
@@ -2269,6 +3841,30 @@
       "ru": "Start Session",
       "zh-Hans": "Start Session"
     },
+    "started": {
+      "de": "started",
+      "en": "started",
+      "es": "started",
+      "fr": "started",
+      "it": "started",
+      "ja": "started",
+      "ko": "started",
+      "pt-BR": "started",
+      "ru": "started",
+      "zh-Hans": "started"
+    },
+    "Status": {
+      "en": "Status",
+      "de": "Zustand",
+      "es": "Estado",
+      "fr": "État",
+      "it": "Stato",
+      "ja": "ステータス",
+      "ko": "상태",
+      "pt-BR": "Situação",
+      "ru": "Статус",
+      "zh-Hans": "状态"
+    },
     "Stop": {
       "de": "Stoppen",
       "en": "Stop",
@@ -2280,6 +3876,18 @@
       "pt-BR": "Parar",
       "ru": "Остановить",
       "zh-Hans": "停止"
+    },
+    "Subscribed agents": {
+      "en": "Subscribed agents",
+      "de": "Abonnierte Agenten",
+      "es": "Agentes suscritos",
+      "fr": "Agents abonnés",
+      "it": "Agenti iscritti",
+      "ja": "購読中のエージェント",
+      "ko": "구독한 에이전트",
+      "pt-BR": "Agentes inscritos",
+      "ru": "Подписанные агенты",
+      "zh-Hans": "已订阅智能体"
     },
     "Suggested intention": {
       "de": "Suggested intention",
@@ -2304,6 +3912,78 @@
       "pt-BR": "Support request",
       "ru": "Support request",
       "zh-Hans": "Support request"
+    },
+    "Sync now": {
+      "de": "Jetzt synchronisieren",
+      "en": "Sync now",
+      "es": "Sincronizar ahora",
+      "fr": "Synchroniser",
+      "it": "Sincronizza ora",
+      "ja": "今すぐ同期",
+      "ko": "지금 동기화",
+      "pt-BR": "Sincronizar agora",
+      "ru": "Синхронизировать",
+      "zh-Hans": "立即同步"
+    },
+    "Synced": {
+      "de": "Synchronisiert",
+      "en": "Synced",
+      "es": "Sincronizado",
+      "fr": "Synchronisé",
+      "it": "Sincronizzato",
+      "ja": "同期済み",
+      "ko": "동기화됨",
+      "pt-BR": "Sincronizado",
+      "ru": "Синхронизировано",
+      "zh-Hans": "已同步"
+    },
+    "System reminders integration": {
+      "de": "System reminders integration",
+      "en": "System reminders integration",
+      "es": "System reminders integration",
+      "fr": "System reminders integration",
+      "it": "System reminders integration",
+      "ja": "System reminders integration",
+      "ko": "System reminders integration",
+      "pt-BR": "System reminders integration",
+      "ru": "System reminders integration",
+      "zh-Hans": "System reminders integration"
+    },
+    "Tab": {
+      "en": "Tab",
+      "de": "Registerkarte",
+      "es": "Pestaña",
+      "fr": "Onglet",
+      "it": "Scheda",
+      "ja": "タブ",
+      "ko": "탭",
+      "pt-BR": "Aba",
+      "ru": "Вкладка",
+      "zh-Hans": "标签页"
+    },
+    "Tags": {
+      "en": "Tags",
+      "de": "Schlagwörter",
+      "es": "Etiquetas",
+      "fr": "Étiquettes",
+      "it": "Tag",
+      "ja": "タグ",
+      "ko": "태그",
+      "pt-BR": "Etiquetas",
+      "ru": "Теги",
+      "zh-Hans": "标签"
+    },
+    "Tags, comma separated": {
+      "de": "Tags, durch Kommas getrennt",
+      "en": "Tags, comma separated",
+      "es": "Etiquetas separadas por comas",
+      "fr": "Tags séparés par des virgules",
+      "it": "Tag separati da virgole",
+      "ja": "タグ、カンマ区切り",
+      "ko": "쉼표로 구분한 태그",
+      "pt-BR": "Tags separados por vírgula",
+      "ru": "Теги через запятую",
+      "zh-Hans": "标签，用逗号分隔"
     },
     "Take Break": {
       "de": "Take Break",
@@ -2377,6 +4057,18 @@
       "ru": "Teams",
       "zh-Hans": "Teams"
     },
+    "Terminal": {
+      "de": "Terminal",
+      "en": "Terminal",
+      "es": "Terminal",
+      "fr": "Terminal",
+      "it": "Terminale",
+      "ja": "ターミナル",
+      "ko": "터미널",
+      "pt-BR": "Terminal",
+      "ru": "Терминал",
+      "zh-Hans": "终端"
+    },
     "Test ending soon": {
       "de": "Test ending soon",
       "en": "Test ending soon",
@@ -2436,6 +4128,66 @@
       "pt-BR": "Test tracker match",
       "ru": "Test tracker match",
       "zh-Hans": "Test tracker match"
+    },
+    "That model is not available. Pick another model and try again.": {
+      "de": "That model is not available. Pick another model and try again.",
+      "en": "That model is not available. Pick another model and try again.",
+      "es": "That model is not available. Pick another model and try again.",
+      "fr": "That model is not available. Pick another model and try again.",
+      "it": "That model is not available. Pick another model and try again.",
+      "ja": "That model is not available. Pick another model and try again.",
+      "ko": "That model is not available. Pick another model and try again.",
+      "pt-BR": "That model is not available. Pick another model and try again.",
+      "ru": "That model is not available. Pick another model and try again.",
+      "zh-Hans": "That model is not available. Pick another model and try again."
+    },
+    "The agent runtime is unavailable. Try again after it reconnects.": {
+      "de": "The agent runtime is unavailable. Try again after it reconnects.",
+      "en": "The agent runtime is unavailable. Try again after it reconnects.",
+      "es": "The agent runtime is unavailable. Try again after it reconnects.",
+      "fr": "The agent runtime is unavailable. Try again after it reconnects.",
+      "it": "The agent runtime is unavailable. Try again after it reconnects.",
+      "ja": "The agent runtime is unavailable. Try again after it reconnects.",
+      "ko": "The agent runtime is unavailable. Try again after it reconnects.",
+      "pt-BR": "The agent runtime is unavailable. Try again after it reconnects.",
+      "ru": "The agent runtime is unavailable. Try again after it reconnects.",
+      "zh-Hans": "The agent runtime is unavailable. Try again after it reconnects."
+    },
+    "The background bridge is unavailable. Try again after it reconnects.": {
+      "de": "The background bridge is unavailable. Try again after it reconnects.",
+      "en": "The background bridge is unavailable. Try again after it reconnects.",
+      "es": "The background bridge is unavailable. Try again after it reconnects.",
+      "fr": "The background bridge is unavailable. Try again after it reconnects.",
+      "it": "The background bridge is unavailable. Try again after it reconnects.",
+      "ja": "The background bridge is unavailable. Try again after it reconnects.",
+      "ko": "The background bridge is unavailable. Try again after it reconnects.",
+      "pt-BR": "The background bridge is unavailable. Try again after it reconnects.",
+      "ru": "The background bridge is unavailable. Try again after it reconnects.",
+      "zh-Hans": "The background bridge is unavailable. Try again after it reconnects."
+    },
+    "The network appears to be offline. Reconnect, then try again.": {
+      "de": "The network appears to be offline. Reconnect, then try again.",
+      "en": "The network appears to be offline. Reconnect, then try again.",
+      "es": "The network appears to be offline. Reconnect, then try again.",
+      "fr": "The network appears to be offline. Reconnect, then try again.",
+      "it": "The network appears to be offline. Reconnect, then try again.",
+      "ja": "The network appears to be offline. Reconnect, then try again.",
+      "ko": "The network appears to be offline. Reconnect, then try again.",
+      "pt-BR": "The network appears to be offline. Reconnect, then try again.",
+      "ru": "The network appears to be offline. Reconnect, then try again.",
+      "zh-Hans": "The network appears to be offline. Reconnect, then try again."
+    },
+    "The service is unavailable. Try again in a moment.": {
+      "de": "The service is unavailable. Try again in a moment.",
+      "en": "The service is unavailable. Try again in a moment.",
+      "es": "The service is unavailable. Try again in a moment.",
+      "fr": "The service is unavailable. Try again in a moment.",
+      "it": "The service is unavailable. Try again in a moment.",
+      "ja": "The service is unavailable. Try again in a moment.",
+      "ko": "The service is unavailable. Try again in a moment.",
+      "pt-BR": "The service is unavailable. Try again in a moment.",
+      "ru": "The service is unavailable. Try again in a moment.",
+      "zh-Hans": "The service is unavailable. Try again in a moment."
     },
     "The working directories your chats touched.": {
       "de": "The working directories your chats touched.",
@@ -2557,6 +4309,18 @@
       "ru": "Total focus",
       "zh-Hans": "Total focus"
     },
+    "Try clearing some filters above, or create a new skill.": {
+      "de": "Entferne einige Filter oben oder erstelle einen neuen Skill.",
+      "en": "Try clearing some filters above, or create a new skill.",
+      "es": "Prueba a limpiar algunos filtros o crea un nuevo skill.",
+      "fr": "Essayez de retirer des filtres ou créez un nouveau skill.",
+      "it": "Prova a rimuovere alcuni filtri o crea una nuova skill.",
+      "ja": "上のフィルターを解除するか、新しいスキルを作成してください。",
+      "ko": "위 필터를 지우거나 새 스킬을 만드세요.",
+      "pt-BR": "Tente limpar alguns filtros ou crie um novo skill.",
+      "ru": "Очистите часть фильтров или создайте новый навык.",
+      "zh-Hans": "尝试清除上方筛选条件，或创建新技能。"
+    },
     "Type": {
       "de": "Type",
       "en": "Type",
@@ -2569,17 +4333,17 @@
       "ru": "Type",
       "zh-Hans": "Type"
     },
-    "URL scheme": {
-      "de": "URL scheme",
-      "en": "URL scheme",
-      "es": "URL scheme",
-      "fr": "URL scheme",
-      "it": "URL scheme",
-      "ja": "URL scheme",
-      "ko": "URL scheme",
-      "pt-BR": "URL scheme",
-      "ru": "URL scheme",
-      "zh-Hans": "URL scheme"
+    "Type to search your conversations": {
+      "de": "Tippe, um deine Unterhaltungen zu durchsuchen",
+      "en": "Type to search your conversations",
+      "es": "Escribe para buscar en tus conversaciones",
+      "fr": "Saisissez du texte pour rechercher dans vos conversations",
+      "it": "Digita per cercare nelle conversazioni",
+      "ja": "入力して会話を検索",
+      "ko": "대화를 검색하려면 입력하세요",
+      "pt-BR": "Digite para pesquisar nas suas conversas",
+      "ru": "Введите текст, чтобы искать в разговорах",
+      "zh-Hans": "输入内容以搜索你的对话"
     },
     "Undo abandon": {
       "de": "Undo abandon",
@@ -2605,6 +4369,78 @@
       "ru": "Unpair this browser",
       "zh-Hans": "Unpair this browser"
     },
+    "Unread alerts": {
+      "en": "Unread alerts",
+      "de": "Ungelesene Hinweise",
+      "es": "Alertas sin leer",
+      "fr": "Alertes non lues",
+      "it": "Avvisi non letti",
+      "ja": "未読アラート",
+      "ko": "읽지 않은 알림",
+      "pt-BR": "Alertas não lidos",
+      "ru": "Непрочитанные оповещения",
+      "zh-Hans": "未读提醒"
+    },
+    "Unread inbox": {
+      "en": "Unread inbox",
+      "de": "Ungelesener Posteingang",
+      "es": "Bandeja sin leer",
+      "fr": "Boîte non lue",
+      "it": "Inbox non letta",
+      "ja": "未読の受信箱",
+      "ko": "읽지 않은 받은편지함",
+      "pt-BR": "Caixa de entrada não lida",
+      "ru": "Непрочитанные входящие",
+      "zh-Hans": "未读收件箱"
+    },
+    "Untitled": {
+      "de": "Untitled",
+      "en": "Untitled",
+      "es": "Untitled",
+      "fr": "Untitled",
+      "it": "Untitled",
+      "ja": "Untitled",
+      "ko": "Untitled",
+      "pt-BR": "Untitled",
+      "ru": "Untitled",
+      "zh-Hans": "Untitled"
+    },
+    "URL scheme": {
+      "de": "URL scheme",
+      "en": "URL scheme",
+      "es": "URL scheme",
+      "fr": "URL scheme",
+      "it": "URL scheme",
+      "ja": "URL scheme",
+      "ko": "URL scheme",
+      "pt-BR": "URL scheme",
+      "ru": "URL scheme",
+      "zh-Hans": "URL scheme"
+    },
+    "Used by": {
+      "en": "Used by",
+      "de": "Verwendet von",
+      "es": "Usado por",
+      "fr": "Utilisé par",
+      "it": "Usato da",
+      "ja": "使用元",
+      "ko": "사용 중",
+      "pt-BR": "Usado por",
+      "ru": "Используется",
+      "zh-Hans": "使用者"
+    },
+    "Version": {
+      "en": "Version",
+      "de": "Fassung",
+      "es": "Versión",
+      "fr": "Révision",
+      "it": "Versione",
+      "ja": "バージョン",
+      "ko": "버전",
+      "pt-BR": "Versão",
+      "ru": "Версия",
+      "zh-Hans": "版本"
+    },
     "Voice": {
       "de": "Voice",
       "en": "Voice",
@@ -2628,6 +4464,18 @@
       "pt-BR": "Web",
       "ru": "Web",
       "zh-Hans": "Web"
+    },
+    "Web search": {
+      "de": "Websuche",
+      "en": "Web search",
+      "es": "Búsqueda web",
+      "fr": "Recherche web",
+      "it": "Ricerca web",
+      "ja": "Web検索",
+      "ko": "웹 검색",
+      "pt-BR": "Pesquisa na web",
+      "ru": "Веб-поиск",
+      "zh-Hans": "网页搜索"
     },
     "Website blocker": {
       "de": "Website blocker",
@@ -2725,582 +4573,6 @@
       "ru": "Write down your thoughts, learning, or distraction...",
       "zh-Hans": "Write down your thoughts, learning, or distraction..."
     },
-    "example.com&#10;social.example": {
-      "de": "example.com&#10;social.example",
-      "en": "example.com&#10;social.example",
-      "es": "example.com&#10;social.example",
-      "fr": "example.com&#10;social.example",
-      "it": "example.com&#10;social.example",
-      "ja": "example.com&#10;social.example",
-      "ko": "example.com&#10;social.example",
-      "pt-BR": "example.com&#10;social.example",
-      "ru": "example.com&#10;social.example",
-      "zh-Hans": "example.com&#10;social.example"
-    },
-    "session://": {
-      "de": "session://",
-      "en": "session://",
-      "es": "session://",
-      "fr": "session://",
-      "it": "session://",
-      "ja": "session://",
-      "ko": "session://",
-      "pt-BR": "session://",
-      "ru": "session://",
-      "zh-Hans": "session://"
-    },
-    "started": {
-      "de": "started",
-      "en": "started",
-      "es": "started",
-      "fr": "started",
-      "it": "started",
-      "ja": "started",
-      "ko": "started",
-      "pt-BR": "started",
-      "ru": "started",
-      "zh-Hans": "started"
-    },
-    "Persistent context the assistant can recall across chats.": {
-      "de": "Persistent context the assistant can recall across chats.",
-      "en": "Persistent context the assistant can recall across chats.",
-      "es": "Persistent context the assistant can recall across chats.",
-      "fr": "Persistent context the assistant can recall across chats.",
-      "it": "Persistent context the assistant can recall across chats.",
-      "ja": "Persistent context the assistant can recall across chats.",
-      "ko": "Persistent context the assistant can recall across chats.",
-      "pt-BR": "Persistent context the assistant can recall across chats.",
-      "ru": "Persistent context the assistant can recall across chats.",
-      "zh-Hans": "Persistent context the assistant can recall across chats."
-    },
-    "Show Sessions on system calendar": {
-      "de": "Show Sessions on system calendar",
-      "en": "Show Sessions on system calendar",
-      "es": "Show Sessions on system calendar",
-      "fr": "Show Sessions on system calendar",
-      "it": "Show Sessions on system calendar",
-      "ja": "Show Sessions on system calendar",
-      "ko": "Show Sessions on system calendar",
-      "pt-BR": "Show Sessions on system calendar",
-      "ru": "Show Sessions on system calendar",
-      "zh-Hans": "Show Sessions on system calendar"
-    },
-    "The network appears to be offline. Reconnect, then try again.": {
-      "de": "The network appears to be offline. Reconnect, then try again.",
-      "en": "The network appears to be offline. Reconnect, then try again.",
-      "es": "The network appears to be offline. Reconnect, then try again.",
-      "fr": "The network appears to be offline. Reconnect, then try again.",
-      "it": "The network appears to be offline. Reconnect, then try again.",
-      "ja": "The network appears to be offline. Reconnect, then try again.",
-      "ko": "The network appears to be offline. Reconnect, then try again.",
-      "pt-BR": "The network appears to be offline. Reconnect, then try again.",
-      "ru": "The network appears to be offline. Reconnect, then try again.",
-      "zh-Hans": "The network appears to be offline. Reconnect, then try again."
-    },
-    "Permission was denied. Review permissions, then try again.": {
-      "de": "Permission was denied. Review permissions, then try again.",
-      "en": "Permission was denied. Review permissions, then try again.",
-      "es": "Permission was denied. Review permissions, then try again.",
-      "fr": "Permission was denied. Review permissions, then try again.",
-      "it": "Permission was denied. Review permissions, then try again.",
-      "ja": "Permission was denied. Review permissions, then try again.",
-      "ko": "Permission was denied. Review permissions, then try again.",
-      "pt-BR": "Permission was denied. Review permissions, then try again.",
-      "ru": "Permission was denied. Review permissions, then try again.",
-      "zh-Hans": "Permission was denied. Review permissions, then try again."
-    },
-    "That model is not available. Pick another model and try again.": {
-      "de": "That model is not available. Pick another model and try again.",
-      "en": "That model is not available. Pick another model and try again.",
-      "es": "That model is not available. Pick another model and try again.",
-      "fr": "That model is not available. Pick another model and try again.",
-      "it": "That model is not available. Pick another model and try again.",
-      "ja": "That model is not available. Pick another model and try again.",
-      "ko": "That model is not available. Pick another model and try again.",
-      "pt-BR": "That model is not available. Pick another model and try again.",
-      "ru": "That model is not available. Pick another model and try again.",
-      "zh-Hans": "That model is not available. Pick another model and try again."
-    },
-    "The background bridge is unavailable. Try again after it reconnects.": {
-      "de": "The background bridge is unavailable. Try again after it reconnects.",
-      "en": "The background bridge is unavailable. Try again after it reconnects.",
-      "es": "The background bridge is unavailable. Try again after it reconnects.",
-      "fr": "The background bridge is unavailable. Try again after it reconnects.",
-      "it": "The background bridge is unavailable. Try again after it reconnects.",
-      "ja": "The background bridge is unavailable. Try again after it reconnects.",
-      "ko": "The background bridge is unavailable. Try again after it reconnects.",
-      "pt-BR": "The background bridge is unavailable. Try again after it reconnects.",
-      "ru": "The background bridge is unavailable. Try again after it reconnects.",
-      "zh-Hans": "The background bridge is unavailable. Try again after it reconnects."
-    },
-    "The agent runtime is unavailable. Try again after it reconnects.": {
-      "de": "The agent runtime is unavailable. Try again after it reconnects.",
-      "en": "The agent runtime is unavailable. Try again after it reconnects.",
-      "es": "The agent runtime is unavailable. Try again after it reconnects.",
-      "fr": "The agent runtime is unavailable. Try again after it reconnects.",
-      "it": "The agent runtime is unavailable. Try again after it reconnects.",
-      "ja": "The agent runtime is unavailable. Try again after it reconnects.",
-      "ko": "The agent runtime is unavailable. Try again after it reconnects.",
-      "pt-BR": "The agent runtime is unavailable. Try again after it reconnects.",
-      "ru": "The agent runtime is unavailable. Try again after it reconnects.",
-      "zh-Hans": "The agent runtime is unavailable. Try again after it reconnects."
-    },
-    "The service is unavailable. Try again in a moment.": {
-      "de": "The service is unavailable. Try again in a moment.",
-      "en": "The service is unavailable. Try again in a moment.",
-      "es": "The service is unavailable. Try again in a moment.",
-      "fr": "The service is unavailable. Try again in a moment.",
-      "it": "The service is unavailable. Try again in a moment.",
-      "ja": "The service is unavailable. Try again in a moment.",
-      "ko": "The service is unavailable. Try again in a moment.",
-      "pt-BR": "The service is unavailable. Try again in a moment.",
-      "ru": "The service is unavailable. Try again in a moment.",
-      "zh-Hans": "The service is unavailable. Try again in a moment."
-    },
-    "Request failed. Try again in a moment.": {
-      "de": "Request failed. Try again in a moment.",
-      "en": "Request failed. Try again in a moment.",
-      "es": "Request failed. Try again in a moment.",
-      "fr": "Request failed. Try again in a moment.",
-      "it": "Request failed. Try again in a moment.",
-      "ja": "Request failed. Try again in a moment.",
-      "ko": "Request failed. Try again in a moment.",
-      "pt-BR": "Request failed. Try again in a moment.",
-      "ru": "Request failed. Try again in a moment.",
-      "zh-Hans": "Request failed. Try again in a moment."
-    },
-    "Start a new conversation": {
-      "de": "Start a new conversation",
-      "en": "Start a new conversation",
-      "es": "Start a new conversation",
-      "fr": "Start a new conversation",
-      "it": "Start a new conversation",
-      "ja": "Start a new conversation",
-      "ko": "Start a new conversation",
-      "pt-BR": "Start a new conversation",
-      "ru": "Start a new conversation",
-      "zh-Hans": "Start a new conversation"
-    },
-    "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.": {
-      "de": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
-      "en": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
-      "es": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
-      "fr": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
-      "it": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
-      "ja": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
-      "ko": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
-      "pt-BR": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
-      "ru": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it.",
-      "zh-Hans": "Pick a chat from the sidebar or write below to start a new one. Clawix runs on your Mac; this page is a window into it."
-    },
-    "Untitled": {
-      "de": "Untitled",
-      "en": "Untitled",
-      "es": "Untitled",
-      "fr": "Untitled",
-      "it": "Untitled",
-      "ja": "Untitled",
-      "ko": "Untitled",
-      "pt-BR": "Untitled",
-      "ru": "Untitled",
-      "zh-Hans": "Untitled"
-    },
-    "Loading older...": {
-      "de": "Loading older...",
-      "en": "Loading older...",
-      "es": "Loading older...",
-      "fr": "Loading older...",
-      "it": "Loading older...",
-      "ja": "Loading older...",
-      "ko": "Loading older...",
-      "pt-BR": "Loading older...",
-      "ru": "Loading older...",
-      "zh-Hans": "Loading older..."
-    },
-    "No messages yet": {
-      "de": "No messages yet",
-      "en": "No messages yet",
-      "es": "No messages yet",
-      "fr": "No messages yet",
-      "it": "No messages yet",
-      "ja": "No messages yet",
-      "ko": "No messages yet",
-      "pt-BR": "No messages yet",
-      "ru": "No messages yet",
-      "zh-Hans": "No messages yet"
-    },
-    "Short code must be 9 letters/digits": {
-      "de": "Short code must be 9 letters/digits",
-      "en": "Short code must be 9 letters/digits",
-      "es": "Short code must be 9 letters/digits",
-      "fr": "Short code must be 9 letters/digits",
-      "it": "Short code must be 9 letters/digits",
-      "ja": "Short code must be 9 letters/digits",
-      "ko": "Short code must be 9 letters/digits",
-      "pt-BR": "Short code must be 9 letters/digits",
-      "ru": "Short code must be 9 letters/digits",
-      "zh-Hans": "Short code must be 9 letters/digits"
-    },
-    "Connecting...": {
-      "de": "Connecting...",
-      "en": "Connecting...",
-      "es": "Connecting...",
-      "fr": "Connecting...",
-      "it": "Connecting...",
-      "ja": "Connecting...",
-      "ko": "Connecting...",
-      "pt-BR": "Connecting...",
-      "ru": "Connecting...",
-      "zh-Hans": "Connecting..."
-    },
-    "Connect": {
-      "de": "Connect",
-      "en": "Connect",
-      "es": "Connect",
-      "fr": "Connect",
-      "it": "Connect",
-      "ja": "Connect",
-      "ko": "Connect",
-      "pt-BR": "Connect",
-      "ru": "Connect",
-      "zh-Hans": "Connect"
-    },
-    "No projects yet. Start a chat with a working directory to see it here.": {
-      "de": "No projects yet. Start a chat with a working directory to see it here.",
-      "en": "No projects yet. Start a chat with a working directory to see it here.",
-      "es": "No projects yet. Start a chat with a working directory to see it here.",
-      "fr": "No projects yet. Start a chat with a working directory to see it here.",
-      "it": "No projects yet. Start a chat with a working directory to see it here.",
-      "ja": "No projects yet. Start a chat with a working directory to see it here.",
-      "ko": "No projects yet. Start a chat with a working directory to see it here.",
-      "pt-BR": "No projects yet. Start a chat with a working directory to see it here.",
-      "ru": "No projects yet. Start a chat with a working directory to see it here.",
-      "zh-Hans": "No projects yet. Start a chat with a working directory to see it here."
-    },
-    "No data yet.": {
-      "de": "No data yet.",
-      "en": "No data yet.",
-      "es": "No data yet.",
-      "fr": "No data yet.",
-      "it": "No data yet.",
-      "ja": "No data yet.",
-      "ko": "No data yet.",
-      "pt-BR": "No data yet.",
-      "ru": "No data yet.",
-      "zh-Hans": "No data yet."
-    },
-    "Your Mac is running a newer Clawix bridge.": {
-      "de": "Your Mac is running a newer Clawix bridge.",
-      "en": "Your Mac is running a newer Clawix bridge.",
-      "es": "Your Mac is running a newer Clawix bridge.",
-      "fr": "Your Mac is running a newer Clawix bridge.",
-      "it": "Your Mac is running a newer Clawix bridge.",
-      "ja": "Your Mac is running a newer Clawix bridge.",
-      "ko": "Your Mac is running a newer Clawix bridge.",
-      "pt-BR": "Your Mac is running a newer Clawix bridge.",
-      "ru": "Your Mac is running a newer Clawix bridge.",
-      "zh-Hans": "Your Mac is running a newer Clawix bridge."
-    },
-    "Protocol": {
-      "de": "Protocol",
-      "en": "Protocol",
-      "es": "Protocol",
-      "fr": "Protocol",
-      "it": "Protocol",
-      "ja": "Protocol",
-      "ko": "Protocol",
-      "pt-BR": "Protocol",
-      "ru": "Protocol",
-      "zh-Hans": "Protocol"
-    },
-    "Reload this page after the Mac app finishes launching the new daemon.": {
-      "de": "Reload this page after the Mac app finishes launching the new daemon.",
-      "en": "Reload this page after the Mac app finishes launching the new daemon.",
-      "es": "Reload this page after the Mac app finishes launching the new daemon.",
-      "fr": "Reload this page after the Mac app finishes launching the new daemon.",
-      "it": "Reload this page after the Mac app finishes launching the new daemon.",
-      "ja": "Reload this page after the Mac app finishes launching the new daemon.",
-      "ko": "Reload this page after the Mac app finishes launching the new daemon.",
-      "pt-BR": "Reload this page after the Mac app finishes launching the new daemon.",
-      "ru": "Reload this page after the Mac app finishes launching the new daemon.",
-      "zh-Hans": "Reload this page after the Mac app finishes launching the new daemon."
-    },
-    "Reload": {
-      "de": "Reload",
-      "en": "Reload",
-      "es": "Reload",
-      "fr": "Reload",
-      "it": "Reload",
-      "ja": "Reload",
-      "ko": "Reload",
-      "pt-BR": "Reload",
-      "ru": "Reload",
-      "zh-Hans": "Reload"
-    },
-    "Retrying automatically.": {
-      "de": "Retrying automatically.",
-      "en": "Retrying automatically.",
-      "es": "Retrying automatically.",
-      "fr": "Retrying automatically.",
-      "it": "Retrying automatically.",
-      "ja": "Retrying automatically.",
-      "ko": "Retrying automatically.",
-      "pt-BR": "Retrying automatically.",
-      "ru": "Retrying automatically.",
-      "zh-Hans": "Retrying automatically."
-    },
-    "Retry": {
-      "de": "Retry",
-      "en": "Retry",
-      "es": "Retry",
-      "fr": "Retry",
-      "it": "Retry",
-      "ja": "Retry",
-      "ko": "Retry",
-      "pt-BR": "Retry",
-      "ru": "Retry",
-      "zh-Hans": "Retry"
-    },
-    "Search in conversations...": {
-      "de": "In Unterhaltungen suchen...",
-      "en": "Search in conversations...",
-      "es": "Buscar en conversaciones...",
-      "fr": "Rechercher dans les conversations...",
-      "it": "Cerca nelle conversazioni...",
-      "ja": "会話内を検索...",
-      "ko": "대화에서 검색...",
-      "pt-BR": "Pesquisar nas conversas...",
-      "ru": "Искать в разговорах...",
-      "zh-Hans": "在对话中搜索..."
-    },
-    "Search field": {
-      "de": "Suchfeld",
-      "en": "Search field",
-      "es": "Campo de búsqueda",
-      "fr": "Champ de recherche",
-      "it": "Campo di ricerca",
-      "ja": "検索フィールド",
-      "ko": "검색 필드",
-      "pt-BR": "Campo de pesquisa",
-      "ru": "Поле поиска",
-      "zh-Hans": "搜索字段"
-    },
-    "Clear search": {
-      "de": "Suche leeren",
-      "en": "Clear search",
-      "es": "Borrar búsqueda",
-      "fr": "Effacer la recherche",
-      "it": "Cancella ricerca",
-      "ja": "検索をクリア",
-      "ko": "검색 지우기",
-      "pt-BR": "Limpar pesquisa",
-      "ru": "Очистить поиск",
-      "zh-Hans": "清除搜索"
-    },
-    "Type to search your conversations": {
-      "de": "Tippe, um deine Unterhaltungen zu durchsuchen",
-      "en": "Type to search your conversations",
-      "es": "Escribe para buscar en tus conversaciones",
-      "fr": "Saisissez du texte pour rechercher dans vos conversations",
-      "it": "Digita per cercare nelle conversazioni",
-      "ja": "入力して会話を検索",
-      "ko": "대화를 검색하려면 입력하세요",
-      "pt-BR": "Digite para pesquisar nas suas conversas",
-      "ru": "Введите текст, чтобы искать в разговорах",
-      "zh-Hans": "输入内容以搜索你的对话"
-    },
-    "No results for": {
-      "de": "Keine Ergebnisse für",
-      "en": "No results for",
-      "es": "No hay resultados para",
-      "fr": "Aucun résultat pour",
-      "it": "Nessun risultato per",
-      "ja": "結果なし:",
-      "ko": "결과 없음:",
-      "pt-BR": "Nenhum resultado para",
-      "ru": "Нет результатов для",
-      "zh-Hans": "没有结果:"
-    },
-    "Message": {
-      "de": "Nachricht",
-      "en": "Message",
-      "es": "Mensaje",
-      "fr": "Message",
-      "it": "Messaggio",
-      "ja": "メッセージ",
-      "ko": "메시지",
-      "pt-BR": "Mensagem",
-      "ru": "Сообщение",
-      "zh-Hans": "消息"
-    },
-    "Chat": {
-      "de": "Chat",
-      "en": "Chat",
-      "es": "Chat",
-      "fr": "Chat",
-      "it": "Chat",
-      "ja": "チャット",
-      "ko": "채팅",
-      "pt-BR": "Chat",
-      "ru": "Чат",
-      "zh-Hans": "聊天"
-    },
-    "Plugins": {
-      "de": "Plugins",
-      "en": "Plugins",
-      "es": "Plugins",
-      "fr": "Plugins",
-      "it": "Plugin",
-      "ja": "プラグイン",
-      "ko": "플러그인",
-      "pt-BR": "Plugins",
-      "ru": "Плагины",
-      "zh-Hans": "插件"
-    },
-    "Search plugins": {
-      "de": "Plugins suchen",
-      "en": "Search plugins",
-      "es": "Buscar plugins",
-      "fr": "Rechercher des plugins",
-      "it": "Cerca plugin",
-      "ja": "プラグインを検索",
-      "ko": "플러그인 검색",
-      "pt-BR": "Pesquisar plugins",
-      "ru": "Искать плагины",
-      "zh-Hans": "搜索插件"
-    },
-    "Repository": {
-      "de": "Repository",
-      "en": "Repository",
-      "es": "Repositorio",
-      "fr": "Dépôt",
-      "it": "Repository",
-      "ja": "リポジトリ",
-      "ko": "저장소",
-      "pt-BR": "Repositório",
-      "ru": "Репозиторий",
-      "zh-Hans": "代码仓库"
-    },
-    "Integration with code repositories": {
-      "de": "Integration mit Code-Repositories",
-      "en": "Integration with code repositories",
-      "es": "Integración con repositorios de código",
-      "fr": "Intégration avec des dépôts de code",
-      "it": "Integrazione con repository di codice",
-      "ja": "コードリポジトリとの連携",
-      "ko": "코드 저장소와 연동",
-      "pt-BR": "Integração com repositórios de código",
-      "ru": "Интеграция с репозиториями кода",
-      "zh-Hans": "与代码仓库集成"
-    },
-    "Terminal": {
-      "de": "Terminal",
-      "en": "Terminal",
-      "es": "Terminal",
-      "fr": "Terminal",
-      "it": "Terminale",
-      "ja": "ターミナル",
-      "ko": "터미널",
-      "pt-BR": "Terminal",
-      "ru": "Терминал",
-      "zh-Hans": "终端"
-    },
-    "Access to the system terminal": {
-      "de": "Zugriff auf das Systemterminal",
-      "en": "Access to the system terminal",
-      "es": "Acceso al terminal del sistema",
-      "fr": "Accès au terminal système",
-      "it": "Accesso al terminale di sistema",
-      "ja": "システムターミナルへのアクセス",
-      "ko": "시스템 터미널 접근",
-      "pt-BR": "Acesso ao terminal do sistema",
-      "ru": "Доступ к системному терминалу",
-      "zh-Hans": "访问系统终端"
-    },
-    "Web search": {
-      "de": "Websuche",
-      "en": "Web search",
-      "es": "Búsqueda web",
-      "fr": "Recherche web",
-      "it": "Ricerca web",
-      "ja": "Web検索",
-      "ko": "웹 검색",
-      "pt-BR": "Pesquisa na web",
-      "ru": "Веб-поиск",
-      "zh-Hans": "网页搜索"
-    },
-    "Search the web for information": {
-      "de": "Das Web nach Informationen durchsuchen",
-      "en": "Search the web for information",
-      "es": "Buscar información en la web",
-      "fr": "Rechercher des informations sur le web",
-      "it": "Cerca informazioni sul web",
-      "ja": "Webで情報を検索",
-      "ko": "웹에서 정보 검색",
-      "pt-BR": "Pesquisar informações na web",
-      "ru": "Поиск информации в интернете",
-      "zh-Hans": "在网页上搜索信息"
-    },
-    "Enabled": {
-      "de": "Aktiviert",
-      "en": "Enabled",
-      "es": "Activado",
-      "fr": "Activé",
-      "it": "Abilitato",
-      "ja": "有効",
-      "ko": "활성화됨",
-      "pt-BR": "Ativado",
-      "ru": "Включено",
-      "zh-Hans": "已启用"
-    },
-    "Disabled": {
-      "de": "Deaktiviert",
-      "en": "Disabled",
-      "es": "Desactivado",
-      "fr": "Désactivé",
-      "it": "Disabilitato",
-      "ja": "無効",
-      "ko": "비활성화됨",
-      "pt-BR": "Desativado",
-      "ru": "Отключено",
-      "zh-Hans": "已停用"
-    },
-    "No plugins match": {
-      "de": "Keine passenden Plugins",
-      "en": "No plugins match",
-      "es": "No hay plugins coincidentes",
-      "fr": "Aucun plugin ne correspond",
-      "it": "Nessun plugin corrisponde",
-      "ja": "一致するプラグインはありません",
-      "ko": "일치하는 플러그인이 없습니다",
-      "pt-BR": "Nenhum plugin corresponde",
-      "ru": "Нет подходящих плагинов",
-      "zh-Hans": "没有匹配的插件"
-    },
-    "Show Sessions on Apple calendar": {
-      "de": "Show Sessions on Apple calendar",
-      "en": "Show Sessions on Apple calendar",
-      "es": "Show Sessions on Apple calendar",
-      "fr": "Show Sessions on Apple calendar",
-      "it": "Show Sessions on Apple calendar",
-      "ja": "Show Sessions on Apple calendar",
-      "ko": "Show Sessions on Apple calendar",
-      "pt-BR": "Show Sessions on Apple calendar",
-      "ru": "Show Sessions on Apple calendar",
-      "zh-Hans": "Show Sessions on Apple calendar"
-    },
-    "Skills": {
-      "de": "Skills",
-      "en": "Skills",
-      "es": "Skills",
-      "fr": "Skills",
-      "it": "Skill",
-      "ja": "スキル",
-      "ko": "스킬",
-      "pt-BR": "Skills",
-      "ru": "Навыки",
-      "zh-Hans": "技能"
-    },
     "Your central library. Activate per chat, project or globally. Sync to other agents on toggle.": {
       "de": "Deine zentrale Bibliothek. Aktiviere pro Chat, Projekt oder global. Beim Umschalten mit anderen Agenten synchronisieren.",
       "en": "Your central library. Activate per chat, project or globally. Sync to other agents on toggle.",
@@ -3313,257 +4585,17 @@
       "ru": "Центральная библиотека. Включайте для чата, проекта или глобально. Синхронизируйте с другими агентами при переключении.",
       "zh-Hans": "你的中央库。可按聊天、项目或全局启用，并在切换时同步到其他代理。"
     },
-    "Search skills...": {
-      "de": "Skills suchen...",
-      "en": "Search skills...",
-      "es": "Buscar skills...",
-      "fr": "Rechercher des skills...",
-      "it": "Cerca skill...",
-      "ja": "スキルを検索...",
-      "ko": "스킬 검색...",
-      "pt-BR": "Pesquisar skills...",
-      "ru": "Искать навыки...",
-      "zh-Hans": "搜索技能..."
-    },
-    "Synced": {
-      "de": "Synchronisiert",
-      "en": "Synced",
-      "es": "Sincronizado",
-      "fr": "Synchronisé",
-      "it": "Sincronizzato",
-      "ja": "同期済み",
-      "ko": "동기화됨",
-      "pt-BR": "Sincronizado",
-      "ru": "Синхронизировано",
-      "zh-Hans": "已同步"
-    },
-    "Sync now": {
-      "de": "Jetzt synchronisieren",
-      "en": "Sync now",
-      "es": "Sincronizar ahora",
-      "fr": "Synchroniser",
-      "it": "Sincronizza ora",
-      "ja": "今すぐ同期",
-      "ko": "지금 동기화",
-      "pt-BR": "Sincronizar agora",
-      "ru": "Синхронизировать",
-      "zh-Hans": "立即同步"
-    },
-    "New skill": {
-      "de": "Neuer Skill",
-      "en": "New skill",
-      "es": "Nuevo skill",
-      "fr": "Nouveau skill",
-      "it": "Nuova skill",
-      "ja": "新しいスキル",
-      "ko": "새 스킬",
-      "pt-BR": "Novo skill",
-      "ru": "Новый навык",
-      "zh-Hans": "新技能"
-    },
-    "All kinds": {
-      "de": "Alle Arten",
-      "en": "All kinds",
-      "es": "Todos los tipos",
-      "fr": "Tous les types",
-      "it": "Tutti i tipi",
-      "ja": "すべての種類",
-      "ko": "모든 종류",
-      "pt-BR": "Todos os tipos",
-      "ru": "Все типы",
-      "zh-Hans": "所有类型"
-    },
-    "Personality": {
-      "de": "Persönlichkeit",
-      "en": "Personality",
-      "es": "Personalidad",
-      "fr": "Personnalité",
-      "it": "Personalità",
-      "ja": "パーソナリティ",
-      "ko": "성격",
-      "pt-BR": "Personalidade",
-      "ru": "Личность",
-      "zh-Hans": "人格"
-    },
-    "Procedure": {
-      "de": "Prozedur",
-      "en": "Procedure",
-      "es": "Procedimiento",
-      "fr": "Procédure",
-      "it": "Procedura",
-      "ja": "手順",
-      "ko": "절차",
-      "pt-BR": "Procedimento",
-      "ru": "Процедура",
-      "zh-Hans": "流程"
-    },
-    "Snippet": {
-      "de": "Snippet",
-      "en": "Snippet",
-      "es": "Fragmento",
-      "fr": "Extrait",
-      "it": "Snippet",
-      "ja": "スニペット",
-      "ko": "스니펫",
-      "pt-BR": "Snippet",
-      "ru": "Фрагмент",
-      "zh-Hans": "片段"
-    },
-    "Role": {
-      "de": "Rolle",
-      "en": "Role",
-      "es": "Rol",
-      "fr": "Rôle",
-      "it": "Ruolo",
-      "ja": "ロール",
-      "ko": "역할",
-      "pt-BR": "Função",
-      "ru": "Роль",
-      "zh-Hans": "角色"
-    },
-    "Reset filters": {
-      "de": "Filter zurücksetzen",
-      "en": "Reset filters",
-      "es": "Restablecer filtros",
-      "fr": "Réinitialiser les filtres",
-      "it": "Reimposta filtri",
-      "ja": "フィルターをリセット",
-      "ko": "필터 초기화",
-      "pt-BR": "Redefinir filtros",
-      "ru": "Сбросить фильтры",
-      "zh-Hans": "重置筛选"
-    },
-    "No skills match these filters.": {
-      "de": "Keine Skills passen zu diesen Filtern.",
-      "en": "No skills match these filters.",
-      "es": "Ningún skill coincide con estos filtros.",
-      "fr": "Aucun skill ne correspond à ces filtres.",
-      "it": "Nessuna skill corrisponde a questi filtri.",
-      "ja": "これらのフィルターに一致するスキルはありません。",
-      "ko": "이 필터와 일치하는 스킬이 없습니다.",
-      "pt-BR": "Nenhum skill corresponde a estes filtros.",
-      "ru": "Нет навыков для этих фильтров.",
-      "zh-Hans": "没有技能匹配这些筛选条件。"
-    },
-    "No skills yet.": {
-      "de": "Noch keine Skills.",
-      "en": "No skills yet.",
-      "es": "Aún no hay skills.",
-      "fr": "Aucun skill pour le moment.",
-      "it": "Ancora nessuna skill.",
-      "ja": "まだスキルはありません。",
-      "ko": "아직 스킬이 없습니다.",
-      "pt-BR": "Ainda não há skills.",
-      "ru": "Навыков пока нет.",
-      "zh-Hans": "还没有技能。"
-    },
-    "Try clearing some filters above, or create a new skill.": {
-      "de": "Entferne einige Filter oben oder erstelle einen neuen Skill.",
-      "en": "Try clearing some filters above, or create a new skill.",
-      "es": "Prueba a limpiar algunos filtros o crea un nuevo skill.",
-      "fr": "Essayez de retirer des filtres ou créez un nouveau skill.",
-      "it": "Prova a rimuovere alcuni filtri o crea una nuova skill.",
-      "ja": "上のフィルターを解除するか、新しいスキルを作成してください。",
-      "ko": "위 필터를 지우거나 새 스킬을 만드세요.",
-      "pt-BR": "Tente limpar alguns filtros ou crie um novo skill.",
-      "ru": "Очистите часть фильтров или создайте новый навык.",
-      "zh-Hans": "尝试清除上方筛选条件，或创建新技能。"
-    },
-    "Create your first skill.": {
-      "de": "Erstelle deinen ersten Skill.",
-      "en": "Create your first skill.",
-      "es": "Crea tu primer skill.",
-      "fr": "Créez votre premier skill.",
-      "it": "Crea la tua prima skill.",
-      "ja": "最初のスキルを作成してください。",
-      "ko": "첫 스킬을 만드세요.",
-      "pt-BR": "Crie seu primeiro skill.",
-      "ru": "Создайте первый навык.",
-      "zh-Hans": "创建你的第一个技能。"
-    },
-    "Name": {
-      "de": "Name",
-      "en": "Name",
-      "es": "Nombre",
-      "fr": "Nom",
-      "it": "Nome",
-      "ja": "名前",
-      "ko": "이름",
-      "pt-BR": "Nome",
-      "ru": "Название",
-      "zh-Hans": "名称"
-    },
-    "Description": {
-      "de": "Beschreibung",
-      "en": "Description",
-      "es": "Descripción",
-      "fr": "Description",
-      "it": "Descrizione",
-      "ja": "説明",
-      "ko": "설명",
-      "pt-BR": "Descrição",
-      "ru": "Описание",
-      "zh-Hans": "描述"
-    },
-    "Tags, comma separated": {
-      "de": "Tags, durch Kommas getrennt",
-      "en": "Tags, comma separated",
-      "es": "Etiquetas separadas por comas",
-      "fr": "Tags séparés par des virgules",
-      "it": "Tag separati da virgole",
-      "ja": "タグ、カンマ区切り",
-      "ko": "쉼표로 구분한 태그",
-      "pt-BR": "Tags separados por vírgula",
-      "ru": "Теги через запятую",
-      "zh-Hans": "标签，用逗号分隔"
-    },
-    "Cancel": {
-      "de": "Abbrechen",
-      "en": "Cancel",
-      "es": "Cancelar",
-      "fr": "Annuler",
-      "it": "Annulla",
-      "ja": "キャンセル",
-      "ko": "취소",
-      "pt-BR": "Cancelar",
-      "ru": "Отмена",
-      "zh-Hans": "取消"
-    },
-    "Create": {
-      "de": "Erstellen",
-      "en": "Create",
-      "es": "Crear",
-      "fr": "Créer",
-      "it": "Crea",
-      "ja": "作成",
-      "ko": "만들기",
-      "pt-BR": "Criar",
-      "ru": "Создать",
-      "zh-Hans": "创建"
-    },
-    "Active": {
-      "de": "Aktiv",
-      "en": "Active",
-      "es": "Activo",
-      "fr": "Actif",
-      "it": "Attiva",
-      "ja": "有効",
-      "ko": "활성",
-      "pt-BR": "Ativo",
-      "ru": "Активен",
-      "zh-Hans": "活跃"
-    },
-    "Built-in": {
-      "de": "Integriert",
-      "en": "Built-in",
-      "es": "Integrado",
-      "fr": "Intégré",
-      "it": "Integrata",
-      "ja": "組み込み",
-      "ko": "내장",
-      "pt-BR": "Integrado",
-      "ru": "Встроенный",
-      "zh-Hans": "内置"
+    "Your Mac is running a newer Clawix bridge.": {
+      "de": "Your Mac is running a newer Clawix bridge.",
+      "en": "Your Mac is running a newer Clawix bridge.",
+      "es": "Your Mac is running a newer Clawix bridge.",
+      "fr": "Your Mac is running a newer Clawix bridge.",
+      "it": "Your Mac is running a newer Clawix bridge.",
+      "ja": "Your Mac is running a newer Clawix bridge.",
+      "ko": "Your Mac is running a newer Clawix bridge.",
+      "pt-BR": "Your Mac is running a newer Clawix bridge.",
+      "ru": "Your Mac is running a newer Clawix bridge.",
+      "zh-Hans": "Your Mac is running a newer Clawix bridge."
     }
   },
   "sameAsEnglishAllowed": {

@@ -234,9 +234,9 @@ function MarketplaceDetail({ activeTab }: { activeTab: MarketplaceTabId }) {
           <div className="grid place-items-center rounded-lg bg-white/[0.055]" style={{ height: 92 }}>
             <TabIcon tab={activeTab} size={24} />
           </div>
-          <DetailRow label="Tab" value={tabLabel} />
-          <DetailRow label="Items" value={String(marketplaceTabCount(activeTab))} />
-          <DetailRow label="Unread inbox" value={String(unreadMarketplaceMessages())} />
+          <DetailRow label={t("Tab")} value={tabLabel} />
+          <DetailRow label={t("Items")} value={String(marketplaceTabCount(activeTab))} />
+          <DetailRow label={t("Unread inbox")} value={String(unreadMarketplaceMessages())} />
         </div>
       </div>
     </Card>

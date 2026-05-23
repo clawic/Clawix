@@ -43,14 +43,14 @@ export function MacCareView() {
           </div>
 
           <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricTile title="Routes" value={String(summary.routes)} detail={MAC_CARE_DATASET.sidecarFilename} />
-            <MetricTile title="Scans" value={String(summary.scans)} detail={selectedScan?.completedAtLabel ?? "No scan"} />
-            <MetricTile title="Candidates" value={String(summary.candidates)} detail={summary.sizeLabel} />
-            <MetricTile title="Authority" value={summary.authority} detail={MAC_CARE_DATASET.destructiveExecutionAuthority} />
+            <MetricTile title={t("Routes")} value={String(summary.routes)} detail={MAC_CARE_DATASET.sidecarFilename} />
+            <MetricTile title={t("Scans")} value={String(summary.scans)} detail={selectedScan?.completedAtLabel ?? "No scan"} />
+            <MetricTile title={t("Candidates")} value={String(summary.candidates)} detail={summary.sizeLabel} />
+            <MetricTile title={t("Authority")} value={summary.authority} detail={MAC_CARE_DATASET.destructiveExecutionAuthority} />
           </div>
 
           <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
-            <SectionCard title="Scan history">
+            <SectionCard title={t("Scan history")}>
               {MAC_CARE_DATASET.scans.map((scan, index) => (
                 <div key={scan.id}>
                   {index > 0 && <CardDivider />}
@@ -60,12 +60,12 @@ export function MacCareView() {
             </SectionCard>
 
             {selectedScan && (
-              <SectionCard title="Selected scan">
+              <SectionCard title={t("Selected scan")}>
                 <div className="grid gap-3 p-3 sm:grid-cols-4">
-                  <InlineMetric title="Status" value={selectedScan.status} />
-                  <InlineMetric title="Candidates" value={String(selectedScan.candidateCount)} />
-                  <InlineMetric title="Size" value={formatBytes(selectedScan.totalSizeBytes)} />
-                  <InlineMetric title="Safety" value={selectedScan.destructiveActions > 0 ? "review" : "none"} />
+                  <InlineMetric title={t("Status")} value={selectedScan.status} />
+                  <InlineMetric title={t("Candidates")} value={String(selectedScan.candidateCount)} />
+                  <InlineMetric title={t("Size")} value={formatBytes(selectedScan.totalSizeBytes)} />
+                  <InlineMetric title={t("Safety")} value={selectedScan.destructiveActions > 0 ? "review" : "none"} />
                 </div>
                 <CardDivider />
                 {MAC_CARE_DATASET.candidates.map((candidate, index) => (
@@ -77,12 +77,12 @@ export function MacCareView() {
               </SectionCard>
             )}
 
-            <SectionCard title="Finalizer preview">
+            <SectionCard title={t("Finalizer preview")}>
               <div className="grid gap-3 p-3 sm:grid-cols-4">
-                <InlineMetric title="Authority" value="signed host" />
-                <InlineMetric title="Execution" value="No" />
-                <InlineMetric title="Receipts" value="0" />
-                <InlineMetric title="Actions" value={String(MAC_CARE_DATASET.finalizerActions.length)} />
+                <InlineMetric title={t("Authority")} value="signed host" />
+                <InlineMetric title={t("Execution")} value="No" />
+                <InlineMetric title={t("Receipts")} value="0" />
+                <InlineMetric title={t("Actions")} value={String(MAC_CARE_DATASET.finalizerActions.length)} />
               </div>
               <CardDivider />
               {MAC_CARE_DATASET.finalizerActions.map((action, index) => (
@@ -93,7 +93,7 @@ export function MacCareView() {
               ))}
             </SectionCard>
 
-            <SectionCard title="Route atlas">
+            <SectionCard title={t("Route atlas")}>
               {MAC_CARE_DATASET.routes.map((route, index) => (
                 <div key={route.id}>
                   {index > 0 && <CardDivider />}
@@ -140,8 +140,8 @@ function ScanRow({ scan, selected }: { scan: MacCareScanSummary; selected: boole
           {scan.modules.join(", ")} / {scan.completedAtLabel}
         </div>
       </div>
-      <InlineMetric title="Candidates" value={String(scan.candidateCount)} />
-      <InlineMetric title="Size" value={formatBytes(scan.totalSizeBytes)} />
+      <InlineMetric title={t("Candidates")} value={String(scan.candidateCount)} />
+      <InlineMetric title={t("Size")} value={formatBytes(scan.totalSizeBytes)} />
     </div>
   );
 }
@@ -155,7 +155,7 @@ function CandidateRow({ candidate }: { candidate: MacCareCandidate }) {
         <div className="truncate text-[11px] text-[var(--color-fg-secondary)]">{candidate.path}</div>
       </div>
       <InlineMetric title={candidate.action} value={candidate.selection} />
-      <InlineMetric title="Size" value={formatBytes(candidate.sizeBytes)} />
+      <InlineMetric title={t("Size")} value={formatBytes(candidate.sizeBytes)} />
     </div>
   );
 }
@@ -169,8 +169,8 @@ function FinalizerRow({ action }: { action: MacCareFinalizerAction }) {
         <div className="truncate text-[11px] text-[var(--color-fg-secondary)]">{action.path}</div>
       </div>
       <InlineMetric title={action.action} value={action.selection} />
-      <InlineMetric title="Rollback" value={action.rollbackLevel} />
-      <InlineMetric title="Receipt" value={action.receiptStatus} />
+      <InlineMetric title={t("Rollback")} value={action.rollbackLevel} />
+      <InlineMetric title={t("Receipt")} value={action.receiptStatus} />
     </div>
   );
 }

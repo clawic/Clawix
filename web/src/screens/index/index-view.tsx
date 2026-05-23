@@ -132,7 +132,7 @@ function IndexSummary({ activeTab }: { activeTab: IndexTabId }) {
 
 function CatalogList({ items }: { items: IndexCatalogItem[] }) {
   if (items.length === 0) {
-    return <EmptyState title="No catalog results" detail="Try a different catalog query." />;
+    return <EmptyState title={t("No catalog results")} detail="Try a different catalog query." />;
   }
   return (
     <div>
@@ -258,9 +258,9 @@ function IndexDetail({ activeTab }: { activeTab: IndexTabId }) {
           <div className="grid place-items-center rounded-lg bg-white/[0.055]" style={{ height: 92 }}>
             <TabIcon tab={activeTab} size={24} />
           </div>
-          <DetailRow label="Tab" value={tabLabel} />
-          <DetailRow label="Items" value={String(indexTabCount(activeTab))} />
-          <DetailRow label="Unread alerts" value={String(unreadIndexAlerts())} />
+          <DetailRow label={t("Tab")} value={tabLabel} />
+          <DetailRow label={t("Items")} value={String(indexTabCount(activeTab))} />
+          <DetailRow label={t("Unread alerts")} value={String(unreadIndexAlerts())} />
         </div>
       </div>
     </Card>

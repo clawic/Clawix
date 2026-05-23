@@ -70,7 +70,7 @@ export const MAC_SIDEBAR_TOOL_ENTRIES: RouteCatalogEntry[] = [
   { route: "documents", label: "Documents", section: "tools", macToolId: "documents", macRoute: "driveDocuments", webSurface: "implemented" },
   { route: "recent", label: "Recent", section: "tools", macToolId: "recent", macRoute: "driveRecent", webSurface: "implemented" },
   { route: "drive", label: "Drive", section: "tools", macToolId: "drive", macRoute: "driveAdmin", webSurface: "implemented" },
-  { route: "agents", label: "Agents", section: "tools", macToolId: "agents", macRoute: "agentsHome", webSurface: "implemented" },
+  { route: "agents", label: "Agents", section: "tools", macRoute: "agentsHome", webSurface: "implemented" },
   { route: "personalities", label: "Personalities", section: "tools", macToolId: "personalities", macRoute: "personalitiesHome", webSurface: "implemented" },
   { route: "skill-collections", label: "Skill Collections", section: "tools", macToolId: "skillCollections", macRoute: "skillCollectionsHome", webSurface: "implemented" },
   { route: "connections", label: "Connections", section: "tools", macToolId: "connections", macRoute: "connectionsHome", webSurface: "implemented" },

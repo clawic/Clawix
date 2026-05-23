@@ -21,6 +21,7 @@ import {
   encodeFrame,
   peekSchemaVersion,
 } from "./frames";
+import { BRIDGE_DEFAULT_PORT, BRIDGE_LOOPBACK_HOST, bridgeWebSocketEndpoint } from "./endpoint";
 import { Backoff } from "../lib/reconnect";
 
 export type ConnectionState =
@@ -53,18 +54,20 @@ interface BridgeBootstrap {
 }
 
 function defaultEndpoint(): string {
-  if (typeof window === "undefined") return "ws://localhost:24080/ws";
+  if (typeof window === "undefined") {
+    return bridgeWebSocketEndpoint("ws:", BRIDGE_LOOPBACK_HOST, BRIDGE_DEFAULT_PORT);
+  }
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
   const bootstrap = (window as Window & { __CLAWIX_BRIDGE__?: BridgeBootstrap }).__CLAWIX_BRIDGE__;
   if (bootstrap?.wsPort) {
-    const hostname = window.location.hostname || "localhost";
-    return `${proto}//${hostname}:${bootstrap.wsPort}/ws`;
+    const hostname = window.location.hostname || BRIDGE_LOOPBACK_HOST;
+    return bridgeWebSocketEndpoint(proto, hostname, bootstrap.wsPort);
   }
   // Vite dev server proxies /ws to the daemon, so same-origin works in dev.
   // Embedded mode injects the bootstrap snippet, so we never reach this branch
   // when served from the daemon.
-  const host = window.location.host || "localhost:24080";
-  return `${proto}//${host}/ws`;
+  const host = window.location.host || `${BRIDGE_LOOPBACK_HOST}:${BRIDGE_DEFAULT_PORT}`;
+  return bridgeWebSocketEndpoint(proto, host, null);
 }
 
 function randomId(): string {

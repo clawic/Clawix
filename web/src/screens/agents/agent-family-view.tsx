@@ -281,10 +281,10 @@ function AgentDetail({ agent }: { agent: AgentItem }) {
       <div className="grid place-items-center rounded-lg bg-white/[0.055]" style={{ height: 92 }}>
         <ClawixLogoIcon size={28} className="text-[var(--color-fg-secondary)]" />
       </div>
-      <DetailRow label="Runtime" value={`${runtimeLabel(agent.runtime)} / ${agent.model}`} />
-      <DetailRow label="Autonomy" value={agent.autonomyLabel} />
-      <DetailRow label="Personalities" value={String(agent.personalityIds.length)} />
-      <DetailRow label="Connections" value={String(agent.connectionIds.length)} />
+      <DetailRow label={t("Runtime")} value={`${runtimeLabel(agent.runtime)} / ${agent.model}`} />
+      <DetailRow label={t("Autonomy")} value={agent.autonomyLabel} />
+      <DetailRow label={t("Personalities")} value={String(agent.personalityIds.length)} />
+      <DetailRow label={t("Connections")} value={String(agent.connectionIds.length)} />
     </div>
   );
 }
@@ -293,8 +293,8 @@ function PersonalityDetail({ personality }: { personality: PersonalityItem }) {
   const users = agentsUsingPersonality(personality.id);
   return (
     <div className="grid gap-3">
-      <DetailRow label="Version" value={`v${personality.version}`} />
-      <DetailRow label="Used by" value={users.length ? users.map((agent) => agent.name).join(", ") : "No agents"} />
+      <DetailRow label={t("Version")} value={`v${personality.version}`} />
+      <DetailRow label={t("Used by")} value={users.length ? users.map((agent) => agent.name).join(", ") : "No agents"} />
       <div>
         <div className="mb-1 text-[10.5px] uppercase text-[var(--color-fg-tertiary)]">{t("Prompt")}</div>
         <div className="rounded-md bg-white/[0.045] p-2.5 font-mono text-[11px] text-[var(--color-fg-secondary)]">
@@ -309,8 +309,8 @@ function SkillCollectionDetail({ collection }: { collection: SkillCollectionItem
   const users = agentsUsingSkillCollection(collection.id);
   return (
     <div className="grid gap-3">
-      <DetailRow label="Tags" value={String(collection.includedTags.length)} />
-      <DetailRow label="Subscribed agents" value={users.length ? users.map((agent) => agent.name).join(", ") : "No agents"} />
+      <DetailRow label={t("Tags")} value={String(collection.includedTags.length)} />
+      <DetailRow label={t("Subscribed agents")} value={users.length ? users.map((agent) => agent.name).join(", ") : "No agents"} />
       <ChipList items={collection.includedTags} />
     </div>
   );
@@ -320,9 +320,9 @@ function ConnectionDetail({ connection }: { connection: ConnectionItem }) {
   const users = agentsUsingConnection(connection.id);
   return (
     <div className="grid gap-3">
-      <DetailRow label="Service" value={connection.service} />
-      <DetailRow label="Bound agents" value={users.length ? users.map((agent) => agent.name).join(", ") : "No agents"} />
-      <DetailRow label="Auth" value={connection.hasSecret ? "Encrypted token in Secrets." : "No token stored."} />
+      <DetailRow label={t("Service")} value={connection.service} />
+      <DetailRow label={t("Bound agents")} value={users.length ? users.map((agent) => agent.name).join(", ") : "No agents"} />
+      <DetailRow label={t("Auth")} value={connection.hasSecret ? "Encrypted token in Secrets." : "No token stored."} />
       <ChipList items={connection.scopes.length ? connection.scopes : ["none"]} />
     </div>
   );

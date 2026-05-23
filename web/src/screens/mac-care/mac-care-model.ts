@@ -7,7 +7,7 @@ export interface MacCareRoute {
   pathPattern: string;
   sensitivity: string;
   mutability: string;
-  owner: string;
+  steward: string;
 }
 
 export interface MacCareScanSummary {
@@ -63,7 +63,7 @@ export const MAC_CARE_DATASET: MacCareDataset = {
       pathPattern: "~/Library/Caches/clawix/**",
       sensitivity: "low",
       mutability: "read-only report",
-      owner: "framework",
+      steward: "framework",
     },
     {
       id: "route-logs",
@@ -72,7 +72,7 @@ export const MAC_CARE_DATASET: MacCareDataset = {
       pathPattern: "~/Library/Logs/Clawix/**",
       sensitivity: "medium",
       mutability: "review required",
-      owner: "host",
+      steward: "host",
     },
     {
       id: "route-sidecars",
@@ -81,7 +81,7 @@ export const MAC_CARE_DATASET: MacCareDataset = {
       pathPattern: "~/.claw/mac-care/*.sqlite",
       sensitivity: "medium",
       mutability: "read-only report",
-      owner: "framework",
+      steward: "framework",
     },
   ],
   scans: [

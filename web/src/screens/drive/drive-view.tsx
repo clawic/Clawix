@@ -198,9 +198,9 @@ function DriveDetail({ item }: { item: DriveItem | null }) {
               <div className="break-words text-[13px] font-semibold text-[var(--color-fg)]">{item.name}</div>
               <div className="mt-1 text-[12px] text-[var(--color-fg-secondary)]">{item.mimeType}</div>
             </div>
-            <DetailRow label="Location" value={item.parentLabel} />
-            <DetailRow label="Modified" value={item.modifiedLabel} />
-            <DetailRow label="Size" value={item.sizeLabel} />
+            <DetailRow label={t("Location")} value={item.parentLabel} />
+            <DetailRow label={t("Modified")} value={item.modifiedLabel} />
+            <DetailRow label={t("Size")} value={item.sizeLabel} />
           </div>
         ) : (
           <div className="py-8 text-[12.5px] text-[var(--color-fg-tertiary)]">
