@@ -120,7 +120,7 @@ struct ComposerRecordingWaveform: View {
                 cornerSize: CGSize(width: barWidth / 2, height: barWidth / 2),
                 style: .continuous
             )
-            ctx.fill(path, with: .color(.white.opacity(alpha)))
+            ctx.fill(path, with: .color(Color.overlay(alpha)))
         }
     }
 
@@ -143,6 +143,6 @@ struct ComposerRecordingWaveform: View {
     ComposerRecordingWaveform()
         .frame(height: 28)
         .padding()
-        .background(Color(white: 0.135))
+        .background(Color.gray(light: 0.94, dark: 0.135))
         .preferredColorScheme(.dark)
 }

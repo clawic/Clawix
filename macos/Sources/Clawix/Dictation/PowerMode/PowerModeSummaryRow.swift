@@ -29,7 +29,7 @@ struct PowerModeSummaryRow: View {
                         .foregroundColor(Palette.textPrimary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Capsule(style: .continuous).fill(Color(white: 0.165)))
+                        .background(Capsule(style: .continuous).fill(Color.gray(light: 0.915, dark: 0.165)))
                 }
                 .buttonStyle(.plain)
             }

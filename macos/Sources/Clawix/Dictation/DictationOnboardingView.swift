@@ -30,7 +30,7 @@ struct DictationOnboardingView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(20)
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 0.5)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
@@ -81,7 +81,7 @@ struct DictationOnboardingView: View {
             }
             .thinScrollers()
 
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 0.5)
             HStack {
                 Button("Skip for now") {
                     finish()
@@ -98,7 +98,7 @@ struct DictationOnboardingView: View {
             .padding(.vertical, 12)
         }
         .frame(width: 580, height: 540)
-        .background(Color(white: 0.10))
+        .background(Color.gray(light: 0.95, dark: 0.10))
         .onAppear {
             refresh()
             refreshTimer?.invalidate()
@@ -202,20 +202,20 @@ private struct OnboardingPermissionRow: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(white: 0.06))
+                .fill(Color.gray(light: 0.96, dark: 0.06))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                 )
         )
     }
 
     private var dotColor: Color {
         switch status {
-        case .granted:       return Color(red: 0.27, green: 0.74, blue: 0.42)
+        case .granted:       return Palette.success
         case .denied, .restricted, .revoked:
-            return Color(red: 0.94, green: 0.36, blue: 0.36)
-        case .notDetermined: return Color(white: 0.55)
+            return Palette.danger
+        case .notDetermined: return Color.gray(light: 0.45, dark: 0.55)
         }
     }
 }
@@ -257,10 +257,10 @@ private struct OnboardingModelGrid: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color(white: 0.06))
+                            .fill(Color.gray(light: 0.96, dark: 0.06))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
                             )
                     )
                 }

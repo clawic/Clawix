@@ -8,13 +8,13 @@ struct PowerModeListSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 0.5)
             content
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 0.5)
             footer
         }
         .frame(width: 760, height: 540)
-        .background(Color(white: 0.10))
+        .background(Color.gray(light: 0.95, dark: 0.10))
         .onAppear {
             if selection == nil {
                 selection = store.configs.first?.id
@@ -40,7 +40,7 @@ struct PowerModeListSheet: View {
                 .foregroundColor(Palette.textPrimary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Capsule(style: .continuous).fill(Color(white: 0.165)))
+                .background(Capsule(style: .continuous).fill(Color.gray(light: 0.915, dark: 0.165)))
             }
             .buttonStyle(.plain)
         }
@@ -62,7 +62,7 @@ struct PowerModeListSheet: View {
                             selection = config.id
                         }
                         Rectangle()
-                            .fill(Color.white.opacity(0.05))
+                            .fill(Color.overlay(0.05))
                             .frame(height: 0.5)
                             .padding(.leading, 16)
                     }
@@ -71,7 +71,7 @@ struct PowerModeListSheet: View {
             .thinScrollers()
             .frame(width: 220)
 
-            Rectangle().fill(Color.white.opacity(0.06)).frame(width: 0.5)
+            Rectangle().fill(Color.overlay(0.06)).frame(width: 0.5)
 
             if let id = selection, let binding = bindingFor(id: id) {
                 PowerModeEditor(
@@ -143,7 +143,7 @@ private struct PowerModeListRow: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Rectangle().fill(selected ? Color.white.opacity(0.06) : Color.clear))
+            .background(Rectangle().fill(selected ? Color.overlay(0.06) : Color.clear))
         }
         .buttonStyle(.plain)
     }
@@ -155,7 +155,7 @@ private struct PowerModeListRow: View {
                 .foregroundColor(Palette.textPrimary)
                 .lineLimit(1)
             if config.isDefault {
-                PowerModeBadge(label: "DEFAULT", color: Color(white: 0.30))
+                PowerModeBadge(label: "DEFAULT", color: Color.gray(light: 0.85, dark: 0.30))
             }
             if isActive {
                 PowerModeBadge(label: "ACTIVE", color: Color(red: 0.16, green: 0.46, blue: 0.98))
@@ -182,7 +182,7 @@ private struct PowerModeBadge: View {
     var body: some View {
         Text(label)
             .font(BodyFont.system(size: 9, wght: 700))
-            .foregroundColor(.white)
+            .foregroundColor(Palette.textPrimary)
             .padding(.horizontal, 5)
             .padding(.vertical, 1)
             .background(Capsule(style: .continuous).fill(color))

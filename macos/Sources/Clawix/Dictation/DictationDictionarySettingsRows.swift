@@ -66,7 +66,7 @@ struct DictionaryManageSheet: View {
                 .padding(.bottom, 10)
 
             Rectangle()
-                .fill(Color.white.opacity(0.06))
+                .fill(Color.overlay(0.06))
                 .frame(height: 0.5)
 
             if store.entries.isEmpty {
@@ -78,7 +78,7 @@ struct DictionaryManageSheet: View {
                         ForEach(Array(store.entries.enumerated()), id: \.element.id) { idx, entry in
                             if idx > 0 {
                                 Rectangle()
-                                    .fill(Color.white.opacity(0.05))
+                                    .fill(Color.overlay(0.05))
                                     .frame(height: 0.5)
                                     .padding(.leading, 16)
                             }
@@ -98,7 +98,7 @@ struct DictionaryManageSheet: View {
             .padding(.vertical, 10)
         }
         .frame(width: 540, height: 440)
-        .background(Color(white: 0.10))
+        .background(Color.gray(light: 0.95, dark: 0.10))
     }
 
     private var emptyState: some View {
@@ -155,7 +155,7 @@ struct DictionaryAddRow: View {
             if let feedback {
                 Text(feedback)
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
+                    .foregroundColor(Palette.danger)
                     .fixedSize(horizontal: false, vertical: true)
                     .transition(.opacity)
             }
@@ -163,8 +163,8 @@ struct DictionaryAddRow: View {
     }
 
     private var addButtonFill: Color {
-        if !canSubmit { return Color(white: 0.12) }
-        return addHovered ? Color(white: 0.24) : Color(white: 0.18)
+        if !canSubmit { return Color.gray(light: 0.945, dark: 0.12) }
+        return addHovered ? Color(white: 0.24) : Color.gray(light: 0.905, dark: 0.18)
     }
 
     private var canSubmit: Bool {
@@ -265,7 +265,7 @@ struct DictionaryIconButton: View {
                 .foregroundColor(Palette.textPrimary)
                 .frame(width: 24, height: 24)
                 .background(
-                    Circle().fill(hovered ? Color(white: 0.22) : Color(white: 0.14))
+                    Circle().fill(hovered ? Color.gray(light: 0.87, dark: 0.22) : Color.gray(light: 0.94, dark: 0.14))
                 )
         }
         .buttonStyle(.plain)
@@ -320,7 +320,7 @@ struct DictionaryEditSheet: View {
             if let error {
                 Text(error)
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
+                    .foregroundColor(Palette.danger)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -337,7 +337,7 @@ struct DictionaryEditSheet: View {
         }
         .padding(20)
         .frame(width: 460, height: 360)
-        .background(Color(white: 0.10))
+        .background(Color.gray(light: 0.95, dark: 0.10))
     }
 
     private var canSave: Bool {
@@ -375,10 +375,10 @@ struct DictionaryEditorBox: View {
             .padding(8)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color(white: 0.06))
+                    .fill(Color.gray(light: 0.96, dark: 0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.12), lineWidth: 0.5)
                     )
             )
     }
@@ -398,10 +398,10 @@ struct DictionaryFieldStyle: View {
             .padding(.vertical, 7)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color(white: 0.06))
+                    .fill(Color.gray(light: 0.96, dark: 0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.12), lineWidth: 0.5)
                     )
             )
             .onSubmit(onSubmit)

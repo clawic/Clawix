@@ -42,9 +42,9 @@ struct PowerModeEditor: View {
                 onDelete()
             } label: {
                 LucideIcon(.trash, size: 13)
-                    .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
+                    .foregroundColor(Palette.danger)
                     .frame(width: 32, height: 32)
-                    .background(Circle().fill(Color(white: 0.14)))
+                    .background(Circle().fill(Color.gray(light: 0.94, dark: 0.14)))
             }
             .buttonStyle(.plain)
         }

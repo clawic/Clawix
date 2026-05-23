@@ -35,7 +35,7 @@ struct EnhancementSummaryRow: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(
-                            Capsule(style: .continuous).fill(Color(white: 0.165))
+                            Capsule(style: .continuous).fill(Color.gray(light: 0.915, dark: 0.165))
                         )
                 }
                 .buttonStyle(.plain)
@@ -79,7 +79,7 @@ struct EnhancementSettingsSheet: View {
             .padding(.horizontal, 16)
             .padding(.top, 14)
             .padding(.bottom, 10)
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 0.5)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
@@ -94,7 +94,7 @@ struct EnhancementSettingsSheet: View {
             .thinScrollers()
         }
         .frame(width: 660, height: 600)
-        .background(Color(white: 0.10))
+        .background(Color.gray(light: 0.95, dark: 0.10))
     }
 
     // MARK: - Sections
@@ -119,15 +119,15 @@ struct EnhancementSettingsSheet: View {
                             library.deleteCustom(p.id)
                         }
                     )
-                    Rectangle().fill(Color.white.opacity(0.05)).frame(height: 0.5)
+                    Rectangle().fill(Color.overlay(0.05)).frame(height: 0.5)
                 }
             }
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(white: 0.06))
+                    .fill(Color.gray(light: 0.96, dark: 0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                            .stroke(Color.overlay(0.10), lineWidth: 0.5)
                     )
             )
         }
@@ -214,7 +214,7 @@ private struct PromptListRow: View {
             HStack(spacing: 10) {
                 LucideIcon.auto(active ? "checkmark.circle.fill" : "circle", size: 13)
                     .foregroundColor(active
-                        ? Color(red: 0.27, green: 0.74, blue: 0.42)
+                        ? Palette.success
                         : Palette.textSecondary)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
@@ -224,12 +224,12 @@ private struct PromptListRow: View {
                         if prompt.isBuiltIn {
                             Text("BUILT-IN")
                                 .font(BodyFont.system(size: 9, wght: 700))
-                                .foregroundColor(.white)
+                                .foregroundColor(Palette.textPrimary)
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
                                 .background(
                                     Capsule(style: .continuous)
-                                        .fill(Color(white: 0.30))
+                                        .fill(Color.gray(light: 0.85, dark: 0.30))
                                 )
                         }
                     }
@@ -247,7 +247,7 @@ private struct PromptListRow: View {
                         LucideIcon(.trash, size: 11)
                             .foregroundColor(Palette.textPrimary)
                             .frame(width: 22, height: 22)
-                            .background(Circle().fill(Color(white: 0.14)))
+                            .background(Circle().fill(Color.gray(light: 0.94, dark: 0.14)))
                     }
                     .buttonStyle(.plain)
                 }
@@ -255,7 +255,7 @@ private struct PromptListRow: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
-                Rectangle().fill(active ? Color.white.opacity(0.04) : Color.clear)
+                Rectangle().fill(active ? Color.overlay(0.04) : Color.clear)
             )
         }
         .buttonStyle(.plain)

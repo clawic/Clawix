@@ -80,7 +80,7 @@ struct OnboardingTriggerRow: View {
                     .foregroundColor(Palette.textPrimary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Capsule(style: .continuous).fill(Color(white: 0.165)))
+                    .background(Capsule(style: .continuous).fill(Color.gray(light: 0.915, dark: 0.165)))
             }
             .buttonStyle(.plain)
         }
@@ -158,7 +158,7 @@ struct CustomSoundRow: View {
                 if let error {
                     Text(error)
                         .font(BodyFont.system(size: 10.5, wght: 500))
-                        .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
+                        .foregroundColor(Palette.danger)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -243,7 +243,7 @@ struct CustomSoundIconButton: View {
                 .foregroundColor(isEnabled ? Palette.textPrimary : Palette.textSecondary)
                 .frame(width: 24, height: 24)
                 .background(
-                    Circle().fill(hovered && isEnabled ? Color(white: 0.22) : Color(white: 0.14))
+                    Circle().fill(hovered && isEnabled ? Color.gray(light: 0.87, dark: 0.22) : Color.gray(light: 0.94, dark: 0.14))
                 )
         }
         .buttonStyle(.plain)
@@ -321,10 +321,10 @@ struct VocabularySheet: View {
                     .padding(.vertical, 7)
                     .background(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color(white: 0.06))
+                            .fill(Color.gray(light: 0.96, dark: 0.06))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                                    .stroke(Color.overlay(0.12), lineWidth: 0.5)
                             )
                     )
                     .onSubmit(submit)
@@ -332,7 +332,7 @@ struct VocabularySheet: View {
                     LucideIcon(.plus, size: 13)
                         .foregroundColor(canSubmit ? Palette.textPrimary : Palette.textSecondary)
                         .frame(width: 26, height: 26)
-                        .background(Circle().fill(Color(white: 0.18)))
+                        .background(Circle().fill(Color.gray(light: 0.905, dark: 0.18)))
                 }
                 .buttonStyle(.plain)
                 .disabled(!canSubmit)
@@ -340,14 +340,14 @@ struct VocabularySheet: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 10)
 
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 0.5)
 
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(Array(vocabulary.entries.enumerated()), id: \.offset) { idx, term in
                         if idx > 0 {
                             Rectangle()
-                                .fill(Color.white.opacity(0.05))
+                                .fill(Color.overlay(0.05))
                                 .frame(height: 0.5)
                                 .padding(.leading, 16)
                         }
@@ -362,7 +362,7 @@ struct VocabularySheet: View {
                                 LucideIcon(.trash, size: 11)
                                     .foregroundColor(Palette.textPrimary)
                                     .frame(width: 24, height: 24)
-                                    .background(Circle().fill(Color(white: 0.14)))
+                                    .background(Circle().fill(Color.gray(light: 0.94, dark: 0.14)))
                             }
                             .buttonStyle(.plain)
                         }
@@ -382,7 +382,7 @@ struct VocabularySheet: View {
             .padding(.vertical, 10)
         }
         .frame(width: 480, height: 420)
-        .background(Color(white: 0.10))
+        .background(Color.gray(light: 0.95, dark: 0.10))
     }
 
     private var canSubmit: Bool {
@@ -468,10 +468,10 @@ struct WhisperPromptEditorSheet: View {
                 .frame(minHeight: 140)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color(white: 0.06))
+                        .fill(Color.gray(light: 0.96, dark: 0.06))
                         .overlay(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.12), lineWidth: 0.5)
                         )
                 )
 
@@ -492,7 +492,7 @@ struct WhisperPromptEditorSheet: View {
         }
         .padding(20)
         .frame(width: 520, height: 360)
-        .background(Color(white: 0.10))
+        .background(Color.gray(light: 0.95, dark: 0.10))
         .onAppear {
             draft = store.prompts[language] ?? ""
         }

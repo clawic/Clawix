@@ -62,7 +62,7 @@ struct EditorTagList: View {
                     LucideIcon(.plus, size: 13)
                         .foregroundColor(canSubmit ? Palette.textPrimary : Palette.textSecondary)
                         .frame(width: 26, height: 26)
-                        .background(Circle().fill(Color(white: 0.18)))
+                        .background(Circle().fill(Color.gray(light: 0.905, dark: 0.18)))
                 }
                 .buttonStyle(.plain)
                 .disabled(!canSubmit)
@@ -119,7 +119,7 @@ struct FlowingChips: View {
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Capsule(style: .continuous).fill(Color(white: 0.14)))
+                    .background(Capsule(style: .continuous).fill(Color.gray(light: 0.94, dark: 0.14)))
                 }
             }
         }
@@ -128,9 +128,9 @@ struct FlowingChips: View {
 
 func editorFieldBackground(radius: CGFloat) -> some View {
     RoundedRectangle(cornerRadius: radius, style: .continuous)
-        .fill(Color(white: 0.06))
+        .fill(Color.gray(light: 0.96, dark: 0.06))
         .overlay(
             RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                .stroke(Color.overlay(0.12), lineWidth: 0.5)
         )
 }

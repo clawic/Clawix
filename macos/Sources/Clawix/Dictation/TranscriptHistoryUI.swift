@@ -31,7 +31,7 @@ struct TranscriptHistorySummaryRow: View {
                     .foregroundColor(Palette.textPrimary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Capsule(style: .continuous).fill(Color(white: 0.165)))
+                    .background(Capsule(style: .continuous).fill(Color.gray(light: 0.915, dark: 0.165)))
             }
             .buttonStyle(.plain)
         }
@@ -96,7 +96,7 @@ struct TranscriptHistorySheet: View {
                             .padding(.vertical, 6)
                             .background(
                                 Capsule(style: .continuous)
-                                    .fill(tab == item ? Color.white.opacity(0.06) : Color.clear)
+                                    .fill(tab == item ? Color.overlay(0.06) : Color.clear)
                             )
                     }
                     .buttonStyle(.plain)
@@ -106,7 +106,7 @@ struct TranscriptHistorySheet: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
 
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5)
+            Rectangle().fill(Color.overlay(0.06)).frame(height: 0.5)
 
             switch tab {
             case .history: TranscriptHistoryListView(repo: repo)
@@ -116,7 +116,7 @@ struct TranscriptHistorySheet: View {
             }
         }
         .frame(width: 760, height: 560)
-        .background(Color(white: 0.10))
+        .background(Color.gray(light: 0.95, dark: 0.10))
     }
 }
 
@@ -138,14 +138,14 @@ private struct TranscriptHistoryListView: View {
                     .padding(.vertical, 7)
                     .background(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color(white: 0.06))
+                            .fill(Color.gray(light: 0.96, dark: 0.06))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                                    .stroke(Color.overlay(0.12), lineWidth: 0.5)
                             )
                     )
                     .padding(12)
-                Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5)
+                Rectangle().fill(Color.overlay(0.06)).frame(height: 0.5)
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(filtered, id: \.id) { row in
@@ -154,14 +154,14 @@ private struct TranscriptHistoryListView: View {
                                 selected: selection == row.id,
                                 onTap: { selection = row.id }
                             )
-                            Rectangle().fill(Color.white.opacity(0.05)).frame(height: 0.5)
+                            Rectangle().fill(Color.overlay(0.05)).frame(height: 0.5)
                         }
                     }
                 }
                 .thinScrollers()
             }
             .frame(width: 280)
-            Rectangle().fill(Color.white.opacity(0.06)).frame(width: 0.5)
+            Rectangle().fill(Color.overlay(0.06)).frame(width: 0.5)
 
             if let id = selection,
                let row = repo.recent.first(where: { $0.id == id }) {
@@ -217,7 +217,7 @@ private struct TranscriptListRow: View {
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                Rectangle().fill(selected ? Color.white.opacity(0.06) : Color.clear)
+                Rectangle().fill(selected ? Color.overlay(0.06) : Color.clear)
             )
         }
         .buttonStyle(.plain)
@@ -276,10 +276,10 @@ private struct TranscriptDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(white: 0.06))
+                .fill(Color.gray(light: 0.96, dark: 0.06))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                 )
         )
     }
@@ -313,10 +313,10 @@ private struct TranscriptDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color(white: 0.06))
+                        .fill(Color.gray(light: 0.96, dark: 0.06))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                                .stroke(Color.overlay(0.10), lineWidth: 0.5)
                         )
                 )
         }
@@ -395,10 +395,10 @@ private struct TranscriptMetricsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(white: 0.06))
+                .fill(Color.gray(light: 0.96, dark: 0.06))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                 )
         )
     }
@@ -526,7 +526,7 @@ private struct TranscriptBackupView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color(white: 0.06))
+                            .fill(Color.gray(light: 0.96, dark: 0.06))
                     )
             }
         }

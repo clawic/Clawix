@@ -20,7 +20,7 @@ struct DictationModelRow: View {
                         if store.activeModel == model {
                             Text("Active")
                                 .font(BodyFont.system(size: 10, wght: 700))
-                                .foregroundColor(.white)
+                                .foregroundColor(Palette.textPrimary)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(
@@ -42,7 +42,7 @@ struct DictationModelRow: View {
             if let error = store.downloadErrors[model] {
                 Text(error)
                     .font(BodyFont.system(size: 11, wght: 500))
-                    .foregroundColor(Color(red: 0.94, green: 0.45, blue: 0.45))
+                    .foregroundColor(Palette.danger)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -157,10 +157,10 @@ struct PermissionRow: View {
 
     private var dotColor: Color {
         switch status {
-        case .granted:       return Color(red: 0.27, green: 0.74, blue: 0.42)
+        case .granted:       return Palette.success
         case .denied, .restricted, .revoked:
-            return Color(red: 0.94, green: 0.36, blue: 0.36)
-        case .notDetermined: return Color(white: 0.55)
+            return Palette.danger
+        case .notDetermined: return Color.gray(light: 0.45, dark: 0.55)
         }
     }
 }
@@ -185,7 +185,7 @@ struct DSPDownloadProgressBar: View {
         let clamped = min(max(value, 0), 1)
         ZStack(alignment: .leading) {
             Capsule(style: .continuous)
-                .fill(Color.white.opacity(0.10))
+                .fill(Color.overlay(0.10))
             Capsule(style: .continuous)
                 .fill(Color.white)
                 .frame(width: max(trackHeight, trackWidth * clamped))
@@ -210,7 +210,7 @@ struct DSPSecondaryButton: View {
                 .padding(.vertical, 6)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(hovered ? Color(white: 0.21) : Color(white: 0.165))
+                        .fill(hovered ? Color.gray(light: 0.875, dark: 0.21) : Color.gray(light: 0.915, dark: 0.165))
                 )
                 .contentShape(Capsule(style: .continuous))
         }

@@ -179,7 +179,7 @@ private struct MicLevelTinyBar: View {
         let lit = active && level >= threshold
 
         Capsule(style: .continuous)
-            .fill(lit ? Color.white.opacity(0.92) : Color.white.opacity(0.22))
+            .fill(lit ? Color.overlay(0.92) : Color.overlay(0.22))
             .frame(width: 3, height: 11)
             .animation(.linear(duration: 0.05), value: lit)
     }

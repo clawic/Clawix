@@ -93,7 +93,7 @@ struct DictationOverlayView: View {
             // shadow the previous version painted around it (the
             // "glass" halo the user complained about).
             RoundedRectangle(cornerRadius: pillCorner, style: .continuous)
-                .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                .stroke(Color.overlay(0.18), lineWidth: 0.5)
         )
         .contentShape(RoundedRectangle(cornerRadius: pillCorner, style: .continuous))
     }
@@ -145,7 +145,7 @@ private struct DictationEscToast: View {
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.6))
+                    .foregroundStyle(Color.overlay(0.6))
                     .frame(width: 16, height: 16)
                     .contentShape(Rectangle())
             }
@@ -175,7 +175,7 @@ private struct DictationEscToast: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                .stroke(Color.overlay(0.18), lineWidth: 0.5)
         )
         .onAppear { startTimer() }
         .onDisappear {
@@ -214,7 +214,7 @@ private struct DictationErrorToast: View {
     let message: String
     let onClose: () -> Void
 
-    private let accent = Color(red: 0.92, green: 0.32, blue: 0.32)
+    private let accent = Palette.danger
     private let corner: CGFloat = 10
 
     var body: some View {
@@ -236,7 +236,7 @@ private struct DictationErrorToast: View {
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.6))
+                    .foregroundStyle(Color.overlay(0.6))
                     .frame(width: 16, height: 16)
                     .contentShape(Rectangle())
             }
@@ -251,7 +251,7 @@ private struct DictationErrorToast: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                .stroke(Color.overlay(0.18), lineWidth: 0.5)
         )
     }
 }
@@ -264,7 +264,7 @@ private struct DictationMicSlot: View {
     var body: some View {
         MicIcon(lineWidth: 0)
             .frame(width: 17, height: 17)
-            .foregroundStyle(.white.opacity(opacity))
+            .foregroundStyle(Color.overlay(opacity))
             .animation(.easeInOut(duration: 0.18), value: state)
     }
 
@@ -332,7 +332,7 @@ private struct DictationAudioVisualizer: View {
             HStack(spacing: barSpacing) {
                 ForEach(0..<barCount, id: \.self) { index in
                     RoundedRectangle(cornerRadius: barWidth / 2, style: .continuous)
-                        .fill(Color.white.opacity(0.85))
+                        .fill(Color.overlay(0.85))
                         .frame(width: barWidth, height: barHeight(for: index, at: context.date))
                 }
             }
@@ -361,7 +361,7 @@ private struct DictationStaticBars: View {
         HStack(spacing: barSpacing) {
             ForEach(0..<barCount, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: barWidth / 2, style: .continuous)
-                    .fill(Color.white.opacity(0.4))
+                    .fill(Color.overlay(0.4))
                     .frame(width: barWidth, height: 4)
             }
         }
@@ -396,7 +396,7 @@ private struct DictationDots: View {
         HStack(spacing: dotSpacing) {
             ForEach(0..<dotCount, id: \.self) { index in
                 RoundedRectangle(cornerRadius: dotSize / 2, style: .continuous)
-                    .fill(Color.white.opacity(index <= currentDot ? 0.85 : 0.25))
+                    .fill(Color.overlay(index <= currentDot ? 0.85 : 0.25))
                     .frame(width: dotSize, height: dotSize)
             }
         }
@@ -475,11 +475,11 @@ private struct DictationSpinner: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color(white: 0.32),
+                .stroke(Color.gray(light: 0.84, dark: 0.32),
                         style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
             Circle()
                 .trim(from: 0.0, to: 0.76)
-                .stroke(Color.white.opacity(0.95),
+                .stroke(Color.overlay(0.95),
                         style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
                 .rotationEffect(.degrees(rotation))
         }
@@ -504,7 +504,7 @@ private struct DictationLivePreview: View {
     var body: some View {
         Text(text)
             .font(BodyFont.system(size: 12, wght: 600))
-            .foregroundColor(Color.white.opacity(0.92))
+            .foregroundColor(Color.overlay(0.92))
             .lineLimit(2)
             .truncationMode(.head)
             .multilineTextAlignment(.center)
@@ -516,7 +516,7 @@ private struct DictationLivePreview: View {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(Color.black.opacity(0.55))
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.18), lineWidth: 0.5)
                 }
             )
     }
