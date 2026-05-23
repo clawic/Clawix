@@ -12,7 +12,7 @@ interface Props {
 export function SearchView({ onOpenChat }: Props) {
   const [query, setQuery] = useState("");
   const sessions = useBridgeStore((s) => s.sessions);
-  const messagesBySession = useBridgeStore((s) => s.messagesBySession);
+  const messagesBySession = useBridgeStore((s) => s.searchMessagesBySession);
   const results = useMemo(
     () => searchConversations({ sessions, messagesBySession, query }),
     [messagesBySession, query, sessions],

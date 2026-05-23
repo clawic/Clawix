@@ -46,6 +46,8 @@ export interface BridgeStoreState {
   projects: WireProject[];
   /** Indexed by sessionId. Only populated for sessions the user has opened. */
   messagesBySession: Record<string, WireMessage[]>;
+  /** Debounced transcript snapshot for global search/index surfaces. */
+  searchMessagesBySession: Record<string, WireMessage[]>;
   /** True when more older messages can be fetched. */
   hasMoreBySession: Record<string, boolean>;
   rateLimits: WireRateLimitSnapshot | null;
@@ -98,6 +100,7 @@ export const useBridgeStore = create<BridgeStoreState>()(
     sessions: [],
     projects: [],
     messagesBySession: {},
+    searchMessagesBySession: {},
     hasMoreBySession: {},
     rateLimits: null,
     rateLimitsByLimitId: {},
@@ -122,6 +125,7 @@ export const useBridgeStore = create<BridgeStoreState>()(
     detach() {
       const client = get().client;
       if (client) client.stop();
+      clearStreamingTimers();
       set({
         client: null,
         connection: { kind: "idle" },
@@ -129,6 +133,7 @@ export const useBridgeStore = create<BridgeStoreState>()(
         sessions: [],
         projects: [],
         messagesBySession: {},
+        searchMessagesBySession: {},
         hasMoreBySession: {},
         hostDisplayName: null,
         rateLimits: null,
@@ -246,6 +251,126 @@ type Set = (
 
 type Get = () => BridgeStoreState;
 
+const STREAMING_TRANSCRIPT_FLUSH_MS = 16;
+const SEARCH_TRANSCRIPT_SNAPSHOT_DEBOUNCE_MS = 250;
+
+type MessageStreamingFrame = Extract<BridgeFrame, { type: "messageStreaming" }>;
+
+const pendingStreamingFrames = new Map<string, MessageStreamingFrame>();
+let streamingFlushTimer: ReturnType<typeof setTimeout> | null = null;
+let searchSnapshotTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearStreamingTimers(): void {
+  if (streamingFlushTimer) {
+    clearTimeout(streamingFlushTimer);
+    streamingFlushTimer = null;
+  }
+  if (searchSnapshotTimer) {
+    clearTimeout(searchSnapshotTimer);
+    searchSnapshotTimer = null;
+  }
+  pendingStreamingFrames.clear();
+}
+
+function streamingKey(frame: MessageStreamingFrame): string {
+  return `${frame.sessionId}\u0000${frame.messageId}`;
+}
+
+function enqueueStreamingFrame(set: Set, get: Get, frame: MessageStreamingFrame): void {
+  pendingStreamingFrames.set(streamingKey(frame), frame);
+  if (frame.finished) {
+    flushStreamingFrames(set, get, { publishSearchSnapshot: true });
+    return;
+  }
+  if (streamingFlushTimer) return;
+  streamingFlushTimer = setTimeout(() => {
+    flushStreamingFrames(set, get, { publishSearchSnapshot: false });
+  }, STREAMING_TRANSCRIPT_FLUSH_MS);
+}
+
+function flushStreamingFrames(
+  set: Set,
+  get: Get,
+  options: { publishSearchSnapshot: boolean },
+): void {
+  if (streamingFlushTimer) {
+    clearTimeout(streamingFlushTimer);
+    streamingFlushTimer = null;
+  }
+  if (pendingStreamingFrames.size === 0) return;
+
+  let messagesBySession = get().messagesBySession;
+  let changed = false;
+  for (const frame of pendingStreamingFrames.values()) {
+    const cur = messagesBySession[frame.sessionId] ?? [];
+    const next = applyStreamingMessage(cur, frame);
+    if (next !== cur) {
+      if (!changed) {
+        messagesBySession = { ...messagesBySession };
+        changed = true;
+      }
+      messagesBySession[frame.sessionId] = next;
+    }
+  }
+  pendingStreamingFrames.clear();
+
+  if (changed) {
+    set({ messagesBySession });
+    if (options.publishSearchSnapshot) publishSearchSnapshot(set, get);
+    else scheduleSearchSnapshot(set, get);
+  }
+}
+
+function applyStreamingMessage(cur: WireMessage[], frame: MessageStreamingFrame): WireMessage[] {
+  const idx = cur.findIndex((m) => m.id === frame.messageId);
+  if (idx >= 0) {
+    const existing = cur[idx]!;
+    if (
+      existing.content === frame.content &&
+      existing.reasoningText === frame.reasoningText &&
+      existing.streamingFinished === frame.finished
+    ) {
+      return cur;
+    }
+    return cur.with(idx, {
+      ...existing,
+      content: frame.content,
+      reasoningText: frame.reasoningText,
+      streamingFinished: frame.finished,
+    });
+  }
+  return [
+    ...cur,
+    {
+      id: frame.messageId,
+      role: "assistant",
+      content: frame.content,
+      reasoningText: frame.reasoningText,
+      streamingFinished: frame.finished,
+      isError: false,
+      timestamp: new Date().toISOString(),
+      timeline: [],
+      attachments: [],
+    } satisfies WireMessage,
+  ];
+}
+
+function scheduleSearchSnapshot(set: Set, get: Get): void {
+  if (searchSnapshotTimer) clearTimeout(searchSnapshotTimer);
+  searchSnapshotTimer = setTimeout(() => {
+    searchSnapshotTimer = null;
+    publishSearchSnapshot(set, get);
+  }, SEARCH_TRANSCRIPT_SNAPSHOT_DEBOUNCE_MS);
+}
+
+function publishSearchSnapshot(set: Set, get: Get): void {
+  if (searchSnapshotTimer) {
+    clearTimeout(searchSnapshotTimer);
+    searchSnapshotTimer = null;
+  }
+  set({ searchMessagesBySession: get().messagesBySession });
+}
+
 function applyFrame(set: Set, get: Get, frame: BridgeFrame): void {
   switch (frame.type) {
     case "authOk":
@@ -266,7 +391,7 @@ function applyFrame(set: Set, get: Get, frame: BridgeFrame): void {
     case "messagesSnapshot": {
       const messagesBySession = { ...get().messagesBySession, [frame.sessionId]: frame.messages };
       const hasMoreBySession = { ...get().hasMoreBySession, [frame.sessionId]: frame.hasMore ?? false };
-      set({ messagesBySession, hasMoreBySession });
+      set({ messagesBySession, searchMessagesBySession: messagesBySession, hasMoreBySession });
       break;
     }
     case "messagesPage": {
@@ -274,7 +399,7 @@ function applyFrame(set: Set, get: Get, frame: BridgeFrame): void {
       const merged = [...frame.messages, ...cur];
       const messagesBySession = { ...get().messagesBySession, [frame.sessionId]: dedupeById(merged) };
       const hasMoreBySession = { ...get().hasMoreBySession, [frame.sessionId]: frame.hasMore };
-      set({ messagesBySession, hasMoreBySession });
+      set({ messagesBySession, searchMessagesBySession: messagesBySession, hasMoreBySession });
       break;
     }
     case "messageAppended": {
@@ -283,40 +408,12 @@ function applyFrame(set: Set, get: Get, frame: BridgeFrame): void {
         ...get().messagesBySession,
         [frame.sessionId]: dedupeById([...cur, frame.message]),
       };
-      set({ messagesBySession });
+      set({ messagesBySession, searchMessagesBySession: messagesBySession });
       break;
     }
-    case "messageStreaming": {
-      const cur = get().messagesBySession[frame.sessionId] ?? [];
-      const idx = cur.findIndex((m) => m.id === frame.messageId);
-      let next: WireMessage[];
-      if (idx >= 0) {
-        const updated: WireMessage = {
-          ...cur[idx]!,
-          content: frame.content,
-          reasoningText: frame.reasoningText,
-          streamingFinished: frame.finished,
-        };
-        next = cur.with(idx, updated);
-      } else {
-        next = [
-          ...cur,
-          {
-            id: frame.messageId,
-            role: "assistant",
-            content: frame.content,
-            reasoningText: frame.reasoningText,
-            streamingFinished: frame.finished,
-            isError: false,
-            timestamp: new Date().toISOString(),
-            timeline: [],
-            attachments: [],
-          } satisfies WireMessage,
-        ];
-      }
-      set({ messagesBySession: { ...get().messagesBySession, [frame.sessionId]: next } });
+    case "messageStreaming":
+      enqueueStreamingFrame(set, get, frame);
       break;
-    }
     case "errorEvent":
       console.error("[bridge errorEvent]", frame.code, frame.message);
       break;
@@ -374,6 +471,35 @@ function applyFrame(set: Set, get: Get, frame: BridgeFrame): void {
     default:
       break;
   }
+}
+
+export function __applyBridgeFrameForTest(frame: BridgeFrame): void {
+  applyFrame(useBridgeStore.setState as Set, useBridgeStore.getState, frame);
+}
+
+export function __flushStreamingFramesForTest(publishSearchSnapshot = false): void {
+  flushStreamingFrames(useBridgeStore.setState as Set, useBridgeStore.getState, { publishSearchSnapshot });
+}
+
+export function __resetBridgeStoreForTest(): void {
+  clearStreamingTimers();
+  useBridgeStore.setState({
+    client: null,
+    connection: { kind: "idle" },
+    bridge: { state: "booting", chatCount: 0 },
+    hostDisplayName: null,
+    chats: [],
+    sessions: [],
+    projects: [],
+    messagesBySession: {},
+    searchMessagesBySession: {},
+    hasMoreBySession: {},
+    rateLimits: null,
+    rateLimitsByLimitId: {},
+    files: {},
+    audioById: {},
+    imagesByPath: {},
+  });
 }
 
 function sortSessions(sessions: WireSession[]): WireSession[] {
