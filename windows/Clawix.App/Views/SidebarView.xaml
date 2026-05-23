@@ -54,6 +54,9 @@
               <Button Click="TogglePin_Click" Tag="{Binding}" ToolTipService.ToolTip="Toggle pin">
                 <FontIcon Glyph="&#xE718;" />
               </Button>
+              <Button Click="ArchiveChat_Click" Tag="{Binding}" ToolTipService.ToolTip="Archive chat">
+                <FontIcon Glyph="&#xE7B8;" />
+              </Button>
             </StackPanel>
           </Grid>
         </DataTemplate>
@@ -96,6 +99,9 @@
               </Button>
               <Button Click="TogglePin_Click" Tag="{Binding}" ToolTipService.ToolTip="Toggle pin">
                 <FontIcon Glyph="&#xE718;" />
+              </Button>
+              <Button Click="ArchiveChat_Click" Tag="{Binding}" ToolTipService.ToolTip="Archive chat">
+                <FontIcon Glyph="&#xE7B8;" />
               </Button>
             </StackPanel>
           </Grid>

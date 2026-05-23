@@ -102,6 +102,12 @@ public sealed partial class SidebarView : UserControl
         await App.Services.State.RenameChatAsync(chat, dialog.ChatTitle);
     }
 
+    private async void ArchiveChat_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is WireSession chat)
+            await App.Services.State.SetArchivedAsync(chat, archived: true);
+    }
+
     private void ProjectList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _selectedProject = ProjectList.SelectedItem as WireProject;

@@ -23,6 +23,7 @@ public sealed class InMemoryEngineHost : IEngineHost
     public IReadOnlyList<WireProject> ProjectsCurrent { get; set; } = [];
     public IReadOnlyList<WireClawJSServiceSnapshot> ClawJSServiceStatusesCurrent { get; set; } = [];
     public List<(string SessionId, bool Pinned)> PinCalls { get; } = new();
+    public List<(string SessionId, bool Archived)> ArchiveCalls { get; } = new();
     public List<(string SessionId, string Title)> RenameCalls { get; } = new();
 
     public event Action<BridgeRuntimeState>? BridgeStateChanged;
@@ -72,7 +73,11 @@ public sealed class InMemoryEngineHost : IEngineHost
     public Task<(IReadOnlyList<WireMessage> Messages, bool HasMore)> HandleLoadOlderMessagesAsync(string sessionId, string beforeMessageId, int limit, CancellationToken ct)
         => Task.FromResult<(IReadOnlyList<WireMessage>, bool)>((Array.Empty<WireMessage>(), false));
     public Task HandleEditPromptAsync(string sessionId, string messageId, string text, CancellationToken ct) => Task.CompletedTask;
-    public Task HandleArchiveAsync(string sessionId, bool archived, CancellationToken ct) => Task.CompletedTask;
+    public Task HandleArchiveAsync(string sessionId, bool archived, CancellationToken ct)
+    {
+        ArchiveCalls.Add((sessionId, archived));
+        return Task.CompletedTask;
+    }
     public Task HandlePinAsync(string sessionId, bool pinned, CancellationToken ct)
     {
         PinCalls.Add((sessionId, pinned));

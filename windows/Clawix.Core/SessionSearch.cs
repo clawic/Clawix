@@ -20,7 +20,7 @@ public static class SessionSearch
 
     public static IReadOnlyList<WireSession> FilterByProject(IEnumerable<WireSession> sessions, WireProject? project, string? query)
     {
-        var filtered = Filter(sessions, query);
+        var filtered = FilterVisible(sessions, query);
         if (project is null) return filtered;
 
         var projectRoot = NormalizePath(project.Cwd);
@@ -28,6 +28,13 @@ public static class SessionSearch
 
         return filtered
             .Where(session => IsInsideProject(session.Cwd, projectRoot))
+            .ToList();
+    }
+
+    public static IReadOnlyList<WireSession> FilterVisible(IEnumerable<WireSession> sessions, string? query)
+    {
+        return Filter(sessions, query)
+            .Where(session => !session.IsArchived)
             .ToList();
     }
 

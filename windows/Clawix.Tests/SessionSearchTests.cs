@@ -52,6 +52,14 @@ public sealed class SessionSearchTests
         Assert.Equal(new[] { "chat-b" }, result.Select(session => session.Id).ToArray());
     }
 
+    [Fact]
+    public void FilterVisible_OmitsArchivedSessions()
+    {
+        var result = SessionSearch.FilterVisible(SampleSessions(), null);
+
+        Assert.Equal(new[] { "chat-b", "chat-a" }, result.Select(session => session.Id).ToArray());
+    }
+
     private static WireSession[] SampleSessions()
     {
         return

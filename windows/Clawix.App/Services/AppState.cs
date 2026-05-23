@@ -171,6 +171,27 @@ public sealed partial class AppState : ObservableObject
             ?? Task.CompletedTask;
     }
 
+    public Task SetArchivedAsync(WireSession chat, bool archived)
+    {
+        var next = chat with
+        {
+            IsArchived = archived,
+            IsPinned = archived ? false : chat.IsPinned,
+        };
+        Sessions = Sessions.Select(session => session.Id == chat.Id ? next : session).ToList();
+        if (CurrentChat?.Id == chat.Id)
+        {
+            CurrentChat = archived ? null : next;
+            if (archived) CurrentMessages = [];
+        }
+
+        if (_client is null) return Task.CompletedTask;
+        BridgeBody body = archived
+            ? new BridgeBody.ArchiveSession(chat.Id)
+            : new BridgeBody.UnarchiveSession(chat.Id);
+        return _client.SendAsync(new BridgeFrame(body), CancellationToken.None);
+    }
+
     public Task SendMessageAsync(string text, IReadOnlyList<WireAttachment>? attachments = null)
     {
         if (_client is null) return Task.CompletedTask;
