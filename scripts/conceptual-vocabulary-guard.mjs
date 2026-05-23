@@ -9,13 +9,13 @@ const args = new Set(process.argv.slice(2));
 const json = args.has("--json");
 const updateBaseline = args.has("--update-baseline");
 const selfTest = args.has("--self-test");
+const reportAllSurfaces = args.has("--report-all-surfaces");
 const baselineRelativePath = "docs/conceptual-vocabulary-baseline.json";
 const registryRelativePath = "docs/vocabulary.registry.json";
 
 const ignoredDirs = new Set([
   ".git",
   ".build",
-  ".claude",
   ".data",
   ".next",
   ".next-e2e",
@@ -38,6 +38,7 @@ const ignoredPathParts = [
 ];
 const docsExtensions = new Set([".md", ".json", ".yaml", ".yml"]);
 const sourceExtensions = new Set([".swift", ".ts", ".tsx", ".js", ".mjs", ".kt", ".cs"]);
+const uiStringExtensions = new Set([".xcstrings", ".strings"]);
 const maxFileBytes = 1_000_000;
 
 function toPosix(relativePath) {
@@ -112,7 +113,9 @@ function isPublicInterfacePath(relativePath) {
 
 function isUiCopyPath(relativePath) {
   const lower = relativePath.toLowerCase();
-  if (!sourceExtensions.has(path.extname(relativePath))) return false;
+  const extension = path.extname(relativePath);
+  if (uiStringExtensions.has(extension)) return true;
+  if (!sourceExtensions.has(extension)) return false;
   return lower.includes("/ui/") ||
     lower.includes("/app/") ||
     lower.includes("/apps/") ||
@@ -127,6 +130,33 @@ function isScannedPath(relativePath) {
   if (relativePath.startsWith("docs/") && docsExtensions.has(ext)) return true;
   if (!sourceExtensions.has(ext)) return false;
   return isPublicInterfacePath(relativePath) || isUiCopyPath(relativePath);
+}
+
+function isTestFixturePath(relativePath) {
+  return /(^|\/)(test|tests|__tests__|fixtures|qa\/scenarios)(\/|$)|\.(test|spec)\./iu.test(relativePath);
+}
+
+function isExamplePath(relativePath) {
+  return /(^|\/)(examples?|samples?)(\/|$)/iu.test(relativePath);
+}
+
+function isFullSurfaceScannedPath(relativePath) {
+  const ext = path.extname(relativePath);
+  if (relativePath.startsWith("docs/") && docsExtensions.has(ext)) return true;
+  if (isTestFixturePath(relativePath) && (docsExtensions.has(ext) || sourceExtensions.has(ext))) return true;
+  if (isExamplePath(relativePath) && (docsExtensions.has(ext) || sourceExtensions.has(ext))) return true;
+  if (isUiCopyPath(relativePath)) return true;
+  return sourceExtensions.has(ext);
+}
+
+function categoryFor(relativePath) {
+  const ext = path.extname(relativePath);
+  if (relativePath.startsWith("docs/") && docsExtensions.has(ext)) return "docs";
+  if (isTestFixturePath(relativePath)) return "tests-fixtures";
+  if (isExamplePath(relativePath)) return "examples";
+  if (isUiCopyPath(relativePath)) return "ui-strings";
+  if (docsExtensions.has(ext) || sourceExtensions.has(ext)) return "code";
+  return "other";
 }
 
 function sortedObject(value) {
@@ -168,10 +198,10 @@ function loadPolicy(baseDir) {
   return guard;
 }
 
-function collectFindings(baseDir, policy) {
+function collectFindings(baseDir, policy, shouldScanPath = isScannedPath) {
   const findings = [];
   for (const relativePath of listedFiles(baseDir)) {
-    if (!isScannedPath(relativePath)) continue;
+    if (!shouldScanPath(relativePath)) continue;
     const absolutePath = path.join(baseDir, relativePath);
     const stat = fs.statSync(absolutePath);
     if (stat.size > maxFileBytes) continue;
@@ -202,6 +232,45 @@ function collectFindings(baseDir, policy) {
     }
   }
   return findings;
+}
+
+function categorySummaryFor(findings) {
+  const categories = {};
+  const samples = {};
+  for (const finding of findings) {
+    const category = categoryFor(finding.path);
+    const key = `${finding.term}/${finding.patternId}`;
+    categories[category] ??= {};
+    categories[category][key] ??= { files: new Set(), occurrences: 0 };
+    categories[category][key].files.add(finding.path);
+    categories[category][key].occurrences += 1;
+    samples[key] ??= [];
+    if (samples[key].length < 5) {
+      samples[key].push({
+        path: finding.path,
+        line: finding.line,
+        match: finding.match,
+      });
+    }
+  }
+
+  const serializableCategories = {};
+  for (const [category, patterns] of Object.entries(categories)) {
+    serializableCategories[category] = {};
+    for (const [pattern, value] of Object.entries(patterns)) {
+      serializableCategories[category][pattern] = {
+        files: value.files.size,
+        occurrences: value.occurrences,
+      };
+    }
+  }
+
+  return {
+    scope: "docs-code-ui-tests-fixtures-examples",
+    note: "Report-only scan across tracked docs, source, UI copy, tests, fixtures, and examples. It does not change the blocking baseline.",
+    categories: serializableCategories,
+    samples,
+  };
 }
 
 function countsFor(findings) {
@@ -298,7 +367,11 @@ function run(baseDir) {
   const counts = countsFor(findings);
   const failures = updateBaseline ? [] : compareToBaseline(baseDir, findings, counts);
   if (updateBaseline) writeBaseline(baseDir, policy, counts);
-  return { failures, summary: summaryFor(counts), baselineUpdated: updateBaseline };
+  const result = { failures, summary: summaryFor(counts), baselineUpdated: updateBaseline };
+  if (reportAllSurfaces) {
+    result.fullSurfaceReport = categorySummaryFor(collectFindings(baseDir, policy, isFullSurfaceScannedPath));
+  }
+  return result;
 }
 
 function writeFixture(baseDir, registry, files, baselineCounts = {}) {
@@ -363,6 +436,36 @@ function runSelfTest() {
             },
           ],
         },
+        {
+          term: "route",
+          blockedPatterns: [
+            {
+              id: "route-implies-authority",
+              pattern: "\\broute\\s+(?:owner|grants? access|permissions?|access control)\\b|\\broute\\s+implies\\s+authority\\b",
+              suggestion: "Use explicit grants, restrictions, and authority edges for access.",
+            },
+          ],
+        },
+        {
+          term: "grant",
+          blockedPatterns: [
+            {
+              id: "grant-as-approval",
+              pattern: "\\bgrant\\s+(?:is|as)\\s+(?:approval|consent)\\b|\\bgrant\\s+implies\\s+approval\\b|\\bgrant\\s+without\\s+(?:scope|principal)\\b",
+              suggestion: "Use grant for scoped capability edges and approval for review/consent gates.",
+            },
+          ],
+        },
+        {
+          term: "approval",
+          blockedPatterns: [
+            {
+              id: "approval-implies-access",
+              pattern: "\\bapproval\\s+(?:implies|grants)\\s+(?:access|authority|permission|permissions)\\b|\\bapproval\\s+(?:token|credential|secret|lease)\\b",
+              suggestion: "Use approval for review/consent and grant/lease/credential references for durable access.",
+            },
+          ],
+        },
       ],
     },
   };
@@ -371,14 +474,25 @@ function runSelfTest() {
   try {
     writeFixture(tempRoot, fixtureRegistry, {
       "docs/bad.md": "The workspace ownerId grants access.\nThe tenant is shown in UI.\nThe Node owner handles secrets.\nUse this plugin account for Slack.\n",
+      "docs/new-bad.md": "The route grants access.\nThe grant is approval.\nThe approval grants access.\n",
       "docs/allowed.md": "The legal owner is domain data. The provider tenant is technical tenant isolation. The broader integration account domain is not a configured credential.\n",
+      "packages/internal.ts": "const ownerId = 'internal-only';\n",
+      "tests/internal.test.ts": "const ownerId = 'test-fixture';\n",
+      "examples/internal.ts": "const ownerId = 'example-fixture';\n",
     });
     const failing = run(tempRoot);
     assertSelfTest(failing.failures.some((failure) => failure.includes("owner/generic-owner-authority")), "self-test must block ownerId authority usage");
     assertSelfTest(failing.failures.some((failure) => failure.includes("tenant/tenant-as-product-scope")), "self-test must block raw tenant UI usage");
     assertSelfTest(failing.failures.some((failure) => failure.includes("host/node-native-owner")), "self-test must block Node native ownership");
     assertSelfTest(failing.failures.some((failure) => failure.includes("connector/provider-plugin-account")), "self-test must block plugin account");
+    assertSelfTest(failing.failures.some((failure) => failure.includes("route/route-implies-authority")), "self-test must block route-as-authority usage");
+    assertSelfTest(failing.failures.some((failure) => failure.includes("grant/grant-as-approval")), "self-test must block grant-as-approval usage");
+    assertSelfTest(failing.failures.some((failure) => failure.includes("approval/approval-implies-access")), "self-test must block approval-as-access usage");
     assertSelfTest(!failing.failures.some((failure) => failure.includes("allowed.md")), "self-test must allow provider/domain contexts");
+    const fullReport = categorySummaryFor(collectFindings(tempRoot, loadPolicy(tempRoot), isFullSurfaceScannedPath));
+    assertSelfTest(fullReport.categories.code?.["owner/generic-owner-authority"]?.occurrences === 1, "self-test full-surface report must include code");
+    assertSelfTest(fullReport.categories["tests-fixtures"]?.["owner/generic-owner-authority"]?.occurrences === 1, "self-test full-surface report must include tests and fixtures");
+    assertSelfTest(fullReport.categories.examples?.["owner/generic-owner-authority"]?.occurrences === 1, "self-test full-surface report must include examples");
 
     const findings = collectFindings(tempRoot, loadPolicy(tempRoot));
     writeBaseline(tempRoot, loadPolicy(tempRoot), countsFor(findings));

@@ -23,7 +23,7 @@
             "id": "generic-owner-authority",
             "pattern": "\\bowner(?:Id|Kind|_id|ship)?\\b",
             "suggestion": "Do not use generic owner vocabulary for authority. Use steward/principal/grant/scope or a documented domain owner field.",
-            "allowedContextPhrases": ["legal owner", "asset owner", "account owner", "pet owner", "provider owner", "domain owner", "host ownership docs", "host ownership", "ownership docs", "ownership relation"]
+            "allowedContextPhrases": ["legal owner", "asset owner", "account owner", "pet owner", "provider owner", "domain owner", "host ownership docs", "host ownership", "host-ownership", "ownership docs", "ownership relation"]
           },
           {
             "id": "owner-implies-access",
@@ -106,6 +106,18 @@
         ]
       },
       {
+        "term": "route",
+        "canonicalMeaning": "Registered route graph path with explicit edge semantics; a route never grants authority by existing.",
+        "replacementGuidance": "Use route for graph paths and transport edges; use grants, restrictions, and authority edges for access.",
+        "blockedPatterns": [
+          {
+            "id": "route-implies-authority",
+            "pattern": "\\broute\\s+(?:owner|grants? access|permissions?|access control)\\b|\\broute\\s+implies\\s+authority\\b",
+            "suggestion": "Routes describe graph paths and transport edges. Use explicit grants, restrictions, and authority edges for access."
+          }
+        ]
+      },
+      {
         "term": "host",
         "canonicalMeaning": "Signed native owner of sensitive capabilities and host-specific operational state.",
         "replacementGuidance": "Use signed host for native authority; do not move native authority to Node or Relay.",
@@ -139,6 +151,30 @@
             "pattern": "\\b(?:plugin|integration) account\\b|\\bplugin credential\\b",
             "suggestion": "Use connector account or connector credential for configured external accounts.",
             "allowedContextPhrases": ["broader integration account domain", "integration account domain"]
+          }
+        ]
+      },
+      {
+        "term": "grant",
+        "canonicalMeaning": "Explicit capability edge scoped to a principal, resource, action, and governing domain.",
+        "replacementGuidance": "Use grant for scoped capability edges; use approval for review/consent gates.",
+        "blockedPatterns": [
+          {
+            "id": "grant-as-approval",
+            "pattern": "\\bgrant\\s+(?:is|as)\\s+(?:approval|consent)\\b|\\bgrant\\s+implies\\s+approval\\b|\\bgrant\\s+without\\s+(?:scope|principal)\\b",
+            "suggestion": "A grant is a scoped capability edge. Use approval for review/consent and include principal plus scope for grants."
+          }
+        ]
+      },
+      {
+        "term": "approval",
+        "canonicalMeaning": "Explicit review or consent gate; approval alone is not a durable access grant.",
+        "replacementGuidance": "Use approval for review/consent gates and grant/lease for scoped durable access.",
+        "blockedPatterns": [
+          {
+            "id": "approval-implies-access",
+            "pattern": "\\bapproval\\s+(?:implies|grants)\\s+(?:access|authority|permission|permissions)\\b|\\bapproval\\s+(?:token|credential|secret|lease)\\b",
+            "suggestion": "Approval is a review or consent gate. Use explicit grant, lease, or credential reference for durable access."
           }
         ]
       },
