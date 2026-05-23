@@ -10,6 +10,6 @@ PowerShell counterparts of `macos/scripts/*.sh`.
 | `public_hygiene_check.ps1` | `public_hygiene_check.sh` | Forbidden literal scan |
 | `_emit_version.ps1` | `_emit_version.sh` | Read VERSION + BUILD_NUMBER |
 
-All scripts read `.signing.env` from the workspace root for
+All scripts read signing values from the environment for
 `WIN_SIGN_THUMBPRINT`, `WIN_SIGN_TIMESTAMP_URL`, etc. The values never
 appear in code or in the public repo.

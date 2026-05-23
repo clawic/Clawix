@@ -23,9 +23,9 @@ elseif (Test-Path $appModeFile) {
     elseif ($raw -in @("dummy","fake","mock","demo")) { $mode = "dummy" }
 }
 
-# Source .signing.env for WIN_SIGN_* vars when present.
-$signingEnv = Join-Path $workspace ".signing.env"
-if (Test-Path $signingEnv) {
+# Source local signing env for WIN_SIGN_* vars when present.
+$signingEnv = $env:CLAWIX_SIGNING_ENV_FILE
+if (-not [string]::IsNullOrEmpty($signingEnv) -and (Test-Path $signingEnv)) {
     Get-Content $signingEnv | ForEach-Object {
         if ($_ -match '^\s*([A-Z_][A-Z0-9_]*)=(.+)$') {
             $name = $Matches[1]; $val = $Matches[2].Trim('"').Trim("'")

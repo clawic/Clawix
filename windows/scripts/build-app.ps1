@@ -24,7 +24,7 @@ try {
 
     if ($Sign.IsPresent) {
         $thumb = $env:WIN_SIGN_THUMBPRINT
-        if ([string]::IsNullOrEmpty($thumb)) { throw "WIN_SIGN_THUMBPRINT not set; source .signing.env first" }
+        if ([string]::IsNullOrEmpty($thumb)) { throw "WIN_SIGN_THUMBPRINT not set; load local signing environment first" }
         $tsa = $env:WIN_SIGN_TIMESTAMP_URL
         if ([string]::IsNullOrEmpty($tsa)) { $tsa = "http://timestamp.digicert.com" }
         foreach ($exe in @($appExe, $bridgedExe)) {

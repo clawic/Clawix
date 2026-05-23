@@ -109,4 +109,4 @@ Any decode drift between Swift and C# fails the fixture parity tests and
 
 The release pipeline lives in `<workspace>/RELEASE_WINDOWS.md`
 (private). Asset name is `Clawix-Setup.msix`. Code signing via
-`signtool.exe` using `WIN_SIGN_THUMBPRINT` from `.signing.env`.
+`signtool.exe` using `WIN_SIGN_THUMBPRINT` from the environment.

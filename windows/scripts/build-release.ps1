@@ -21,7 +21,7 @@ if ($env:CLAWIX_RELEASE_APPROVED_FOR -ne "windows-msix") {
 }
 
 $thumb = $env:WIN_SIGN_THUMBPRINT
-if ([string]::IsNullOrEmpty($thumb)) { throw "WIN_SIGN_THUMBPRINT not set; source .signing.env first" }
+if ([string]::IsNullOrEmpty($thumb)) { throw "WIN_SIGN_THUMBPRINT not set; load local signing environment first" }
 
 $publishDir = Join-Path $ROOT "publish\$Platform"
 if (Test-Path $publishDir) { Remove-Item -Recurse -Force $publishDir }

@@ -29,9 +29,9 @@ windows/
 
 ## Hard Rules Inherited From `<workspace>/AGENTS.md`
 
-- **Literal blacklist**: the real Team ID, real bundle id (`BUNDLE_ID` in `.signing.env`), SKU (`APP_SKU`), and Authenticode certificate thumbprint (`WIN_SIGN_THUMBPRINT`) never appear in code under `clawix/windows/`. They are read from environment variables at runtime.
-- **Signed build**: run `pwsh scripts/build-app.ps1` from the workspace root. The script reads `.signing.env` and signs with `signtool.exe` using `WIN_SIGN_THUMBPRINT`. Without stable signing, SmartScreen blocks the binary.
-- **Coalesced restart**: agents use `pwsh scripts-dev/restart-app.ps1 --requester "<id>"` from the workspace root, not `dev.ps1` directly. It uses the same `SCHEDULED/QUEUED/BLOCKED/PENDING_UNLOCK` contract and `<workspace>\.dev-control\` state as macOS.
+- **Literal blacklist**: the real Team ID, real bundle id (`BUNDLE_ID`), SKU (`APP_SKU`), and Authenticode certificate thumbprint (`WIN_SIGN_THUMBPRINT`) never appear in code under `clawix/windows/`. They are read from environment variables at runtime.
+- **Signed build**: run `pwsh scripts/build-app.ps1` from the workspace root. The script signs with `signtool.exe` using `WIN_SIGN_THUMBPRINT`. Without stable signing, SmartScreen blocks the binary.
+- **Coalesced restart**: agents should use the workspace restart wrapper when one is configured, not `dev.ps1` directly. It uses a scheduled/queued/blocked/pending-unlock contract in external state.
 - **`real` vs `dummy` mode**: read `<workspace>\.app-mode`, same as macOS. The same user phrases switch the mode.
 - **Commits**: Conventional Commits with a `windows/` or `win/` scope, for example `feat(windows): add daemon heartbeat`.
 
