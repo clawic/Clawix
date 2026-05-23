@@ -13,7 +13,7 @@ const {
 } = require('./platform');
 
 // Read ~/.clawix/bin/manifest.json once. Dev links written by
-// scripts-dev/cli-link.sh stamp `source: "npm-link"`, which forces
+// a local development link stamp `source: "npm-link"`, which forces
 // the resolver to prefer the locally-built binaries over whatever
 // Clawix.app may ship. Outside dev, the manifest is either missing
 // or stamped `"source": "github-release"` and the .app's helper wins.

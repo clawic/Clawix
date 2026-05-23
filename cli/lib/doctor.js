@@ -81,7 +81,7 @@ function run() {
     if (!bridgedSig.exists) {
         checks.push(check('clawix-bridge-binary', 'fail',
             `clawix-bridge not found at ${bridgedPath}.`,
-            'install signed bridge helpers with `clawix setup` or rerun `bash scripts-dev/cli-link.sh` for dev.'));
+            'install signed bridge helpers with `clawix setup` or refresh the local development link.'));
     } else if (!bridgedSig.valid) {
         checks.push(check('clawix-bridge-binary', 'fail',
             `clawix-bridge failed codesign --verify at ${bridgedPath}.`,
