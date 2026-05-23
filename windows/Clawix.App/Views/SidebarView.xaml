@@ -14,6 +14,8 @@
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
@@ -108,8 +110,32 @@
         </DataTemplate>
       </ListView.ItemTemplate>
     </ListView>
-    <Button Grid.Row="8" Content="New chat" HorizontalAlignment="Stretch" Margin="6" Click="NewChat_Click" />
-    <views:RateLimitsWidget Grid.Row="9" x:Name="RateLimits" Margin="6,8,6,4" />
-    <TextBlock Grid.Row="10" x:Name="BridgeStatusText" Margin="6,4,6,6" Style="{ThemeResource ClawixCaption}" />
+    <TextBlock Grid.Row="8" x:Name="ArchivedHeader" Text="Archived" Margin="8,4,8,4" Style="{ThemeResource ClawixCaption}" />
+    <ListView Grid.Row="9" x:Name="ArchivedList"
+              MaxHeight="128"
+              ItemsSource="{x:Bind ArchivedSessions, Mode=OneWay}"
+              SelectionChanged="ArchivedList_SelectionChanged"
+              SelectionMode="Single">
+      <ListView.ItemTemplate>
+        <DataTemplate x:DataType="models:WireSession">
+          <Grid Padding="6,4">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" />
+              <TextBlock Text="{x:Bind LastMessagePreview}" Opacity="0.6" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <Button Grid.Column="1" Click="UnarchiveChat_Click" Tag="{Binding}" ToolTipService.ToolTip="Unarchive chat">
+              <FontIcon Glyph="&#xE7B8;" />
+            </Button>
+          </Grid>
+        </DataTemplate>
+      </ListView.ItemTemplate>
+    </ListView>
+    <Button Grid.Row="10" Content="New chat" HorizontalAlignment="Stretch" Margin="6" Click="NewChat_Click" />
+    <views:RateLimitsWidget Grid.Row="11" x:Name="RateLimits" Margin="6,8,6,4" />
+    <TextBlock Grid.Row="12" x:Name="BridgeStatusText" Margin="6,4,6,6" Style="{ThemeResource ClawixCaption}" />
   </Grid>
 </UserControl>

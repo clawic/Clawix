@@ -45,6 +45,13 @@ public static class SessionSearch
             .ToList();
     }
 
+    public static IReadOnlyList<WireSession> FilterArchived(IEnumerable<WireSession> sessions, string? query)
+    {
+        return Filter(sessions, query)
+            .Where(session => session.IsArchived)
+            .ToList();
+    }
+
     private static bool Matches(WireSession session, string query)
     {
         return Contains(session.Title, query)

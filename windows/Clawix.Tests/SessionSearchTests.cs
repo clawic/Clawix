@@ -60,6 +60,14 @@ public sealed class SessionSearchTests
         Assert.Equal(new[] { "chat-b", "chat-a" }, result.Select(session => session.Id).ToArray());
     }
 
+    [Fact]
+    public void FilterArchived_ReturnsArchivedSessions()
+    {
+        var result = SessionSearch.FilterArchived(SampleSessions(), null);
+
+        Assert.Equal(new[] { "chat-c" }, result.Select(session => session.Id).ToArray());
+    }
+
     private static WireSession[] SampleSessions()
     {
         return

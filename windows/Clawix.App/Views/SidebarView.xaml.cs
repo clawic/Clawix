@@ -10,6 +10,7 @@ public sealed partial class SidebarView : UserControl
 {
     public ObservableCollection<WireSession> Sessions { get; } = new();
     public ObservableCollection<WireSession> PinnedSessions { get; } = new();
+    public ObservableCollection<WireSession> ArchivedSessions { get; } = new();
     public ObservableCollection<WireProject> Projects { get; } = new();
     private IReadOnlyList<WireSession> _allSessions = [];
     private WireProject? _selectedProject;
@@ -30,6 +31,7 @@ public sealed partial class SidebarView : UserControl
                 {
                     _allSessions = state.Sessions;
                     RefreshPinnedSessions();
+                    RefreshArchivedSessions();
                     RefreshSessions();
                 });
             if (args.PropertyName == nameof(state.Projects))
@@ -49,6 +51,7 @@ public sealed partial class SidebarView : UserControl
         };
         _allSessions = state.Sessions;
         RefreshPinnedSessions();
+        RefreshArchivedSessions();
         RefreshProjects(state.Projects);
         RefreshSessions();
         BridgeStatusText.Text = state.BridgeStateLabel;
@@ -61,6 +64,7 @@ public sealed partial class SidebarView : UserControl
         if (ChatList.SelectedItem is WireSession chat)
         {
             PinnedList.SelectedItem = null;
+            ArchivedList.SelectedItem = null;
             await App.Services.State.SelectChatAsync(chat);
         }
     }
@@ -70,6 +74,17 @@ public sealed partial class SidebarView : UserControl
         if (PinnedList.SelectedItem is WireSession chat)
         {
             ChatList.SelectedItem = null;
+            ArchivedList.SelectedItem = null;
+            await App.Services.State.SelectChatAsync(chat);
+        }
+    }
+
+    private async void ArchivedList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ArchivedList.SelectedItem is WireSession chat)
+        {
+            ChatList.SelectedItem = null;
+            PinnedList.SelectedItem = null;
             await App.Services.State.SelectChatAsync(chat);
         }
     }
@@ -78,6 +93,7 @@ public sealed partial class SidebarView : UserControl
     {
         ChatList.SelectedItem = null;
         PinnedList.SelectedItem = null;
+        ArchivedList.SelectedItem = null;
         App.Services.State.StartNewChat();
     }
 
@@ -108,6 +124,12 @@ public sealed partial class SidebarView : UserControl
             await App.Services.State.SetArchivedAsync(chat, archived: true);
     }
 
+    private async void UnarchiveChat_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is WireSession chat)
+            await App.Services.State.SetArchivedAsync(chat, archived: false);
+    }
+
     private void ProjectList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _selectedProject = ProjectList.SelectedItem as WireProject;
@@ -127,6 +149,7 @@ public sealed partial class SidebarView : UserControl
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         RefreshPinnedSessions();
+        RefreshArchivedSessions();
         RefreshSessions();
     }
 
@@ -146,6 +169,24 @@ public sealed partial class SidebarView : UserControl
         var hasPinned = PinnedSessions.Count > 0;
         PinnedHeader.Visibility = hasPinned ? Visibility.Visible : Visibility.Collapsed;
         PinnedList.Visibility = hasPinned ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void RefreshArchivedSessions()
+    {
+        var selectedId = (ArchivedList.SelectedItem as WireSession)?.Id;
+        var filtered = SessionSearch.FilterArchived(_allSessions, SearchBox.Text);
+        ArchivedSessions.Clear();
+        WireSession? selected = null;
+        foreach (var chat in filtered)
+        {
+            ArchivedSessions.Add(chat);
+            if (chat.Id == selectedId) selected = chat;
+        }
+
+        ArchivedList.SelectedItem = selected;
+        var hasArchived = ArchivedSessions.Count > 0;
+        ArchivedHeader.Visibility = hasArchived ? Visibility.Visible : Visibility.Collapsed;
+        ArchivedList.Visibility = hasArchived ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void RefreshSessions()
