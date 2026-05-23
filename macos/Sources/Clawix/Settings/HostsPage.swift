@@ -12,6 +12,7 @@ struct HostsPage: View {
     @State private var editorItem: HostEditorItem? = nil
     @State private var detailItem: HostDetailItem? = nil
     @State private var bridgeLease: BridgeDemandLease?
+    @State private var workspaceAddInFlight = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -289,10 +290,16 @@ struct HostsPage: View {
                 }
                 CardDivider()
                 HStack {
+                    if workspaceAddInFlight {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
                     Spacer()
                     IconChipButton(symbol: "folder", label: "Add folder…", isPrimary: true) {
                         Task { await pickAndAddWorkspace() }
                     }
+                    .disabled(workspaceAddInFlight)
+                    .accessibilityHint(Text(workspaceAddInFlight ? "Adding a trusted workspace folder." : "Choose a local folder remote peers may run jobs in."))
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
@@ -301,6 +308,7 @@ struct HostsPage: View {
     }
 
     private func pickAndAddWorkspace() async {
+        guard !workspaceAddInFlight else { return }
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
@@ -309,6 +317,8 @@ struct HostsPage: View {
         panel.prompt = "Allow"
         let response = await MainActor.run { panel.runModal() }
         guard response == .OK, let url = panel.url else { return }
+        workspaceAddInFlight = true
+        defer { workspaceAddInFlight = false }
         await store.addWorkspace(path: url.path)
     }
 }

@@ -285,6 +285,7 @@ struct HostEditorSheet: View {
     }
 
     private func commit() async {
+        guard canCommit else { return }
         switch mode {
         case .pairMac:
             await commitPairing()
@@ -294,6 +295,7 @@ struct HostEditorSheet: View {
     }
 
     private func commitPairing() async {
+        guard !pairingInFlight else { return }
         pairingInFlight = true
         pairingError = nil
         pairingSuccessName = nil
@@ -314,6 +316,7 @@ struct HostEditorSheet: View {
     }
 
     private func commitSshServer() async {
+        guard !sshInFlight else { return }
         sshInFlight = true
         sshError = nil
         sshSuccessName = nil

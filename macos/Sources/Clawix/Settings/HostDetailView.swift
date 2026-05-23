@@ -9,6 +9,7 @@ struct HostDetailView: View {
     @State private var workspaceDraft: String = ""
     @State private var revokeConfirm = false
     @State private var actionInFlight = false
+    @State private var actionError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -23,6 +24,9 @@ struct HostDetailView: View {
                     capabilitiesCard
                     workspaceCard
                     metadataCard
+                    if let actionError {
+                        InfoBanner(text: actionError, kind: .error)
+                    }
                 }
                 .padding(.horizontal, 22)
                 .padding(.bottom, 8)
@@ -54,17 +58,33 @@ struct HostDetailView: View {
     }
 
     private func runRevoke() async {
+        guard !actionInFlight else { return }
         actionInFlight = true
+        actionError = nil
         defer { actionInFlight = false }
-        if case .success = await store.revokePeer(nodeId: peer.nodeId) {
+        switch await store.revokePeer(nodeId: peer.nodeId) {
+        case .success:
             onClose()
+        case .failure(let error):
+            if error != .cancelled {
+                actionError = SettingsUtilities.failureMessage(for: error, surface: "settings.hosts.revoke")
+            }
         }
     }
 
     private func runUnrevoke() async {
+        guard !actionInFlight else { return }
         actionInFlight = true
+        actionError = nil
         defer { actionInFlight = false }
-        _ = await store.unrevokePeer(nodeId: peer.nodeId)
+        switch await store.unrevokePeer(nodeId: peer.nodeId) {
+        case .success:
+            break
+        case .failure(let error):
+            if error != .cancelled {
+                actionError = SettingsUtilities.failureMessage(for: error, surface: "settings.hosts.unrevoke")
+            }
+        }
     }
 
     // MARK: - Header
