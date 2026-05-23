@@ -124,7 +124,7 @@ private struct AgentCard: View {
                             .padding(.vertical, 1.5)
                             .background(
                                 Capsule(style: .continuous)
-                                    .fill(Color.white.opacity(0.06))
+                                    .fill(Color.overlay(0.06))
                             )
                     }
                 }
@@ -152,10 +152,10 @@ private struct AgentCard: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(hovered ? 0.04 : 0.025))
+                .fill(Color.overlay(hovered ? 0.04 : 0.025))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.white.opacity(0.07), lineWidth: 0.6)
+                        .stroke(Color.overlay(0.07), lineWidth: 0.6)
                 )
         )
         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

@@ -384,7 +384,7 @@ struct AgentEditorSheet: View {
             .padding(14)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.025))
+                    .fill(Color.overlay(0.025))
             )
         }
     }
@@ -402,10 +402,10 @@ struct AgentEditorSheet: View {
 
     private var fieldBackground: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color.white.opacity(0.04))
+            .fill(Color.overlay(0.04))
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                    .stroke(Color.overlay(0.10), lineWidth: 0.5)
             )
     }
 
@@ -437,7 +437,7 @@ struct AgentEditorSheet: View {
                     .padding(.vertical, 4)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                     )
                 }
             }

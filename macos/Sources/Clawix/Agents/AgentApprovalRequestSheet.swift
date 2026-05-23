@@ -58,7 +58,7 @@ struct AgentApprovalRequestSheet: View {
                 .frame(minHeight: 80, maxHeight: 160)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(Color.overlay(0.04))
                 )
                 .thinScrollers()
             }

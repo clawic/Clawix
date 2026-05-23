@@ -222,7 +222,7 @@ struct AgentDetailView: View {
                         .padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.white.opacity(0.03))
+                                .fill(Color.overlay(0.03))
                         )
                     }
                     .buttonStyle(.plain)
@@ -320,7 +320,7 @@ struct AgentDetailView: View {
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color.white.opacity(0.03))
+                            .fill(Color.overlay(0.03))
                     )
                 }
             }
@@ -353,7 +353,7 @@ struct AgentDetailView: View {
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color.white.opacity(0.03))
+                            .fill(Color.overlay(0.03))
                     )
                 }
             }
@@ -421,7 +421,7 @@ struct AgentDetailView: View {
             .padding(14)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.025))
+                    .fill(Color.overlay(0.025))
             )
         }
     }
@@ -477,7 +477,7 @@ struct FlowChips: View {
                     .padding(.vertical, 4)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(Color.overlay(0.06))
                     )
             }
         }
