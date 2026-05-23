@@ -53,7 +53,7 @@ struct EventPopover: View {
                         .frame(height: 24)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.white.opacity(0.06))
+                                .fill(Color.overlay(0.06))
                         )
                 }
                 .buttonStyle(.plain)
@@ -65,7 +65,7 @@ struct EventPopover: View {
                         .frame(height: 24)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.white.opacity(0.06))
+                                .fill(Color.overlay(0.06))
                         )
                 }
                 .buttonStyle(.plain)
@@ -76,10 +76,10 @@ struct EventPopover: View {
         .frame(width: 320)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(white: 0.135))
+                .fill(Color.gray(light: 0.94, dark: 0.135))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                        .stroke(Color.overlay(0.10), lineWidth: 0.5)
                 )
                 .shadow(color: .black.opacity(0.4), radius: 18, x: 0, y: 10)
         )

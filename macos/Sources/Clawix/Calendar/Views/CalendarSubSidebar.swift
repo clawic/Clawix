@@ -58,7 +58,7 @@ struct CalendarSubSidebar: View {
                         .frame(width: 11, height: 11)
                     if isVisible {
                         LucideIcon(.check, size: 7)
-                            .foregroundColor(.white)
+                            .foregroundColor(Palette.textPrimary)
                     }
                 }
                 Text(source.title)

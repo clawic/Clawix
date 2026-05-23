@@ -37,7 +37,7 @@ struct EventEditSheet: View {
             footer
         }
         .frame(width: 440, height: 540)
-        .background(Color(white: 0.135))
+        .background(Color.gray(light: 0.94, dark: 0.135))
     }
 
     private var header: some View {
@@ -227,7 +227,7 @@ struct EventEditSheet: View {
             } label: {
                 Text(mode == .create ? "Create" : "Save")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(Palette.textPrimary)
                     .padding(.horizontal, 18)
                     .frame(height: 28)
                     .background(

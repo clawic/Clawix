@@ -69,7 +69,7 @@ private struct MiniMonthTile: View {
         }
         .padding(8)
         .frame(width: size.width, height: size.height)
-        .background(hovered ? Color.white.opacity(0.04) : Color.clear)
+        .background(hovered ? Color.overlay(0.04) : Color.clear)
         .contentShape(Rectangle())
         .onHover { hovered = $0 }
         .onTapGesture {
