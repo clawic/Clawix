@@ -71,6 +71,16 @@ final class RescueRepairContextTests: XCTestCase {
         XCTAssertTrue(package.agentInstructions.contains { $0.contains("evolution CLI report is unavailable") })
     }
 
+    func testRescueRedactionUsesCentralUserHomeRoutePattern() throws {
+        let routesSource = try readSource("ClawixUserHomeRoutes.swift")
+        let rescueSource = try readSource("Rescue/RescueRepairContext.swift")
+
+        XCTAssertEqual(ClawixUserHomeRoutes.absoluteUsersPathRedactionPattern, #"/Users/[^\s"'`]+"#)
+        XCTAssertTrue(routesSource.contains("absoluteUsersPathRedactionPattern"))
+        XCTAssertTrue(rescueSource.contains("ClawixUserHomeRoutes.absoluteUsersPathRedactionPattern"))
+        XCTAssertFalse(rescueSource.contains(##"of: #"/Users/[^\s"'`]+"#"##))
+    }
+
     @MainActor
     func testEvolutionCommandClientUsesRepairDoctorAndDryRunCommands() throws {
         var seen: [[String]] = []
@@ -156,6 +166,20 @@ final class RescueRepairContextTests: XCTestCase {
         XCTAssertEqual(snapshot.runtimeCount, 1)
 
         try? FileManager.default.removeItem(at: tempDir)
+    }
+
+    private func readSource(_ relativePath: String) throws -> String {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let root = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent(ClawixPersistentSurfacePaths.components.sources, isDirectory: true)
+            .appendingPathComponent(ClawixPersistentSurfacePaths.components.clawix, isDirectory: true)
+        return try String(
+            contentsOf: root.appendingPathComponent(relativePath, isDirectory: false),
+            encoding: .utf8
+        )
     }
 
     private static let fixtureRepairEnvelope = Data("""
