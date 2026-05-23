@@ -19,7 +19,8 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 var port = ushort.TryParse(Environment.GetEnvironmentVariable("CLAWIX_BRIDGE_PORT"), out var p) ? p : (ushort)24080;
-var bonjourDisabled = Environment.GetEnvironmentVariable("CLAWIX_BRIDGE_DISABLE_BONJOUR") == "1";
+var bonjourDisabled = Environment.GetEnvironmentVariable("CLAWIX_BRIDGE_DISABLE_BONJOUR") == "1"
+    || !PairingPublicationSettings.ReadBonjourEnabled();
 
 using var builder = Host.CreateDefaultBuilder(args)
     .UseSerilog()

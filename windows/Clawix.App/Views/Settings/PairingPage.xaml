@@ -12,7 +12,10 @@
         <StackPanel Spacing="12" Padding="0,8,0,0">
           <Button Content="Rotate pairing token" Click="Rotate_Click" />
           <Button Content="Copy QR JSON" Click="CopyQr_Click" />
-          <ToggleSwitch Header="Publish via Bonjour" IsOn="True" />
+          <ToggleSwitch x:Name="PublishBonjourSwitch"
+                        Header="Publish via Bonjour"
+                        Toggled="PublishBonjourSwitch_Toggled" />
+          <TextBlock x:Name="PairingStatusText" Opacity="0.7" TextWrapping="Wrap" />
         </StackPanel>
       </Expander>
     </StackPanel>
