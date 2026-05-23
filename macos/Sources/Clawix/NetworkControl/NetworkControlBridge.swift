@@ -475,94 +475,483 @@ final class NetworkControlModel: ObservableObject {
     }
 }
 
+/// Network Control Center. Shows where agent traffic is enforced
+/// (gateway, Mac, runtime), the routing rules in effect, and the recent
+/// allow/deny decisions. Visual language follows `STYLE.md`: Manrope via
+/// `BodyFont`, `Palette` tokens, Lucide glyphs, `thinScrollers`, and
+/// sentence-case section labels.
 struct NetworkControlCenterView: View {
     @ObservedObject var model: NetworkControlModel
+    @State private var detailOptIn = false
+    @State private var isRefreshing = false
+
     private static let visibleEventLimit = 100
+    private static let okColor = Color(red: 0.34, green: 0.78, blue: 0.55)
+    private static let warnColor = Color(red: 1.0, green: 0.78, blue: 0.34)
+    private static let denyColor = Color(red: 0.95, green: 0.45, blue: 0.45)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Network")
-                    .font(.headline)
-                Spacer()
-                if let status = model.status {
-                    Text(status.defaultRedaction)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            if let errorMessage = model.errorMessage {
-                Text(errorMessage)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-
-            HStack(spacing: 8) {
-                statusPill("Gateway", model.status?.gateway ?? "unknown")
-                statusPill("Mac", model.status?.nativeMac ?? "unknown")
-                statusPill("Events", "\(model.status?.recentEvents ?? model.events.count)")
-            }
-
-            List {
-                Section("Adapters") {
-                    ForEach(model.adapters) { adapter in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(adapter.label)
-                                Text(adapter.reason)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text(adapter.status)
-                                .font(.caption)
-                        }
-                    }
-                }
-
-                Section("Rules") {
-                    ForEach(model.rules) { rule in
-                        HStack {
-                            Text(rule.action)
-                            Text(rule.endpointValue.isEmpty ? rule.endpointKind : rule.endpointValue)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(rule.enabled ? "enabled" : "disabled")
-                                .font(.caption)
-                        }
-                    }
-                }
-
-                Section("Recent") {
-                    ForEach(model.events.prefix(Self.visibleEventLimit)) { event in
-                        HStack {
-                            Text(event.decision)
-                            Text(event.endpointValue)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(event.adapterID)
-                                .font(.caption)
-                        }
-                    }
-                }
-            }
-            .listStyle(.inset)
+        VStack(spacing: 0) {
+            header
+            CardDivider()
+            content
         }
-        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .task(id: detailOptIn) { await reload() }
     }
 
-    private func statusPill(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.caption)
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Network")
+                    .font(BodyFont.system(size: 16, wght: 600))
+                    .foregroundColor(Palette.textPrimary)
+                Text(headerSubtitle)
+                    .font(BodyFont.system(size: 11, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+            }
+            Spacer()
+            IconChipButton(symbol: "arrow.clockwise", label: "Refresh") {
+                Task { await reload() }
+            }
+            .disabled(isRefreshing)
+            .opacity(isRefreshing ? 0.5 : 1)
+        }
+        .padding(.horizontal, 22)
+        .padding(.vertical, 14)
+    }
+
+    private var headerSubtitle: String {
+        let events = model.status?.recentEvents ?? model.events.count
+        let ruleText = model.rules.count == 1 ? "1 rule" : "\(model.rules.count) rules"
+        let eventText = events == 1 ? "1 recent decision" : "\(events) recent decisions"
+        return "\(ruleText) · \(eventText)"
+    }
+
+    // MARK: - Content
+
+    @ViewBuilder
+    private var content: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                if let errorMessage = model.errorMessage {
+                    errorCard(errorMessage)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    sectionHeader("Enforcement")
+                    HStack(spacing: 10) {
+                        scopeTile(icon: .globe, label: "Gateway", state: model.status?.gateway ?? "")
+                        scopeTile(icon: .laptop, label: "Mac", state: model.status?.nativeMac ?? "")
+                        scopeTile(icon: .terminal, label: "Runtime", state: model.status?.clawRuntime ?? "")
+                    }
+                    privacyControl
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    sectionHeader("Adapters", count: model.adapters.isEmpty ? nil : model.adapters.count)
+                    if model.adapters.isEmpty {
+                        emptyRow("No enforcement adapters reported.")
+                    } else {
+                        ForEach(model.adapters) { adapterCard($0) }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    sectionHeader("Rules", count: model.rules.isEmpty ? nil : model.rules.count)
+                    if model.rules.isEmpty {
+                        emptyRow("No routing rules defined.")
+                    } else {
+                        ForEach(model.rules) { ruleCard($0) }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    sectionHeader("Recent activity", count: model.events.isEmpty ? nil : model.events.count)
+                    if model.events.isEmpty {
+                        emptyRow("No network decisions recorded yet.")
+                    } else {
+                        ForEach(model.events.prefix(Self.visibleEventLimit)) { eventCard($0) }
+                    }
+                }
+            }
+            .padding(.horizontal, 22)
+            .padding(.vertical, 18)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .thinScrollers()
+    }
+
+    // MARK: - Enforcement summary
+
+    private func scopeTile(icon: LucideIcon.Kind, label: String, state: String) -> some View {
+        let color = Self.enforcementColor(state)
+        return HStack(spacing: 10) {
+            LucideIcon(icon, size: 15)
+                .foregroundColor(Palette.textPrimary)
+                .frame(width: 30, height: 30)
+                .background(
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Color.white.opacity(0.06))
+                )
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(BodyFont.system(size: 11, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 6, height: 6)
+                    Text(state.isEmpty ? "Off" : state.capitalized)
+                        .font(BodyFont.system(size: 12.5, wght: 600))
+                        .foregroundColor(Palette.textPrimary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 11)
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.035))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Palette.popupStroke, lineWidth: Palette.popupStrokeWidth)
+                )
+        )
+    }
+
+    private var privacyControl: some View {
+        HStack(spacing: 12) {
+            LucideIcon(detailOptIn ? .eye : .eyeOff, size: 15)
+                .foregroundColor(Palette.textPrimary)
+                .frame(width: 30, height: 30)
+                .background(
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Color.white.opacity(0.06))
+                )
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Reveal endpoint details")
+                    .font(BodyFont.system(size: 13, wght: 600))
+                    .foregroundColor(Palette.textPrimary)
+                Text("Domains and processes are aggregated by default.")
+                    .font(BodyFont.system(size: 11, wght: 500))
+                    .foregroundColor(Palette.textSecondary)
+            }
+            Spacer()
+            PillToggle(isOn: $detailOptIn, accessibilityLabel: "Reveal endpoint details")
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.025))
+        )
+    }
+
+    // MARK: - Cards
+
+    private func adapterCard(_ adapter: NetworkControlAdapter) -> some View {
+        HStack(spacing: 12) {
+            LucideIcon(Self.adapterIcon(adapter.kind), size: 14)
+                .foregroundColor(Palette.textPrimary)
+                .frame(width: 28, height: 28)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.white.opacity(0.06))
+                )
+            VStack(alignment: .leading, spacing: 2) {
+                Text(adapter.label)
+                    .font(BodyFont.system(size: 13, wght: 600))
+                    .foregroundColor(Palette.textPrimary)
+                if !adapter.reason.isEmpty {
+                    Text(adapter.reason)
+                        .font(BodyFont.system(size: 11, wght: 500))
+                        .foregroundColor(Palette.textSecondary)
+                        .lineLimit(2)
+                }
+                if let reentry = adapter.reentryCondition, !reentry.isEmpty {
+                    Text("Re-enters when \(reentry)")
+                        .font(BodyFont.system(size: 10.5, wght: 500))
+                        .foregroundColor(Palette.textTertiary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 4) {
+                statusBadge(adapter.status)
+                if adapter.externalPending {
+                    tag("External pending", color: Self.warnColor)
+                }
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.025))
+        )
+    }
+
+    private func ruleCard(_ rule: NetworkControlRule) -> some View {
+        let color = decisionColor(rule.action)
+        return HStack(spacing: 12) {
+            decisionGlyph(rule.action, color: color)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(rule.action.isEmpty ? "Rule" : rule.action.capitalized)
+                        .font(BodyFont.system(size: 13, wght: 600))
+                        .foregroundColor(Palette.textPrimary)
+                    Text(endpointText(kind: rule.endpointKind, value: rule.endpointValue))
+                        .font(BodyFont.system(size: 12, wght: 500))
+                        .foregroundColor(Palette.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                HStack(spacing: 8) {
+                    if !rule.subjectKind.isEmpty { metaText(rule.subjectKind) }
+                    if !rule.source.isEmpty { metaText("via \(rule.source)") }
+                    if let notes = rule.notes, !notes.isEmpty { metaText(notes) }
+                }
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Priority \(rule.priority)")
+                    .font(BodyFont.system(size: 10.5, wght: 500))
+                    .foregroundColor(Palette.textTertiary)
+                if !rule.enabled {
+                    tag("Disabled", color: Palette.textTertiary)
+                }
+            }
+        }
+        .opacity(rule.enabled ? 1 : 0.55)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.025))
+        )
+    }
+
+    private func eventCard(_ event: NetworkControlEvent) -> some View {
+        let color = decisionColor(event.decision)
+        return HStack(spacing: 12) {
+            decisionGlyph(event.decision, color: color)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(event.decision.isEmpty ? "Decision" : event.decision.capitalized)
+                        .font(BodyFont.system(size: 13, wght: 600))
+                        .foregroundColor(Palette.textPrimary)
+                    Text(eventEndpoint(event))
+                        .font(BodyFont.system(size: 12, wght: 500))
+                        .foregroundColor(Palette.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                HStack(spacing: 8) {
+                    if !event.subjectKind.isEmpty { metaText(event.subjectKind) }
+                    if !event.adapterID.isEmpty { metaText(event.adapterID) }
+                    if event.bytesIn + event.bytesOut > 0 {
+                        metaText("↓\(formatBytes(event.bytesIn)) ↑\(formatBytes(event.bytesOut))")
+                    }
+                }
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 4) {
+                if !event.observedAt.isEmpty {
+                    Text(relativeTime(event.observedAt))
+                        .font(BodyFont.system(size: 10.5, wght: 500))
+                        .foregroundColor(Palette.textTertiary)
+                }
+                if event.domainHidden || event.processHidden {
+                    LucideIcon(.eyeOff, size: 11)
+                        .foregroundColor(Palette.textTertiary)
+                }
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.025))
+        )
+    }
+
+    private func errorCard(_ message: String) -> some View {
+        HStack(spacing: 10) {
+            LucideIcon(.triangleAlert, size: 14)
+                .foregroundColor(Self.denyColor)
+            Text(message)
+                .font(BodyFont.system(size: 12, wght: 500))
+                .foregroundColor(Palette.textPrimary)
+                .lineLimit(3)
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Self.denyColor.opacity(0.10))
+        )
+    }
+
+    // MARK: - Small building blocks
+
+    private func sectionHeader(_ title: String, count: Int? = nil) -> some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(BodyFont.system(size: 12, wght: 600))
+                .foregroundColor(Palette.textSecondary)
+            if let count {
+                Text("\(count)")
+                    .font(BodyFont.system(size: 10.5, wght: 600))
+                    .foregroundColor(Palette.textTertiary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(Capsule(style: .continuous).fill(Color.white.opacity(0.05)))
+            }
+            Spacer()
+        }
+    }
+
+    private func decisionGlyph(_ value: String, color: Color) -> some View {
+        LucideIcon(decisionIcon(value), size: 14)
+            .foregroundColor(color)
+            .frame(width: 28, height: 28)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(color.opacity(0.12))
+            )
+    }
+
+    private func statusBadge(_ status: String) -> some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(Self.enforcementColor(status))
+                .frame(width: 6, height: 6)
+            Text(status.isEmpty ? "Unknown" : status.capitalized)
+                .font(BodyFont.system(size: 11, wght: 600))
+                .foregroundColor(Palette.textPrimary)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .padding(.vertical, 4)
+        .background(Capsule(style: .continuous).fill(Color.white.opacity(0.05)))
+    }
+
+    private func tag(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(BodyFont.system(size: 10, wght: 600))
+            .foregroundColor(color)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Capsule(style: .continuous).fill(color.opacity(0.14)))
+    }
+
+    private func metaText(_ value: String) -> some View {
+        Text(value)
+            .font(BodyFont.system(size: 10.5, wght: 500))
+            .foregroundColor(Palette.textTertiary)
+            .lineLimit(1)
+    }
+
+    private func emptyRow(_ text: String) -> some View {
+        Text(text)
+            .font(BodyFont.system(size: 12, wght: 500))
+            .foregroundColor(Palette.textSecondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 14)
+            .padding(.horizontal, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.white.opacity(0.02))
+            )
+    }
+
+    // MARK: - Behaviour
+
+    private func reload() async {
+        isRefreshing = true
+        await model.refresh(detailOptIn: detailOptIn)
+        isRefreshing = false
+    }
+
+    // MARK: - Formatting and semantics
+
+    private func endpointText(kind: String, value: String) -> String {
+        if !value.isEmpty { return value }
+        if !kind.isEmpty { return kind }
+        return "any endpoint"
+    }
+
+    private func eventEndpoint(_ event: NetworkControlEvent) -> String {
+        if !event.endpointValue.isEmpty { return event.endpointValue }
+        if event.domainHidden { return "Domain hidden" }
+        if !event.endpointKind.isEmpty { return event.endpointKind }
+        return "endpoint"
+    }
+
+    private func formatBytes(_ count: Int) -> String {
+        if count <= 0 { return "0 B" }
+        let units = ["B", "KB", "MB", "GB", "TB"]
+        var value = Double(count)
+        var index = 0
+        while value >= 1024 && index < units.count - 1 {
+            value /= 1024
+            index += 1
+        }
+        return index == 0 ? "\(Int(value)) B" : String(format: "%.1f %@", value, units[index])
+    }
+
+    private func relativeTime(_ iso: String) -> String {
+        guard !iso.isEmpty else { return "" }
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        guard let date = fractional.date(from: iso) ?? plain.date(from: iso) else {
+            return iso
+        }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func decisionColor(_ value: String) -> Color {
+        let v = value.lowercased()
+        if v.contains("allow") || v.contains("permit") || v.contains("accept") { return Self.okColor }
+        if v.contains("deny") || v.contains("block") || v.contains("reject") || v.contains("drop") { return Self.denyColor }
+        if v.contains("redact") || v.contains("review") || v.contains("pending") || v.contains("ask") { return Self.warnColor }
+        return Palette.textSecondary
+    }
+
+    private func decisionIcon(_ value: String) -> LucideIcon.Kind {
+        let v = value.lowercased()
+        if v.contains("allow") || v.contains("permit") || v.contains("accept") { return .circleCheck }
+        if v.contains("deny") || v.contains("block") || v.contains("reject") || v.contains("drop") { return .circleX }
+        if v.contains("redact") { return .eyeOff }
+        if v.contains("review") || v.contains("pending") || v.contains("ask") { return .circleAlert }
+        return .circleDot
+    }
+
+    private static func enforcementColor(_ value: String) -> Color {
+        let v = value.lowercased()
+        if v.contains("enforc") || v.contains("active") || v.contains("enabled") || v == "on" { return okColor }
+        if v.contains("monitor") || v.contains("advisory") || v.contains("pending") || v.contains("partial") || v.contains("degrad") { return warnColor }
+        return Palette.textTertiary
+    }
+
+    private static func adapterIcon(_ kind: String) -> LucideIcon.Kind {
+        let v = kind.lowercased()
+        if v.contains("gateway") { return .globe }
+        if v.contains("mac") || v.contains("native") { return .laptop }
+        if v.contains("runtime") || v.contains("claw") { return .terminal }
+        if v.contains("webhook") { return .webhook }
+        if v.contains("proxy") || v.contains("route") { return .workflow }
+        return .shieldAlert
     }
 }
 
@@ -571,8 +960,5 @@ struct NetworkControlCenterScreen: View {
 
     var body: some View {
         NetworkControlCenterView(model: model)
-            .task {
-                await model.refresh()
-            }
     }
 }
