@@ -109,7 +109,7 @@ final class BackgroundBridgeService: ObservableObject {
             try agent.register()
             lastError = nil
         } catch {
-            lastError = "register failed: \(error.localizedDescription)"
+            lastError = Self.failureMessage(for: error, surface: "backgroundBridge.register")
         }
         refresh()
         recoverRegisteredDaemonIfNeeded()
@@ -120,7 +120,7 @@ final class BackgroundBridgeService: ObservableObject {
             try agent.unregister()
             lastError = nil
         } catch {
-            lastError = "unregister failed: \(error.localizedDescription)"
+            lastError = Self.failureMessage(for: error, surface: "backgroundBridge.unregister")
         }
         refresh()
     }
@@ -139,7 +139,10 @@ final class BackgroundBridgeService: ObservableObject {
         if BridgeAgentControl.bootstrapBridgeAgentIfInstalled() {
             lastError = nil
         } else {
-            lastError = "background bridge registered but not loaded"
+            lastError = UserFacingFailure.displayMessage(
+                for: "background bridge registered but not loaded",
+                surface: "backgroundBridge.recover"
+            )
         }
         refresh()
     }
@@ -213,5 +216,10 @@ final class BackgroundBridgeService: ObservableObject {
         @unknown default:
             return "Unknown status"
         }
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 }

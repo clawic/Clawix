@@ -130,7 +130,7 @@ final class MeshStore: ObservableObject {
             }
         } catch {
             guard isCurrentHostsRefreshOperation(generation) else { return }
-            self.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            self.lastError = Self.failureMessage(for: error, surface: "mesh.peers.refresh")
             return
         }
         guard isCurrentHostsRefreshOperation(generation) else { return }
@@ -138,7 +138,7 @@ final class MeshStore: ObservableObject {
         if let peers { self.peers = peers }
         if let workspaces { self.workspaces = workspaces }
         if identity == nil && peers == nil && workspaces == nil {
-            self.lastError = MeshClientError.daemonUnreachable.localizedDescription
+            self.lastError = Self.failureMessage(for: MeshClientError.daemonUnreachable, surface: "mesh.refresh")
         } else {
             self.lastError = nil
         }
@@ -162,7 +162,7 @@ final class MeshStore: ObservableObject {
             self.lastError = nil
         } catch {
             guard isCurrentHostsRefreshOperation(generation) else { return }
-            self.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            self.lastError = Self.failureMessage(for: error, surface: "mesh.peers.mutationRefresh")
         }
     }
 
@@ -179,7 +179,7 @@ final class MeshStore: ObservableObject {
             self.lastError = nil
         } catch {
             guard isCurrentHostsMutationOperation(generation) else { return }
-            self.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            self.lastError = Self.failureMessage(for: error, surface: "mesh.refresh")
         }
     }
 
@@ -205,7 +205,7 @@ final class MeshStore: ObservableObject {
             await refreshPeersForMutation(generation: generation)
         } catch {
             guard isCurrentHostsMutationOperation(generation) else { return }
-            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            let message = Self.failureMessage(for: error, surface: "mesh.pair")
             lastPairingResult = .failure(message: message)
         }
     }
@@ -282,11 +282,11 @@ final class MeshStore: ObservableObject {
             return .success(peer)
         } catch let err as MeshClientError {
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
-            lastError = err.errorDescription
+            lastError = Self.failureMessage(for: err, surface: "mesh.host.upsert")
             return .failure(err)
         } catch {
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
-            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            let message = Self.failureMessage(for: error, surface: "mesh.host.upsert")
             lastError = message
             return .failure(.unknown(message))
         }
@@ -306,11 +306,11 @@ final class MeshStore: ObservableObject {
             return .success(())
         } catch let err as MeshClientError {
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
-            lastError = err.errorDescription
+            lastError = Self.failureMessage(for: err, surface: "mesh.peer.revoke")
             return .failure(err)
         } catch {
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
-            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            let message = Self.failureMessage(for: error, surface: "mesh.peer.revoke")
             lastError = message
             return .failure(.unknown(message))
         }
@@ -329,11 +329,11 @@ final class MeshStore: ObservableObject {
             return .success(())
         } catch let err as MeshClientError {
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
-            lastError = err.errorDescription
+            lastError = Self.failureMessage(for: err, surface: "mesh.peer.unrevoke")
             return .failure(err)
         } catch {
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
-            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            let message = Self.failureMessage(for: error, surface: "mesh.peer.unrevoke")
             lastError = message
             return .failure(.unknown(message))
         }
@@ -354,11 +354,11 @@ final class MeshStore: ObservableObject {
             return .success(())
         } catch let err as MeshClientError {
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
-            lastError = err.errorDescription
+            lastError = Self.failureMessage(for: err, surface: "mesh.host.remove")
             return .failure(err)
         } catch {
             guard isCurrentHostsMutationOperation(generation) else { return .failure(.cancelled) }
-            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            let message = Self.failureMessage(for: error, surface: "mesh.host.remove")
             lastError = message
             return .failure(.unknown(message))
         }
@@ -387,7 +387,7 @@ final class MeshStore: ObservableObject {
             self.lastError = nil
         } catch {
             guard isCurrentHostsMutationOperation(generation) else { return }
-            self.lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            self.lastError = Self.failureMessage(for: error, surface: "mesh.workspace.add")
         }
     }
 
@@ -514,7 +514,7 @@ final class MeshStore: ObservableObject {
         } catch let err as MeshClientError {
             return .failure(err)
         } catch {
-            return .failure(.unknown(error.localizedDescription))
+            return .failure(.unknown(Self.failureMessage(for: error, surface: "mesh.remoteJob.start")))
         }
     }
 
@@ -566,7 +566,7 @@ final class MeshStore: ObservableObject {
                     // text on the job so the UI can warn.
                     await MainActor.run {
                         self.activeJobs[jobId]?.transientError =
-                            (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                            Self.failureMessage(for: error, surface: "mesh.remoteJob.poll")
                     }
                     interval = .seconds(2)
                 }
@@ -616,6 +616,11 @@ final class MeshStore: ObservableObject {
 
     private static func saveRemoteWorkspaces(_ map: [String: String]) {
         UserDefaults.standard.set(map, forKey: workspacesDefaultsKey)
+    }
+
+    private static func failureMessage(for error: Error, surface: String) -> String {
+        let rawMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        return UserFacingFailure.displayMessage(for: rawMessage, surface: surface)
     }
 }
 
