@@ -101,8 +101,15 @@ extension ClawJSRuntimeLensSection {
                 .foregroundColor(Palette.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
+            if section.id == "session-actions", runtimeLensSelection == .hermes {
+                runtimeLensSessionActionControlHeader()
+            }
             ForEach(slice.rows) { presentationRow in
-                runtimeLensPresentationRow(presentationRow)
+                if section.id == "session-actions" {
+                    runtimeLensPresentationRow(presentationRow, sectionId: section.id)
+                } else {
+                    runtimeLensPresentationRow(presentationRow)
+                }
             }
             pager(slice, key: pageKey)
         }
@@ -110,7 +117,10 @@ extension ClawJSRuntimeLensSection {
         .accessibilityLabel(Text(section.accessibilityLabel))
     }
 
-    func runtimeLensPresentationRow(_ presentationRow: ClawJSRuntimeLensSettingsPresentation.Row) -> some View {
+    func runtimeLensPresentationRow(
+        _ presentationRow: ClawJSRuntimeLensSettingsPresentation.Row,
+        sectionId: String? = nil
+    ) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             row(label: presentationRow.label) {
                 HStack(spacing: 8) {
@@ -123,6 +133,9 @@ extension ClawJSRuntimeLensSection {
                     }
                     ForEach(presentationRow.pills) { pill in
                         statusPill(text: pill.label, color: runtimeLensColor(pill.tone))
+                    }
+                    if sectionId == "session-actions" {
+                        runtimeLensSessionActionButtons(action: presentationRow.id)
                     }
                     Spacer()
                 }
@@ -137,6 +150,78 @@ extension ClawJSRuntimeLensSection {
         }
         .accessibilityIdentifier("runtime-lens-presentation-row-\(presentationRow.id)")
         .accessibilityLabel(Text(presentationRow.accessibilityLabel))
+    }
+
+    func runtimeLensSessionActionControlHeader() -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                TextField("Session", text: $runtimeLensActionSessionId)
+                    .textFieldStyle(.roundedBorder)
+                    .font(BodyFont.system(size: 11.5))
+                    .accessibilityIdentifier("runtime-lens-session-action-session-id")
+                TextField("Message", text: $runtimeLensActionMessage)
+                    .textFieldStyle(.roundedBorder)
+                    .font(BodyFont.system(size: 11.5))
+                    .accessibilityIdentifier("runtime-lens-session-action-message")
+                TextField("Title", text: $runtimeLensActionTitle)
+                    .textFieldStyle(.roundedBorder)
+                    .font(BodyFont.system(size: 11.5))
+                    .accessibilityIdentifier("runtime-lens-session-action-title")
+            }
+            TextField("Loopback gateway URL", text: $runtimeLensActionGatewayURL)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .accessibilityIdentifier("runtime-lens-session-action-gateway-url")
+            if let result = runtimeLensActionResult {
+                Text(result)
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.78))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .accessibilityIdentifier("runtime-lens-session-action-result")
+            }
+        }
+        .accessibilityIdentifier("runtime-lens-session-action-controls")
+    }
+
+    func runtimeLensSessionActionButtons(action: String) -> some View {
+        let presentation = ClawJSRuntimeLensSessionActionRunPresentation.make(
+            runtime: runtimeLensSelection,
+            action: action,
+            sessionId: runtimeLensActionSessionId,
+            message: runtimeLensActionMessage,
+            title: runtimeLensActionTitle,
+            gatewayURL: runtimeLensActionGatewayURL,
+            inFlightKeys: runtimeLensSessionActionsInFlight
+        )
+
+        return HStack(spacing: 6) {
+            Button {
+                Task { await runRuntimeLensSessionAction(action: action, confirmRuntimeWrite: false) }
+            } label: {
+                Image(systemName: "checkmark.shield")
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .buttonStyle(.plain)
+            .foregroundColor(presentation.canCheckGate ? Palette.textPrimary : Palette.textSecondary.opacity(0.45))
+            .help(presentation.disabledReason ?? "Check confirmation gate")
+            .disabled(!presentation.canCheckGate)
+            .accessibilityIdentifier("\(presentation.accessibilityIdentifier)-check")
+            .accessibilityLabel(Text("\(presentation.accessibilityLabel), check confirmation gate"))
+
+            Button {
+                runtimeLensPendingConfirmedAction = action
+            } label: {
+                Image(systemName: "play.circle")
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .buttonStyle(.plain)
+            .foregroundColor(presentation.canRunConfirmedFixture ? .orange : Palette.textSecondary.opacity(0.45))
+            .help(presentation.disabledReason ?? "Run confirmed loopback fixture")
+            .disabled(!presentation.canRunConfirmedFixture)
+            .accessibilityIdentifier("\(presentation.accessibilityIdentifier)-run")
+            .accessibilityLabel(Text("\(presentation.accessibilityLabel), run confirmed loopback fixture"))
+        }
     }
 
     func row<Trailing: View>(
