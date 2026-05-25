@@ -843,8 +843,41 @@
           }
         }
       ],
-      "models": [],
-      "defaultModel": null,
+      "models": [
+        {
+          "id": "anthropic/claude-3-5-sonnet",
+          "modelId": "anthropic/claude-3-5-sonnet",
+          "provider": "anthropic",
+          "label": "anthropic/claude-3-5-sonnet",
+          "available": true,
+          "isDefault": false,
+          "ref": {
+            "provider": "anthropic",
+            "modelId": "anthropic/claude-3-5-sonnet",
+            "label": "anthropic/claude-3-5-sonnet"
+          },
+          "source": "config"
+        },
+        {
+          "id": "openai/gpt-4.1",
+          "modelId": "openai/gpt-4.1",
+          "provider": "openai",
+          "label": "openai/gpt-4.1",
+          "available": true,
+          "isDefault": true,
+          "ref": {
+            "provider": "openai",
+            "modelId": "openai/gpt-4.1",
+            "label": "openai/gpt-4.1"
+          },
+          "source": "config"
+        }
+      ],
+      "defaultModel": {
+        "provider": "openai",
+        "modelId": "openai/gpt-4.1",
+        "label": "openai/gpt-4.1"
+      },
       "auth": {
         "ai-gateway": {
           "provider": "ai-gateway",
@@ -1057,14 +1090,14 @@
         },
         "openai": {
           "provider": "openai",
-          "hasAuth": true,
+          "hasAuth": false,
           "hasSubscription": false,
-          "hasApiKey": true,
+          "hasApiKey": false,
           "hasProfileApiKey": false,
-          "hasEnvKey": true,
-          "authType": "env",
-          "maskedCredential": "[REDACTED]",
-          "source": "env"
+          "hasEnvKey": false,
+          "authType": null,
+          "maskedCredential": null,
+          "source": "missing"
         },
         "opencode-go": {
           "provider": "opencode-go",
@@ -1145,9 +1178,34 @@
           "source": "missing"
         }
       },
-      "schedulers": [],
-      "memory": [],
-      "skills": [],
+      "schedulers": [
+        {
+          "id": "daily-summary",
+          "label": "daily-summary",
+          "enabled": true,
+          "status": "idle",
+          "kind": "cron"
+        }
+      ],
+      "memory": [
+        {
+          "id": "hermes-memory-profile",
+          "label": "profile",
+          "kind": "knowledge",
+          "path": "/Users/tester/.hermes/memories/profile.md",
+          "summary": "Hermes memory file; content is not exposed by default.",
+          "updatedAt": "2026-05-25T12:23:00.376Z"
+        }
+      ],
+      "skills": [
+        {
+          "id": "browser-helper",
+          "label": "Browser Helper",
+          "enabled": true,
+          "scope": "runtime",
+          "path": "/Users/tester/.hermes/skills/browser-helper"
+        }
+      ],
       "channels": [
         {
           "id": "telegram",
@@ -1159,6 +1217,16 @@
           "metadata": {
             "mode": "disabled",
             "knownChats": 0
+          }
+        },
+        {
+          "id": "slack",
+          "label": "Slack",
+          "kind": "chat",
+          "status": "configured",
+          "metadata": {
+            "source": "config",
+            "configKeys": "[REDACTED]"
           }
         }
       ],
@@ -1221,8 +1289,8 @@
             "label": "runtime-session",
             "kind": "session",
             "path": "/Users/tester/.hermes/sessions/2026/05/21/runtime-session.jsonl",
-            "updatedAt": "2026-05-25T12:06:31.227Z",
-            "sizeBytes": 110,
+            "updatedAt": "2026-05-25T12:23:00.385Z",
+            "sizeBytes": 174,
             "status": "projected",
             "provenance": {
               "source": "runtime-session-store",
@@ -1560,7 +1628,15 @@
         }
       },
       "skills": {
-        "skills": [],
+        "skills": [
+          {
+            "id": "browser-helper",
+            "label": "Browser Helper",
+            "enabled": true,
+            "scope": "runtime",
+            "path": "/Users/tester/.hermes/skills/browser-helper"
+          }
+        ],
         "supportContract": {
           "claim": "inventoried",
           "nativeAuthority": "runtime",
@@ -1631,7 +1707,16 @@
         }
       },
       "memory": {
-        "memory": [],
+        "memory": [
+          {
+            "id": "hermes-memory-profile",
+            "label": "profile",
+            "kind": "knowledge",
+            "path": "/Users/tester/.hermes/memories/profile.md",
+            "summary": "Hermes memory file; content is not exposed by default.",
+            "updatedAt": "2026-05-25T12:23:00.376Z"
+          }
+        ],
         "supportContract": {
           "claim": "inventoried",
           "nativeAuthority": "runtime",
@@ -1699,6 +1784,16 @@
             "metadata": {
               "mode": "disabled",
               "knownChats": 0
+            }
+          },
+          {
+            "id": "slack",
+            "label": "Slack",
+            "kind": "chat",
+            "status": "configured",
+            "metadata": {
+              "source": "config",
+              "configKeys": "[REDACTED]"
             }
           }
         ],
@@ -2375,14 +2470,14 @@
           },
           "openai": {
             "provider": "openai",
-            "hasAuth": true,
+            "hasAuth": false,
             "hasSubscription": false,
-            "hasApiKey": true,
+            "hasApiKey": false,
             "hasProfileApiKey": false,
-            "hasEnvKey": true,
-            "authType": "env",
-            "maskedCredential": "[REDACTED]",
-            "source": "env"
+            "hasEnvKey": false,
+            "authType": null,
+            "maskedCredential": null,
+            "source": "missing"
           },
           "opencode-go": {
             "provider": "opencode-go",
@@ -2525,8 +2620,41 @@
         }
       },
       "models": {
-        "models": [],
-        "defaultModel": null,
+        "models": [
+          {
+            "id": "anthropic/claude-3-5-sonnet",
+            "modelId": "anthropic/claude-3-5-sonnet",
+            "provider": "anthropic",
+            "label": "anthropic/claude-3-5-sonnet",
+            "available": true,
+            "isDefault": false,
+            "ref": {
+              "provider": "anthropic",
+              "modelId": "anthropic/claude-3-5-sonnet",
+              "label": "anthropic/claude-3-5-sonnet"
+            },
+            "source": "config"
+          },
+          {
+            "id": "openai/gpt-4.1",
+            "modelId": "openai/gpt-4.1",
+            "provider": "openai",
+            "label": "openai/gpt-4.1",
+            "available": true,
+            "isDefault": true,
+            "ref": {
+              "provider": "openai",
+              "modelId": "openai/gpt-4.1",
+              "label": "openai/gpt-4.1"
+            },
+            "source": "config"
+          }
+        ],
+        "defaultModel": {
+          "provider": "openai",
+          "modelId": "openai/gpt-4.1",
+          "label": "openai/gpt-4.1"
+        },
         "supportContract": {
           "claim": "inventoried",
           "nativeAuthority": "runtime",
@@ -2586,7 +2714,15 @@
         }
       },
       "scheduler": {
-        "schedulers": [],
+        "schedulers": [
+          {
+            "id": "daily-summary",
+            "label": "daily-summary",
+            "enabled": true,
+            "status": "idle",
+            "kind": "cron"
+          }
+        ],
         "supportContract": {
           "claim": "inventoried",
           "nativeAuthority": "runtime",
@@ -3217,7 +3353,7 @@
         "supported": true,
         "status": "degraded",
         "strategy": "native",
-        "count": 0,
+        "count": 1,
         "authority": "runtime_adapter",
         "claim": "inventoried",
         "canonicalAuthority": "runtime",
@@ -3291,7 +3427,7 @@
         "supported": true,
         "status": "ready",
         "strategy": "bridge",
-        "count": 0,
+        "count": 1,
         "authority": "runtime_adapter",
         "claim": "inventoried",
         "canonicalAuthority": "runtime",
@@ -3351,7 +3487,7 @@
         "supported": true,
         "status": "degraded",
         "strategy": "native",
-        "count": 1,
+        "count": 2,
         "authority": "runtime_adapter",
         "claim": "inventoried",
         "canonicalAuthority": "runtime",
@@ -3554,7 +3690,7 @@
         "supported": true,
         "status": "degraded",
         "strategy": "cli",
-        "count": 0,
+        "count": 2,
         "authority": "runtime_adapter_with_claw_resolver",
         "claim": "inventoried",
         "canonicalAuthority": "runtime",
@@ -3617,7 +3753,7 @@
         "supported": true,
         "status": "degraded",
         "strategy": "native",
-        "count": 0,
+        "count": 1,
         "authority": "runtime_adapter",
         "claim": "inventoried",
         "canonicalAuthority": "runtime",

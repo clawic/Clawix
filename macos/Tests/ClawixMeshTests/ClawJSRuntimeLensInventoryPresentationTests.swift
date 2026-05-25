@@ -267,32 +267,39 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertTrue(supportContracts.accessibilityLabel.contains("Runtime support contracts"))
 
         let inventory = ClawJSRuntimeLensInventoryPresentation.make(snapshot: snapshot, rowLimit: 40)
-        XCTAssertEqual(inventory.sectionCount, 9)
-        XCTAssertEqual(
-            inventory.sections.map(\.domain),
-            [
-                "sessions",
-                "channels",
-                "providers",
-                "auth",
-                "plugins",
-                "gateway",
-                "doctorCompat",
-                "sandboxPermissions",
-                "configuration"
-            ]
-        )
+        XCTAssertEqual(inventory.sectionCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
+        XCTAssertEqual(inventory.sections.map(\.domain), ClawJSRuntimeLensSnapshot.canonicalDomains)
         XCTAssertGreaterThanOrEqual(inventory.totalResourceCount, 70)
         XCTAssertTrue(inventory.accessibilityLabel.contains("Runtime inventory"))
 
         let missingInventoryDomains = ClawJSRuntimeLensSnapshot.canonicalDomains.filter { domain in
             !inventory.sections.contains { $0.domain == domain }
         }
-        XCTAssertEqual(missingInventoryDomains, ["skills", "memory", "models", "scheduler"])
+        XCTAssertEqual(missingInventoryDomains, [])
+
+        let skillsInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "skills" })
+        XCTAssertEqual(skillsInventory.totalResourceCount, 1)
+        XCTAssertEqual(skillsInventory.rows.first?.id, "browser-helper")
+        XCTAssertEqual(skillsInventory.rows.first?.attributesLabel, "scope: runtime")
+
+        let memoryInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "memory" })
+        XCTAssertEqual(memoryInventory.totalResourceCount, 1)
+        XCTAssertEqual(memoryInventory.rows.first?.id, "hermes-memory-profile")
+        XCTAssertTrue(memoryInventory.rows.first?.summaryLabel?.contains("not exposed by default") == true)
+
+        let modelInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "models" })
+        XCTAssertEqual(modelInventory.totalResourceCount, 2)
+        XCTAssertEqual(modelInventory.rows.first { $0.id == "openai/gpt-4.1" }?.attributesLabel, "provider: openai, model id: openai/gpt-4.1, source: config, available: true")
+        XCTAssertEqual(modelInventory.rows.first { $0.id == "anthropic/claude-3-5-sonnet" }?.attributesLabel, "provider: anthropic, model id: anthropic/claude-3-5-sonnet, source: config, available: true")
+
+        let schedulerInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "scheduler" })
+        XCTAssertEqual(schedulerInventory.totalResourceCount, 1)
+        XCTAssertEqual(schedulerInventory.rows.first?.id, "daily-summary")
+        XCTAssertEqual(schedulerInventory.rows.first?.kindLabel, "kind: cron")
 
         let authInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "auth" })
         XCTAssertEqual(authInventory.totalResourceCount, 28)
-        XCTAssertEqual(authInventory.statusLabel, "configured 1, missing 26, redacted 1")
+        XCTAssertEqual(authInventory.statusLabel, "missing 27, redacted 1")
         let scalarAuthRow = try XCTUnwrap(authInventory.rows.first { $0.id == "tencent-tokenhub" })
         XCTAssertEqual(scalarAuthRow.statusLabel, "redacted")
         XCTAssertNil(scalarAuthRow.summaryLabel)
