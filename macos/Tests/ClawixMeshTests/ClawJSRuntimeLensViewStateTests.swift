@@ -40,6 +40,9 @@ final class ClawJSRuntimeLensViewStateTests: XCTestCase {
 
     func testRuntimeLensStatusToneKeepsBlockedAndLocalStateSemanticsCentralized() {
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.sessionActionStatus("implemented"), .success)
+        XCTAssertEqual(ClawJSRuntimeLensStatusTone.sessionActionStatus("implemented_requires_confirmation"), .warning)
+        XCTAssertEqual(ClawJSRuntimeLensStatusTone.sessionActionStatus("confirmation_required"), .warning)
+        XCTAssertEqual(ClawJSRuntimeLensStatusTone.sessionActionStatus("partial"), .warning)
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.sessionActionStatus("local_overlay_only"), .info)
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.sessionActionStatus("blocked"), .warning)
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.sessionActionDisposition("would write"), .warning)

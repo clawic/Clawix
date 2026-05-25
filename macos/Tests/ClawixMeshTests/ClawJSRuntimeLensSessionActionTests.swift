@@ -52,7 +52,13 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
             "tui_gateway_prompt_submit_fixture, non_destructive_fixture, confirmation_or_dry_run_policy, round_trip_native_visibility"
         )
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.delegatesTo, "tui_gateway.prompt.submit")
+        XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.officialProtocol, "tui_gateway_json_rpc")
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.officialMethod, "prompt.submit")
+        XCTAssertEqual(
+            actionPresentation.rows.first { $0.action == "send" }?.officialContractSource,
+            "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration"
+        )
+        XCTAssertTrue(actionPresentation.rows.first { $0.action == "send" }?.accessibilityLabel.contains("official protocol tui_gateway_json_rpc") == true)
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "create" }?.writeDisposition, "would write")
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "pin" }?.authority, "clawix_local_overlay")
         XCTAssertTrue(actionPresentation.accessibilityLabel.contains("blocked actions send, inject, abort, create"))
@@ -71,7 +77,13 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "history" }?.statusChanged, true)
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "create" }?.contractWriteDisposition, "would write")
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "create" }?.delegatesTo, "tui_gateway.session.create")
+        XCTAssertEqual(contractPresentation.rows.first { $0.action == "create" }?.officialProtocol, "tui_gateway_json_rpc")
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "create" }?.officialMethod, "session.create")
+        XCTAssertEqual(
+            contractPresentation.rows.first { $0.action == "create" }?.officialContractSource,
+            "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration"
+        )
+        XCTAssertTrue(contractPresentation.rows.first { $0.action == "create" }?.accessibilityLabel.contains("official protocol tui_gateway_json_rpc") == true)
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "pin" }?.authority, "clawix_local_overlay")
 
         let commandPresentation = ClawJSRuntimeLensCommandMatrixPresentation.make(

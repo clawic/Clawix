@@ -12,7 +12,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
         let authority: String?
         let delegatesTo: String?
         let guardName: String?
+        let officialProtocol: String?
         let officialMethod: String?
+        let officialContractSource: String?
         let requiredEvidenceCount: Int
 
         var detailLabel: String? {
@@ -20,7 +22,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 authority,
                 delegatesTo,
                 guardName,
+                officialProtocol,
                 officialMethod,
+                officialContractSource,
                 requiredEvidenceCount > 0 ? "evidence \(requiredEvidenceCount)" : nil,
                 statusChanged ? "materialized" : nil
             ].compactMap { $0 }
@@ -39,7 +43,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 authority.map { "authority \($0)" },
                 delegatesTo.map { "delegates to \($0)" },
                 guardName.map { "guard \($0)" },
+                officialProtocol.map { "official protocol \($0)" },
                 officialMethod.map { "official method \($0)" },
+                officialContractSource.map { "official contract source \($0)" },
                 "required evidence \(requiredEvidenceCount)"
             ]
             .compactMap { $0 }
@@ -110,7 +116,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 authority: materialized?.authority ?? contract?.authority,
                 delegatesTo: materialized?.delegatesTo ?? contract?.delegatesTo,
                 guardName: materialized?.guardName ?? contract?.guardName,
+                officialProtocol: materialized?.officialProtocol ?? contract?.officialProtocol,
                 officialMethod: materialized?.officialMethod ?? contract?.officialMethod,
+                officialContractSource: materialized?.officialContractSource ?? contract?.officialContractSource,
                 requiredEvidenceCount: materialized?.requiredEvidence?.count ?? contract?.requiredEvidence?.count ?? 0
             )
         }

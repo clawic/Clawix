@@ -20,6 +20,8 @@ enum ClawJSRuntimeLensStatusTone: String, Equatable {
         switch status {
         case "implemented":
             return .success
+        case "implemented_requires_confirmation", "confirmation_required", "partial":
+            return .warning
         case "local_overlay_only":
             return .info
         case "blocked", "degraded":
