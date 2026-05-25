@@ -30,6 +30,8 @@ final class ClawJSRuntimeLensClientBoundaryTests: XCTestCase {
         let runtimeSummary = ClawJSRuntimeLensRuntimeSummaryPresentation.make(snapshot: snapshot)
 
         XCTAssertEqual(snapshot.session?.sessionPath, "/Users/tester/.example/sessions")
+        XCTAssertEqual(snapshot.session?.sessionStorageContract, "sqlite_with_gateway_transcripts")
+        XCTAssertEqual(snapshot.session?.sessionDatabasePath, "/Users/tester/.example/state.db")
         XCTAssertEqual(snapshot.runtimeResources?.providers?.first?.id, "openai")
         XCTAssertEqual(snapshot.runtimeResources?.auth?["openai"]?.hasEnvKey, true)
         XCTAssertEqual(runtimeSummary.runtimeResourceAggregateDomainCount, 7)

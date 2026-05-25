@@ -39,6 +39,8 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
 
         XCTAssertEqual(snapshot.domainData?.sessions?.session?.primaryTransport, "gateway")
         XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionPath, "/Users/tester/.example/sessions")
+        XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionStorageContract, "sqlite_with_gateway_transcripts")
+        XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionDatabasePath, "/Users/tester/.example/state.db")
         let sessionDescriptorPresentation = ClawJSRuntimeLensSessionDescriptorPresentation.make(
             session: try XCTUnwrap(snapshot.domainData?.sessions?.session)
         )
@@ -49,10 +51,22 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(sessionDescriptorPresentation.persistence, "runtime")
         XCTAssertEqual(sessionDescriptorPresentation.fallbackTransport, "cli")
         XCTAssertEqual(sessionDescriptorPresentation.sessionPath, "/Users/tester/.example/sessions")
+        XCTAssertEqual(sessionDescriptorPresentation.sessionStorageContract, "sqlite_with_gateway_transcripts")
+        XCTAssertEqual(sessionDescriptorPresentation.sessionDatabasePath, "/Users/tester/.example/state.db")
+        XCTAssertEqual(sessionDescriptorPresentation.sessionTranscriptPath, "/Users/tester/.example/sessions")
+        XCTAssertEqual(sessionDescriptorPresentation.sessionIndexPath, "/Users/tester/.example/sessions/sessions.json")
+        XCTAssertEqual(sessionDescriptorPresentation.storageDetailLines, [
+            "storage: sqlite_with_gateway_transcripts",
+            "database: /Users/tester/.example/state.db",
+            "transcripts: /Users/tester/.example/sessions",
+            "index: /Users/tester/.example/sessions/sessions.json"
+        ])
         XCTAssertEqual(sessionDescriptorPresentation.transportPills, ["gateway", "hybrid", "runtime"])
         XCTAssertTrue(sessionDescriptorPresentation.hasFallback)
         XCTAssertTrue(sessionDescriptorPresentation.hasPath)
         XCTAssertTrue(sessionDescriptorPresentation.accessibilityLabel.contains("Runtime session descriptor"))
+        XCTAssertTrue(sessionDescriptorPresentation.accessibilityLabel.contains("storage contract sqlite_with_gateway_transcripts"))
+        XCTAssertTrue(sessionDescriptorPresentation.accessibilityLabel.contains("database /Users/tester/.example/state.db"))
         XCTAssertTrue(sessionDescriptorPresentation.accessibilityLabel.contains("fallback cli"))
         XCTAssertEqual(snapshot.domainData?.sessions?.sessions?.first?.id, "2026/05/21/runtime-session")
         XCTAssertEqual(snapshot.domainData?.sessions?.totalProjected, 1)
@@ -245,6 +259,8 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
 
     func testHermesRuntimePortalFixtureFeedsInventoryAndSupportPresentations() async throws {
         let snapshot = try await ClawJSRuntimeLensTestFixtures.hermesRuntimePortalSnapshot()
+        XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionStorageContract, "sqlite_with_gateway_transcripts")
+        XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionDatabasePath, "/Users/tester/.hermes/state.db")
 
         let domainPresentation = ClawJSRuntimeLensDomainPresentation.make(domains: snapshot.domains)
         XCTAssertEqual(domainPresentation.domainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)

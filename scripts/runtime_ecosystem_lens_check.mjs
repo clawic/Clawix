@@ -469,6 +469,11 @@ for (const snippet of [
   "streamingLabel",
   "fallbackTransport",
   "sessionPath",
+  "sessionDatabasePath",
+  "sessionTranscriptPath",
+  "sessionIndexPath",
+  "sessionStorageContract",
+  "storageDetailLines",
   "normalizedFallback"
 ]) {
   requireSnippet("macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensSessionDescriptorPresentation.swift", snippet);

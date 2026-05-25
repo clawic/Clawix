@@ -84,6 +84,26 @@ extension ClawJSRuntimeLensSection {
                         .truncationMode(.middle)
                 }
             }
+            if let storage = presentation.sessionStorageContract {
+                Divider().background(Color.overlay(0.07))
+                row(label: "Storage") {
+                    Text(storage)
+                        .font(BodyFont.system(size: 11.5))
+                        .foregroundColor(Palette.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
+            if let database = presentation.sessionDatabasePath {
+                Divider().background(Color.overlay(0.07))
+                row(label: "Database") {
+                    Text(database)
+                        .font(BodyFont.system(size: 11.5))
+                        .foregroundColor(Palette.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
         }
         .accessibilityIdentifier("runtime-lens-session-descriptor")
         .accessibilityLabel(Text(presentation.accessibilityLabel))

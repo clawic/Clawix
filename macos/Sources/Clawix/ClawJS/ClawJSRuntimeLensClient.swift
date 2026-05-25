@@ -566,6 +566,10 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let sessionPersistence: String?
         let streamingMode: String?
         let sessionPath: String?
+        let sessionDatabasePath: String?
+        let sessionTranscriptPath: String?
+        let sessionIndexPath: String?
+        let sessionStorageContract: String?
 
         struct Transport: Decodable, Equatable {
             let kind: String?

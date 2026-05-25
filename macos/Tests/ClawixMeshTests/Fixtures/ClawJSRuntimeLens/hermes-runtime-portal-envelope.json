@@ -502,7 +502,11 @@
       "fallbackTransport": "cli",
       "sessionPersistence": "runtime",
       "streamingMode": "hybrid",
-      "sessionPath": "/Users/tester/.hermes/sessions"
+      "sessionPath": "/Users/tester/.hermes/sessions",
+      "sessionDatabasePath": "/Users/tester/.hermes/state.db",
+      "sessionTranscriptPath": "/Users/tester/.hermes/sessions",
+      "sessionIndexPath": "/Users/tester/.hermes/sessions/sessions.json",
+      "sessionStorageContract": "sqlite_with_gateway_transcripts"
     },
     "workspace": {
       "managedFiles": [],
@@ -1291,7 +1295,11 @@
           "fallbackTransport": "cli",
           "sessionPersistence": "runtime",
           "streamingMode": "hybrid",
-          "sessionPath": "/Users/tester/.hermes/sessions"
+          "sessionPath": "/Users/tester/.hermes/sessions",
+          "sessionDatabasePath": "/Users/tester/.hermes/state.db",
+          "sessionTranscriptPath": "/Users/tester/.hermes/sessions",
+          "sessionIndexPath": "/Users/tester/.hermes/sessions/sessions.json",
+          "sessionStorageContract": "sqlite_with_gateway_transcripts"
         },
         "sessions": [
           {

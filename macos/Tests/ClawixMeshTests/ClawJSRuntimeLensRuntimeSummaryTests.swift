@@ -17,6 +17,8 @@ final class ClawJSRuntimeLensRuntimeSummaryTests: XCTestCase {
         XCTAssertEqual(snapshot.status.capabilityMap?["runtime"]?.diagnostics?.source, "runtime")
         XCTAssertEqual(snapshot.status.capabilityMap?["channels"]?.limitations?.first, "Channel inventory is normalized from Example gateway capabilities.")
         XCTAssertEqual(snapshot.session?.sessionPath, "/Users/tester/.example/sessions")
+        XCTAssertEqual(snapshot.session?.sessionStorageContract, "sqlite_with_gateway_transcripts")
+        XCTAssertEqual(snapshot.session?.sessionDatabasePath, "/Users/tester/.example/state.db")
         XCTAssertEqual(snapshot.session?.primaryTransport, "gateway")
         XCTAssertEqual(snapshot.workspace?.canonicalPaths?["SOUL"], "/tmp/workspace/SOUL.md")
         XCTAssertEqual(snapshot.workspace?.managedFiles?.count, 2)

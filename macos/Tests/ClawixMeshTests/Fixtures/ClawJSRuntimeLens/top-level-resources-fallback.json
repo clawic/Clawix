@@ -13,7 +13,11 @@
       "fallbackTransport": "cli",
       "sessionPersistence": "runtime",
       "streamingMode": "hybrid",
-      "sessionPath": "/Users/tester/.example/sessions"
+      "sessionPath": "/Users/tester/.example/sessions",
+      "sessionDatabasePath": "/Users/tester/.example/state.db",
+      "sessionTranscriptPath": "/Users/tester/.example/sessions",
+      "sessionIndexPath": "/Users/tester/.example/sessions/sessions.json",
+      "sessionStorageContract": "sqlite_with_gateway_transcripts"
     },
     "workspace": {
       "canonicalPaths": {

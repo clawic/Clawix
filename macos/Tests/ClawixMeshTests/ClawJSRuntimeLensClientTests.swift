@@ -40,6 +40,10 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.status.capabilityMap?["configuration"]?.status, "ready")
         XCTAssertEqual(snapshot.domainData?.configuration?.capability?.strategy, "config")
         XCTAssertEqual(snapshot.resources(for: "configuration").last?.id, "configuration-capability")
+        XCTAssertEqual(snapshot.session?.sessionStorageContract, "sqlite_with_gateway_transcripts")
+        XCTAssertEqual(snapshot.session?.sessionDatabasePath, "/Users/tester/.hermes/state.db")
+        XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionStorageContract, "sqlite_with_gateway_transcripts")
+        XCTAssertEqual(snapshot.domainData?.sessions?.session?.sessionIndexPath, "/Users/tester/.hermes/sessions/sessions.json")
         XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.map(\.action), [
             "list",
             "preview",

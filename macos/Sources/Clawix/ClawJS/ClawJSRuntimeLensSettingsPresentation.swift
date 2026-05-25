@@ -488,7 +488,7 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
             id: "session",
             title: "Session",
             rows: [
-                Row(id: "session", label: "Session", value: presentation.sessionPath, pills: presentation.transportPills.map { Pill(id: $0, label: $0, tone: $0 == presentation.streamingLabel ? .success : .info) }, detailLines: optionalLines([presentation.fallbackTransport]), accessibilityLabel: presentation.accessibilityLabel)
+                Row(id: "session", label: "Session", value: presentation.sessionPath, pills: presentation.transportPills.map { Pill(id: $0, label: $0, tone: $0 == presentation.streamingLabel ? .success : .info) }, detailLines: optionalLines([presentation.fallbackTransport]) + presentation.storageDetailLines, accessibilityLabel: presentation.accessibilityLabel)
             ],
             accessibilityLabel: presentation.accessibilityLabel
         )
