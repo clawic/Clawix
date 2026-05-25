@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Components</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="components">
+<div class="wrap">
+
+  <section>
+    <div class="h-sec"><span class="n">0</span>Tokens &amp; palette <span class="d">change a token in :root → it applies everywhere</span></div>
+    <div class="lbl">Palette (blue = minimal signals only · green / amber / red for status)</div>
+    <div class="swatches" id="swatches"></div>
+    <div style="margin-top:16px" class="lbl">Geometry &amp; system tokens</div>
+    <div class="tok-row"><span class="tok">--r-card 14</span><span class="tok">--r-ctl 10</span><span class="tok">--hairline ~8%</span><span class="tok">M 30 / S 24</span><span class="tok">squircle, never full-pill</span><span class="tok">ease cubic-bezier(.22,.61,.36,1)</span><span class="tok">mono → code only</span></div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">1</span>Iconography <span class="d">Lucide only · stroke 1.75 · hover</span></div>
+    <div class="spec flush"><div class="icons" id="iconGallery"></div></div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">2</span>Typography <span class="d">Manrope everywhere · mono only in code</span></div>
+    <div class="grid g2">
+      <div class="spec"><div class="t-eyebrow">Session</div><div class="t-h1" style="margin-top:4px">Refactor the login flow</div><div class="t-sub" style="margin-top:6px">opus 4.7 · 2 min ago</div><div class="t-body" style="margin-top:12px">Moved validation into AuthService. See the <a class="link" href="#">pull request</a>.</div></div>
+      <div class="spec"><div class="lbl">Scale</div><div class="col" style="gap:7px"><div class="t-h1">Heading</div><div class="t-h2">Subheading</div><div class="t-body">Body text in Manrope.</div><div class="t-sub">Secondary / meta.</div><div class="row"><span class="t-num">1,240</span><span class="t-sub">numbers in Manrope (not mono)</span></div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">3</span>Buttons</div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl">Hierarchy + sizes + loading + group + split</div>
+        <div class="row"><button class="ctl m btn-primary">Save</button><button class="ctl m btn-secondary">Test</button><button class="ctl m btn-ghost">Cancel</button><button class="ctl m btn-danger">Delete</button><button class="ctl m btn-primary"><span class="spinner"><svg class="ic s"><use href="icons.svg#i-loader"/></svg></span>Connecting…</button></div>
+        <div class="row" style="margin-top:10px"><button class="ctl s btn-primary">New</button><button class="ctl s btn-secondary">Edit</button><button class="ctl s btn-ghost">Cancel</button></div>
+        <div class="row" style="margin-top:10px"><button class="ctl m btn-primary"><svg class="ic s"><use href="icons.svg#i-plus"/></svg>New session</button><span class="btn-group"><button class="on">Edit</button><button>Split</button><button>Join</button></span><span class="split"><span class="m2">Run</span><span class="c2"><svg class="ic s"><use href="icons.svg#i-chevron-down"/></svg></span></span></div>
+      </div>
+      <div class="spec"><div class="lbl">Icon buttons (ghost → hover) + toolbar</div>
+        <div class="row"><span class="iconbtn"><svg class="ic"><use href="icons.svg#i-plus"/></svg></span><span class="iconbtn"><svg class="ic"><use href="icons.svg#i-pencil"/></svg></span><span class="iconbtn"><svg class="ic"><use href="icons.svg#i-copy"/></svg></span><span class="iconbtn"><svg class="ic"><use href="icons.svg#i-more"/></svg></span><span class="iconbtn" style="color:var(--danger)"><svg class="ic"><use href="icons.svg#i-trash"/></svg></span></div>
+        <div class="row" style="margin-top:12px"><span class="toolbar"><span class="t on"><svg class="ic"><use href="icons.svg#i-message"/></svg></span><span class="t"><svg class="ic"><use href="icons.svg#i-terminal"/></svg></span><span class="t"><svg class="ic"><use href="icons.svg#i-file"/></svg></span><span class="t"><svg class="ic"><use href="icons.svg#i-settings"/></svg></span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">4</span>Toggles, checkbox, radio, segmented <span class="d">interactive</span></div>
+    <div class="grid g4">
+      <div class="spec"><div class="lbl">Toggle (M / S)</div><div class="col"><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label><label class="toggle"><input type="checkbox"><span class="tr"></span><span class="kn"></span></label><label class="toggle s"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div></div>
+      <div class="spec"><div class="lbl">Checkbox (+ indeterminate)</div><div class="col"><label class="check"><input type="checkbox" checked><span class="bx"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span>Checked</label><label class="check"><input type="checkbox" id="indet"><span class="bx"><svg class="ic xs"><use href="icons.svg#i-minus"/></svg></span>Partial</label><label class="check"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span>Empty</label></div></div>
+      <div class="spec"><div class="lbl">Radio (squircle)</div><div class="col"><label class="radio"><input type="radio" name="r" checked><span class="rx"></span>Whole repo</label><label class="radio"><input type="radio" name="r"><span class="rx"></span>This folder</label></div></div>
+      <div class="spec"><div class="lbl">Segmented · strong / subtle / iOS</div><div class="col"><div class="seg js-seg"><span class="ind"></span><button class="on">Chat</button><button>Diff</button><button>Logs</button></div><div class="seg subtle js-seg"><span class="ind"></span><button class="on">Chat</button><button>Diff</button></div><div class="seg ios js-seg"><span class="ind"></span><button class="on">Light</button><button>Dark</button><button>Auto</button></div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">5</span>Inputs &amp; forms <span class="d">focus = monochrome border, no blue/shadow</span></div>
+    <div class="grid g3">
+      <div class="spec"><div class="lbl">Text · search · with icon · disabled</div><div class="col"><div class="field"><input placeholder="Name"></div><div class="field"><svg class="ic s"><use href="icons.svg#i-search"/></svg><input placeholder="Search…"></div><div class="field"><svg class="ic s"><use href="icons.svg#i-globe"/></svg><input value="localhost:7420"></div><div class="field disabled"><input value="Not editable"></div></div></div>
+      <div class="spec"><div class="lbl">Error · password (fat bullets) · textarea</div><div class="col"><div><div class="field err"><input value="localhost:"></div><div class="hint">Missing port</div></div><div class="field"><span class="bullets"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span style="margin-left:auto;color:var(--text-3)"><svg class="ic s"><use href="icons.svg#i-eye"/></svg></span></div><textarea class="area" placeholder="Instructions for the agent…"></textarea></div></div>
+      <div class="spec"><div class="lbl">Token input · stepper</div><div class="col"><div class="tokfield"><span class="token">auth.swift <svg class="ic xs"><use href="icons.svg#i-x"/></svg></span><span class="token">session.swift <svg class="ic xs"><use href="icons.svg#i-x"/></svg></span><span style="font-size:11px;color:var(--text-3)">add…</span></div><div class="stepper"><div class="b"><svg class="ic s"><use href="icons.svg#i-minus"/></svg></div><div class="v">4</div><div class="b"><svg class="ic s"><use href="icons.svg#i-plus"/></svg></div></div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">6</span>Dropdowns &amp; menus <span class="d">click to open · inset selection · white check</span></div>
+    <div class="grid g4">
+      <div class="spec"><div class="lbl">Select (click)</div>
+        <div class="dropdown"><div class="field js-pop" style="width:150px;justify-content:space-between;cursor:pointer"><span data-val>opus 4.7</span><svg class="ic s"><use href="icons.svg#i-chevron-down"/></svg></div>
+          <div class="pop-menu"><div class="gh">Model</div><div class="it" data-pick>opus 4.7<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div><div class="it" data-pick>sonnet 4.6</div><div class="it" data-pick>haiku 4.5</div></div></div></div>
+      <div class="spec"><div class="lbl">Combobox (search)</div><div class="menu-static" style="width:auto"><div class="sf"><svg class="ic s"><use href="icons.svg#i-search"/></svg><input placeholder="Search model…"></div><div class="it on">opus 4.7<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div><div class="it">opus 4.6</div><div class="it">sonnet 4.6</div></div></div>
+      <div class="spec"><div class="lbl">Context menu</div><div class="menu-static"><div class="it"><svg class="ic s"><use href="icons.svg#i-pencil"/></svg>Rename<span class="sc"><span class="kbd soft">↵</span></span></div><div class="it"><svg class="ic s"><use href="icons.svg#i-copy"/></svg>Duplicate<span class="sc"><span class="kbd soft">⌘D</span></span></div><div class="it"><svg class="ic s"><use href="icons.svg#i-folder"/></svg>Move to<span class="arr"><svg class="ic s"><use href="icons.svg#i-chevron-right"/></svg></span></div><div class="dv"></div><div class="it danger"><svg class="ic s"><use href="icons.svg#i-trash"/></svg>Delete<span class="sc"><span class="kbd soft">⌫</span></span></div></div></div>
+      <div class="spec"><div class="lbl">Filter menu (multi)</div><div class="menu-static"><div class="gh">Status</div><label class="it" style="cursor:pointer"><span class="check" style="gap:0"><input type="checkbox" checked><span class="bx"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></span>Active</label><label class="it" style="cursor:pointer"><span class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></span>Archived</label><label class="it" style="cursor:pointer"><span class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></span>Errors</label></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">7</span>Search &amp; command bar</div>
+    <div class="grid g3">
+      <div class="spec"><div class="lbl">Search field (clearable)</div><div class="field"><svg class="ic s"><use href="icons.svg#i-search"/></svg><input value="swiftdata"><span class="iconbtn s" style="margin-right:-6px"><svg class="ic xs"><use href="icons.svg#i-x"/></svg></span></div></div>
+      <div class="spec flush"><div class="lbl">Command palette (⌘K)</div><div class="cmd"><div class="top"><svg class="ic"><use href="icons.svg#i-search"/></svg>Search action or file…</div><div class="gh" style="padding-left:14px">Actions</div><div class="ci on"><svg class="ic s"><use href="icons.svg#i-plus"/></svg>New session<span style="margin-left:auto"><span class="kbd soft">⌘N</span></span></div><div class="ci"><svg class="ic s"><use href="icons.svg#i-terminal"/></svg>Open terminal<span style="margin-left:auto"><span class="kbd soft">⌘J</span></span></div><div class="gh" style="padding-left:14px">Files</div><div class="ci"><svg class="ic s"><use href="icons.svg#i-file"/></svg>auth.swift</div></div></div>
+      <div class="spec"><div class="lbl">Filter bar</div><div class="row"><span class="chip on">All</span><span class="chip">Unread <span class="count c-accent" style="min-width:16px;height:16px">3</span></span><span class="chip">Errors</span><span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-sliders"/></svg></span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">8</span>Sliders &amp; steppers</div>
+    <div class="grid g3">
+      <div class="spec"><div class="lbl">Slider</div><div class="row"><div class="slider" data-min="0" data-max="1" data-step="0.05" data-value="0.7" style="width:150px"><div class="tr2"></div><div class="fi"></div><div class="kn2"></div></div><span class="slider-val" style="font-size:12px;font-weight:600">0.70</span></div></div>
+      <div class="spec"><div class="lbl">Stepper</div><div class="stepper"><div class="b"><svg class="ic s"><use href="icons.svg#i-minus"/></svg></div><div class="v">4</div><div class="b"><svg class="ic s"><use href="icons.svg#i-plus"/></svg></div></div></div>
+      <div class="spec"><div class="lbl">In a settings row</div><div class="set-row" style="padding:0"><div class="rl"><div class="rt">Editor font size</div></div><div class="slider" data-min="9" data-max="24" data-step="1" data-value="13" style="width:90px"><div class="tr2"></div><div class="fi"></div><div class="kn2"></div></div><span class="slider-val" style="font-size:12px;font-weight:600">13</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">9</span>Chips, badges, status, avatars</div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl">Filter chips · removable tags</div><div class="row js-chips"><span class="chip on">All</span><span class="chip">Unread</span><span class="chip">Errors</span></div><div class="row" style="margin-top:10px"><span class="chip">swift <svg class="ic xs"><use href="icons.svg#i-x"/></svg></span><span class="chip">macos <svg class="ic xs"><use href="icons.svg#i-x"/></svg></span></div></div>
+      <div class="spec"><div class="lbl">Badges · status (no dot / live) · counters · avatars</div><div class="row"><span class="badge c-danger">BETA</span><span class="badge c-ok">NEW</span><span class="badge c-accent">PRO</span></div><div class="row" style="margin-top:9px"><span class="status c-ok"><svg class="ic xs"><use href="icons.svg#i-check"/></svg>Connected</span><span class="status c-warn"><span class="dot live"></span>Running</span><span class="status c-danger">Error</span></div><div class="row" style="margin-top:9px"><span class="count c-accent">3</span><span class="count c-neu">12</span><div class="avstack"><span class="av round s">AL</span><span class="av round s">AT</span><span class="av round s">GH</span></div><span class="av round"><span class="pres"></span></span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">10</span>Tabs <span class="d">hover for close (solid circle) · underline variant</span></div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl">Closable tabs</div><div class="tabs js-tabs"><div class="tab on"><svg class="ic s"><use href="icons.svg#i-terminal"/></svg><span class="nm">zsh · clawix</span><span class="x"><i><svg class="ic xs"><use href="icons.svg#i-x"/></svg></i></span></div><div class="tab"><svg class="ic s"><use href="icons.svg#i-terminal"/></svg><span class="nm">build output long</span><span class="x"><i><svg class="ic xs"><use href="icons.svg#i-x"/></svg></i></span></div><div class="tab"><svg class="ic s"><use href="icons.svg#i-terminal"/></svg><span class="nm">logs</span><span class="x"><i><svg class="ic xs"><use href="icons.svg#i-x"/></svg></i></span></div></div></div>
+      <div class="spec"><div class="lbl">Underline tabs</div><div class="utabs js-utabs"><div class="utab on">Chat</div><div class="utab">Diff</div><div class="utab">Terminal</div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">11</span>Tooltips, popovers, hover cards</div>
+    <div class="grid g3">
+      <div class="spec"><div class="lbl">Tooltip</div><span class="tooltip">New session <span class="kbd">⌘N</span></span></div>
+      <div class="spec flush"><div class="lbl">Popover</div><div class="popover"><div class="t">Stop the agent</div><div class="d">Cancels the running task.</div><div class="a"><button class="ctl s btn-secondary">Keep</button><button class="ctl s btn-danger">Stop</button></div></div></div>
+      <div class="spec flush"><div class="lbl">Hover card</div><div class="hovercard"><div class="h"><span class="av">RL</span><div><div style="font-size:12.5px;font-weight:700">Refactor login</div><div style="font-size:10px;color:var(--text-3)">opus 4.7 · 2 min</div></div></div><div class="meta"><div><div class="v">3</div><div class="k">files</div></div><div><div class="v">12</div><div class="k">msgs</div></div><div><div class="v">1.2k</div><div class="k">tokens</div></div></div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">12</span>Feedback &amp; loading</div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl">Toasts (icon never inside a shape) · banner</div><div class="col"><div class="toast"><svg class="ic s" style="color:var(--ok)"><use href="icons.svg#i-check"/></svg><div><div class="tt">Session saved</div><div class="td">Refactor login · 3 files</div></div></div><div class="toast"><svg class="ic s" style="color:var(--danger)"><use href="icons.svg#i-alert"/></svg><div><div class="tt">Host disconnected</div></div><span class="ac">Retry</span></div><div class="banner"><svg class="ic s" style="color:var(--warn)"><use href="icons.svg#i-info"/></svg><div><div class="bt">Reconnecting</div><div class="bd">Retrying in 5s.</div></div></div></div></div>
+      <div class="spec"><div class="lbl">Spinner · progress · steps · skeleton</div><div class="row" style="gap:18px"><span class="spinner" style="color:var(--strong)"><svg class="ic l" style="stroke-width:2.4"><use href="icons.svg#i-loader"/></svg></span><div class="pbar"><div class="f" style="width:62%"></div></div></div><div class="steps" style="margin-top:13px"><span class="cir done"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span><span class="ln done"></span><span class="cir now">2</span><span class="ln"></span><span class="cir">3</span></div><div style="margin-top:13px;display:flex;gap:9px;align-items:center"><div class="skel" style="width:28px;height:28px;border-radius:8px"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="skel" style="height:8px;width:70%"></div><div class="skel" style="height:7px;width:45%"></div></div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">13</span>Cards, lists, tables</div>
+    <div class="grid g3">
+      <div class="spec flush"><div class="lbl">Stat cards</div><div class="row"><div class="stat"><div class="v">128</div><div class="k">sessions</div><div class="dl" style="color:var(--ok)">↑ 12</div></div><div class="stat"><div class="v">3.2k</div><div class="k">tokens/day</div></div></div></div>
+      <div class="spec flush"><div class="lbl">List (avatar + meta column)</div><div class="list"><div class="lrow sel"><span class="av s round">RL</span><div><div class="nm">Refactor the login flow</div></div><span class="meta">now</span></div><div class="lrow"><span class="av s round">DB</span><div><div class="nm">Migrate the database layer</div></div><span class="meta"><span class="un"></span></span></div></div></div>
+      <div class="spec flush"><div class="lbl">Key · value</div><div class="card2"><div class="kv"><div class="r"><span class="k">Host</span><span class="v">localhost:7420</span></div><div class="r"><span class="k">Status</span><span class="v">active</span></div><div class="r"><span class="k">Version</span><span class="v">0.4.1</span></div></div></div></div>
+    </div>
+    <div class="spec flush" style="margin-top:16px"><div class="lbl">Table (sortable header · row actions · zebra option)</div><div class="list"><div class="tbl"><div class="th"><div></div><div class="so">Name <svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></div><div>Role</div><div>Status</div><div></div></div><div class="tr"><label class="check" style="gap:0"><input type="checkbox" checked><span class="bx"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></label><div>Ada Lovelace</div><div>admin</div><div><span class="status c-ok">Active</span></div><div><span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-more"/></svg></span></div></div><div class="tr"><label class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></label><div>Alan Turing</div><div>viewer</div><div><span class="status c-warn">Pending</span></div><div><span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-more"/></svg></span></div></div></div></div></div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">14</span>Settings, modals, accordion, empty</div>
+    <div class="grid g4">
+      <div class="spec flush"><div class="lbl">Settings (header outside card)</div><div class="set-h"><div class="t">Appearance</div><div class="s">How Clawix looks</div></div><div class="set-card"><div class="set-row"><div class="rl"><div class="rt">Theme</div></div><div class="seg js-seg"><span class="ind"></span><button class="on">Dark</button><button>Light</button></div></div><div class="set-row"><div class="rl"><div class="rt">Translucency</div></div><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div></div></div>
+      <div class="spec flush"><div class="lbl">Modal</div><div class="modal"><div class="mh"><div class="t">Delete 1,240 rows?</div><span class="iconbtn s x"><svg class="ic s"><use href="icons.svg#i-x"/></svg></span></div><div class="mb">This cannot be undone.</div><div class="mf"><button class="ctl m btn-secondary">Cancel</button><button class="ctl m btn-danger">Delete</button></div></div></div>
+      <div class="spec flush"><div class="lbl">Accordion (click)</div><div class="acc js-acc"><div class="ah">Advanced<span class="arr"><svg class="ic s"><use href="icons.svg#i-chevron-right"/></svg></span></div><div class="ab">Hidden options revealed with a smooth height transition.</div></div></div>
+      <div class="spec flush"><div class="lbl">Empty state</div><div class="empty"><div class="ec"><svg class="ic l"><use href="icons.svg#i-message"/></svg></div><div class="et">No sessions</div><div class="ed">Create one to start.</div><button class="ctl m btn-primary" style="margin-top:12px"><svg class="ic xs"><use href="icons.svg#i-plus"/></svg>New</button></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">15</span>Code, diff, markdown <span class="d">mono only in code</span></div>
+    <div class="grid g3">
+      <div class="spec flush"><div class="lbl">Code block (copy)</div><div class="code mono"><div class="ct">swift · auth.swift</div><span class="cp"><svg class="ic s"><use href="icons.svg#i-copy"/></svg></span><div class="cc"><span class="tk-k">func</span> <span class="tk-f">login</span>(_ u: User) <span class="tk-k">throws</span> {
+  <span class="tk-k">guard</span> auth.<span class="tk-f">isValid</span>(u) <span class="tk-k">else</span> {
+    <span class="tk-k">throw</span> .<span class="tk-f">denied</span>(<span class="tk-s">.en</span>)
+  }
+}</div></div></div>
+      <div class="spec flush"><div class="lbl">Diff (side-by-side)</div><div class="diff mono"><div class="col"><div class="lh">before</div><div class="ln">func login(u) {</div><div class="ln m">  if u.valid {</div><div class="ln">  }</div></div><div class="col"><div class="lh">after</div><div class="ln">func login(u) throws {</div><div class="ln p">  guard valid else {</div><div class="ln">  }</div></div></div></div>
+      <div class="spec"><div class="lbl">Markdown</div><div class="md"><h3>Changes</h3><p>Moved validation to <code>AuthService</code>:</p><ul><li>Centralized error messages</li><li>Updated three calls</li></ul><blockquote>Apply to the rest too?</blockquote></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">16</span>Navigation, tree, calendar</div>
+    <div class="grid g4">
+      <div class="spec"><div class="lbl">Breadcrumb (plain)</div><div class="crumb"><span class="s">apps</span><span class="sp"><svg class="ic xs"><use href="icons.svg#i-chevron-right"/></svg></span><span class="s">macos</span><span class="sp"><svg class="ic xs"><use href="icons.svg#i-chevron-right"/></svg></span><span class="s cur">auth.swift</span></div><div class="lbl" style="margin-top:16px">Pagination</div><div class="pg js-pg"><span class="b"><svg class="ic xs"><use href="icons.svg#i-chevron-left"/></svg></span><span class="b on">1</span><span class="b">2</span><span class="b">3</span><span class="b"><svg class="ic xs"><use href="icons.svg#i-chevron-right"/></svg></span></div></div>
+      <div class="spec"><div class="lbl">File tree</div><div class="tree"><div class="tn"><svg class="ic xs ch"><use href="icons.svg#i-chevron-down"/></svg><svg class="ic s"><use href="icons.svg#i-folder"/></svg>Sources</div><div class="tn sel" style="padding-left:22px"><span style="width:11px"></span><svg class="ic s"><use href="icons.svg#i-file"/></svg>auth.swift</div><div class="tn" style="padding-left:22px"><span style="width:11px"></span><svg class="ic s"><use href="icons.svg#i-file"/></svg>session.swift</div></div></div>
+      <div class="spec"><div class="lbl">Scrollbar · dots</div><div class="scbox"><div class="sl2" style="width:80%"></div><div class="sl2" style="width:60%"></div><div class="sl2" style="width:90%"></div><div class="sl2" style="width:55%"></div><div class="bar"></div></div><div class="dots js-dots" style="margin-top:13px"><i class="on"></i><i></i><i></i></div></div>
+      <div class="spec flush"><div class="lbl">Date picker</div><div class="cal"><div class="ch"><span class="m">May 2026</span><span class="nav"><span class="iconbtn s"><svg class="ic xs"><use href="icons.svg#i-chevron-left"/></svg></span><span class="iconbtn s"><svg class="ic xs"><use href="icons.svg#i-chevron-right"/></svg></span></span></div><div class="grid7"><span class="wd">M</span><span class="wd">T</span><span class="wd">W</span><span class="wd">T</span><span class="wd">F</span><span class="wd">S</span><span class="wd">S</span><span class="dy mut">28</span><span class="dy mut">29</span><span class="dy mut">30</span><span class="dy">1</span><span class="dy">2</span><span class="dy">3</span><span class="dy">4</span><span class="dy">5</span><span class="dy">6</span><span class="dy">7</span><span class="dy">8</span><span class="dy">9</span><span class="dy">10</span><span class="dy">11</span><span class="dy on">12</span><span class="dy">13</span><span class="dy">14</span><span class="dy">15</span></div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">17</span>Window chip (translucent sidebar) <span class="d">hover for close · right-fade · no ellipsis</span></div>
+    <div class="spec flush"><div class="wallbox"><div class="wsb"><div class="wchip on"><svg class="ic s"><use href="icons.svg#i-globe"/></svg><span class="nm">example.com/research/agents</span><span class="x"><i><svg class="ic xs"><use href="icons.svg#i-x"/></svg></i></span></div><div class="wchip"><svg class="ic s"><use href="icons.svg#i-file"/></svg><span class="nm">RecordsTableView.swift</span><span class="x"><i><svg class="ic xs"><use href="icons.svg#i-x"/></svg></i></span></div></div></div></div>
+  </section>
+
+  <div style="margin-top:46px;font-size:11px;color:var(--text-3);border-top:0.5px solid var(--hairline);padding-top:16px">
+    Single-file interactive reference · Lucide icons only · theme toggle top-right · every component reads from the tokens in <span class="mono">:root</span> / <span class="mono">[data-theme="dark"]</span>. Click to interact: select, accordion, segmented, tabs, chips, pagination, dots. Still tuning: exact light-mode blue, shortcut treatment per surface, tab close-circle color.
+  </div>
+</div>
+</body>
+</html>

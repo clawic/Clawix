@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Overlays &amp; menus (lab)</title>
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="lab.css">
+<script defer src="app.js"></script>
+<script defer src="lab.js"></script>
+</head>
+<body data-page="lab-overlays">
+<div class="wrap">
+
+  <div class="x-labnav">
+    <a class="b" href="lab-index.html">Lab home</a>
+    <a class="b on" href="lab-overlays.html">Overlays &amp; menus</a>
+    <a class="b" href="lab-forms.html">Forms &amp; inputs</a>
+    <a class="b" href="lab-data.html">Data &amp; charts</a>
+    <span class="tag">additive lab · mergeable into canon</span>
+  </div>
+  <div class="x-note"><b>Every overlay here opens as <span class="mono">position:fixed</span> anchored to its trigger.</b> It flips up when there is no room below and clamps inside the viewport, so a menu can never be clipped by an <span class="mono">overflow:hidden</span> ancestor or hide under a later stacking context. Section I shows the bug the canonical <span class="mono">.pop-menu</span> still has and the exact drop-in patch.</div>
+
+  <section style="margin-top:8px">
+    <div class="h-sec"><span class="n">A</span>Dropdowns &amp; select menus <span class="d">click to open · flips &amp; clamps · never clipped</span></div>
+    <div class="grid g4">
+      <div class="spec"><div class="lbl">Select (single)</div>
+        <div class="x-dd" data-align="start">
+          <button class="x-dd-trigger" type="button" style="width:160px"><span class="x-dd-val">opus 4.7</span><span class="sp"></span><svg class="ic s"><use href="icons.svg#i-chevron-down"/></svg></button>
+          <div class="x-menu x-surface"><div class="x-gh">Model</div>
+            <div class="x-item on" data-pick>opus 4.7<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div>
+            <div class="x-item" data-pick>sonnet 4.6</div>
+            <div class="x-item" data-pick>haiku 4.5</div>
+          </div>
+        </div>
+      </div>
+      <div class="spec"><div class="lbl">With icons + shortcuts</div>
+        <div class="x-dd" data-align="start">
+          <button class="x-dd-trigger ghost" type="button"><svg class="ic s"><use href="icons.svg#i-more"/></svg>Actions</button>
+          <div class="x-menu x-surface">
+            <div class="x-item"><svg class="ic s"><use href="icons.svg#i-pencil"/></svg>Rename<span class="sc"><span class="kbd soft">↵</span></span></div>
+            <div class="x-item"><svg class="ic s"><use href="icons.svg#i-copy"/></svg>Duplicate<span class="sc"><span class="kbd soft">⌘D</span></span></div>
+            <div class="x-item"><svg class="ic s"><use href="icons.svg#i-download"/></svg>Export</div>
+            <div class="x-dv"></div>
+            <div class="x-item danger"><svg class="ic s"><use href="icons.svg#i-trash"/></svg>Delete<span class="sc"><span class="kbd soft">⌫</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="spec"><div class="lbl">End-aligned</div>
+        <div style="display:flex;justify-content:flex-end">
+          <div class="x-dd" data-align="end">
+            <button class="x-dd-trigger" type="button"><svg class="ic s"><use href="icons.svg#i-sliders"/></svg><span class="x-dd-val">Newest</span><svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></button>
+            <div class="x-menu x-surface"><div class="x-gh">Sort by</div>
+              <div class="x-item on" data-pick>Newest</div><div class="x-item" data-pick>Oldest</div><div class="x-item" data-pick>Most active</div><div class="x-item" data-pick>Name</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="spec"><div class="lbl">Opens upward (data-side="top")</div>
+        <div style="display:flex;align-items:flex-end;min-height:60px">
+          <div class="x-dd" data-side="top" data-align="start">
+            <button class="x-dd-trigger" type="button"><span class="x-dd-val">Agent</span><svg class="ic xs"><use href="icons.svg#i-chevron-up"/></svg></button>
+            <div class="x-menu x-surface"><div class="x-item on" data-pick><svg class="ic s"><use href="icons.svg#i-shield"/></svg>Agent</div><div class="x-item" data-pick><svg class="ic s"><use href="icons.svg#i-check"/></svg>Plan</div><div class="x-item" data-pick><svg class="ic s"><use href="icons.svg#i-eye"/></svg>Read only</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">B</span>Combobox &amp; nested submenus <span class="d">type to filter · hover a row with ▸ for a submenu</span></div>
+    <div class="grid g3">
+      <div class="spec"><div class="lbl">Searchable combobox</div>
+        <div class="x-dd" data-align="start" data-select>
+          <button class="x-dd-trigger" type="button" style="width:200px"><svg class="ic s"><use href="icons.svg#i-search"/></svg><span class="x-dd-val">Pick a file…</span><span class="sp"></span><svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></button>
+          <div class="x-menu x-surface" style="width:240px">
+            <div class="x-search"><svg class="ic s"><use href="icons.svg#i-search"/></svg><input placeholder="Search files…"></div>
+            <div class="x-item" data-pick><svg class="ic s"><use href="icons.svg#i-file"/></svg>AuthService.swift</div>
+            <div class="x-item" data-pick><svg class="ic s"><use href="icons.svg#i-file"/></svg>LoginView.swift</div>
+            <div class="x-item" data-pick><svg class="ic s"><use href="icons.svg#i-file"/></svg>SessionStore.swift</div>
+            <div class="x-item" data-pick><svg class="ic s"><use href="icons.svg#i-file"/></svg>BridgeClient.swift</div>
+            <div class="x-item" data-pick><svg class="ic s"><use href="icons.svg#i-file"/></svg>ContentView.swift</div>
+            <div class="x-empty-row" style="display:none">No matches</div>
+          </div>
+        </div>
+      </div>
+      <div class="spec"><div class="lbl">Submenus (multi-level)</div>
+        <div class="x-dd" data-align="start">
+          <button class="x-dd-trigger ghost" type="button"><svg class="ic s"><use href="icons.svg#i-bot"/></svg>Model<svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></button>
+          <div class="x-menu x-surface" style="width:200px"><div class="x-gh">Model</div>
+            <div class="x-item on" data-pick>opus 4.7</div>
+            <div class="x-item" data-pick>sonnet 4.6</div>
+            <div class="x-dv"></div>
+            <div class="x-item x-has-sub">Reasoning<span class="arr"><svg class="ic s"><use href="icons.svg#i-chevron-right"/></svg></span>
+              <div class="x-sub x-surface"><div class="x-item" data-pick>Low</div><div class="x-item on" data-pick>Medium</div><div class="x-item" data-pick>High</div></div></div>
+            <div class="x-item x-has-sub">Other models<span class="arr"><svg class="ic s"><use href="icons.svg#i-chevron-right"/></svg></span>
+              <div class="x-sub x-surface"><div class="x-item" data-pick>opus 4.6</div><div class="x-item" data-pick>haiku 4.5</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="spec"><div class="lbl">Right-click a row → context menu</div>
+        <div class="list" style="background:var(--card)">
+          <div class="lrow" data-ctx="#ctx1" style="cursor:context-menu"><span class="av s round">RL</span><div><div class="nm">Refactor the login flow</div></div><span class="meta">now</span></div>
+          <div class="lrow" data-ctx="#ctx1" style="cursor:context-menu"><span class="av s round">DB</span><div><div class="nm">Migrate the database layer</div></div><span class="meta"></span></div>
+        </div>
+        <div class="x-clip-note">right-click either row</div>
+      </div>
+    </div>
+  </section>
+  <!-- shared context menu used by the rows above -->
+  <div class="x-menu x-surface" id="ctx1" style="width:190px">
+    <div class="x-item"><svg class="ic s"><use href="icons.svg#i-message"/></svg>Open</div>
+    <div class="x-item"><svg class="ic s"><use href="icons.svg#i-pencil"/></svg>Rename<span class="sc"><span class="kbd soft">↵</span></span></div>
+    <div class="x-item"><svg class="ic s"><use href="icons.svg#i-pin"/></svg>Pin</div>
+    <div class="x-item x-has-sub"><svg class="ic s"><use href="icons.svg#i-folder"/></svg>Move to<span class="arr"><svg class="ic s"><use href="icons.svg#i-chevron-right"/></svg></span>
+      <div class="x-sub x-surface"><div class="x-item">clawix</div><div class="x-item">landing</div><div class="x-item">archive</div></div></div>
+    <div class="x-dv"></div>
+    <div class="x-item danger"><svg class="ic s"><use href="icons.svg#i-trash"/></svg>Delete<span class="sc"><span class="kbd soft">⌫</span></span></div>
+  </div>
+
+  <section>
+    <div class="h-sec"><span class="n">C</span>Tooltips, popover &amp; hover card <span class="d">hover the chips · 4 tooltip sides</span></div>
+    <div class="grid g3">
+      <div class="spec"><div class="lbl">Tooltip · 4 sides (hover)</div>
+        <div class="row" style="gap:12px;justify-content:center;padding:14px 0">
+          <span class="x-tip" data-side="top" data-tip="Top tooltip ⌘N"><span class="iconbtn"><svg class="ic"><use href="icons.svg#i-plus"/></svg></span></span>
+          <span class="x-tip" data-side="bottom" data-tip="Bottom tooltip"><span class="iconbtn"><svg class="ic"><use href="icons.svg#i-bell"/></svg></span></span>
+          <span class="x-tip" data-side="left" data-tip="Left tooltip"><span class="iconbtn"><svg class="ic"><use href="icons.svg#i-git"/></svg></span></span>
+          <span class="x-tip" data-side="right" data-tip="Right tooltip"><span class="iconbtn"><svg class="ic"><use href="icons.svg#i-settings"/></svg></span></span>
+        </div>
+      </div>
+      <div class="spec flush"><div class="lbl">Popover (action)</div>
+        <div class="x-surface x-pop"><div class="t">Stop the agent?</div><div class="d">The running task will be cancelled. Unsaved tool output is kept.</div><div class="a"><button class="ctl s btn-secondary">Keep running</button><button class="ctl s btn-danger">Stop</button></div></div>
+      </div>
+      <div class="spec flush"><div class="lbl">Hover card</div>
+        <div class="hovercard"><div class="h"><span class="av">RL</span><div><div style="font-size:12.5px;font-weight:700">Refactor login</div><div style="font-size:10px;color:var(--text-3)">opus 4.7 · 2 min</div></div></div><div class="meta"><div><div class="v">3</div><div class="k">files</div></div><div><div class="v">12</div><div class="k">msgs</div></div><div><div class="v">1.2k</div><div class="k">tokens</div></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">D</span>Modals, drawer, sheet &amp; command bar <span class="d">click to open · Esc or backdrop closes</span></div>
+    <div class="spec flush"><div class="row">
+      <button class="ctl m btn-primary" data-x-open="#m-sm">Small dialog</button>
+      <button class="ctl m btn-secondary" data-x-open="#m-md">Standard modal</button>
+      <button class="ctl m btn-secondary" data-x-open="#m-lg">Large modal</button>
+      <button class="ctl m btn-secondary" data-x-open="#m-drawer"><svg class="ic s"><use href="icons.svg#i-sliders"/></svg>Right drawer</button>
+      <button class="ctl m btn-secondary" data-x-open="#m-sheet"><svg class="ic s"><use href="icons.svg#i-stack"/></svg>Bottom sheet</button>
+      <button class="ctl m btn-secondary" data-x-cmdk><svg class="ic s"><use href="icons.svg#i-command"/></svg>Command bar<span class="kbd soft" style="margin-left:6px">⌘K</span></button>
+    </div></div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">E</span>Toasts <span class="d">click to spawn · auto-dismiss · stack bottom-right</span></div>
+    <div class="spec flush"><div class="row">
+      <button class="ctl m btn-secondary" data-x-toast="success" data-title="Session saved" data-desc="Refactor login · 3 files">Success</button>
+      <button class="ctl m btn-secondary" data-x-toast="error" data-title="Host disconnected" data-desc="Could not reach localhost:24080" data-action="Retry">Error</button>
+      <button class="ctl m btn-secondary" data-x-toast="warn" data-title="Approaching usage limit" data-desc="92% used · resets in 3h">Warning</button>
+      <button class="ctl m btn-secondary" data-x-toast="info" data-title="Update available" data-desc="Clawix 0.4.2 is ready" data-action="Install">Info</button>
+    </div></div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">I</span>Why menus get clipped <span class="d">the bug in the canonical .pop-menu · and the fix</span></div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl"><span class="x-badge-bad">BUG</span> &nbsp;absolute menu inside <span class="mono">overflow:hidden</span></div>
+        <div class="set-card x-clip" style="margin-top:4px">
+          <div class="set-row"><div class="rl"><div class="rt">Default model</div></div>
+            <div class="dropdown open"><div class="field js-pop" style="width:140px;justify-content:space-between;cursor:pointer"><span data-val>opus 4.7</span><svg class="ic s"><use href="icons.svg#i-chevron-down"/></svg></div>
+              <div class="pop-menu"><div class="it" data-pick>opus 4.7<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div><div class="it" data-pick>sonnet 4.6</div><div class="it" data-pick>haiku 4.5</div></div></div></div>
+          <div class="set-row"><div class="rl"><div class="rt">Reasoning</div></div><span style="font-size:12px;color:var(--text-2)">High</span></div>
+        </div>
+        <div class="x-clip-note">The card clips its overflow for rounded corners, so the open <span class="mono">.pop-menu</span> is cut to the card edge. z-index can't help, the ancestor clips it.</div>
+      </div>
+      <div class="spec"><div class="lbl"><span class="x-badge-ok">FIX</span> &nbsp;fixed menu escapes the clip (click it)</div>
+        <div class="set-card x-clip" style="margin-top:4px">
+          <div class="set-row"><div class="rl"><div class="rt">Default model</div></div>
+            <div class="x-dd" data-align="end"><button class="x-dd-trigger" type="button" style="width:140px"><span class="x-dd-val">opus 4.7</span><span class="sp"></span><svg class="ic s"><use href="icons.svg#i-chevron-down"/></svg></button>
+              <div class="x-menu x-surface"><div class="x-item on" data-pick>opus 4.7<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div><div class="x-item" data-pick>sonnet 4.6</div><div class="x-item" data-pick>haiku 4.5</div></div></div></div>
+          <div class="set-row"><div class="rl"><div class="rt">Reasoning</div></div><span style="font-size:12px;color:var(--text-2)">High</span></div>
+        </div>
+        <div class="x-clip-note">Same clipped card, but the menu is <span class="mono">position:fixed</span> at z-index 4000, so it floats over the card edge and the window frame.</div>
+      </div>
+    </div>
+
+    <div class="spec flush" style="margin-top:16px"><div class="lbl">Edge clamping &amp; in-scroll torture test</div>
+      <div class="grid g2">
+        <div style="display:flex;justify-content:flex-end;border:0.5px dashed var(--hairline);border-radius:var(--r-card);padding:14px">
+          <div class="x-dd" data-align="start"><button class="x-dd-trigger" type="button">Opens at the right edge<svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></button>
+            <div class="x-menu x-surface" style="width:240px"><div class="x-item" data-pick>The menu clamps so it stays inside the viewport</div><div class="x-item" data-pick>instead of overflowing off-screen</div><div class="x-item" data-pick>aligned to the edge</div></div></div>
+        </div>
+        <div class="x-fade"><div class="x-scroll" style="border:0.5px solid var(--hairline);border-radius:var(--r-card);padding:12px;background:var(--card)">
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:8px">A scroll container with its own overflow.</div>
+          <div class="x-dd" data-align="start"><button class="x-dd-trigger" type="button">Open inside a scroll box<svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></button>
+            <div class="x-menu x-surface"><div class="x-item" data-pick>Still not clipped</div><div class="x-item" data-pick>repositions on scroll</div><div class="x-item" data-pick>stays anchored</div></div></div>
+          <div style="height:120px"></div>
+          <div style="font-size:11px;color:var(--text-3)">More content below to make it scroll…</div>
+          <div style="height:120px"></div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="spec flush" style="margin-top:16px"><div class="lbl">Drop-in patch for the canonical component (ui.css + app.js)</div>
+      <div class="code mono"><div class="ct">the fix, applied to the shared .pop-menu</div><div class="cc"><span class="tk-k">/* ui.css */</span>
+.pop-menu{ <span class="tk-f">position</span>:fixed; z-index:<span class="tk-s">4000</span>; <span class="tk-k">/* was absolute / z-index:30 */</span> }
+
+<span class="tk-k">/* app.js — when a .dropdown opens, anchor its menu like lab.js place() */</span>
+<span class="tk-k">function</span> <span class="tk-f">place</span>(menu, rect){
+  <span class="tk-k">var</span> mh = menu.offsetHeight, vh = innerHeight, gap = <span class="tk-s">6</span>;
+  <span class="tk-k">var</span> up = (vh - rect.bottom) &lt; mh + gap;
+  menu.style.top  = (up ? rect.top - gap - mh : rect.bottom + gap) + <span class="tk-s">"px"</span>;
+  menu.style.left = rect.left + <span class="tk-s">"px"</span>;
+}</div></div>
+      <div class="x-clip-note">Because the workspace is shared right now, this patch is documented here rather than applied to <span class="mono">ui.css</span> / <span class="mono">app.js</span> directly. Drop it in when those files are free.</div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===================== overlay hosts ===================== -->
+<div class="x-scrim center" id="m-sm"><div class="x-modal sm x-surface">
+  <div class="mh"><div class="t">Discard changes?</div><span class="iconbtn s x" data-x-close><svg class="ic s"><use href="icons.svg#i-x"/></svg></span></div>
+  <div class="mb">You have unsaved edits in <span class="mono">AuthService.swift</span>. They will be lost.</div>
+  <div class="mf"><button class="ctl m btn-secondary" data-x-close>Keep editing</button><button class="ctl m btn-danger" data-x-close>Discard</button></div>
+</div></div>
+
+<div class="x-scrim center" id="m-md"><div class="x-modal x-surface">
+  <div class="mh"><div class="t">New session</div><span class="iconbtn s x" data-x-close><svg class="ic s"><use href="icons.svg#i-x"/></svg></span></div>
+  <div class="mb">
+    <div class="x-field-row" style="margin-bottom:14px"><span class="fl">Name</span><div class="field"><input placeholder="Refactor the login flow"></div></div>
+    <div class="x-field-row"><span class="fl">Working folder</span>
+      <div class="x-dd" data-align="start" style="display:block"><button class="x-dd-trigger" type="button" style="width:100%"><svg class="ic s"><use href="icons.svg#i-folder"/></svg><span class="x-dd-val">clawix</span><span class="sp"></span><svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></button>
+        <div class="x-menu x-surface"><div class="x-item on" data-pick><svg class="ic s"><use href="icons.svg#i-folder"/></svg>clawix</div><div class="x-item" data-pick><svg class="ic s"><use href="icons.svg#i-folder"/></svg>landing</div></div></div></div>
+  </div>
+  <div class="mf"><button class="ctl m btn-secondary" data-x-close>Cancel</button><button class="ctl m btn-primary" data-x-close>Create</button></div>
+</div></div>
+
+<div class="x-scrim center" id="m-lg"><div class="x-modal lg x-surface">
+  <div class="mh"><div class="t">Review diff · AuthService.swift</div><span class="iconbtn s x" data-x-close><svg class="ic s"><use href="icons.svg#i-x"/></svg></span></div>
+  <div class="mb">
+    <div class="diff mono"><div class="col"><div class="lh">before</div><div class="ln">func login(_ u: User) {</div><div class="ln m">&nbsp;&nbsp;if u.email.contains("@") {</div><div class="ln">&nbsp;&nbsp;}</div></div>
+      <div class="col"><div class="lh">after</div><div class="ln">func login(_ u: User) throws {</div><div class="ln p">&nbsp;&nbsp;guard auth.isValid(u) else {</div><div class="ln">&nbsp;&nbsp;}</div></div></div>
+  </div>
+  <div class="mf"><button class="ctl m btn-secondary" data-x-close>Close</button><button class="ctl m btn-primary" data-x-close><svg class="ic s"><use href="icons.svg#i-git"/></svg>Commit</button></div>
+</div></div>
+
+<div class="x-scrim right" id="m-drawer"><div class="x-drawer x-surface">
+  <div class="mh"><div class="t">Session details</div><span class="iconbtn s x" data-x-close><svg class="ic s"><use href="icons.svg#i-x"/></svg></span></div>
+  <div class="mb">
+    <div class="card2"><div class="kv"><div class="r"><span class="k">Model</span><span class="v">opus 4.7</span></div><div class="r"><span class="k">Files</span><span class="v">3</span></div><div class="r"><span class="k">Tokens</span><span class="v">1,240</span></div><div class="r"><span class="k">Started</span><span class="v">2:14 PM</span></div></div></div>
+    <div class="lbl" style="margin:16px 0 8px">Changed files</div>
+    <div class="list"><div class="lrow"><span class="av s round">SW</span><div><div class="nm">AuthService.swift</div></div><span class="meta">+18</span></div><div class="lrow"><span class="av s round">SW</span><div><div class="nm">LoginView.swift</div></div><span class="meta">−11</span></div></div>
+  </div>
+</div></div>
+
+<div class="x-scrim bottom" id="m-sheet"><div class="x-sheet x-surface">
+  <div class="grab"></div><div class="mh">Attach to this message</div>
+  <div class="mb"><div class="grid g3">
+    <div class="x-dropzone"><span class="di"><svg class="ic l"><use href="icons.svg#i-file"/></svg></span><span class="dt">Files</span><span class="dd">Drop or browse</span></div>
+    <div class="x-dropzone"><span class="di"><svg class="ic l"><use href="icons.svg#i-grid"/></svg></span><span class="dt">Window</span><span class="dd">Capture a window</span></div>
+    <div class="x-dropzone"><span class="di"><svg class="ic l"><use href="icons.svg#i-globe"/></svg></span><span class="dt">URL</span><span class="dd">Paste a link</span></div>
+  </div></div>
+</div></div>
+
+</body>
+</html>

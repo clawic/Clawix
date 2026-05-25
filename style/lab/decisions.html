@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Decisions board</title>
+<link rel="stylesheet" href="../ui.css">
+<script defer src="../app.js"></script>
+<style>
+  .wrap{max-width:1000px;}
+  .dec-intro{font-size:13.5px;color:var(--text-2);margin-top:10px;max-width:680px;line-height:1.55;}
+  .dec-sec{margin-top:30px;}
+  .dec-sh{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;letter-spacing:-0.2px;padding-bottom:8px;border-bottom:0.5px solid var(--hairline);}
+  .dec-sh .cnt{font-size:11px;font-weight:600;color:var(--text-3);margin-left:auto;}
+  .dec-dot{width:8px;height:8px;border-radius:999px;flex:0 0 auto;}
+  .dec-dot.done{background:var(--ok);} .dec-dot.exp{background:var(--warn);} .dec-dot.add{background:var(--accent);}
+  .dec-list{display:flex;flex-direction:column;gap:3px;margin-top:10px;}
+  .dec-row{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;border:0.5px solid var(--hairline);border-radius:var(--r-ctl);background:var(--card);}
+  .dec-row .ti{font-size:12.5px;font-weight:600;letter-spacing:-0.1px;}
+  .dec-row .no{font-size:11.5px;color:var(--text-2);margin-top:2px;line-height:1.45;}
+  .dec-row .ic-wrap{width:22px;height:22px;flex:0 0 auto;border-radius:6px;background:var(--fill-2);display:flex;align-items:center;justify-content:center;color:var(--text-2);}
+</style>
+</head>
+<body data-base="../" data-page="lab">
+<div class="wrap">
+  <div style="font-size:28px;font-weight:800;letter-spacing:-0.8px">Decisions board</div>
+  <p class="dec-intro">The running ledger of the visual language. <b>Decided</b> calls are settled and being folded into the tokens and components. <b>Experiments</b> are in flight, still resolved through a discordance. <b>To add</b> are app components that exist but are not yet documented in the fundamentals. Nothing here is removed by force, only superseded after a confirmed comparison.</p>
+
+  <div class="dec-sec">
+    <div class="dec-sh"><span class="dec-dot done"></span>Decided<span class="cnt">12</span></div>
+    <div class="dec-list">
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Toggle</div><div class="no">Monochrome high-contrast: strong track when on, white knob, no blue and no green.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Segmented</div><div class="no">Recessed adaptive well with a soft sliding indicator; the section selector is the large strong segmented, never an underline.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Settings card</div><div class="no">Low-luminance dark fill with a visible hairline; radius leaning to 10 (see discordance).</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Menu surface</div><div class="no">Subtle glass: light blur, opaque-ish tint, radius 12; selection must read clearly.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Toast</div><div class="no">Glass squircle, radius 18; wins over the flat card.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Assistant prose</div><div class="no">Weight 500 with monospaced code; app padding and radius.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Home suggestions</div><div class="no">Pill chips with a leading icon.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Window / tab chip</div><div class="no">Hover-reveal X with a right-edge gradient fade; Manrope label; clean close glyph.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Spinner</div><div class="no">Two-ring compact arc (~270°) with round caps; the only loader.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Scrollbar</div><div class="no">Thin low-opacity capsule; the only scroller.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Reasoning block</div><div class="no">Uses the shimmer treatment, not a plain chevron.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-check"/></svg></span><div><div class="ti">Search field</div><div class="no">The unified squircle field, not a capsule.</div></div></div>
+    </div>
+  </div>
+
+  <div class="dec-sec">
+    <div class="dec-sh"><span class="dec-dot exp"></span>Experiments in flight<span class="cnt">2</span></div>
+    <div class="dec-list">
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-git"/></svg></span><div><div class="ti">Inline link color</div><div class="no">Shared <span class="mono">--accent</span> versus the chat surface's brighter tuned blue. See discordance.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-git"/></svg></span><div><div class="ti">Container radius token</div><div class="no">One <span class="mono">--r-card</span> (14) for everything versus a tighter token for dense cards. See discordance.</div></div></div>
+    </div>
+  </div>
+
+  <div class="dec-sec">
+    <div class="dec-sh"><span class="dec-dot add"></span>To add to the fundamentals<span class="cnt">app-only components</span></div>
+    <div class="dec-list">
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-plus"/></svg></span><div><div class="ti">Usage limit bar</div><div class="no">The warn / reached progress bar, not yet a documented component.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-plus"/></svg></span><div><div class="ti">Plan card</div><div class="no">The plan / step card shown in the conversation.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-plus"/></svg></span><div><div class="ti">Queued messages row</div><div class="no">Pending follow-ups stacked above the composer.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-plus"/></svg></span><div><div class="ti">Skills / suggestion bar</div><div class="no">The chip bar above the composer.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-plus"/></svg></span><div><div class="ti">Live working header</div><div class="no">The streaming "working" header with its shimmer state.</div></div></div>
+      <div class="dec-row"><span class="ic-wrap"><svg class="ic s"><use href="../icons.svg#i-plus"/></svg></span><div><div class="ti">Context ring &amp; tooltip</div><div class="no">The conic context donut and its tooltip (staged in Menus).</div></div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

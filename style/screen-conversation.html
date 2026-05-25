@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Conversation</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="conversation" data-shell="app" data-title="Refactor the login flow" data-active="conv">
+<template id="main">
+  <div class="conv">
+    <div class="msgs">
+      <div class="thread">
+
+        <div class="msg-user">
+          <div class="user-bubble">Refactor the login flow so validation lives in <code class="mono">AuthService</code> instead of the view. Keep the error messages.</div>
+        </div>
+
+        <div class="msg-ai">
+          <div class="work js-work">
+            <div class="work-head">Worked for 42s<svg class="ic xs"><use href="icons.svg#i-chevron-right"/></svg></div>
+            <div class="work-line"></div>
+            <div class="work-body"><div class="work-body-inner">
+              <div class="tool-group">
+                <div class="tool-row"><svg class="ic s"><use href="icons.svg#i-file"/></svg>Read auth.swift</div>
+                <div class="tool-row"><svg class="ic s"><use href="icons.svg#i-pencil"/></svg>Edited AuthService.swift &middot; +18 &minus;4</div>
+                <div class="tool-row"><svg class="ic s"><use href="icons.svg#i-pencil"/></svg>Edited LoginView.swift &middot; +2 &minus;11</div>
+                <div class="tool-row"><svg class="ic s"><use href="icons.svg#i-terminal"/></svg>Ran swift build</div>
+              </div>
+              <div class="diff mono">
+                <div class="col"><div class="lh">before</div><div class="ln">func login(_ u: User) {</div><div class="ln m">&nbsp;&nbsp;if u.email.contains("@") {</div><div class="ln">&nbsp;&nbsp;}</div></div>
+                <div class="col"><div class="lh">after</div><div class="ln">func login(_ u: User) throws {</div><div class="ln p">&nbsp;&nbsp;guard auth.isValid(u) else {</div><div class="ln">&nbsp;&nbsp;}</div></div>
+              </div>
+            </div></div>
+          </div>
+          <div class="ai-md">
+            <p>Moved validation into <code>AuthService</code> and updated the three call sites. The error copy is unchanged, so the existing strings still surface to the user.</p>
+            <p>Want me to add a unit test for the new <code>isValid</code> path?</p>
+          </div>
+          <div class="msg-actions">
+            <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-copy"/></svg></span>
+            <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-git"/></svg></span>
+            <span class="t">2:14 PM</span>
+          </div>
+        </div>
+
+        <div class="msg-user">
+          <div class="user-bubble">Nice. Run the auth tests too.</div>
+        </div>
+
+        <div class="msg-ai">
+          <div class="work js-work">
+            <div class="work-head">Worked for 8s<svg class="ic xs"><use href="icons.svg#i-chevron-right"/></svg></div>
+            <div class="work-line"></div>
+            <div class="work-body"><div class="work-body-inner">
+              <div class="tool-group">
+                <div class="tool-row"><svg class="ic s"><use href="icons.svg#i-terminal"/></svg>Ran swift test --filter AuthTests</div>
+              </div>
+            </div></div>
+          </div>
+          <div class="ai-md">
+            <p>All 12 tests passed. The login flow is fully covered now.</p>
+          </div>
+          <div class="msg-actions">
+            <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-copy"/></svg></span>
+            <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-git"/></svg></span>
+            <span class="t">2:15 PM</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="composer-dock"><div class="inner">
+      <div class="composer-card">
+        <textarea placeholder="Ask for follow-up changes"></textarea>
+        <div class="composer-tools">
+          <span class="cmp-btn"><svg class="ic"><use href="icons.svg#i-plus"/></svg></span>
+          <span class="cmp-perm"><svg class="ic s"><use href="icons.svg#i-shield"/></svg>Agent</span>
+          <span class="sp"></span>
+          <span class="dropdown">
+            <span class="cmp-model js-pop"><span data-val>opus 4.7</span><span class="lo">High</span><svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></span>
+            <div class="pop-menu up" style="left:auto;right:0;top:auto;bottom:calc(100% + 6px);transform-origin:bottom right">
+              <div class="gh">Model</div>
+              <div class="it" data-pick>opus 4.7<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div>
+              <div class="it" data-pick>sonnet 4.6</div>
+              <div class="it" data-pick>haiku 4.5</div>
+            </div>
+          </span>
+          <span class="cmp-btn"><svg class="ic s"><use href="icons.svg#i-mic"/></svg></span>
+          <span class="cmp-send"><svg class="ic s"><use href="icons.svg#i-arrow-up"/></svg></span>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</template>
+</body>
+</html>

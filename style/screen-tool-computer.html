@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - On this Mac</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="tool-computer" data-shell="app" data-title="On this Mac" data-active="computer">
+<template id="main">
+  <div class="surface">
+    <div class="surf-head">
+      <div class="tt">
+        <div class="h"><svg class="ic"><use href="icons.svg#i-cpu"/></svg>On this Mac</div>
+        <div class="s">Let the agent see and control native apps through Accessibility. Every action is logged and tagged <span class="mono">computer-use</span>.</div>
+      </div>
+      <div class="sp"></div>
+      <div class="acts">
+        <span class="status c-ok"><svg class="ic xs"><use href="icons.svg#i-check"/></svg>Accessibility on</span>
+        <span class="set-row" style="padding:0;gap:9px"><span class="rt" style="font-size:12.5px;font-weight:600">Any app</span><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></span>
+      </div>
+    </div>
+
+    <div class="md2">
+      <div class="md-list">
+        <div class="ltop">
+          <div class="field"><svg class="ic s"><use href="icons.svg#i-search"/></svg><input placeholder="Search apps…"></div>
+          <div class="seg js-seg" style="align-self:stretch"><span class="ind"></span><button class="on">All</button><button>Allowed</button></div>
+        </div>
+        <div class="cap">12 running apps</div>
+        <div class="scroll">
+          <div class="mrow on"><span class="ec"><svg class="ic s"><use href="icons.svg#i-folder"/></svg></span><div class="mt"><div class="nm">Finder</div><div class="sub">com.apple.finder</div></div><span class="status c-ok">Allowed</span></div>
+          <div class="mrow"><span class="ec"><svg class="ic s"><use href="icons.svg#i-globe"/></svg></span><div class="mt"><div class="nm">Safari</div><div class="sub">com.apple.Safari</div></div><span class="status c-warn">Ask</span></div>
+          <div class="mrow"><span class="ec"><svg class="ic s"><use href="icons.svg#i-calendar"/></svg></span><div class="mt"><div class="nm">Calendar</div><div class="sub">com.apple.iCal</div></div><span class="status c-ok">Allowed</span></div>
+          <div class="mrow"><span class="ec"><svg class="ic s"><use href="icons.svg#i-message"/></svg></span><div class="mt"><div class="nm">Messages</div><div class="sub">com.apple.MobileSMS</div></div><span class="status c-warn">Ask</span></div>
+          <div class="mrow"><span class="ec"><svg class="ic s"><use href="icons.svg#i-settings"/></svg></span><div class="mt"><div class="nm">System Settings</div><div class="sub">com.apple.systempreferences</div></div><span class="status c-warn">Ask</span></div>
+          <div class="mrow"><span class="ec"><svg class="ic s"><use href="icons.svg#i-file"/></svg></span><div class="mt"><div class="nm">Notes</div><div class="sub">com.apple.Notes</div></div><span class="status c-ok">Allowed</span></div>
+          <div class="mrow"><span class="ec"><svg class="ic s"><use href="icons.svg#i-bot"/></svg></span><div class="mt"><div class="nm">Reminders</div><div class="sub">com.apple.reminders</div></div><span class="status c-warn">Ask</span></div>
+        </div>
+      </div>
+
+      <div class="md-detail">
+        <div class="md-head">
+          <span class="ec"><svg class="ic l"><use href="icons.svg#i-folder"/></svg></span>
+          <div>
+            <div class="nm">Finder</div>
+            <div class="meta"><span class="mono">com.apple.finder</span><span>·</span><span class="status c-ok"><span class="dot live"></span>Frontmost</span></div>
+          </div>
+          <div class="sp"></div>
+          <span class="set-row" style="padding:0;gap:9px"><span class="rt" style="font-size:12px;font-weight:600">Always allow</span><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></span>
+        </div>
+
+        <div class="sec-lbl">Permission for this app</div>
+        <div class="set-card">
+          <div class="set-row"><div class="rl"><div class="rt">When the agent controls Finder</div><div class="rd">Allowed apps skip the per-turn approval card</div></div>
+            <div class="seg js-seg"><span class="ind"></span><button class="on">Allow always</button><button>Ask each time</button><button>Block</button></div></div>
+        </div>
+
+        <div class="sec-lbl">Accessibility tree</div>
+        <div class="card2" style="padding:11px 12px">
+          <div class="ax">
+            <div class="axn"><svg class="ic xs ch"><use href="icons.svg#i-chevron-down"/></svg><span class="role">AXApplication</span><span class="val">"Finder"</span></div>
+            <div class="axn" style="padding-left:22px"><svg class="ic xs ch"><use href="icons.svg#i-chevron-down"/></svg><span class="role">AXWindow</span><span class="val">"Desktop"</span></div>
+            <div class="axn" style="padding-left:40px"><svg class="ic xs ch"><use href="icons.svg#i-chevron-right"/></svg><span class="role">AXToolbar</span></div>
+            <div class="axn" style="padding-left:40px"><svg class="ic xs ch"><use href="icons.svg#i-chevron-down"/></svg><span class="role">AXScrollArea</span></div>
+            <div class="axn" style="padding-left:58px"><span style="width:11px"></span><span class="role">AXImage</span><span class="val">"Macintosh HD"</span></div>
+            <div class="axn" style="padding-left:58px"><span style="width:11px"></span><span class="role">AXImage</span><span class="val">"Reports"</span></div>
+            <div class="axn" style="padding-left:40px"><span style="width:11px"></span><span class="role">AXButton</span><span class="val">"New Folder"</span></div>
+          </div>
+        </div>
+
+        <div class="sec-lbl">Recent actions</div>
+        <div class="list">
+          <div class="xrow"><svg class="ic s"><use href="icons.svg#i-grid"/></svg><div class="mt"><div class="nm">get_app_state · Finder</div><div class="sub">Resolved 25 accessibility nodes</div></div><span class="status c-ok">done</span><span class="meta">2:14 PM</span></div>
+          <div class="xrow"><svg class="ic s"><use href="icons.svg#i-command"/></svg><div class="mt"><div class="nm">left_click · "New Folder"</div><div class="sub">AXPress on toolbar button</div></div><span class="status c-ok">done</span><span class="meta">2:14 PM</span></div>
+          <div class="xrow"><svg class="ic s"><use href="icons.svg#i-pencil"/></svg><div class="mt"><div class="nm">type · "Reports"</div><div class="sub">Set value on new folder field</div></div><span class="status c-ok">done</span><span class="meta">2:15 PM</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+</body>
+</html>

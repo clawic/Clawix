@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Data &amp; charts (lab)</title>
+<link rel="stylesheet" href="../ui.css">
+<link rel="stylesheet" href="lab.css">
+<script defer src="../app.js"></script>
+<script defer src="lab.js"></script>
+<style>
+  /* page-local: table column templates + chart box sizing */
+  .x-table.t1 .thead,.x-table.t1 .trow{grid-template-columns:22px 1.4fr .9fr .7fr .8fr 22px;}
+  .chartbox{width:100%;height:auto;display:block;}
+</style>
+</head>
+<body data-base="../" data-page="lab-data">
+<div class="wrap">
+
+  <div class="x-labnav">
+    <a class="b" href="index.html">Lab home</a>
+    <a class="b" href="lab-overlays.html">Overlays &amp; menus</a>
+    <a class="b" href="lab-forms.html">Forms &amp; inputs</a>
+    <a class="b on" href="lab-data.html">Data &amp; charts</a>
+    <span class="tag">additive lab · mergeable into canon</span>
+  </div>
+  <div class="x-note">Mock data, but everything renders for real: charts are inline SVG that follow the tokens (monochrome by default, the status palette only for meaning), and the table sorts, selects and expands. No chart library, no color noise.</div>
+
+  <section style="margin-top:8px">
+    <div class="h-sec"><span class="n">A</span>KPIs &amp; deltas</div>
+    <div class="grid g4">
+      <div class="x-kpi"><div class="k"><svg class="ic xs"><use href="../icons.svg#i-message"/></svg>Sessions</div><div class="v">128</div><div class="delta up"><svg class="ic xs"><use href="../icons.svg#i-chevron-up"/></svg>12% vs last week</div></div>
+      <div class="x-kpi"><div class="k"><svg class="ic xs"><use href="../icons.svg#i-chart"/></svg>Tokens / day</div><div class="v">3.2k</div><div class="delta down"><svg class="ic xs"><use href="../icons.svg#i-chevron-down"/></svg>4% vs last week</div></div>
+      <div class="x-kpi"><div class="k"><svg class="ic xs"><use href="../icons.svg#i-git"/></svg>Commits</div><div class="v">47</div><div class="delta up"><svg class="ic xs"><use href="../icons.svg#i-chevron-up"/></svg>9 today</div></div>
+      <div class="x-kpi"><div class="k"><svg class="ic xs"><use href="../icons.svg#i-clock"/></svg>Avg run</div><div class="v">8.4s</div>
+        <svg class="x-spark" viewBox="0 0 90 26" style="margin-top:10px;width:90px"><polyline points="2,18 15,12 28,16 41,7 54,13 67,5 88,9"/></svg></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">B</span>Bar &amp; grouped bar</div>
+    <div class="grid g2">
+      <div class="x-panel"><div class="ph"><div><div class="pt">Tokens per day</div><div class="ps">last 7 days</div></div><span class="sp"></span><span class="badge c-ok">+12%</span></div>
+        <svg class="chartbox" viewBox="0 0 320 150">
+          <line class="x-grid" x1="16" y1="30" x2="320" y2="30"/><line class="x-grid" x1="16" y1="70" x2="320" y2="70"/><line class="x-grid" x1="16" y1="110" x2="320" y2="110"/>
+          <line class="x-axis" x1="16" y1="120" x2="320" y2="120"/>
+          <rect class="x-bar" x="24"  y="72" width="24" height="48" rx="3"/>
+          <rect class="x-bar" x="64"  y="46" width="24" height="74" rx="3"/>
+          <rect class="x-bar" x="104" y="58" width="24" height="62" rx="3"/>
+          <rect class="x-bar" x="144" y="34" width="24" height="86" rx="3"/>
+          <rect class="x-bar" x="184" y="52" width="24" height="68" rx="3"/>
+          <rect class="x-bar" x="224" y="22" width="24" height="98" rx="3"/>
+          <rect class="x-bar" x="264" y="40" width="24" height="80" rx="3"/>
+          <text class="x-chart-lab" x="36"  y="134" text-anchor="middle">M</text><text class="x-chart-lab" x="76" y="134" text-anchor="middle">T</text><text class="x-chart-lab" x="116" y="134" text-anchor="middle">W</text><text class="x-chart-lab" x="156" y="134" text-anchor="middle">T</text><text class="x-chart-lab" x="196" y="134" text-anchor="middle">F</text><text class="x-chart-lab" x="236" y="134" text-anchor="middle">S</text><text class="x-chart-lab" x="276" y="134" text-anchor="middle">S</text>
+        </svg>
+      </div>
+      <div class="x-panel"><div class="ph"><div><div class="pt">Edits vs reads</div><div class="ps">per repo</div></div></div>
+        <svg class="chartbox" viewBox="0 0 320 150">
+          <line class="x-axis" x1="16" y1="120" x2="320" y2="120"/>
+          <rect class="x-bar"   x="34"  y="40" width="18" height="80" rx="3"/><rect class="x-bar-2" x="54" y="64" width="18" height="56" rx="3"/>
+          <rect class="x-bar"   x="114" y="58" width="18" height="62" rx="3"/><rect class="x-bar-2" x="134" y="80" width="18" height="40" rx="3"/>
+          <rect class="x-bar"   x="194" y="30" width="18" height="90" rx="3"/><rect class="x-bar-2" x="214" y="54" width="18" height="66" rx="3"/>
+          <rect class="x-bar"   x="274" y="70" width="18" height="50" rx="3"/><rect class="x-bar-2" x="294" y="88" width="18" height="32" rx="3"/>
+          <text class="x-chart-lab" x="54"  y="134" text-anchor="middle">clawix</text><text class="x-chart-lab" x="134" y="134" text-anchor="middle">web</text><text class="x-chart-lab" x="214" y="134" text-anchor="middle">spec</text><text class="x-chart-lab" x="294" y="134" text-anchor="middle">landing</text>
+        </svg>
+        <div class="x-legend"><span class="lg"><span class="sw" style="background:var(--strong)"></span>Edits</span><span class="lg"><span class="sw" style="background:color-mix(in srgb,var(--text) 26%,transparent)"></span>Reads</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">C</span>Line, area, donut &amp; rings</div>
+    <div class="grid g2">
+      <div class="x-panel"><div class="ph"><div><div class="pt">Active sessions</div><div class="ps">this week</div></div></div>
+        <svg class="chartbox" viewBox="0 0 320 150">
+          <line class="x-grid" x1="16" y1="40" x2="320" y2="40"/><line class="x-grid" x1="16" y1="80" x2="320" y2="80"/>
+          <line class="x-axis" x1="16" y1="118" x2="320" y2="118"/>
+          <path class="x-area" d="M24,88 L72,62 L120,74 L168,44 L216,56 L264,26 L304,40 L304,118 L24,118 Z"/>
+          <polyline class="x-line" points="24,88 72,62 120,74 168,44 216,56 264,26 304,40"/>
+          <circle class="x-dotc" cx="24" cy="88" r="3.2"/><circle class="x-dotc" cx="72" cy="62" r="3.2"/><circle class="x-dotc" cx="120" cy="74" r="3.2"/><circle class="x-dotc" cx="168" cy="44" r="3.2"/><circle class="x-dotc" cx="216" cy="56" r="3.2"/><circle class="x-dotc" cx="264" cy="26" r="3.2"/><circle class="x-dotc" cx="304" cy="40" r="3.2"/>
+        </svg>
+      </div>
+      <div class="x-panel"><div class="ph"><div><div class="pt">Tool usage &amp; progress</div><div class="ps">distribution · completion</div></div></div>
+        <div class="row" style="gap:28px;align-items:center;justify-content:space-around">
+          <div class="x-donut-wrap">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="color-mix(in srgb,var(--text) 9%,transparent)" stroke-width="16"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="var(--strong)" stroke-width="16" stroke-dasharray="141.4 314.2" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="color-mix(in srgb,var(--text) 42%,transparent)" stroke-width="16" stroke-dasharray="94.2 314.2" stroke-dashoffset="-141.4" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="color-mix(in srgb,var(--text) 20%,transparent)" stroke-width="16" stroke-dasharray="78.5 314.2" stroke-dashoffset="-235.6" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="lbl-c"><span class="v">128</span><span class="k">tool calls</span></div>
+          </div>
+          <div class="row" style="gap:18px">
+            <div class="x-ring-wrap"><svg width="84" height="84" viewBox="0 0 84 84"><circle class="x-ring-bg" cx="42" cy="42" r="36" stroke-width="7"/><circle class="x-ring-fg" cx="42" cy="42" r="36" stroke-width="7" stroke-dasharray="162.9 226.2"/></svg><div class="lbl-c">72%</div></div>
+            <div class="x-ring-wrap"><svg width="84" height="84" viewBox="0 0 84 84"><circle class="x-ring-bg" cx="42" cy="42" r="36" stroke-width="7"/><circle class="x-ring-fg" cx="42" cy="42" r="36" stroke-width="7" stroke-dasharray="101.8 226.2"/></svg><div class="lbl-c">45%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">D</span>Progress bars</div>
+    <div class="spec"><div class="col" style="gap:14px">
+      <div><div class="row" style="justify-content:space-between;font-size:11px;margin-bottom:5px"><span style="color:var(--text-2)">Indexing repo</span><span style="font-weight:600">100%</span></div><div class="x-prog"><div class="f ok" style="width:100%"></div></div></div>
+      <div><div class="row" style="justify-content:space-between;font-size:11px;margin-bottom:5px"><span style="color:var(--text-2)">Context used</span><span style="font-weight:600">62%</span></div><div class="x-prog"><div class="f" style="width:62%"></div></div></div>
+      <div><div class="row" style="justify-content:space-between;font-size:11px;margin-bottom:5px"><span style="color:var(--text-2)">Usage limit</span><span style="font-weight:600;color:var(--warn)">92%</span></div><div class="x-prog"><div class="f warn" style="width:92%"></div></div></div>
+      <div><div class="row" style="justify-content:space-between;font-size:11px;margin-bottom:5px"><span style="color:var(--text-2)">Disk for caches</span><span style="font-weight:600;color:var(--danger)">98%</span></div><div class="x-prog"><div class="f danger" style="width:98%"></div></div></div>
+    </div></div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">E</span>Table <span class="d">click a header to sort · checkbox to select · ▸ to expand</span></div>
+    <div class="x-table t1">
+      <div class="thead">
+        <label class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg></span></label>
+        <span class="th sorted" data-sort="name">Session<svg class="ic xs ar"><use href="../icons.svg#i-chevron-down"/></svg></span>
+        <span class="th" data-sort="model">Model<svg class="ic xs ar"><use href="../icons.svg#i-chevron-down"/></svg></span>
+        <span class="th" data-sort="tokens">Tokens<svg class="ic xs ar"><use href="../icons.svg#i-chevron-down"/></svg></span>
+        <span>Status</span><span></span>
+      </div>
+      <div class="trow" data-name="Refactor the login flow" data-model="opus 4.7" data-tokens="1240">
+        <label class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg></span></label>
+        <span>Refactor the login flow</span><span>opus 4.7</span><span>1,240</span><span><span class="status c-ok"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg>Done</span></span>
+        <span class="caret"><svg class="ic s"><use href="../icons.svg#i-chevron-right"/></svg></span>
+        <div class="exp">Moved validation into AuthService and updated three call sites · 3 files · 12 messages.</div>
+      </div>
+      <div class="trow" data-name="Migrate the database layer" data-model="sonnet 4.6" data-tokens="3580">
+        <label class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg></span></label>
+        <span>Migrate the database layer</span><span>sonnet 4.6</span><span>3,580</span><span><span class="status c-warn"><span class="dot live"></span>Running</span></span>
+        <span class="caret"><svg class="ic s"><use href="../icons.svg#i-chevron-right"/></svg></span>
+        <div class="exp">Schema migration in progress · 8 files touched.</div>
+      </div>
+      <div class="trow" data-name="Computer Use parity" data-model="opus 4.7" data-tokens="860">
+        <label class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg></span></label>
+        <span>Computer Use parity</span><span>opus 4.7</span><span>860</span><span><span class="status c-danger">Error</span></span>
+        <span class="caret"><svg class="ic s"><use href="../icons.svg#i-chevron-right"/></svg></span>
+        <div class="exp">Engine returned a permission denial for the target app.</div>
+      </div>
+      <div class="trow" data-name="Wallpaper library polish" data-model="haiku 4.5" data-tokens="420">
+        <label class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg></span></label>
+        <span>Wallpaper library polish</span><span>haiku 4.5</span><span>420</span><span><span class="status c-ok"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg>Done</span></span>
+        <span class="caret"><svg class="ic s"><use href="../icons.svg#i-chevron-right"/></svg></span>
+        <div class="exp">Fade edges and carousel clipping fixed.</div>
+      </div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><div class="pg js-pg"><span class="b"><svg class="ic xs"><use href="../icons.svg#i-chevron-left"/></svg></span><span class="b on">1</span><span class="b">2</span><span class="b">3</span><span class="b"><svg class="ic xs"><use href="../icons.svg#i-chevron-right"/></svg></span></div></div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">F</span>Timeline, activity feed &amp; range calendar</div>
+    <div class="grid g3">
+      <div class="x-panel"><div class="ph"><div class="pt">Run timeline</div></div>
+        <div class="x-timeline">
+          <div class="x-tl ok"><div class="nd"></div><div class="tt">Read auth.swift</div><div class="tm">2:14:02 PM</div></div>
+          <div class="x-tl ok"><div class="nd"></div><div class="tt">Edited AuthService.swift</div><div class="td">+18 −4</div><div class="tm">2:14:09 PM</div></div>
+          <div class="x-tl ok"><div class="nd"></div><div class="tt">Ran swift build</div><div class="td">succeeded in 8.4s</div><div class="tm">2:14:21 PM</div></div>
+          <div class="x-tl now"><div class="nd"></div><div class="tt">Running tests…</div><div class="tm">now</div></div>
+        </div>
+      </div>
+      <div class="x-panel"><div class="ph"><div class="pt">Activity</div></div>
+        <div class="x-feed">
+          <div class="x-fr"><span class="av s round">RL</span><div><div class="ft"><b>opus 4.7</b> committed <b>3 files</b></div><div class="fm">2 min ago</div></div></div>
+          <div class="x-fr"><span class="av s round">DB</span><div><div class="ft">Started <b>Migrate the database layer</b></div><div class="fm">14 min ago</div></div></div>
+          <div class="x-fr"><span class="av s round">CX</span><div><div class="ft">You opened <b>Settings → Machines</b></div><div class="fm">1 hr ago</div></div></div>
+          <div class="x-fr"><span class="av s round">CU</span><div><div class="ft"><b>Computer Use</b> read the Finder tree</div><div class="fm">2 hr ago</div></div></div>
+        </div>
+      </div>
+      <div class="spec flush"><div class="lbl">Range calendar</div>
+        <div class="x-cal">
+          <div class="ch"><span class="m">May 2026</span><span class="nav"><span class="iconbtn s"><svg class="ic xs"><use href="../icons.svg#i-chevron-left"/></svg></span><span class="iconbtn s"><svg class="ic xs"><use href="../icons.svg#i-chevron-right"/></svg></span></span></div>
+          <div class="g7"><span class="wd">M</span><span class="wd">T</span><span class="wd">W</span><span class="wd">T</span><span class="wd">F</span><span class="wd">S</span><span class="wd">S</span>
+            <span class="dy mut">28</span><span class="dy mut">29</span><span class="dy mut">30</span><span class="dy">1</span><span class="dy">2</span><span class="dy">3</span><span class="dy">4</span>
+            <span class="dy">5</span><span class="dy">6</span><span class="dy">7</span><span class="dy end s0">8</span><span class="dy in">9</span><span class="dy in">10</span><span class="dy in">11</span>
+            <span class="dy end s1">12</span><span class="dy">13</span><span class="dy">14</span><span class="dy">15</span><span class="dy">16</span><span class="dy">17</span><span class="dy">18</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -5,534 +5,488 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clawix — Visual Style Reference</title>
 <style>
-@font-face{
-  font-family:"Manrope";
-  src:url("./dist/fonts/Manrope-Variable.ttf") format("truetype");
-  font-weight:200 800; font-style:normal; font-display:swap;
-}
+@font-face{font-family:"Manrope";src:url("./dist/fonts/Manrope-Variable.ttf") format("truetype");font-weight:200 800;font-style:normal;font-display:swap;}
 
-/* ============================================================
-   DESIGN TOKENS  (change one here → it applies everywhere)
-   Light is the default :root; dark overrides under [data-theme="dark"].
-   ============================================================ */
+/* ============ DESIGN TOKENS (change one → applies everywhere) ============ */
 :root{
-  /* palette — semantic */
   --bg:#fbfbfc; --bg-2:#f2f2f4;
   --text:#171719; --text-2:#56565c; --text-3:#8e8e96;
   --card:#ffffff; --pop:#ffffff;
-  --hairline:rgba(0,0,0,0.10);   /* the single coherent border */
-  --sel:rgba(0,0,0,0.05);        /* selection fill (levísimo) */
+  --hairline:rgba(0,0,0,0.10); --sel:rgba(0,0,0,0.05);
   --fill:rgba(0,0,0,0.04); --fill-2:rgba(0,0,0,0.07);
-  --strong:#1a1a1c; --strong-fg:#ffffff;   /* primary button / strong control */
-  --accent:#2f74e6;  --accent-bg:rgba(47,116,230,0.12);   /* blue — minimal signals only */
-  --ok:#2f8a52;      --ok-bg:rgba(47,138,82,0.13);        /* green */
-  --warn:#9c7a2e;    --warn-bg:rgba(180,140,50,0.14);     /* amber */
-  --danger:#c0433a;  --danger-bg:rgba(192,67,58,0.12);    /* red — brick */
-  /* knobs / tracks */
+  --strong:#1a1a1c; --strong-fg:#ffffff;
+  --accent:#2f74e6; --accent-bg:rgba(47,116,230,0.12);
+  --ok:#2f8a52; --ok-bg:rgba(47,138,82,0.13);
+  --warn:#9c7a2e; --warn-bg:rgba(180,140,50,0.14);
+  --danger:#c0433a; --danger-bg:rgba(192,67,58,0.12);
   --track-off:rgba(0,0,0,0.12); --knob-off:#ffffff; --track-on:#1a1a1c; --knob-on:#ffffff;
-  /* geometry (squircle, moderate) */
   --r-card:14px; --r-ctl:10px; --r-s:8px;
-  /* control sizing system (M default / S dense) */
-  --h-m:30px; --h-s:24px;
-  /* motion */
-  --ease:cubic-bezier(.22,.61,.36,1); --dur:.18s;
-  /* wallpaper for translucent-surface demos */
+  --h-m:32px; --h-s:26px;   /* the ONLY two heights for button-like / squircle controls */
+  --ease:cubic-bezier(.22,.61,.36,1); --dur:.18s; --dur-s:.12s;
   --wall:linear-gradient(135deg,#dbe3ef,#c6cedb 55%,#b6bec9);
-  --shadow:0 10px 26px rgba(0,0,0,0.14);
+  --shadow:0 10px 26px rgba(0,0,0,0.14); --shadow-pop:0 8px 24px rgba(0,0,0,0.16);
 }
 [data-theme="dark"]{
   --bg:#0e0e10; --bg-2:#161618;
   --text:#f2f2f4; --text-2:#9a9aa0; --text-3:#67676c;
   --card:#151515; --pop:#1a1a1a;
-  --hairline:rgba(255,255,255,0.08);
-  --sel:rgba(255,255,255,0.05);
+  --hairline:rgba(255,255,255,0.08); --sel:rgba(255,255,255,0.05);
   --fill:rgba(255,255,255,0.05); --fill-2:rgba(255,255,255,0.09);
   --strong:#ededf0; --strong-fg:#1b1b1d;
-  --accent:#73a6ff;  --accent-bg:rgba(115,166,255,0.18);
-  --ok:#86c79a;      --ok-bg:rgba(120,190,140,0.16);
-  --warn:#d4af6e;    --warn-bg:rgba(210,170,90,0.16);
-  --danger:#d98a82;  --danger-bg:rgba(192,80,72,0.18);
+  --accent:#73a6ff; --accent-bg:rgba(115,166,255,0.18);
+  --ok:#86c79a; --ok-bg:rgba(120,190,140,0.16);
+  --warn:#d4af6e; --warn-bg:rgba(210,170,90,0.16);
+  --danger:#d98a82; --danger-bg:rgba(192,80,72,0.18);
   --track-off:rgba(255,255,255,0.06); --knob-off:#8c8c8c; --track-on:rgba(255,255,255,0.10); --knob-on:#ffffff;
   --wall:linear-gradient(135deg,#2a3550,#14161f 55%,#0a0b10);
-  --shadow:0 12px 30px rgba(0,0,0,0.5);
+  --shadow:0 12px 30px rgba(0,0,0,0.5); --shadow-pop:0 10px 28px rgba(0,0,0,0.55);
 }
-
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{background:var(--bg);color:var(--text);}
-body{font-family:"Manrope",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;
-  letter-spacing:-0.1px;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}  /* ONLY for code */
+body{font-family:"Manrope",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;letter-spacing:-0.1px;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
 
-/* ---- page chrome ---- */
-.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;padding:14px 28px;
-  background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);
-  border-bottom:0.5px solid var(--hairline);}
-.topbar .brand{font-size:15px;font-weight:800;letter-spacing:-0.4px;}
-.topbar .brand span{color:var(--text-2);font-weight:600;}
-.topbar .sp{flex:1;}
-.wrap{max-width:1060px;margin:0 auto;padding:34px 28px 90px;}
+.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;}
+.ic.s{width:13px;height:13px;} .ic.xs{width:11px;height:11px;} .ic.l{width:20px;height:20px;}
+
+.topbar{position:sticky;top:0;z-index:90;display:flex;align-items:center;gap:14px;padding:13px 28px;background:color-mix(in srgb,var(--bg) 84%,transparent);backdrop-filter:blur(16px);border-bottom:0.5px solid var(--hairline);}
+.brand{font-size:15px;font-weight:800;letter-spacing:-0.4px;} .brand span{color:var(--text-2);font-weight:600;}
+.topbar .sp{flex:1;} .tlabel{font-size:11px;color:var(--text-2);font-weight:600;}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 28px 100px;}
 section{margin-top:40px;}
-.h-sec{font-size:13px;font-weight:700;letter-spacing:0.3px;text-transform:none;color:var(--text);
-  display:flex;align-items:center;gap:9px;padding-bottom:6px;border-bottom:0.5px solid var(--hairline);margin-bottom:18px;}
-.h-sec .n{font-size:10px;font-weight:700;color:var(--strong-fg);background:var(--strong);width:20px;height:20px;
-  border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.h-sec{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:9px;padding-bottom:6px;border-bottom:0.5px solid var(--hairline);margin-bottom:18px;}
+.h-sec .n{font-size:10px;font-weight:700;color:var(--strong-fg);background:var(--strong);width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;}
 .h-sec .d{font-size:11px;font-weight:500;color:var(--text-3);margin-left:auto;}
-.grid{display:grid;gap:16px;}
-.g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:1fr 1fr 1fr;} .g4{grid-template-columns:repeat(4,1fr);}
+.grid{display:grid;gap:16px;} .g2{grid-template-columns:1fr 1fr;} .g3{grid-template-columns:repeat(3,1fr);} .g4{grid-template-columns:repeat(4,1fr);}
 .spec{border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);padding:16px;}
 .spec.flush{background:transparent;}
 .lbl{font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:11px;}
-.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.col{display:flex;flex-direction:column;gap:11px;}
-.note{font-size:11.5px;color:var(--text-2);margin-top:10px;line-height:1.45;}
-.note b{color:var(--text);font-weight:600;}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;} .col{display:flex;flex-direction:column;gap:11px;}
 
-/* ====================== TOKENS / PALETTE ====================== */
-.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px;}
-.sw{border:0.5px solid var(--hairline);border-radius:var(--r-ctl);overflow:hidden;}
-.sw .chip{height:46px;} .sw .meta{padding:7px 9px;} .sw .nm{font-size:11px;font-weight:600;}
-.sw .val{font-size:9.5px;color:var(--text-3);margin-top:1px;}
-.tok-row{display:flex;flex-wrap:wrap;gap:8px;}
-.tok{font-size:11px;font-weight:600;color:var(--text-2);background:var(--fill);border:0.5px solid var(--hairline);border-radius:999px;padding:3px 10px;}
+.icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:6px;}
+.icw{display:flex;flex-direction:column;align-items:center;gap:6px;padding:11px 6px;border:0.5px solid var(--hairline);border-radius:var(--r-s);color:var(--text-2);transition:background var(--dur) var(--ease),color var(--dur) var(--ease);}
+.icw:hover{background:var(--fill-2);color:var(--text);} .icw .nm{font-size:9px;color:var(--text-3);}
 
-/* ====================== TYPOGRAPHY ====================== */
-.t-h1{font-size:28px;font-weight:800;letter-spacing:-0.8px;line-height:1.05;}
-.t-h2{font-size:20px;font-weight:700;letter-spacing:-0.4px;}
-.t-eyebrow{font-size:11px;font-weight:600;color:var(--text-2);}  /* never blue */
-.t-body{font-size:13px;font-weight:500;}
-.t-sub{font-size:12px;color:var(--text-2);}
-.t-num{font-size:18px;font-weight:700;}  /* numbers in Manrope, NOT mono */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:10px;}
+.sw{border:0.5px solid var(--hairline);border-radius:var(--r-ctl);overflow:hidden;} .sw .chip{height:44px;} .sw .meta{padding:7px 9px;} .sw .nm{font-size:11px;font-weight:600;} .sw .val{font-size:9.5px;color:var(--text-3);margin-top:1px;}
+.tok-row{display:flex;flex-wrap:wrap;gap:8px;} .tok{font-size:11px;font-weight:600;color:var(--text-2);background:var(--fill);border:0.5px solid var(--hairline);border-radius:999px;padding:3px 10px;}
 
-/* ====================== CONTROL SYSTEM (squircle + bg + text/icon) ====================== */
-.ctl{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;border-radius:var(--r-ctl);
-  border:0.5px solid transparent;white-space:nowrap;cursor:pointer;line-height:1;
-  transition:background var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease);}
-.ctl.m{height:var(--h-m);padding:0 14px;font-size:12.5px;} .ctl.s{height:var(--h-s);padding:0 11px;font-size:11px;border-radius:var(--r-s);}
-.ctl svg{width:14px;height:14px;flex:0 0 auto;}
+.t-h1{font-size:28px;font-weight:800;letter-spacing:-0.8px;line-height:1.05;} .t-h2{font-size:20px;font-weight:700;letter-spacing:-0.4px;}
+.t-eyebrow{font-size:11px;font-weight:600;color:var(--text-2);} .t-body{font-size:13px;font-weight:500;} .t-sub{font-size:12px;color:var(--text-2);} .t-num{font-size:18px;font-weight:700;}
+a.link{color:var(--accent);text-decoration:none;font-weight:600;} a.link:hover{text-decoration:underline;}
+
+.ctl{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:600;border-radius:var(--r-ctl);border:0.5px solid transparent;white-space:nowrap;cursor:pointer;line-height:1;transition:background var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease),transform var(--dur-s) var(--ease);}
+.ctl:active{transform:scale(.97);}
+.ctl.m{height:var(--h-m);padding:0 15px;font-size:12.5px;letter-spacing:-0.2px;} .ctl.s{height:var(--h-s);padding:0 12px;font-size:12px;border-radius:var(--r-s);letter-spacing:-0.2px;}
 .btn-primary{background:var(--strong);color:var(--strong-fg);} .btn-primary:hover{filter:brightness(1.08);}
 .btn-secondary{background:var(--fill-2);color:var(--text);border-color:var(--hairline);} .btn-secondary:hover{background:var(--sel);}
 .btn-ghost{color:var(--text-2);} .btn-ghost:hover{background:var(--fill-2);color:var(--text);}
 .btn-danger{background:var(--danger-bg);color:var(--danger);border-color:color-mix(in srgb,var(--danger) 38%,transparent);} .btn-danger:hover{filter:brightness(1.05);}
-/* icon button: ghost by default, bg+color on hover (animated) */
-.iconbtn{width:30px;height:30px;border-radius:var(--r-ctl);display:inline-flex;align-items:center;justify-content:center;
-  color:var(--text-3);cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);}
-.iconbtn:hover{background:var(--fill-2);color:var(--text);}
-.iconbtn svg{width:15px;height:15px;}
+.btn-group{display:inline-flex;border:0.5px solid var(--hairline);border-radius:var(--r-ctl);overflow:hidden;}
+.btn-group button{appearance:none;font:inherit;font-size:12.5px;font-weight:600;letter-spacing:-0.2px;background:var(--fill);color:var(--text-2);border:none;border-right:0.5px solid var(--hairline);height:var(--h-m);padding:0 14px;cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);}
+.btn-group button:last-child{border-right:none;} .btn-group button.on{background:var(--fill-2);color:var(--text);} .btn-group button:hover{background:var(--fill-2);}
+.split{display:inline-flex;}
+.split .m2{height:var(--h-m);padding:0 15px;font-size:12.5px;font-weight:600;letter-spacing:-0.2px;background:var(--strong);color:var(--strong-fg);border-radius:var(--r-ctl) 0 0 var(--r-ctl);display:inline-flex;align-items:center;cursor:pointer;}
+.split .c2{height:var(--h-m);width:30px;background:var(--strong);color:var(--strong-fg);border-radius:0 var(--r-ctl) var(--r-ctl) 0;border-left:0.5px solid color-mix(in srgb,var(--strong-fg) 22%,transparent);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}
+.iconbtn{width:var(--h-m);height:var(--h-m);border-radius:var(--r-ctl);display:inline-flex;align-items:center;justify-content:center;color:var(--text-3);cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);}
+.iconbtn:hover{background:var(--fill-2);color:var(--text);} .iconbtn.s{width:var(--h-s);height:var(--h-s);border-radius:var(--r-s);}
 .toolbar{display:inline-flex;gap:2px;padding:4px;border-radius:12px;border:0.5px solid var(--hairline);background:var(--fill);}
-.toolbar .t{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-2);cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);}
-.toolbar .t:hover{background:var(--fill-2);color:var(--text);} .toolbar .t.on{background:var(--fill-2);color:var(--text);}
-.spinner{width:16px;height:16px;border-radius:999px;animation:spin .9s linear infinite;}
-.spinner svg{width:100%;height:100%;}
+.toolbar .t{width:28px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-2);cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);}
+.toolbar .t:hover,.toolbar .t.on{background:var(--fill-2);color:var(--text);}
+.spinner{display:inline-flex;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-/* ---- toggle (mono-accent, locked) ---- */
 .toggle{position:relative;display:inline-block;width:38px;height:22px;flex:0 0 auto;cursor:pointer;}
 .toggle input{position:absolute;opacity:0;width:0;height:0;}
-.toggle .tr{position:absolute;inset:0;border-radius:999px;background:var(--track-off);border:0.5px solid var(--hairline);
-  transition:background var(--dur) var(--ease),border-color var(--dur) var(--ease);}
-.toggle .kn{position:absolute;top:2.5px;left:2.5px;width:17px;height:17px;border-radius:999px;background:var(--knob-off);
-  box-shadow:0 1px 2px rgba(0,0,0,0.3);transition:transform var(--dur) var(--ease),background var(--dur) var(--ease);}
+.toggle .tr{position:absolute;inset:0;border-radius:999px;background:var(--track-off);border:0.5px solid var(--hairline);transition:background var(--dur) var(--ease),border-color var(--dur) var(--ease);}
+.toggle .kn{position:absolute;top:2.5px;left:2.5px;width:17px;height:17px;border-radius:999px;background:var(--knob-off);box-shadow:0 1px 2px rgba(0,0,0,0.3);transition:transform var(--dur) var(--ease),background var(--dur) var(--ease);}
 .toggle input:checked + .tr{background:var(--track-on);border-color:color-mix(in srgb,var(--knob-on) 35%,transparent);}
 .toggle input:checked ~ .kn{transform:translateX(16px);background:var(--knob-on);}
-
-/* ---- checkbox / radio (squircle) ---- */
+.toggle.s{width:32px;height:19px;} .toggle.s .kn{width:14px;height:14px;} .toggle.s input:checked ~ .kn{transform:translateX(13px);}
 .check,.radio{position:relative;display:inline-flex;align-items:center;gap:9px;font-size:12.5px;cursor:pointer;}
 .check input,.radio input{position:absolute;opacity:0;width:0;height:0;}
-.check .bx{width:17px;height:17px;border-radius:6px;border:0.5px solid var(--hairline);background:var(--fill);
-  display:flex;align-items:center;justify-content:center;color:transparent;flex:0 0 auto;transition:all var(--dur) var(--ease);}
-.check input:checked + .bx{background:var(--strong);border-color:var(--strong);color:var(--strong-fg);}
+.check .bx{width:17px;height:17px;border-radius:6px;border:0.5px solid var(--hairline);background:var(--fill);display:flex;align-items:center;justify-content:center;color:transparent;flex:0 0 auto;transition:all var(--dur) var(--ease);}
+.check input:checked + .bx,.check input:indeterminate + .bx{background:var(--strong);border-color:var(--strong);color:var(--strong-fg);}
 .radio .rx{width:17px;height:17px;border-radius:6px;border:1.5px solid var(--text-3);flex:0 0 auto;display:flex;align-items:center;justify-content:center;transition:all var(--dur) var(--ease);}
-.radio .rx::after{content:"";width:9px;height:9px;border-radius:3px;background:transparent;transition:background var(--dur) var(--ease);}
-.radio input:checked + .rx{border-color:var(--text);} .radio input:checked + .rx::after{background:var(--text);}
+.radio .rx::after{content:"";width:9px;height:9px;border-radius:3px;background:transparent;transition:background var(--dur) var(--ease),transform var(--dur) var(--ease);transform:scale(.4);}
+.radio input:checked + .rx{border-color:var(--text);} .radio input:checked + .rx::after{background:var(--text);transform:scale(1);}
 
-/* ---- segmented (strong default + subtle/iOS variants) ---- */
 .seg{position:relative;display:inline-flex;padding:3px;border-radius:var(--r-ctl);background:var(--fill);border:0.5px solid var(--hairline);}
-.seg button{appearance:none;background:transparent;border:none;cursor:pointer;font:inherit;font-size:11.5px;font-weight:600;
-  color:var(--text-2);height:24px;padding:0 13px;border-radius:7px;position:relative;z-index:1;transition:color var(--dur) var(--ease);}
+.seg button{appearance:none;background:transparent;border:none;cursor:pointer;font:inherit;font-size:12px;font-weight:600;letter-spacing:-0.2px;color:var(--text-2);height:26px;padding:0 14px;border-radius:7px;position:relative;z-index:1;transition:color var(--dur) var(--ease);}
 .seg .ind{position:absolute;top:3px;bottom:3px;border-radius:7px;background:var(--strong);z-index:0;transition:left var(--dur) var(--ease),width var(--dur) var(--ease);}
 .seg button.on{color:var(--strong-fg);}
 .seg.subtle .ind{background:var(--fill-2);} .seg.subtle button.on{color:var(--text);}
-.seg.ios{padding:2px;} .seg.ios .ind{top:2px;bottom:2px;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.2);border:0.5px solid var(--hairline);} .seg.ios button.on{color:var(--text);}
+.seg.ios{padding:3px;} .seg.ios .ind{top:3px;bottom:3px;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.2);border:0.5px solid var(--hairline);} .seg.ios button.on{color:var(--text);}
 
-/* ---- inputs ---- */
-.field{display:flex;align-items:center;gap:8px;height:30px;border-radius:var(--r-ctl);background:var(--fill);
-  border:0.5px solid var(--hairline);padding:0 11px;font-size:12.5px;color:var(--text);transition:border-color var(--dur) var(--ease);}
+.field{display:flex;align-items:center;gap:8px;height:var(--h-m);border-radius:var(--r-ctl);background:var(--fill);border:0.5px solid var(--hairline);padding:0 11px;font-size:12.5px;color:var(--text);transition:border-color var(--dur) var(--ease);}
+.field .ic{color:var(--text-3);}
 .field input{appearance:none;background:transparent;border:none;outline:none;font:inherit;color:inherit;width:100%;}
 .field input::placeholder{color:var(--text-3);}
-.field:focus-within{border-color:color-mix(in srgb,var(--text) 35%,transparent);}   /* monochrome, no blue, no shadow */
+.field:focus-within{border-color:color-mix(in srgb,var(--text) 35%,transparent);}
 .field.err{border-color:color-mix(in srgb,var(--danger) 60%,transparent);}
+.field.disabled{opacity:.5;pointer-events:none;}
 .hint{font-size:9.5px;margin-top:4px;padding-left:11px;color:var(--danger);}
-textarea.area{width:100%;min-height:56px;border-radius:var(--r-ctl);background:var(--fill);border:0.5px solid var(--hairline);
-  padding:9px 11px;font:inherit;font-size:12.5px;color:var(--text);resize:none;outline:none;}
+textarea.area{width:100%;min-height:56px;border-radius:var(--r-ctl);background:var(--fill);border:0.5px solid var(--hairline);padding:9px 11px;font:inherit;font-size:12.5px;color:var(--text);resize:none;outline:none;transition:border-color var(--dur) var(--ease);}
+textarea.area:focus{border-color:color-mix(in srgb,var(--text) 35%,transparent);}
 .bullets{display:flex;gap:5px;align-items:center;} .bullets i{width:7px;height:7px;border-radius:999px;background:var(--text-2);}
-
-/* multi-select list (gap + aligned) */
-.mslist{display:flex;flex-direction:column;gap:3px;border:0.5px solid var(--hairline);border-radius:var(--r-ctl);background:var(--pop);padding:5px;}
-.mslist label{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:var(--r-s);font-size:12.5px;cursor:pointer;transition:background var(--dur) var(--ease);}
-.mslist label:hover{background:var(--sel);}
-.mslist input:checked ~ span.lbl-t,.mslist label.on{} /* handled by JS demo */
-
-/* ---- sliders / steppers ---- */
-.slider{position:relative;width:150px;height:16px;display:inline-block;cursor:pointer;}
-.slider .tr{position:absolute;left:0;right:0;top:50%;height:3px;margin-top:-1.5px;border-radius:999px;background:var(--track-off);}
-.slider .fi{position:absolute;left:0;top:50%;height:3px;margin-top:-1.5px;border-radius:999px;background:var(--strong);}
-.slider .kn{position:absolute;top:50%;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);}
+.tokfield{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:0.5px solid var(--hairline);background:var(--fill);border-radius:var(--r-ctl);padding:5px 8px;min-height:34px;}
+.token{display:inline-flex;align-items:center;gap:6px;background:var(--fill-2);border-radius:7px;padding:3px 8px;font-size:11px;} .token .ic{color:var(--text-3);cursor:pointer;}
 .stepper{display:inline-flex;border:0.5px solid var(--hairline);border-radius:var(--r-ctl);overflow:hidden;background:var(--fill);}
-.stepper .b{width:32px;height:30px;display:flex;align-items:center;justify-content:center;color:var(--text-2);cursor:pointer;transition:background var(--dur) var(--ease);}
-.stepper .b:hover{background:var(--fill-2);color:var(--text);}
-.stepper .v{min-width:38px;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;border-left:0.5px solid var(--hairline);border-right:0.5px solid var(--hairline);}
+.stepper .b{width:32px;height:var(--h-m);display:flex;align-items:center;justify-content:center;color:var(--text-2);cursor:pointer;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);} .stepper .b:hover{background:var(--fill-2);color:var(--text);}
+.stepper .v{min-width:38px;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;border-left:.5px solid var(--hairline);border-right:.5px solid var(--hairline);}
+.slider{position:relative;height:16px;cursor:pointer;}
+.slider .tr2{position:absolute;left:0;right:0;top:50%;height:3px;margin-top:-1.5px;border-radius:999px;background:var(--track-off);}
+.slider .fi{position:absolute;left:0;top:50%;height:3px;margin-top:-1.5px;border-radius:999px;background:var(--strong);}
+.slider .kn2{position:absolute;top:50%;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);}
 
-/* ---- dropdown / menu ---- */
-.menu{width:200px;background:var(--pop);border:0.5px solid var(--hairline);border-radius:var(--r-card);box-shadow:var(--shadow);padding:5px;}
-.menu .it{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:var(--r-s);font-size:12.5px;color:var(--text);cursor:pointer;transition:background var(--dur) var(--ease);}
-.menu .it:hover,.menu .it.on{background:var(--sel);}   /* inset, rounded, never edge-to-edge */
-.menu .it .ck{margin-left:auto;color:var(--text);display:flex;}   /* white/text check, not blue */
-.menu .it .sc{margin-left:auto;}
-.menu .dv{height:0.5px;background:var(--hairline);margin:4px 8px;}
-.menu .it.danger{color:var(--danger);}
-.gh{font-size:10px;font-weight:600;color:var(--text-3);padding:7px 10px 3px;}
-/* shortcut indicator: high-contrast single piece (the tooltip reference) */
-.kbd{display:inline-flex;align-items:center;font-size:10px;font-weight:600;border-radius:5px;padding:2px 7px;
-  background:var(--strong);color:var(--strong-fg);}
-.kbd.soft{background:var(--fill-2);color:var(--text-2);}
+.dropdown{position:relative;display:inline-block;}
+.pop-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:190px;background:var(--pop);border:0.5px solid var(--hairline);border-radius:var(--r-card);box-shadow:var(--shadow-pop);padding:5px;z-index:30;opacity:0;transform:translateY(-4px) scale(.98);pointer-events:none;transform-origin:top left;transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);}
+.dropdown.open .pop-menu{opacity:1;transform:none;pointer-events:auto;}
+.menu-static{background:var(--pop);border:0.5px solid var(--hairline);border-radius:var(--r-card);box-shadow:var(--shadow-pop);padding:5px;width:200px;}
+.it{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:var(--r-s);font-size:12.5px;color:var(--text);cursor:pointer;transition:background var(--dur) var(--ease);}
+.it .ic{color:var(--text-2);} .it:hover,.it.on{background:var(--sel);} .it:hover .ic,.it.on .ic{color:var(--text);}
+.it .ck{margin-left:auto;color:var(--text);display:flex;} .it .sc{margin-left:auto;} .it.danger,.it.danger .ic{color:var(--danger);} .it .arr{margin-left:auto;color:var(--text-3);display:flex;}
+.dv{height:0.5px;background:var(--hairline);margin:4px 8px;} .gh{font-size:10px;font-weight:600;color:var(--text-3);padding:7px 10px 3px;}
+.sf{display:flex;align-items:center;gap:8px;padding:7px 9px;margin-bottom:4px;border-bottom:0.5px solid var(--hairline);color:var(--text-3);font-size:12px;} .sf .ic{color:var(--text-3);} .sf input{appearance:none;background:transparent;border:none;outline:none;font:inherit;color:var(--text);width:100%;}
+.kbd{display:inline-flex;align-items:center;font-size:10px;font-weight:600;border-radius:5px;padding:2px 7px;background:var(--strong);color:var(--strong-fg);} .kbd.soft{background:var(--fill-2);color:var(--text-2);}
 
-/* ---- chips / badges / status / counters ---- */
-.chip{height:26px;padding:0 12px;border-radius:999px;font-size:11.5px;font-weight:600;color:var(--text-2);background:var(--fill);
-  border:0.5px solid transparent;display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:all var(--dur) var(--ease);}
-.chip:hover{background:var(--fill-2);}
-.chip.on{background:var(--fill-2);color:var(--text);border-color:var(--hairline);font-weight:700;}  /* clear selected contrast */
+.cmd{width:100%;max-width:380px;border-radius:var(--r-card);background:var(--pop);border:0.5px solid var(--hairline);box-shadow:var(--shadow-pop);overflow:hidden;}
+.cmd .top{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:0.5px solid var(--hairline);color:var(--text-3);font-size:13px;}
+.cmd .ci{display:flex;align-items:center;gap:11px;padding:8px 8px;margin:2px 6px;border-radius:var(--r-s);font-size:12.5px;color:var(--text-2);cursor:pointer;transition:background var(--dur) var(--ease);}
+.cmd .ci.on,.cmd .ci:hover{background:var(--sel);color:var(--text);} .cmd .ci .ic{color:var(--text-3);} .cmd .ci.on .ic{color:var(--text);}
+
+.chip{height:var(--h-s);padding:0 13px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:-0.2px;color:var(--text-2);background:var(--fill);border:0.5px solid transparent;display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:all var(--dur) var(--ease);}
+.chip:hover{background:var(--fill-2);} .chip.on{background:var(--fill-2);color:var(--text);border-color:var(--hairline);font-weight:700;} .chip .ic{color:var(--text-3);}
 .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:var(--r-s);display:inline-flex;align-items:center;gap:5px;}
-.status{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:var(--r-s);display:inline-flex;align-items:center;gap:5px;}
-.status svg{width:11px;height:11px;}
-.count{min-width:18px;height:18px;border-radius:999px;padding:0 5px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;}  /* circular */
+.status{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:var(--r-s);display:inline-flex;align-items:center;gap:6px;}
+.dot{width:6px;height:6px;border-radius:999px;background:currentColor;} .dot.live{animation:pulse 1.6s ease infinite;} @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.count{min-width:18px;height:18px;border-radius:999px;padding:0 5px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;}
 .c-ok{background:var(--ok-bg);color:var(--ok);} .c-warn{background:var(--warn-bg);color:var(--warn);} .c-danger{background:var(--danger-bg);color:var(--danger);} .c-accent{background:var(--accent-bg);color:var(--accent);} .c-neu{background:var(--fill-2);color:var(--text-2);}
 
-/* ---- tabs (hover-X overlay, solid circle, fade) ---- */
-.tabs{display:flex;gap:5px;}
-.tab{position:relative;height:30px;border-radius:var(--r-ctl);padding:0 13px;font-size:11.5px;display:inline-flex;align-items:center;gap:8px;
-  color:var(--text-2);background:transparent;border:0.5px solid transparent;overflow:hidden;cursor:pointer;min-width:96px;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);}
-.tab .ic{width:12px;height:12px;color:var(--text-3);display:flex;flex:0 0 auto;}
-.tab .nm{white-space:nowrap;overflow:hidden;}
-.tab.on{background:var(--sel);color:var(--text);} .tab.on .ic{color:var(--text);}
-.tab:not(.on){border-color:var(--hairline);}   /* non-selected distinguishable */
-.tab:hover{background:var(--sel);color:var(--text);}
-.tab .x{position:absolute;right:0;top:0;bottom:0;width:30px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;
-  opacity:0;transition:opacity var(--dur) var(--ease);
-  background:linear-gradient(to right,transparent,var(--bg) 55%);}
-[data-theme="dark"] .tab .x{background:linear-gradient(to right,transparent,#141416 55%);}
-.tab .x.lt{background:linear-gradient(to right,transparent,#f3f3f5 55%);}
-.tab:hover .x{opacity:1;}
-.tab .x i{width:16px;height:16px;border-radius:999px;display:flex;align-items:center;justify-content:center;
-  background:var(--strong);color:var(--strong-fg);}   /* SOLID circle, hides text */
+.av{width:30px;height:30px;border-radius:9px;background:var(--fill-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-2);position:relative;flex:0 0 auto;}
+.av.round{border-radius:999px;} .av.s{width:24px;height:24px;font-size:10px;} .av.l{width:40px;height:40px;font-size:14px;}
+.av .pres{position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:999px;border:2px solid var(--card);background:var(--ok);}
+.avstack{display:flex;} .avstack .av{margin-left:-8px;border:2px solid var(--card);} .avstack .av:first-child{margin-left:0;}
 
-/* ---- tooltip / popover / hovercard ---- */
-.tooltip{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;padding:5px 9px;border-radius:var(--r-s);
-  background:var(--strong);color:var(--strong-fg);box-shadow:var(--shadow);}  /* high contrast: dark-on-light / light-on-dark */
+.tabs{display:flex;gap:5px;}
+.tab{position:relative;height:var(--h-m);border-radius:var(--r-ctl);padding:0 13px;font-size:12px;letter-spacing:-0.2px;display:inline-flex;align-items:center;gap:8px;color:var(--text-2);background:transparent;border:0.5px solid transparent;overflow:hidden;cursor:pointer;min-width:104px;transition:background var(--dur) var(--ease),color var(--dur) var(--ease);}
+.tab .ic{color:var(--text-3);} .tab .nm{white-space:nowrap;overflow:hidden;}
+.tab.on{background:var(--sel);color:var(--text);} .tab.on .ic{color:var(--text);}
+.tab:not(.on){border-color:var(--hairline);} .tab:hover{background:var(--sel);color:var(--text);}
+.tab .x{position:absolute;right:0;top:0;bottom:0;width:30px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;opacity:0;transition:opacity var(--dur) var(--ease);background:linear-gradient(to right,transparent,var(--bg) 55%);}
+.tab.on .x{background:linear-gradient(to right,transparent,color-mix(in srgb,var(--bg) 60%,var(--text) 5%) 55%);}
+.tab:hover .x{opacity:1;} .tab .x i{width:16px;height:16px;border-radius:999px;background:var(--strong);color:var(--strong-fg);display:flex;align-items:center;justify-content:center;}
+.utabs{display:flex;gap:18px;border-bottom:0.5px solid var(--hairline);}
+.utab{font-size:12.5px;font-weight:600;color:var(--text-2);padding:0 0 9px;position:relative;cursor:pointer;transition:color var(--dur) var(--ease);}
+.utab.on{color:var(--text);} .utab.on::after{content:"";position:absolute;left:0;right:0;bottom:-0.5px;height:2px;border-radius:999px;background:var(--text);}
+
+.tooltip{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;padding:5px 9px;border-radius:var(--r-s);background:var(--strong);color:var(--strong-fg);box-shadow:var(--shadow);}
 .tooltip .kbd{background:color-mix(in srgb,var(--strong-fg) 18%,transparent);color:var(--strong-fg);}
-.popover{width:210px;background:var(--pop);border:0.5px solid var(--hairline);border-radius:var(--r-card);box-shadow:var(--shadow);padding:13px;}
-.popover .t{font-size:12.5px;font-weight:700;} .popover .d{font-size:11px;color:var(--text-2);margin-top:5px;line-height:1.45;}
-.popover .a{display:flex;gap:8px;margin-top:11px;} .popover .a .ctl{flex:1;}
-.hovercard{width:220px;background:var(--pop);border:0.5px solid var(--hairline);border-radius:var(--r-card);box-shadow:var(--shadow);padding:13px;}
-.hovercard .h{display:flex;align-items:center;gap:10px;} .hovercard .av{width:30px;height:30px;border-radius:9px;background:var(--fill-2);}
+.popover{width:210px;background:var(--pop);border:0.5px solid var(--hairline);border-radius:var(--r-card);box-shadow:var(--shadow-pop);padding:13px;}
+.popover .t{font-size:12.5px;font-weight:700;} .popover .d{font-size:11px;color:var(--text-2);margin-top:5px;line-height:1.45;} .popover .a{display:flex;gap:8px;margin-top:11px;} .popover .a .ctl{flex:1;}
+.hovercard{width:220px;background:var(--pop);border:0.5px solid var(--hairline);border-radius:var(--r-card);box-shadow:var(--shadow-pop);padding:13px;}
+.hovercard .h{display:flex;align-items:center;gap:10px;}
 .hovercard .meta{display:flex;justify-content:space-evenly;margin-top:11px;padding-top:10px;border-top:0.5px solid var(--hairline);text-align:center;}
 .hovercard .meta .v{font-size:14px;font-weight:700;} .hovercard .meta .k{font-size:9px;color:var(--text-3);margin-top:2px;}
 
-/* ---- feedback ---- */
-.toast{display:flex;gap:11px;align-items:center;background:var(--card);border:0.5px solid var(--hairline);border-radius:var(--r-card);
-  box-shadow:var(--shadow);padding:9px 13px;width:240px;}
-.toast .ic{width:15px;height:15px;flex:0 0 auto;}   /* monochrome / color icon, NEVER inside a circle/triangle */
-.toast .tt{font-size:11.5px;font-weight:600;} .toast .td{font-size:10px;color:var(--text-2);margin-top:1px;}
-.pbar{width:110px;height:6px;border-radius:999px;background:var(--track-off);overflow:hidden;} .pbar .f{height:100%;border-radius:999px;background:var(--strong);}
+.toast{display:flex;gap:11px;align-items:center;background:var(--card);border:0.5px solid var(--hairline);border-radius:var(--r-card);box-shadow:var(--shadow-pop);padding:9px 13px;width:240px;animation:toastIn .26s var(--ease);}
+@keyframes toastIn{from{opacity:0;transform:translateX(12px);}to{opacity:1;transform:none;}}
+.toast .ic{flex:0 0 auto;} .toast .tt{font-size:11.5px;font-weight:600;} .toast .td{font-size:10px;color:var(--text-2);margin-top:1px;} .toast .ac{margin-left:auto;font-size:11px;font-weight:600;color:var(--text);cursor:pointer;}
+.pbar{width:110px;height:6px;border-radius:999px;background:var(--track-off);overflow:hidden;} .pbar .f{height:100%;border-radius:999px;background:var(--strong);transition:width .4s var(--ease);}
 .skel{border-radius:var(--r-s);background:linear-gradient(90deg,var(--fill) 25%,var(--fill-2) 37%,var(--fill) 63%);background-size:400% 100%;animation:shimmer 2.2s ease infinite;}
 @keyframes shimmer{0%{background-position:100% 0;}100%{background-position:-100% 0;}}
 .banner{display:flex;gap:9px;align-items:flex-start;border:0.5px solid var(--hairline);border-radius:var(--r-ctl);background:var(--fill);padding:10px 12px;}
-.banner .bi{width:15px;height:15px;flex:0 0 auto;margin-top:1px;color:var(--warn);} .banner .bt{font-size:11.5px;font-weight:600;} .banner .bd{font-size:10.5px;color:var(--text-2);margin-top:1px;}
+.banner .ic{flex:0 0 auto;margin-top:1px;} .banner .bt{font-size:11.5px;font-weight:600;} .banner .bd{font-size:10.5px;color:var(--text-2);margin-top:1px;}
+.steps{display:flex;align-items:center;} .steps .cir{width:20px;height:20px;border-radius:999px;border:1.5px solid var(--hairline);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text-3);} .steps .cir.done{background:var(--strong);border-color:var(--strong);color:var(--strong-fg);} .steps .cir.now{border-color:var(--text);color:var(--text);} .steps .ln{width:34px;height:1.5px;background:var(--hairline);} .steps .ln.done{background:var(--strong);}
 
-/* ---- cards / rows / table ---- */
 .card2{border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);padding:13px;}
-.stat{border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);padding:12px 14px;min-width:130px;}
-.stat .v{font-size:21px;font-weight:800;letter-spacing:-0.5px;} .stat .k{font-size:10px;color:var(--text-2);margin-top:2px;} .stat .dl{font-size:9.5px;font-weight:600;margin-top:6px;}
+.stat{border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);padding:12px 14px;min-width:128px;} .stat .v{font-size:21px;font-weight:800;letter-spacing:-0.5px;} .stat .k{font-size:10px;color:var(--text-2);margin-top:2px;} .stat .dl{font-size:9.5px;font-weight:600;margin-top:6px;}
 .list{border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);overflow:hidden;}
-.lrow{display:grid;grid-template-columns:15px 1fr 44px;gap:10px;align-items:center;padding:9px 12px;}
-.lrow + .lrow{border-top:0.5px solid var(--hairline);}
-.lrow .ic{width:15px;height:15px;color:var(--text-3);display:flex;}
-.lrow .nm{font-size:12.5px;white-space:nowrap;overflow:hidden;-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent);}
-.lrow .meta{font-size:10px;color:var(--text-3);text-align:right;}    /* one thing: time OR unread dot, aligned */
-.lrow .meta .un{width:7px;height:7px;border-radius:999px;background:var(--accent);display:inline-block;}
+.lrow{display:grid;grid-template-columns:auto 1fr 44px;gap:10px;align-items:center;padding:9px 12px;transition:background var(--dur) var(--ease);} .lrow:hover{background:var(--sel);} .lrow + .lrow{border-top:0.5px solid var(--hairline);}
+.lrow .ic{color:var(--text-3);} .lrow .nm{font-size:12.5px;white-space:nowrap;overflow:hidden;-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent);} .lrow .meta{font-size:10px;color:var(--text-3);text-align:right;} .lrow .meta .un{width:7px;height:7px;border-radius:999px;background:var(--accent);display:inline-block;}
 .lrow.sel{background:var(--sel);} .lrow.sel .nm{font-weight:600;}
-.tbl{width:100%;font-size:11.5px;}
-.tbl .th,.tbl .tr{display:grid;grid-template-columns:16px 1.3fr .8fr .9fr;gap:10px;align-items:center;padding:8px 12px;}
-.tbl .th{font-size:9px;font-weight:700;color:var(--text-3);} .tbl .tr{border-top:0.5px solid var(--hairline);}
-.tbl.zebra .tr:nth-child(even){background:var(--sel);}
+.tbl{width:100%;font-size:11.5px;} .tbl .th,.tbl .tr{display:grid;grid-template-columns:16px 1.3fr .8fr .9fr 24px;gap:10px;align-items:center;padding:8px 12px;}
+.tbl .th{font-size:9px;font-weight:700;color:var(--text-3);} .tbl .th .so{display:inline-flex;align-items:center;gap:3px;cursor:pointer;} .tbl .tr{border-top:0.5px solid var(--hairline);transition:background var(--dur) var(--ease);} .tbl .tr:hover{background:var(--sel);} .tbl.zebra .tr:nth-child(even){background:var(--sel);}
 .kv{display:flex;flex-direction:column;gap:7px;} .kv .r{display:flex;align-items:baseline;justify-content:space-between;font-size:12px;} .kv .k{color:var(--text-2);} .kv .v{font-weight:600;}
 
-/* settings section: header OUTSIDE card */
 .set-h{padding:0 2px 8px;} .set-h .t{font-size:14px;font-weight:700;letter-spacing:-0.2px;} .set-h .s{font-size:11px;color:var(--text-2);margin-top:1px;}
 .set-card{border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);overflow:hidden;}
-.set-row{display:flex;align-items:center;gap:12px;padding:11px 14px;} .set-row + .set-row{border-top:0.5px solid var(--hairline);}
-.set-row .rl{flex:1;} .set-row .rt{font-size:12.5px;font-weight:600;} .set-row .rd{font-size:10.5px;color:var(--text-2);margin-top:1px;}
-
-/* modal */
-.modal{width:250px;background:var(--pop);border:0.5px solid var(--hairline);border-radius:var(--r-card);box-shadow:var(--shadow);overflow:hidden;}
+.set-row{display:flex;align-items:center;gap:12px;padding:11px 14px;} .set-row + .set-row{border-top:0.5px solid var(--hairline);} .set-row .rl{flex:1;} .set-row .rt{font-size:12.5px;font-weight:600;} .set-row .rd{font-size:10.5px;color:var(--text-2);margin-top:1px;}
+.modal{width:250px;background:var(--pop);border:0.5px solid var(--hairline);border-radius:var(--r-card);box-shadow:var(--shadow-pop);overflow:hidden;}
 .modal .mh{display:flex;align-items:center;padding:12px 14px;} .modal .mh .t{font-size:13px;font-weight:700;} .modal .mh .x{margin-left:auto;}
-.modal .mb{padding:0 14px 13px;font-size:11.5px;color:var(--text-2);line-height:1.45;}
-.modal .mf{display:flex;gap:8px;padding:11px 14px;border-top:0.5px solid var(--hairline);} .modal .mf .ctl{flex:1;}
+.modal .mb{padding:0 14px 13px;font-size:11.5px;color:var(--text-2);line-height:1.45;} .modal .mf{display:flex;gap:8px;padding:11px 14px;border-top:0.5px solid var(--hairline);} .modal .mf .ctl{flex:1;}
+.acc{border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);overflow:hidden;}
+.acc .ah{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;font-size:12.5px;font-weight:600;} .acc .ah .arr{margin-left:auto;color:var(--text-3);transition:transform var(--dur) var(--ease);} .acc.open .ah .arr{transform:rotate(90deg);}
+.acc .ab{padding:0 14px;max-height:0;overflow:hidden;transition:max-height var(--dur) var(--ease),padding var(--dur) var(--ease);font-size:11.5px;color:var(--text-2);} .acc.open .ab{max-height:140px;padding:0 14px 12px;}
+.empty{border:0.5px solid var(--hairline);border-radius:var(--r-card);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:var(--card);}
+.empty .ec{width:42px;height:42px;border-radius:12px;background:var(--fill-2);display:flex;align-items:center;justify-content:center;color:var(--text-2);margin-bottom:12px;} .empty .et{font-size:14px;font-weight:700;} .empty .ed{font-size:11px;color:var(--text-2);margin-top:6px;max-width:200px;line-height:1.45;}
 
-/* empty state */
-.empty{border:0.5px solid var(--hairline);border-radius:var(--r-card);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:26px;background:var(--card);}
-.empty .ec{width:42px;height:42px;border-radius:12px;background:var(--fill-2);display:flex;align-items:center;justify-content:center;color:var(--text-2);margin-bottom:12px;}
-.empty .et{font-size:14px;font-weight:700;} .empty .ed{font-size:11px;color:var(--text-2);margin-top:6px;max-width:200px;line-height:1.45;}
-
-/* code / diff */
-.code{border-radius:var(--r-card);overflow:hidden;background:#0f1012;}
-.code .ct{padding:7px 12px 2px;font-size:9px;color:#7a7a80;}
-.code .cc{padding:3px 12px 11px;font-size:10.5px;line-height:1.7;white-space:pre;color:#d6d6d6;}
+.code{border-radius:var(--r-card);overflow:hidden;background:#0f1012;position:relative;}
+.code .ct{padding:7px 12px 2px;font-size:9px;color:#7a7a80;} .code .cc{padding:3px 12px 11px;font-size:10.5px;line-height:1.7;white-space:pre;color:#d6d6d6;} .code .cp{position:absolute;top:7px;right:8px;color:#7a7a80;cursor:pointer;}
 .tk-k{color:#c98fe0;} .tk-f{color:#8fb9ff;} .tk-s{color:#9ece9a;}
 .diff{display:flex;border:0.5px solid var(--hairline);border-radius:var(--r-card);overflow:hidden;}
-.diff .col{flex:1;padding:8px 0;font-size:10.5px;line-height:1.7;} .diff .col + .col{border-left:0.5px solid var(--hairline);}
-.diff .ln{padding:0 12px;color:var(--text);} .diff .ln.m{background:var(--danger-bg);color:var(--danger);} .diff .ln.p{background:var(--ok-bg);color:var(--ok);} .diff .lh{font-size:9px;font-weight:700;color:var(--text-3);padding:0 12px 5px;}
+.diff .col{flex:1;padding:8px 0;font-size:10.5px;line-height:1.7;} .diff .col + .col{border-left:0.5px solid var(--hairline);} .diff .ln{padding:0 12px;color:var(--text);} .diff .ln.m{background:var(--danger-bg);color:var(--danger);} .diff .ln.p{background:var(--ok-bg);color:var(--ok);} .diff .lh{font-size:9px;font-weight:700;color:var(--text-3);padding:0 12px 5px;}
+.md{font-size:12.5px;line-height:1.6;} .md h3{font-size:14px;font-weight:700;margin:0 0 8px;} .md p{margin:0 0 8px;} .md ul{list-style:none;margin:0 0 8px;padding:0;}
+.md li{position:relative;padding-left:18px;margin-bottom:6px;} .md ul li::before{content:"";position:absolute;left:2px;top:7px;width:6px;height:6px;border-radius:999px;background:var(--text-2);}
+.md code{font-family:ui-monospace,monospace;font-size:11px;background:var(--fill-2);border-radius:4px;padding:1px 5px;} .md blockquote{border-left:2px solid var(--hairline);padding-left:11px;color:var(--text-2);margin:0;}
 
-/* window chip (translucent sidebar demo) */
 .wallbox{border-radius:var(--r-card);overflow:hidden;background:var(--wall);padding:18px;}
 .wsb{width:230px;background:color-mix(in srgb,var(--bg) 55%,transparent);backdrop-filter:blur(28px);border:0.5px solid var(--hairline);border-radius:var(--r-ctl);padding:8px;}
-.wchip{position:relative;height:30px;border-radius:var(--r-s);display:flex;align-items:center;gap:9px;padding:0 11px;overflow:hidden;color:var(--text);}
-.wchip.on{background:var(--sel);} .wchip .ic{width:13px;height:13px;color:var(--text-2);flex:0 0 auto;display:flex;}
+.wchip{position:relative;height:30px;border-radius:var(--r-s);display:flex;align-items:center;gap:9px;padding:0 11px;overflow:hidden;color:var(--text);cursor:pointer;}
+.wchip.on,.wchip:hover{background:var(--sel);} .wchip .ic{color:var(--text-2);}
 .wchip .nm{white-space:nowrap;overflow:hidden;font-size:12px;-webkit-mask-image:linear-gradient(to right,#000 60%,transparent 92%);mask-image:linear-gradient(to right,#000 60%,transparent 92%);}
 .wchip .x{position:absolute;right:0;top:0;bottom:0;width:30px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;opacity:0;transition:opacity var(--dur) var(--ease);}
 .wchip:hover .x{opacity:1;} .wchip .x i{width:16px;height:16px;border-radius:999px;background:var(--strong);color:var(--strong-fg);display:flex;align-items:center;justify-content:center;}
-
-/* markdown (fat bullets) */
-.md{font-size:12.5px;line-height:1.6;} .md p{margin:0 0 8px;} .md ul{list-style:none;margin:0;padding:0;}
-.md li{position:relative;padding-left:18px;margin-bottom:6px;} .md li::before{content:"";position:absolute;left:2px;top:7px;width:6px;height:6px;border-radius:999px;background:var(--text-2);}
-.md code{font-family:ui-monospace,monospace;font-size:11px;background:var(--fill-2);border-radius:4px;padding:1px 5px;}
-
-/* scrollbar / pagination / breadcrumb / dots */
 .scbox{position:relative;width:130px;height:74px;border:0.5px solid var(--hairline);border-radius:var(--r-ctl);padding:9px 11px;overflow:hidden;background:var(--card);}
-.scbox .sl{height:7px;border-radius:4px;background:var(--fill-2);margin-bottom:7px;} .scbox .bar{position:absolute;right:3px;top:9px;width:3px;height:34px;border-radius:999px;background:color-mix(in srgb,var(--text) 16%,transparent);}
-.pg{display:inline-flex;gap:3px;align-items:center;} .pg .b{min-width:28px;height:28px;padding:0 8px;border-radius:var(--r-s);font-size:12px;font-weight:600;color:var(--text-2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;} .pg .b.on{background:var(--sel);color:var(--text);} .pg .b:hover{background:var(--fill-2);}
-.crumb{display:flex;align-items:center;gap:6px;font-size:12px;} .crumb .s{color:var(--text-2);} .crumb .s.cur{color:var(--text);font-weight:600;} .crumb .sp{color:var(--text-3);display:flex;}
-.dots{display:flex;gap:7px;} .dots i{width:7px;height:7px;border-radius:999px;background:var(--fill-2);transition:width var(--dur) var(--ease),background var(--dur) var(--ease);} .dots i.on{width:18px;background:var(--strong);}
+.scbox .sl2{height:7px;border-radius:4px;background:var(--fill-2);margin-bottom:7px;} .scbox .bar{position:absolute;right:3px;top:9px;width:3px;height:34px;border-radius:999px;background:color-mix(in srgb,var(--text) 16%,transparent);}
+.pg{display:inline-flex;gap:3px;align-items:center;} .pg .b{min-width:28px;height:28px;padding:0 8px;border-radius:var(--r-s);font-size:12px;font-weight:600;color:var(--text-2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background var(--dur) var(--ease);} .pg .b.on{background:var(--sel);color:var(--text);} .pg .b:hover{background:var(--fill-2);}
+.crumb{display:flex;align-items:center;gap:6px;font-size:12px;} .crumb .s{color:var(--text-2);cursor:pointer;} .crumb .s.cur{color:var(--text);font-weight:600;} .crumb .sp{color:var(--text-3);display:flex;}
+.dots{display:flex;gap:7px;} .dots i{width:7px;height:7px;border-radius:999px;background:var(--fill-2);cursor:pointer;transition:width var(--dur) var(--ease),background var(--dur) var(--ease);} .dots i.on{width:18px;background:var(--strong);}
+.tree{font-size:12.5px;} .tn{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:var(--r-s);color:var(--text-2);cursor:pointer;transition:background var(--dur) var(--ease);} .tn:hover{background:var(--sel);} .tn.sel{background:var(--sel);color:var(--text);} .tn .ch{color:var(--text-3);} .tn .ic{color:var(--text-3);} .tn.sel .ic{color:var(--text);}
+.cal{width:210px;border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);padding:12px;}
+.cal .ch{display:flex;align-items:center;margin-bottom:8px;} .cal .ch .m{font-size:12px;font-weight:700;} .cal .ch .nav{margin-left:auto;display:flex;gap:2px;}
+.cal .grid7{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;} .cal .wd{font-size:8.5px;color:var(--text-3);text-align:center;padding:2px 0;font-weight:700;} .cal .dy{font-size:10.5px;text-align:center;padding:4px 0;border-radius:6px;color:var(--text);cursor:pointer;transition:background var(--dur) var(--ease);} .cal .dy:hover{background:var(--sel);} .cal .dy.mut{color:var(--text-3);} .cal .dy.on{background:var(--strong);color:var(--strong-fg);font-weight:700;}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+<symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+<symbol id="i-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></symbol>
+<symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol>
+<symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+<symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+<symbol id="i-command" viewBox="0 0 24 24"><path d="M15 6a3 3 0 1 0 3-3 3 3 0 0 0-3 3v12a3 3 0 1 0 3 3 3 3 0 0 0-3-3H6a3 3 0 1 0-3 3 3 3 0 0 0 3-3V6a3 3 0 1 0-3-3 3 3 0 0 0 3 3z"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.12 2.12 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.12 2.12 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.12 2.12 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.12 2.12 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.12 2.12 0 0 0 1.597-1.16z"/></symbol>
+<symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></symbol>
+<symbol id="i-loader" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
+</defs></svg>
+
 <div class="topbar">
   <div class="brand">Clawix <span>· Visual Style Reference</span></div>
   <div class="sp"></div>
-  <span style="font-size:11px;color:var(--text-2);font-weight:600;">Light</span>
+  <span class="tlabel">Light</span>
   <label class="toggle" title="Toggle theme"><input type="checkbox" id="themeToggle" checked><span class="tr"></span><span class="kn"></span></label>
-  <span style="font-size:11px;color:var(--text-2);font-weight:600;">Dark</span>
+  <span class="tlabel">Dark</span>
 </div>
 
 <div class="wrap">
 
-  <!-- 0. TOKENS -->
-  <section id="tokens">
+  <section>
     <div class="h-sec"><span class="n">0</span>Tokens &amp; palette <span class="d">change a token in :root → it applies everywhere</span></div>
-    <div class="lbl">Palette (semantic — blue only for minimal signals; green / amber / red for status)</div>
+    <div class="lbl">Palette (blue = minimal signals only · green / amber / red for status)</div>
     <div class="swatches" id="swatches"></div>
-    <div style="margin-top:16px;" class="lbl">Geometry &amp; system tokens</div>
-    <div class="tok-row">
-      <span class="tok">--r-card 14</span><span class="tok">--r-ctl 10</span><span class="tok">--hairline ~8%</span>
-      <span class="tok">control M 30 / S 24</span><span class="tok">squircle, never full-pill</span><span class="tok">ease cubic-bezier(.22,.61,.36,1)</span>
-      <span class="tok">mono → code only</span>
-    </div>
+    <div style="margin-top:16px" class="lbl">Geometry &amp; system tokens</div>
+    <div class="tok-row"><span class="tok">--r-card 14</span><span class="tok">--r-ctl 10</span><span class="tok">--hairline ~8%</span><span class="tok">M 30 / S 24</span><span class="tok">squircle, never full-pill</span><span class="tok">ease cubic-bezier(.22,.61,.36,1)</span><span class="tok">mono → code only</span></div>
   </section>
 
-  <!-- 1. TYPOGRAPHY -->
   <section>
-    <div class="h-sec"><span class="n">1</span>Typography <span class="d">Manrope everywhere · mono only in code</span></div>
+    <div class="h-sec"><span class="n">1</span>Iconography <span class="d">Lucide only · stroke 1.75 · hover</span></div>
+    <div class="spec flush"><div class="icons" id="iconGallery"></div></div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">2</span>Typography <span class="d">Manrope everywhere · mono only in code</span></div>
     <div class="grid g2">
-      <div class="spec"><div class="t-eyebrow">Session</div><div class="t-h1" style="margin-top:4px;">Refactor the login flow</div><div class="t-sub" style="margin-top:6px;">opus 4.7 · 2 min ago</div><div class="t-body" style="margin-top:12px;">Moved validation into AuthService and updated the three dependent calls.</div></div>
-      <div class="spec"><div class="lbl">Scale</div><div class="col"><div class="t-h1">Heading</div><div class="t-h2">Subheading</div><div class="t-body">Body text in Manrope.</div><div class="t-sub">Secondary / meta.</div><div class="row"><span class="t-num">1,240</span><span class="t-sub">numbers in Manrope (not mono)</span></div></div></div>
+      <div class="spec"><div class="t-eyebrow">Session</div><div class="t-h1" style="margin-top:4px">Refactor the login flow</div><div class="t-sub" style="margin-top:6px">opus 4.7 · 2 min ago</div><div class="t-body" style="margin-top:12px">Moved validation into AuthService. See the <a class="link" href="#">pull request</a>.</div></div>
+      <div class="spec"><div class="lbl">Scale</div><div class="col" style="gap:7px"><div class="t-h1">Heading</div><div class="t-h2">Subheading</div><div class="t-body">Body text in Manrope.</div><div class="t-sub">Secondary / meta.</div><div class="row"><span class="t-num">1,240</span><span class="t-sub">numbers in Manrope (not mono)</span></div></div></div>
     </div>
   </section>
 
-  <!-- 2. BUTTONS -->
   <section>
-    <div class="h-sec"><span class="n">2</span>Buttons</div>
+    <div class="h-sec"><span class="n">3</span>Buttons</div>
     <div class="grid g2">
-      <div class="spec"><div class="lbl">Hierarchy + sizes (hover me)</div><div class="row"><button class="ctl m btn-primary">Save</button><button class="ctl m btn-secondary">Test</button><button class="ctl m btn-ghost">Cancel</button><button class="ctl m btn-danger">Delete</button></div><div class="row" style="margin-top:10px;"><button class="ctl s btn-primary">New</button><button class="ctl s btn-secondary">Edit</button></div><div class="row" style="margin-top:10px;"><button class="ctl m btn-primary"><span class="spinner"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="13.5" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="4"/><circle cx="18" cy="18" r="13.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="85" stroke-dashoffset="21" transform="rotate(-90 18 18)"/></svg></span>Connecting…</button></div></div>
-      <div class="spec"><div class="lbl">Icon buttons (ghost → hover) + toolbar</div><div class="row"><span class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span><span class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><span class="iconbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span></div><div class="row" style="margin-top:12px;"><span class="toolbar"><span class="t on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span><span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/></svg></span></span></div></div>
+      <div class="spec"><div class="lbl">Hierarchy + sizes + loading + group + split</div>
+        <div class="row"><button class="ctl m btn-primary">Save</button><button class="ctl m btn-secondary">Test</button><button class="ctl m btn-ghost">Cancel</button><button class="ctl m btn-danger">Delete</button><button class="ctl m btn-primary"><span class="spinner"><svg class="ic s"><use href="#i-loader"/></svg></span>Connecting…</button></div>
+        <div class="row" style="margin-top:10px"><button class="ctl s btn-primary">New</button><button class="ctl s btn-secondary">Edit</button><button class="ctl s btn-ghost">Cancel</button></div>
+        <div class="row" style="margin-top:10px"><button class="ctl m btn-primary"><svg class="ic s"><use href="#i-plus"/></svg>New session</button><span class="btn-group"><button class="on">Edit</button><button>Split</button><button>Join</button></span><span class="split"><span class="m2">Run</span><span class="c2"><svg class="ic s"><use href="#i-chevron-down"/></svg></span></span></div>
+      </div>
+      <div class="spec"><div class="lbl">Icon buttons (ghost → hover) + toolbar</div>
+        <div class="row"><span class="iconbtn"><svg class="ic"><use href="#i-plus"/></svg></span><span class="iconbtn"><svg class="ic"><use href="#i-pencil"/></svg></span><span class="iconbtn"><svg class="ic"><use href="#i-copy"/></svg></span><span class="iconbtn"><svg class="ic"><use href="#i-more"/></svg></span><span class="iconbtn" style="color:var(--danger)"><svg class="ic"><use href="#i-trash"/></svg></span></div>
+        <div class="row" style="margin-top:12px"><span class="toolbar"><span class="t on"><svg class="ic"><use href="#i-message"/></svg></span><span class="t"><svg class="ic"><use href="#i-terminal"/></svg></span><span class="t"><svg class="ic"><use href="#i-file"/></svg></span><span class="t"><svg class="ic"><use href="#i-settings"/></svg></span></span></div>
+      </div>
     </div>
   </section>
 
-  <!-- 3. CONTROLS: toggle / checkbox / radio / segmented -->
   <section>
-    <div class="h-sec"><span class="n">3</span>Toggles, checkbox, radio, segmented <span class="d">interactive · click them</span></div>
+    <div class="h-sec"><span class="n">4</span>Toggles, checkbox, radio, segmented <span class="d">interactive</span></div>
     <div class="grid g4">
-      <div class="spec"><div class="lbl">Toggle (mono-accent)</div><div class="col"><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label><label class="toggle"><input type="checkbox"><span class="tr"></span><span class="kn"></span></label></div></div>
-      <div class="spec"><div class="lbl">Checkbox (squircle)</div><div class="col"><label class="check"><input type="checkbox" checked><span class="bx"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Enabled</label><label class="check"><input type="checkbox"><span class="bx"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Disabled</label></div></div>
-      <div class="spec"><div class="lbl">Radio (squircle ring + dot)</div><div class="col"><label class="radio"><input type="radio" name="r" checked><span class="rx"></span>Whole repo</label><label class="radio"><input type="radio" name="r"><span class="rx"></span>This folder</label></div></div>
+      <div class="spec"><div class="lbl">Toggle (M / S)</div><div class="col"><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label><label class="toggle"><input type="checkbox"><span class="tr"></span><span class="kn"></span></label><label class="toggle s"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div></div>
+      <div class="spec"><div class="lbl">Checkbox (+ indeterminate)</div><div class="col"><label class="check"><input type="checkbox" checked><span class="bx"><svg class="ic xs"><use href="#i-check"/></svg></span>Checked</label><label class="check"><input type="checkbox" id="indet"><span class="bx"><svg class="ic xs"><use href="#i-minus"/></svg></span>Partial</label><label class="check"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="#i-check"/></svg></span>Empty</label></div></div>
+      <div class="spec"><div class="lbl">Radio (squircle)</div><div class="col"><label class="radio"><input type="radio" name="r" checked><span class="rx"></span>Whole repo</label><label class="radio"><input type="radio" name="r"><span class="rx"></span>This folder</label></div></div>
       <div class="spec"><div class="lbl">Segmented · strong / subtle / iOS</div><div class="col"><div class="seg js-seg"><span class="ind"></span><button class="on">Chat</button><button>Diff</button><button>Logs</button></div><div class="seg subtle js-seg"><span class="ind"></span><button class="on">Chat</button><button>Diff</button></div><div class="seg ios js-seg"><span class="ind"></span><button class="on">Light</button><button>Dark</button><button>Auto</button></div></div></div>
     </div>
   </section>
 
-  <!-- 4. INPUTS -->
   <section>
-    <div class="h-sec"><span class="n">4</span>Inputs &amp; forms <span class="d">focus = monochrome border, no blue/shadow</span></div>
+    <div class="h-sec"><span class="n">5</span>Inputs &amp; forms <span class="d">focus = monochrome border, no blue/shadow</span></div>
     <div class="grid g3">
-      <div class="spec"><div class="lbl">States</div><div class="col"><div class="field"><input placeholder="Name"></div><div class="field"><input value="user@example.com"></div><div><div class="field err"><input value="localhost:"></div><div class="hint">Missing port</div></div></div></div>
-      <div class="spec"><div class="lbl">Password (fat bullets) + textarea</div><div class="col"><div class="field"><span class="bullets"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div><textarea class="area" placeholder="Instructions for the agent…"></textarea></div></div>
-      <div class="spec"><div class="lbl">Multi-select (gap + aligned)</div><div class="mslist"><label><span class="check" style="gap:0"><input type="checkbox" checked><span class="bx"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></span>auth.swift</label><label><span class="check" style="gap:0"><input type="checkbox" checked><span class="bx"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></span>session.swift</label><label><span class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></span>user.swift</label></div></div>
+      <div class="spec"><div class="lbl">Text · search · with icon · disabled</div><div class="col"><div class="field"><input placeholder="Name"></div><div class="field"><svg class="ic s"><use href="#i-search"/></svg><input placeholder="Search…"></div><div class="field"><svg class="ic s"><use href="#i-globe"/></svg><input value="localhost:7420"></div><div class="field disabled"><input value="Not editable"></div></div></div>
+      <div class="spec"><div class="lbl">Error · password (fat bullets) · textarea</div><div class="col"><div><div class="field err"><input value="localhost:"></div><div class="hint">Missing port</div></div><div class="field"><span class="bullets"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span style="margin-left:auto;color:var(--text-3)"><svg class="ic s"><use href="#i-eye"/></svg></span></div><textarea class="area" placeholder="Instructions for the agent…"></textarea></div></div>
+      <div class="spec"><div class="lbl">Token input · stepper</div><div class="col"><div class="tokfield"><span class="token">auth.swift <svg class="ic xs"><use href="#i-x"/></svg></span><span class="token">session.swift <svg class="ic xs"><use href="#i-x"/></svg></span><span style="font-size:11px;color:var(--text-3)">add…</span></div><div class="stepper"><div class="b"><svg class="ic s"><use href="#i-minus"/></svg></div><div class="v">4</div><div class="b"><svg class="ic s"><use href="#i-plus"/></svg></div></div></div></div>
     </div>
   </section>
 
-  <!-- 5. SLIDERS / STEPPERS -->
   <section>
-    <div class="h-sec"><span class="n">5</span>Sliders &amp; steppers</div>
-    <div class="grid g3">
-      <div class="spec"><div class="lbl">Slider</div><div class="row"><div class="slider"><div class="tr"></div><div class="fi" style="width:62%"></div><div class="kn" style="left:62%"></div></div><span style="font-size:12px;font-weight:600;">0.7</span></div></div>
-      <div class="spec"><div class="lbl">Stepper</div><div class="stepper"><div class="b"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="v">4</div><div class="b"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div></div>
-      <div class="spec"><div class="lbl">In a settings row</div><div class="set-row" style="padding:0;"><div class="rl"><div class="rt">Editor font size</div></div><div class="slider" style="width:90px;"><div class="tr"></div><div class="fi" style="width:40%"></div><div class="kn" style="left:40%"></div></div><span style="font-size:12px;font-weight:600;">13</span></div></div>
+    <div class="h-sec"><span class="n">6</span>Dropdowns &amp; menus <span class="d">click to open · inset selection · white check</span></div>
+    <div class="grid g4">
+      <div class="spec"><div class="lbl">Select (click)</div>
+        <div class="dropdown"><div class="field js-pop" style="width:150px;justify-content:space-between;cursor:pointer"><span data-val>opus 4.7</span><svg class="ic s"><use href="#i-chevron-down"/></svg></div>
+          <div class="pop-menu"><div class="gh">Model</div><div class="it" data-pick>opus 4.7<span class="ck"><svg class="ic xs"><use href="#i-check"/></svg></span></div><div class="it" data-pick>sonnet 4.6</div><div class="it" data-pick>haiku 4.5</div></div></div></div>
+      <div class="spec"><div class="lbl">Combobox (search)</div><div class="menu-static" style="width:auto"><div class="sf"><svg class="ic s"><use href="#i-search"/></svg><input placeholder="Search model…"></div><div class="it on">opus 4.7<span class="ck"><svg class="ic xs"><use href="#i-check"/></svg></span></div><div class="it">opus 4.6</div><div class="it">sonnet 4.6</div></div></div>
+      <div class="spec"><div class="lbl">Context menu</div><div class="menu-static"><div class="it"><svg class="ic s"><use href="#i-pencil"/></svg>Rename<span class="sc"><span class="kbd soft">↵</span></span></div><div class="it"><svg class="ic s"><use href="#i-copy"/></svg>Duplicate<span class="sc"><span class="kbd soft">⌘D</span></span></div><div class="it"><svg class="ic s"><use href="#i-folder"/></svg>Move to<span class="arr"><svg class="ic s"><use href="#i-chevron-right"/></svg></span></div><div class="dv"></div><div class="it danger"><svg class="ic s"><use href="#i-trash"/></svg>Delete<span class="sc"><span class="kbd soft">⌫</span></span></div></div></div>
+      <div class="spec"><div class="lbl">Filter menu (multi)</div><div class="menu-static"><div class="gh">Status</div><label class="it" style="cursor:pointer"><span class="check" style="gap:0"><input type="checkbox" checked><span class="bx"><svg class="ic xs"><use href="#i-check"/></svg></span></span>Active</label><label class="it" style="cursor:pointer"><span class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="#i-check"/></svg></span></span>Archived</label><label class="it" style="cursor:pointer"><span class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="#i-check"/></svg></span></span>Errors</label></div></div>
     </div>
   </section>
 
-  <!-- 6. DROPDOWN / MENU / SHORTCUTS -->
   <section>
-    <div class="h-sec"><span class="n">6</span>Menus &amp; shortcuts <span class="d">inset selection · shortcut = high-contrast pill</span></div>
+    <div class="h-sec"><span class="n">7</span>Search &amp; command bar</div>
     <div class="grid g3">
-      <div class="spec flush"><div class="lbl">Dropdown</div><div class="menu"><div class="gh">Model</div><div class="it on">opus 4.7<span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></div><div class="it">sonnet 4.6</div><div class="it">haiku 4.5</div></div></div>
-      <div class="spec flush"><div class="lbl">Context menu</div><div class="menu"><div class="it">Rename<span class="sc"><span class="kbd soft">↵</span></span></div><div class="it">Duplicate<span class="sc"><span class="kbd soft">⌘D</span></span></div><div class="dv"></div><div class="it danger">Delete<span class="sc"><span class="kbd soft">⌫</span></span></div></div></div>
-      <div class="spec"><div class="lbl">Shortcut indicator (the reference)</div><div class="col"><span class="tooltip">New session <span class="kbd">⌘N</span></span><div class="menu" style="width:auto;"><div class="it">New session<span class="sc"><span class="kbd soft">⌘N</span></span></div></div></div></div>
+      <div class="spec"><div class="lbl">Search field (clearable)</div><div class="field"><svg class="ic s"><use href="#i-search"/></svg><input value="swiftdata"><span class="iconbtn s" style="margin-right:-6px"><svg class="ic xs"><use href="#i-x"/></svg></span></div></div>
+      <div class="spec flush"><div class="lbl">Command palette (⌘K)</div><div class="cmd"><div class="top"><svg class="ic"><use href="#i-search"/></svg>Search action or file…</div><div class="gh" style="padding-left:14px">Actions</div><div class="ci on"><svg class="ic s"><use href="#i-plus"/></svg>New session<span style="margin-left:auto"><span class="kbd soft">⌘N</span></span></div><div class="ci"><svg class="ic s"><use href="#i-terminal"/></svg>Open terminal<span style="margin-left:auto"><span class="kbd soft">⌘J</span></span></div><div class="gh" style="padding-left:14px">Files</div><div class="ci"><svg class="ic s"><use href="#i-file"/></svg>auth.swift</div></div></div>
+      <div class="spec"><div class="lbl">Filter bar</div><div class="row"><span class="chip on">All</span><span class="chip">Unread <span class="count c-accent" style="min-width:16px;height:16px">3</span></span><span class="chip">Errors</span><span class="iconbtn s"><svg class="ic s"><use href="#i-sliders"/></svg></span></div></div>
     </div>
   </section>
 
-  <!-- 7. CHIPS / BADGES / STATUS -->
   <section>
-    <div class="h-sec"><span class="n">7</span>Chips, badges, status, counters</div>
+    <div class="h-sec"><span class="n">8</span>Sliders &amp; steppers</div>
+    <div class="grid g3">
+      <div class="spec"><div class="lbl">Slider</div><div class="row"><div class="slider" style="width:150px"><div class="tr2"></div><div class="fi" style="width:62%"></div><div class="kn2" style="left:62%"></div></div><span style="font-size:12px;font-weight:600">0.7</span></div></div>
+      <div class="spec"><div class="lbl">Stepper</div><div class="stepper"><div class="b"><svg class="ic s"><use href="#i-minus"/></svg></div><div class="v">4</div><div class="b"><svg class="ic s"><use href="#i-plus"/></svg></div></div></div>
+      <div class="spec"><div class="lbl">In a settings row</div><div class="set-row" style="padding:0"><div class="rl"><div class="rt">Editor font size</div></div><div class="slider" style="width:90px"><div class="tr2"></div><div class="fi" style="width:40%"></div><div class="kn2" style="left:40%"></div></div><span style="font-size:12px;font-weight:600">13</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">9</span>Chips, badges, status, avatars</div>
     <div class="grid g2">
-      <div class="spec"><div class="lbl">Filter chips (clear selected) + tags</div><div class="row js-chips"><span class="chip on">All</span><span class="chip">Unread</span><span class="chip">Errors</span><span class="chip">Archived</span></div></div>
-      <div class="spec"><div class="lbl">Badges · status (no dot) · counters (circular)</div><div class="row"><span class="badge c-danger">BETA</span><span class="badge c-ok">NEW</span><span class="badge c-accent">PRO</span></div><div class="row" style="margin-top:9px;"><span class="status c-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Connected</span><span class="status c-warn">Running</span><span class="status c-danger">Error</span></div><div class="row" style="margin-top:9px;"><span class="count c-accent">3</span><span class="count c-neu">12</span></div></div>
+      <div class="spec"><div class="lbl">Filter chips · removable tags</div><div class="row js-chips"><span class="chip on">All</span><span class="chip">Unread</span><span class="chip">Errors</span></div><div class="row" style="margin-top:10px"><span class="chip">swift <svg class="ic xs"><use href="#i-x"/></svg></span><span class="chip">macos <svg class="ic xs"><use href="#i-x"/></svg></span></div></div>
+      <div class="spec"><div class="lbl">Badges · status (no dot / live) · counters · avatars</div><div class="row"><span class="badge c-danger">BETA</span><span class="badge c-ok">NEW</span><span class="badge c-accent">PRO</span></div><div class="row" style="margin-top:9px"><span class="status c-ok"><svg class="ic xs"><use href="#i-check"/></svg>Connected</span><span class="status c-warn"><span class="dot live"></span>Running</span><span class="status c-danger">Error</span></div><div class="row" style="margin-top:9px"><span class="count c-accent">3</span><span class="count c-neu">12</span><div class="avstack"><span class="av round s">AL</span><span class="av round s">AT</span><span class="av round s">GH</span></div><span class="av round"><span class="pres"></span></span></div></div>
     </div>
   </section>
 
-  <!-- 8. TABS -->
   <section>
-    <div class="h-sec"><span class="n">8</span>Tabs <span class="d">hover a tab → close (solid circle, hides text)</span></div>
-    <div class="spec"><div class="lbl">Selected · unselected (distinguishable) · hover for X</div><div class="tabs js-tabs"><div class="tab on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span><span class="nm">zsh · clawix</span><span class="x"><i><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></i></span></div><div class="tab"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span><span class="nm">build output very long</span><span class="x"><i><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></i></span></div><div class="tab"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span><span class="nm">logs</span><span class="x"><i><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></i></span></div></div></div>
+    <div class="h-sec"><span class="n">10</span>Tabs <span class="d">hover for close (solid circle) · underline variant</span></div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl">Closable tabs</div><div class="tabs js-tabs"><div class="tab on"><svg class="ic s"><use href="#i-terminal"/></svg><span class="nm">zsh · clawix</span><span class="x"><i><svg class="ic xs"><use href="#i-x"/></svg></i></span></div><div class="tab"><svg class="ic s"><use href="#i-terminal"/></svg><span class="nm">build output long</span><span class="x"><i><svg class="ic xs"><use href="#i-x"/></svg></i></span></div><div class="tab"><svg class="ic s"><use href="#i-terminal"/></svg><span class="nm">logs</span><span class="x"><i><svg class="ic xs"><use href="#i-x"/></svg></i></span></div></div></div>
+      <div class="spec"><div class="lbl">Underline tabs</div><div class="utabs js-utabs"><div class="utab on">Chat</div><div class="utab">Diff</div><div class="utab">Terminal</div></div></div>
+    </div>
   </section>
 
-  <!-- 9. OVERLAYS -->
   <section>
-    <div class="h-sec"><span class="n">9</span>Tooltips, popovers, hover cards</div>
+    <div class="h-sec"><span class="n">11</span>Tooltips, popovers, hover cards</div>
     <div class="grid g3">
       <div class="spec"><div class="lbl">Tooltip</div><span class="tooltip">New session <span class="kbd">⌘N</span></span></div>
       <div class="spec flush"><div class="lbl">Popover</div><div class="popover"><div class="t">Stop the agent</div><div class="d">Cancels the running task.</div><div class="a"><button class="ctl s btn-secondary">Keep</button><button class="ctl s btn-danger">Stop</button></div></div></div>
-      <div class="spec flush"><div class="lbl">Hover card</div><div class="hovercard"><div class="h"><div class="av"></div><div><div style="font-size:12.5px;font-weight:700;">Refactor login</div><div style="font-size:10px;color:var(--text-3);">opus 4.7 · 2 min</div></div></div><div class="meta"><div><div class="v">3</div><div class="k">files</div></div><div><div class="v">12</div><div class="k">msgs</div></div><div><div class="v">1.2k</div><div class="k">tokens</div></div></div></div></div>
+      <div class="spec flush"><div class="lbl">Hover card</div><div class="hovercard"><div class="h"><span class="av">RL</span><div><div style="font-size:12.5px;font-weight:700">Refactor login</div><div style="font-size:10px;color:var(--text-3)">opus 4.7 · 2 min</div></div></div><div class="meta"><div><div class="v">3</div><div class="k">files</div></div><div><div class="v">12</div><div class="k">msgs</div></div><div><div class="v">1.2k</div><div class="k">tokens</div></div></div></div></div>
     </div>
   </section>
 
-  <!-- 10. FEEDBACK -->
   <section>
-    <div class="h-sec"><span class="n">10</span>Feedback · loading</div>
+    <div class="h-sec"><span class="n">12</span>Feedback &amp; loading</div>
     <div class="grid g2">
-      <div class="spec"><div class="lbl">Toast (icon never inside a shape) · banner</div><div class="col"><div class="toast"><span class="ic c-ok" style="color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div><div class="tt">Session saved</div><div class="td">Refactor login · 3 files</div></div></div><div class="banner"><span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16"/></svg></span><div><div class="bt">Host disconnected</div><div class="bd">Retrying in 5s.</div></div></div></div></div>
-      <div class="spec"><div class="lbl">Spinner (≈250°) · progress · skeleton</div><div class="row" style="gap:18px;"><span class="spinner" style="width:22px;height:22px;color:var(--strong)"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="13.5" fill="none" stroke="var(--track-off)" stroke-width="3.5"/><circle cx="18" cy="18" r="13.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="85" stroke-dashoffset="21" transform="rotate(-90 18 18)"/></svg></span><div class="pbar"><div class="f" style="width:62%"></div></div></div><div style="margin-top:13px;display:flex;gap:9px;align-items:center;"><div class="skel" style="width:28px;height:28px;border-radius:8px;"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px;"><div class="skel" style="height:8px;width:70%;"></div><div class="skel" style="height:7px;width:45%;"></div></div></div></div>
+      <div class="spec"><div class="lbl">Toasts (icon never inside a shape) · banner</div><div class="col"><div class="toast"><svg class="ic s" style="color:var(--ok)"><use href="#i-check"/></svg><div><div class="tt">Session saved</div><div class="td">Refactor login · 3 files</div></div></div><div class="toast"><svg class="ic s" style="color:var(--danger)"><use href="#i-alert"/></svg><div><div class="tt">Host disconnected</div></div><span class="ac">Retry</span></div><div class="banner"><svg class="ic s" style="color:var(--warn)"><use href="#i-info"/></svg><div><div class="bt">Reconnecting</div><div class="bd">Retrying in 5s.</div></div></div></div></div>
+      <div class="spec"><div class="lbl">Spinner · progress · steps · skeleton</div><div class="row" style="gap:18px"><span class="spinner" style="color:var(--strong)"><svg class="ic l" style="stroke-width:2.4"><use href="#i-loader"/></svg></span><div class="pbar"><div class="f" style="width:62%"></div></div></div><div class="steps" style="margin-top:13px"><span class="cir done"><svg class="ic xs"><use href="#i-check"/></svg></span><span class="ln done"></span><span class="cir now">2</span><span class="ln"></span><span class="cir">3</span></div><div style="margin-top:13px;display:flex;gap:9px;align-items:center"><div class="skel" style="width:28px;height:28px;border-radius:8px"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px"><div class="skel" style="height:8px;width:70%"></div><div class="skel" style="height:7px;width:45%"></div></div></div></div>
     </div>
   </section>
 
-  <!-- 11. CARDS / LISTS / TABLE -->
   <section>
-    <div class="h-sec"><span class="n">11</span>Cards, lists, tables</div>
+    <div class="h-sec"><span class="n">13</span>Cards, lists, tables</div>
     <div class="grid g3">
       <div class="spec flush"><div class="lbl">Stat cards</div><div class="row"><div class="stat"><div class="v">128</div><div class="k">sessions</div><div class="dl" style="color:var(--ok)">↑ 12</div></div><div class="stat"><div class="v">3.2k</div><div class="k">tokens/day</div></div></div></div>
-      <div class="spec flush"><div class="lbl">List (meta aligned, one slot)</div><div class="list"><div class="lrow sel"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="nm">Refactor the login flow</span><span class="meta">now</span></div><div class="lrow"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><span class="nm">Migrate the database layer</span><span class="meta"><span class="un"></span></span></div></div></div>
+      <div class="spec flush"><div class="lbl">List (avatar + meta column)</div><div class="list"><div class="lrow sel"><span class="av s round">RL</span><div><div class="nm">Refactor the login flow</div></div><span class="meta">now</span></div><div class="lrow"><span class="av s round">DB</span><div><div class="nm">Migrate the database layer</div></div><span class="meta"><span class="un"></span></span></div></div></div>
       <div class="spec flush"><div class="lbl">Key · value</div><div class="card2"><div class="kv"><div class="r"><span class="k">Host</span><span class="v">localhost:7420</span></div><div class="r"><span class="k">Status</span><span class="v">active</span></div><div class="r"><span class="k">Version</span><span class="v">0.4.1</span></div></div></div></div>
     </div>
-    <div class="spec flush" style="margin-top:16px;"><div class="lbl">Table (lines base · zebra option)</div><div class="list"><div class="tbl"><div class="th"><div></div><div>Name</div><div>Role</div><div>Status</div></div><div class="tr"><label class="check" style="gap:0"><input type="checkbox" checked><span class="bx"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></label><div>Ada Lovelace</div><div>admin</div><div><span class="status c-ok">Active</span></div></div><div class="tr"><label class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></label><div>Alan Turing</div><div>viewer</div><div><span class="status c-warn">Pending</span></div></div></div></div></div>
+    <div class="spec flush" style="margin-top:16px"><div class="lbl">Table (sortable header · row actions · zebra option)</div><div class="list"><div class="tbl"><div class="th"><div></div><div class="so">Name <svg class="ic xs"><use href="#i-chevron-down"/></svg></div><div>Role</div><div>Status</div><div></div></div><div class="tr"><label class="check" style="gap:0"><input type="checkbox" checked><span class="bx"><svg class="ic xs"><use href="#i-check"/></svg></span></label><div>Ada Lovelace</div><div>admin</div><div><span class="status c-ok">Active</span></div><div><span class="iconbtn s"><svg class="ic s"><use href="#i-more"/></svg></span></div></div><div class="tr"><label class="check" style="gap:0"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="#i-check"/></svg></span></label><div>Alan Turing</div><div>viewer</div><div><span class="status c-warn">Pending</span></div><div><span class="iconbtn s"><svg class="ic s"><use href="#i-more"/></svg></span></div></div></div></div></div>
   </section>
 
-  <!-- 12. SETTINGS / MODAL / EMPTY -->
   <section>
-    <div class="h-sec"><span class="n">12</span>Settings, modals, empty states</div>
-    <div class="grid g3">
-      <div class="spec flush"><div class="lbl">Settings (header outside card)</div><div class="set-h"><div class="t">Appearance</div><div class="s">How Clawix looks</div></div><div class="set-card"><div class="set-row"><div class="rl"><div class="rt">Theme</div><div class="rd">Follow system</div></div><div class="seg js-seg"><span class="ind"></span><button class="on">Dark</button><button>Light</button></div></div><div class="set-row"><div class="rl"><div class="rt">Sidebar translucency</div></div><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div></div></div>
-      <div class="spec flush"><div class="lbl">Modal / sheet</div><div class="modal"><div class="mh"><div class="t">Delete 1,240 rows?</div></div><div class="mb">This cannot be undone.</div><div class="mf"><button class="ctl s btn-secondary">Cancel</button><button class="ctl s btn-danger">Delete</button></div></div></div>
-      <div class="spec flush"><div class="lbl">Empty state</div><div class="empty"><div class="ec"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="et">No sessions yet</div><div class="ed">Create one to start.</div><button class="ctl m btn-primary" style="margin-top:14px;">New session</button></div></div>
+    <div class="h-sec"><span class="n">14</span>Settings, modals, accordion, empty</div>
+    <div class="grid g4">
+      <div class="spec flush"><div class="lbl">Settings (header outside card)</div><div class="set-h"><div class="t">Appearance</div><div class="s">How Clawix looks</div></div><div class="set-card"><div class="set-row"><div class="rl"><div class="rt">Theme</div></div><div class="seg js-seg"><span class="ind"></span><button class="on">Dark</button><button>Light</button></div></div><div class="set-row"><div class="rl"><div class="rt">Translucency</div></div><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div></div></div>
+      <div class="spec flush"><div class="lbl">Modal</div><div class="modal"><div class="mh"><div class="t">Delete 1,240 rows?</div><span class="iconbtn s x"><svg class="ic s"><use href="#i-x"/></svg></span></div><div class="mb">This cannot be undone.</div><div class="mf"><button class="ctl m btn-secondary">Cancel</button><button class="ctl m btn-danger">Delete</button></div></div></div>
+      <div class="spec flush"><div class="lbl">Accordion (click)</div><div class="acc js-acc"><div class="ah">Advanced<span class="arr"><svg class="ic s"><use href="#i-chevron-right"/></svg></span></div><div class="ab">Hidden options revealed with a smooth height transition.</div></div></div>
+      <div class="spec flush"><div class="lbl">Empty state</div><div class="empty"><div class="ec"><svg class="ic l"><use href="#i-message"/></svg></div><div class="et">No sessions</div><div class="ed">Create one to start.</div><button class="ctl m btn-primary" style="margin-top:12px"><svg class="ic xs"><use href="#i-plus"/></svg>New</button></div></div>
     </div>
   </section>
 
-  <!-- 13. CODE / DIFF / FILE -->
   <section>
-    <div class="h-sec"><span class="n">13</span>Code &amp; diff <span class="d">mono only here</span></div>
-    <div class="grid g2">
-      <div class="spec flush"><div class="lbl">Code block</div><div class="code mono"><div class="ct">swift · auth.swift</div><div class="cc"><span class="tk-k">func</span> <span class="tk-f">login</span>(_ u: User) <span class="tk-k">throws</span> {
+    <div class="h-sec"><span class="n">15</span>Code, diff, markdown <span class="d">mono only in code</span></div>
+    <div class="grid g3">
+      <div class="spec flush"><div class="lbl">Code block (copy)</div><div class="code mono"><div class="ct">swift · auth.swift</div><span class="cp"><svg class="ic s"><use href="#i-copy"/></svg></span><div class="cc"><span class="tk-k">func</span> <span class="tk-f">login</span>(_ u: User) <span class="tk-k">throws</span> {
   <span class="tk-k">guard</span> auth.<span class="tk-f">isValid</span>(u) <span class="tk-k">else</span> {
-    <span class="tk-k">throw</span> AuthError.<span class="tk-f">denied</span>(<span class="tk-s">.en</span>)
+    <span class="tk-k">throw</span> .<span class="tk-f">denied</span>(<span class="tk-s">.en</span>)
   }
 }</div></div></div>
-      <div class="spec flush"><div class="lbl">Diff (side-by-side, muted)</div><div class="diff mono"><div class="col"><div class="lh">before</div><div class="ln">func login(u) {</div><div class="ln m">  if u.valid {</div><div class="ln">  }</div></div><div class="col"><div class="lh">after</div><div class="ln">func login(u) throws {</div><div class="ln p">  guard valid else {</div><div class="ln">  }</div></div></div></div>
+      <div class="spec flush"><div class="lbl">Diff (side-by-side)</div><div class="diff mono"><div class="col"><div class="lh">before</div><div class="ln">func login(u) {</div><div class="ln m">  if u.valid {</div><div class="ln">  }</div></div><div class="col"><div class="lh">after</div><div class="ln">func login(u) throws {</div><div class="ln p">  guard valid else {</div><div class="ln">  }</div></div></div></div>
+      <div class="spec"><div class="lbl">Markdown</div><div class="md"><h3>Changes</h3><p>Moved validation to <code>AuthService</code>:</p><ul><li>Centralized error messages</li><li>Updated three calls</li></ul><blockquote>Apply to the rest too?</blockquote></div></div>
     </div>
   </section>
 
-  <!-- 14. WINDOW CHIP / MARKDOWN -->
   <section>
-    <div class="h-sec"><span class="n">14</span>Window chip (translucent sidebar) &amp; markdown</div>
-    <div class="grid g2">
-      <div class="spec flush"><div class="lbl">Window chip — hover for close, right-fade, no ellipsis</div><div class="wallbox"><div class="wsb"><div class="wchip on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/></svg></span><span class="nm">example.com/research/agents</span><span class="x"><i><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></i></span></div><div class="wchip"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></span><span class="nm">RecordsTableView.swift</span><span class="x"><i><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></i></span></div></div></div></div>
-      <div class="spec"><div class="lbl">Markdown (fat bullets)</div><div class="md"><p>Moved validation into <code>AuthService</code>:</p><ul><li>Centralized the error messages</li><li>Updated three dependent calls</li><li>Added a regression test</li></ul></div></div>
-    </div>
-  </section>
-
-  <!-- 15. NAV -->
-  <section>
-    <div class="h-sec"><span class="n">15</span>Navigation</div>
+    <div class="h-sec"><span class="n">16</span>Navigation, tree, calendar</div>
     <div class="grid g4">
-      <div class="spec"><div class="lbl">Breadcrumb (plain)</div><div class="crumb"><span class="s">apps</span><span class="sp"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span><span class="s">macos</span><span class="sp"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span><span class="s cur">auth.swift</span></div></div>
-      <div class="spec"><div class="lbl">Pagination</div><div class="pg js-pg"><span class="b">‹</span><span class="b on">1</span><span class="b">2</span><span class="b">3</span><span class="b">›</span></div></div>
-      <div class="spec"><div class="lbl">Thin scrollbar</div><div class="scbox"><div class="sl" style="width:80%"></div><div class="sl" style="width:60%"></div><div class="sl" style="width:90%"></div><div class="sl" style="width:55%"></div><div class="bar"></div></div></div>
-      <div class="spec"><div class="lbl">Step dots (animated)</div><div class="dots js-dots"><i class="on"></i><i></i><i></i></div></div>
+      <div class="spec"><div class="lbl">Breadcrumb (plain)</div><div class="crumb"><span class="s">apps</span><span class="sp"><svg class="ic xs"><use href="#i-chevron-right"/></svg></span><span class="s">macos</span><span class="sp"><svg class="ic xs"><use href="#i-chevron-right"/></svg></span><span class="s cur">auth.swift</span></div><div class="lbl" style="margin-top:16px">Pagination</div><div class="pg js-pg"><span class="b"><svg class="ic xs"><use href="#i-chevron-left"/></svg></span><span class="b on">1</span><span class="b">2</span><span class="b">3</span><span class="b"><svg class="ic xs"><use href="#i-chevron-right"/></svg></span></div></div>
+      <div class="spec"><div class="lbl">File tree</div><div class="tree"><div class="tn"><svg class="ic xs ch"><use href="#i-chevron-down"/></svg><svg class="ic s"><use href="#i-folder"/></svg>Sources</div><div class="tn sel" style="padding-left:22px"><span style="width:11px"></span><svg class="ic s"><use href="#i-file"/></svg>auth.swift</div><div class="tn" style="padding-left:22px"><span style="width:11px"></span><svg class="ic s"><use href="#i-file"/></svg>session.swift</div></div></div>
+      <div class="spec"><div class="lbl">Scrollbar · dots</div><div class="scbox"><div class="sl2" style="width:80%"></div><div class="sl2" style="width:60%"></div><div class="sl2" style="width:90%"></div><div class="sl2" style="width:55%"></div><div class="bar"></div></div><div class="dots js-dots" style="margin-top:13px"><i class="on"></i><i></i><i></i></div></div>
+      <div class="spec flush"><div class="lbl">Date picker</div><div class="cal"><div class="ch"><span class="m">May 2026</span><span class="nav"><span class="iconbtn s"><svg class="ic xs"><use href="#i-chevron-left"/></svg></span><span class="iconbtn s"><svg class="ic xs"><use href="#i-chevron-right"/></svg></span></span></div><div class="grid7"><span class="wd">M</span><span class="wd">T</span><span class="wd">W</span><span class="wd">T</span><span class="wd">F</span><span class="wd">S</span><span class="wd">S</span><span class="dy mut">28</span><span class="dy mut">29</span><span class="dy mut">30</span><span class="dy">1</span><span class="dy">2</span><span class="dy">3</span><span class="dy">4</span><span class="dy">5</span><span class="dy">6</span><span class="dy">7</span><span class="dy">8</span><span class="dy">9</span><span class="dy">10</span><span class="dy">11</span><span class="dy on">12</span><span class="dy">13</span><span class="dy">14</span><span class="dy">15</span></div></div></div>
     </div>
   </section>
 
-  <div style="margin-top:46px;font-size:11px;color:var(--text-3);border-top:0.5px solid var(--hairline);padding-top:16px;">
-    Single-file interactive style reference. Toggle theme top-right. Every component reads from the tokens in <span class="mono">:root</span> / <span class="mono">[data-theme="dark"]</span> — change a token to verify it propagates. Open items still being tuned: the exact light-mode blue, shortcut treatment per surface (white vs gray bg), and tab close-circle color.
+  <section>
+    <div class="h-sec"><span class="n">17</span>Window chip (translucent sidebar) <span class="d">hover for close · right-fade · no ellipsis</span></div>
+    <div class="spec flush"><div class="wallbox"><div class="wsb"><div class="wchip on"><svg class="ic s"><use href="#i-globe"/></svg><span class="nm">example.com/research/agents</span><span class="x"><i><svg class="ic xs"><use href="#i-x"/></svg></i></span></div><div class="wchip"><svg class="ic s"><use href="#i-file"/></svg><span class="nm">RecordsTableView.swift</span><span class="x"><i><svg class="ic xs"><use href="#i-x"/></svg></i></span></div></div></div></div>
+  </section>
+
+  <div style="margin-top:46px;font-size:11px;color:var(--text-3);border-top:0.5px solid var(--hairline);padding-top:16px">
+    Single-file interactive reference · Lucide icons only · theme toggle top-right · every component reads from the tokens in <span class="mono">:root</span> / <span class="mono">[data-theme="dark"]</span>. Click to interact: select, accordion, segmented, tabs, chips, pagination, dots. Still tuning: exact light-mode blue, shortcut treatment per surface, tab close-circle color.
   </div>
 </div>
 
 <script>
 (function(){
-  // theme toggle
-  var t=document.getElementById('themeToggle');
-  function apply(){document.documentElement.setAttribute('data-theme', t.checked?'dark':'light');}
-  t.addEventListener('change',apply); apply();
+  var root=document.documentElement, t=document.getElementById('themeToggle');
+  function apply(){root.setAttribute('data-theme',t.checked?'dark':'light');}
+  function paint(){var cs=getComputedStyle(root);var names=[['--bg','bg'],['--card','card'],['--text','text'],['--text-2','text-2'],['--text-3','text-3'],['--strong','strong'],['--accent','accent (blue)'],['--ok','ok (green)'],['--warn','warn'],['--danger','danger (red)'],['--hairline','hairline'],['--sel','selection']];document.getElementById('swatches').innerHTML=names.map(function(n){var v=cs.getPropertyValue(n[0]).trim();return '<div class="sw"><div class="chip" style="background:'+v+'"></div><div class="meta"><div class="nm">'+n[1]+'</div><div class="val mono">'+v+'</div></div></div>';}).join('');}
+  t.addEventListener('change',function(){apply();paint();}); apply(); paint();
 
-  // palette swatches from tokens
-  var names=[['--bg','bg'],['--card','card'],['--text','text'],['--text-2','text-2'],['--text-3','text-3'],['--strong','strong'],['--accent','accent (blue)'],['--ok','ok (green)'],['--warn','warn'],['--danger','danger (red)'],['--hairline','hairline'],['--sel','selection']];
-  function paint(){
-    var cs=getComputedStyle(document.documentElement);
-    document.getElementById('swatches').innerHTML=names.map(function(n){
-      var v=cs.getPropertyValue(n[0]).trim();
-      return '<div class="sw"><div class="chip" style="background:'+v+'"></div><div class="meta"><div class="nm">'+n[1]+'</div><div class="val mono">'+v+'</div></div></div>';
-    }).join('');
-  }
-  paint(); t.addEventListener('change',paint);
+  var icons="plus x check minus search chevron-down chevron-right chevron-left chevron-up arrow-up terminal folder file message settings sliders pencil copy trash info alert bell user calendar clock more database bot globe command send star circle loader eye".split(' ');
+  document.getElementById('iconGallery').innerHTML=icons.map(function(n){return '<div class="icw"><svg class="ic l"><use href="#i-'+n+'"/></svg><span class="nm">'+n+'</span></div>';}).join('');
 
-  // segmented: move indicator + selection
-  function initSeg(seg){
-    var ind=seg.querySelector('.ind'); var btns=[].slice.call(seg.querySelectorAll('button'));
-    function move(b){btns.forEach(function(x){x.classList.toggle('on',x===b);}); ind.style.left=b.offsetLeft+'px'; ind.style.width=b.offsetWidth+'px';}
-    btns.forEach(function(b){b.addEventListener('click',function(){move(b);});});
-    var on=seg.querySelector('button.on')||btns[0]; move(on);
-  }
-  [].slice.call(document.querySelectorAll('.js-seg')).forEach(initSeg);
+  var ind=document.getElementById('indet'); if(ind) ind.indeterminate=true;
 
-  // chips, tabs, pagination, dots: simple selection toggles
-  function single(sel,childSel,cls){
-    [].slice.call(document.querySelectorAll(sel)).forEach(function(group){
-      var items=[].slice.call(group.querySelectorAll(childSel));
-      items.forEach(function(it){it.addEventListener('click',function(){items.forEach(function(x){x.classList.remove(cls);});it.classList.add(cls);});});
-    });
-  }
-  single('.js-chips','.chip','on');
-  single('.js-tabs','.tab','on');
-  single('.js-pg','.b','on');
-  single('.js-dots','i','on');
-  // animate dots width handled by .on css
-  [].slice.call(document.querySelectorAll('.js-dots')).forEach(function(d){
-    var its=[].slice.call(d.querySelectorAll('i'));
-    its.forEach(function(i){i.addEventListener('click',function(){its.forEach(function(x){x.classList.remove('on');});i.classList.add('on');});});
-  });
+  [].forEach.call(document.querySelectorAll('.js-seg'),function(seg){var i=seg.querySelector('.ind'),b=[].slice.call(seg.querySelectorAll('button'));function m(x){b.forEach(function(y){y.classList.toggle('on',y===x);});i.style.left=x.offsetLeft+'px';i.style.width=x.offsetWidth+'px';}b.forEach(function(x){x.addEventListener('click',function(){m(x);});});m(seg.querySelector('button.on')||b[0]);});
+  function single(s,c,k){[].forEach.call(document.querySelectorAll(s),function(g){var it=[].slice.call(g.querySelectorAll(c));it.forEach(function(x){x.addEventListener('click',function(){it.forEach(function(y){y.classList.remove(k);});x.classList.add(k);});});});}
+  single('.js-chips','.chip','on');single('.js-tabs','.tab','on');single('.js-utabs','.utab','on');single('.js-pg','.b','on');single('.js-dots','i','on');
+
+  [].forEach.call(document.querySelectorAll('.dropdown'),function(dd){var tg=dd.querySelector('.js-pop');tg.addEventListener('click',function(e){e.stopPropagation();var o=dd.classList.contains('open');[].forEach.call(document.querySelectorAll('.dropdown.open'),function(x){x.classList.remove('open');});if(!o)dd.classList.add('open');});[].forEach.call(dd.querySelectorAll('[data-pick]'),function(it){it.addEventListener('click',function(){[].forEach.call(dd.querySelectorAll('[data-pick] .ck'),function(c){c.remove();});var v=dd.querySelector('[data-val]');if(v)v.textContent=it.childNodes[0].textContent.trim();it.insertAdjacentHTML('beforeend','<span class="ck"><svg class="ic xs"><use href="#i-check"/></svg></span>');dd.classList.remove('open');});});});
+  document.addEventListener('click',function(){[].forEach.call(document.querySelectorAll('.dropdown.open'),function(x){x.classList.remove('open');});});
+  [].forEach.call(document.querySelectorAll('.js-acc'),function(a){a.querySelector('.ah').addEventListener('click',function(){a.classList.toggle('open');});});
 })();
 </script>
 </body>

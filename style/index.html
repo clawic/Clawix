@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Style System</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+<style>
+  .hub{max-width:1080px;margin:0 auto;padding:42px 28px 100px;}
+  .hub .hero .t{font-size:30px;font-weight:800;letter-spacing:-0.9px;}
+  .hub .hero .s{font-size:13.5px;color:var(--text-2);margin-top:10px;max-width:640px;line-height:1.55;}
+  .hub .lead{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap;}
+  .hub .lead .pt{flex:1;min-width:240px;border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);padding:15px 16px;}
+  .hub .lead .pt .h{font-size:12.5px;font-weight:700;letter-spacing:-0.2px;display:flex;align-items:center;gap:8px;}
+  .hub .lead .pt .h .ec2{width:24px;height:24px;border-radius:7px;background:var(--fill-2);display:flex;align-items:center;justify-content:center;}
+  .hub .lead .pt .d{font-size:11.5px;color:var(--text-2);margin-top:7px;line-height:1.5;}
+  .hub-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;}
+  .hub-card{display:flex;gap:14px;align-items:flex-start;border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);padding:18px;text-decoration:none;color:var(--text);transition:background var(--dur-hover) var(--ease),transform var(--dur-s) var(--ease);}
+  .hub-card:hover{background:var(--fill);transform:translateY(-1px);}
+  .hub-card .ec{width:38px;height:38px;border-radius:11px;background:var(--fill-2);display:flex;align-items:center;justify-content:center;color:var(--text);flex:0 0 auto;}
+  .hub-card .ht{font-size:14px;font-weight:700;letter-spacing:-0.3px;}
+  .hub-card .hd{font-size:11.5px;color:var(--text-2);margin-top:4px;line-height:1.5;}
+  .hub-sub{font-size:12px;font-weight:700;letter-spacing:-0.2px;color:var(--text-2);margin:38px 2px 0;display:flex;align-items:center;gap:9px;}
+  .hub-sub .ln{flex:1;height:0.5px;background:var(--hairline);}
+  .hub-sub + .hub-grid{margin-top:14px;}
+</style>
+</head>
+<body data-page="index">
+<div class="hub">
+  <div class="hero">
+    <div class="t">Clawix Style System</div>
+    <div class="s">The centralized, platform-agnostic source of truth for how Clawix looks and moves. Every rule, token, component and screen is defined once here and shown live, so a change made here is meant to propagate outward to macOS, iOS, Android and web.</div>
+    <div class="lead">
+      <div class="pt">
+        <div class="h"><span class="ec2"><svg class="ic s"><use href="icons.svg#i-grid"/></svg></span>The standard</div>
+        <div class="d">Foundations, components, iconography and mocked screens, all driven by one set of tokens. Nothing is hardcoded: change a token in <span class="mono">tokens.css</span> and it travels everywhere it applies.</div>
+      </div>
+      <div class="pt">
+        <div class="h"><span class="ec2"><svg class="ic s"><use href="icons.svg#i-wrench"/></svg></span>The laboratory</div>
+        <div class="d">A place to iterate on the visual language in isolation, before any change touches product code. Drift is captured as side-by-side discordances and resolved against a real visual reference, never by force.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hub-sub">Reference<span class="ln"></span></div>
+  <div class="hub-grid">
+    <a class="hub-card" href="foundations.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-sliders"/></svg></span>
+      <div><div class="ht">Foundations</div><div class="hd">The rules behind every component: color, geometry &amp; radius, control heights, spacing, type, motion, elevation, selection. Each rule shown applied.</div></div>
+    </a>
+    <a class="hub-card" href="components.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-grid"/></svg></span>
+      <div><div class="ht">Components</div><div class="hd">The primitive gallery: buttons, inputs, toggles, segmented, dropdowns, chips, cards, code and more, in both themes.</div></div>
+    </a>
+    <a class="hub-card" href="icons.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-sparkles"/></svg></span>
+      <div><div class="ht">Iconography</div><div class="hd">The full line-icon set, the sizing scale, and what each icon is used for across the app.</div></div>
+    </a>
+    <a class="hub-card" href="chat-catalog.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-message"/></svg></span>
+      <div><div class="ht">Chat catalog</div><div class="hd">Every element of a conversation as its own faithful component: messages, cards, mentions, the tool-call timeline.</div></div>
+    </a>
+    <a class="hub-card" href="menus.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-command"/></svg></span>
+      <div><div class="ht">Menus &amp; popups</div><div class="hd">Composer menus, context rings, usage bars and the more advanced overlay components, shown open.</div></div>
+    </a>
+  </div>
+
+  <div class="hub-sub">Mocked screens<span class="ln"></span></div>
+  <div class="hub-grid">
+    <a class="hub-card" href="screen-sidebar.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-home"/></svg></span>
+      <div><div class="ht">Home / Sidebar</div><div class="hd">The full window: translucent sidebar, sections and the home composer.</div></div>
+    </a>
+    <a class="hub-card" href="screen-conversation.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-message"/></svg></span>
+      <div><div class="ht">Conversation</div><div class="hd">A live thread: messages, flat tool-call timeline, diff and the composer.</div></div>
+    </a>
+    <a class="hub-card" href="screen-settings.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-settings"/></svg></span>
+      <div><div class="ht">Settings</div><div class="hd">Two-pane settings with category nav and real cards, rows and controls.</div></div>
+    </a>
+    <a class="hub-card" href="screen-tool-computer.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-cpu"/></svg></span>
+      <div><div class="ht">On this Mac</div><div class="hd">Computer Use: app inventory, accessibility tree, per-app permission and the action log.</div></div>
+    </a>
+    <a class="hub-card" href="screen-tool-browser.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-globe"/></svg></span>
+      <div><div class="ht">Browser</div><div class="hd">Tab strip, address bar, page and the floating website-access approval card.</div></div>
+    </a>
+    <a class="hub-card" href="screen-tool-terminal.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-terminal"/></svg></span>
+      <div><div class="ht">Terminal</div><div class="hd">Tabbed sessions, a split pane and a live log tail in the monospace console.</div></div>
+    </a>
+    <a class="hub-card" href="screen-master-detail.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-key"/></svg></span>
+      <div><div class="ht">Master–detail</div><div class="hd">List pane + inspector. Shown as Secrets; the shape behind Memory, Contacts, Connections.</div></div>
+    </a>
+    <a class="hub-card" href="screen-browse.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-puzzle"/></svg></span>
+      <div><div class="ht">Browse / grid</div><div class="hd">Filter bar + card grid. Shown as Skills; the shape behind Apps and Marketplace.</div></div>
+    </a>
+    <a class="hub-card" href="screen-tabbed.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-stack"/></svg></span>
+      <div><div class="ht">Tabbed workspace</div><div class="hd">Segmented header that swaps content. Shown as Index; also Feed and Publishing.</div></div>
+    </a>
+    <a class="hub-card" href="screen-dashboard.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-network"/></svg></span>
+      <div><div class="ht">Dashboard</div><div class="hd">Stat cards, a chart and an activity feed. Shown as Network; also Usage.</div></div>
+    </a>
+    <a class="hub-card" href="screen-workbench.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-database"/></svg></span>
+      <div><div class="ht">Workbench</div><div class="hd">Three panes: objects, an editor + results, and a row inspector. Shown as Database.</div></div>
+    </a>
+  </div>
+
+  <div class="hub-sub">Laboratory<span class="ln"></span></div>
+  <div class="hub-grid">
+    <a class="hub-card" href="lab/index.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-wrench"/></svg></span>
+      <div><div class="ht">Lab</div><div class="hd">Where iteration happens: discordances (side-by-side drift with a question), the decisions board, and staging experiments not yet folded into canon.</div></div>
+    </a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Iconography</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+<style>
+  .ico-intro{font-size:13.5px;color:var(--text-2);margin-top:10px;max-width:660px;line-height:1.55;}
+  .ico-note{font-size:12px;color:var(--text-2);line-height:1.5;margin:0 2px 14px;}
+  .ico-note b{color:var(--text);font-weight:600;}
+  .size-row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-end;}
+  .size-row .cell{display:flex;flex-direction:column;align-items:center;gap:9px;color:var(--text);}
+  .size-row .cell .lab{font-size:10.5px;color:var(--text-3);text-align:center;line-height:1.4;}
+  .size-row .cell .lab b{display:block;color:var(--text-2);font-weight:600;font-size:11px;}
+  .ctx-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+</style>
+</head>
+<body data-page="icons">
+<div class="wrap">
+  <div style="font-size:28px;font-weight:800;letter-spacing:-0.8px">Iconography</div>
+  <p class="ico-intro">One line-icon set, shipped as a single SVG sprite (<span class="mono">icons.svg</span>) and referenced with <span class="mono">&lt;use href="icons.svg#i-name"&gt;</span>. Icons inherit <span class="mono">currentColor</span> and a uniform <span class="mono">1.75</span> stroke with round caps and joins, so they read as one family at every size. On native platforms the same names map to the matching SF Symbol, keeping identical weight and meaning across macOS, iOS and Android.</p>
+
+  <section>
+    <div class="h-sec"><span class="n">1</span>Sizing scale<span class="d">--ic 16 · s 13 · xs 11 · l 20</span></div>
+    <p class="ico-note">Four sizes, each with a job. Pick by the density of the surface, never arbitrarily. The point size is set by the class (<span class="mono">.ic</span>, <span class="mono">.ic.s</span>, <span class="mono">.ic.xs</span>, <span class="mono">.ic.l</span>), so an icon is the same size everywhere it plays the same role.</p>
+    <div class="spec">
+      <div class="size-row">
+        <div class="cell"><svg class="ic xs"><use href="icons.svg#i-settings"/></svg><div class="lab"><b>xs · 11</b>inside chips, kbd hints,<br>inline status checks</div></div>
+        <div class="cell"><svg class="ic s"><use href="icons.svg#i-settings"/></svg><div class="lab"><b>s · 13</b>menu rows, toolbars,<br>small / dense buttons</div></div>
+        <div class="cell"><svg class="ic"><use href="icons.svg#i-settings"/></svg><div class="lab"><b>default · 16</b>sidebar rows, standard<br>buttons, most UI</div></div>
+        <div class="cell"><svg class="ic l"><use href="icons.svg#i-settings"/></svg><div class="lab"><b>l · 20</b>hub cards, empty<br>states, large affordances</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">2</span>Icons in context<span class="d">always currentColor</span></div>
+    <p class="ico-note">Icons take the color of their container: secondary on idle chrome, primary inside a solid button, status color when paired with a state. They are never tinted on their own.</p>
+    <div class="spec">
+      <div class="ctx-row">
+        <button class="ctl m btn-primary"><svg class="ic s"><use href="icons.svg#i-arrow-up"/></svg>Primary</button>
+        <button class="ctl s btn-secondary"><svg class="ic s"><use href="icons.svg#i-download"/></svg>Secondary</button>
+        <span class="iconbtn"><svg class="ic"><use href="icons.svg#i-more"/></svg></span>
+        <span class="chip on"><svg class="ic xs"><use href="icons.svg#i-puzzle"/></svg>Chip</span>
+        <span class="status c-ok"><svg class="ic xs"><use href="icons.svg#i-check"/></svg>Done</span>
+        <span class="status c-danger"><svg class="ic xs"><use href="icons.svg#i-alert"/></svg>Error</span>
+        <div class="sb-item on" style="max-width:200px"><svg class="ic"><use href="icons.svg#i-message"/></svg><span class="nm">Sidebar row</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">3</span>Navigation &amp; disclosure</div>
+    <p class="ico-note"><b>Use for</b> moving between views and opening / collapsing things. Chevrons point in the direction of travel; <span class="mono">chevron-down</span> rotates to indicate an expanded section.</p>
+    <div class="icons">
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-chevron-down"/></svg><span class="nm">chevron-down</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-chevron-right"/></svg><span class="nm">chevron-right</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-chevron-left"/></svg><span class="nm">chevron-left</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-chevron-up"/></svg><span class="nm">chevron-up</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-arrow-up"/></svg><span class="nm">arrow-up</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-more"/></svg><span class="nm">more</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-command"/></svg><span class="nm">command</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-home"/></svg><span class="nm">home</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">4</span>Core actions</div>
+    <p class="ico-note"><b>Use for</b> things the user does. <span class="mono">arrow-up</span> is send; <span class="mono">x</span> is dismiss / close; <span class="mono">trash</span> is the only destructive glyph and only appears with the danger color.</p>
+    <div class="icons">
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-plus"/></svg><span class="nm">plus</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-x"/></svg><span class="nm">x</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-check"/></svg><span class="nm">check</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-minus"/></svg><span class="nm">minus</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-search"/></svg><span class="nm">search</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-pencil"/></svg><span class="nm">pencil</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-copy"/></svg><span class="nm">copy</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-trash"/></svg><span class="nm">trash</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-download"/></svg><span class="nm">download</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-refresh"/></svg><span class="nm">refresh</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-send"/></svg><span class="nm">send</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-link"/></svg><span class="nm">link</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-play"/></svg><span class="nm">play</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-stop"/></svg><span class="nm">stop</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">5</span>Status &amp; feedback</div>
+    <p class="ico-note"><b>Use for</b> conveying state. These pair with the status colors (<span class="mono">--ok</span> / <span class="mono">--warn</span> / <span class="mono">--danger</span>). <span class="mono">loader</span> is the only icon that spins; <span class="mono">sparkles</span> marks agent / generated content.</p>
+    <div class="icons">
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-info"/></svg><span class="nm">info</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-alert"/></svg><span class="nm">alert</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-bell"/></svg><span class="nm">bell</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-circle"/></svg><span class="nm">circle</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-loader"/></svg><span class="nm">loader</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-star"/></svg><span class="nm">star</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-shield"/></svg><span class="nm">shield</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-sparkles"/></svg><span class="nm">sparkles</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-eye"/></svg><span class="nm">eye</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">6</span>Surfaces &amp; objects</div>
+    <p class="ico-note"><b>Use for</b> naming a place or a kind of thing: sidebar destinations, tools and entity types. Each tool surface has a stable glyph so it reads the same in the sidebar, headers and menus.</p>
+    <div class="icons">
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-folder"/></svg><span class="nm">folder</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-file"/></svg><span class="nm">file</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-message"/></svg><span class="nm">message</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-database"/></svg><span class="nm">database</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-terminal"/></svg><span class="nm">terminal</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-globe"/></svg><span class="nm">globe</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-key"/></svg><span class="nm">key</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-grid"/></svg><span class="nm">grid</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-stack"/></svg><span class="nm">stack</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-archive"/></svg><span class="nm">archive</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-pin"/></svg><span class="nm">pin</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-calendar"/></svg><span class="nm">calendar</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-clock"/></svg><span class="nm">clock</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-chart"/></svg><span class="nm">chart</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-git"/></svg><span class="nm">git</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-network"/></svg><span class="nm">network</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-puzzle"/></svg><span class="nm">puzzle</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-wrench"/></svg><span class="nm">wrench</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-cpu"/></svg><span class="nm">cpu</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-sliders"/></svg><span class="nm">sliders</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-settings"/></svg><span class="nm">settings</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">7</span>People &amp; input</div>
+    <p class="ico-note"><b>Use for</b> identity and the composer. <span class="mono">bot</span> marks the agent; <span class="mono">mic</span> and <span class="mono">paperclip</span> live in the composer toolbar for voice and attachments.</p>
+    <div class="icons">
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-user"/></svg><span class="nm">user</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-bot"/></svg><span class="nm">bot</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-mic"/></svg><span class="nm">mic</span></div>
+      <div class="icw"><svg class="ic l"><use href="icons.svg#i-paperclip"/></svg><span class="nm">paperclip</span></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

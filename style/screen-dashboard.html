@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Dashboard</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="dashboard" data-shell="app" data-title="Network" data-active="network">
+<template id="main">
+  <div class="surface">
+    <div class="surf-head">
+      <div class="tt">
+        <div class="h"><svg class="ic"><use href="icons.svg#i-network"/></svg>Network</div>
+        <div class="s">What the agent is allowed to reach, and what it has actually been requesting.</div>
+      </div>
+      <div class="sp"></div>
+      <div class="acts">
+        <div class="seg js-seg"><span class="ind"></span><button class="on">7 days</button><button>30 days</button></div>
+        <button class="ctl m btn-secondary"><svg class="ic xs"><use href="icons.svg#i-download"/></svg>Export</button>
+      </div>
+    </div>
+
+    <div class="surf-body">
+      <div class="dash">
+        <div class="dash-stats">
+          <div class="stat"><div class="v">24</div><div class="k">Allowed hosts</div><div class="dl" style="color:var(--text-3)">3 pending</div></div>
+          <div class="stat"><div class="v">8</div><div class="k">Blocked</div></div>
+          <div class="stat"><div class="v">1,240</div><div class="k">Requests today</div><div class="dl" style="color:var(--ok)">↑ 12%</div></div>
+          <div class="stat"><div class="v">84<span style="font-size:13px;font-weight:600;color:var(--text-2)">ms</span></div><div class="k">Avg latency</div></div>
+        </div>
+
+        <div class="chartbox">
+          <div class="ch"><span class="t">Requests · last 14 days</span><span class="sp"></span><span class="t-sub" style="font-size:11px">peak 1,640</span></div>
+          <div class="chart-bars">
+            <i style="height:32%"></i><i style="height:46%"></i><i style="height:40%"></i><i style="height:58%"></i><i style="height:52%"></i><i style="height:70%"></i><i style="height:64%"></i><i style="height:48%"></i><i style="height:55%"></i><i style="height:78%"></i><i style="height:66%"></i><i style="height:84%"></i><i class="hi" style="height:100%"></i><i class="hi" style="height:62%"></i>
+          </div>
+          <div class="chart-x"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+        </div>
+
+        <div>
+          <div class="sec-lbl">Recent requests</div>
+          <div class="list">
+            <div class="xrow"><span class="status c-ok"><span class="dot"></span></span><div class="mt"><div class="nm">api.example.com</div><div class="sub">GET /v1/models · 142ms</div></div><span class="meta">just now</span></div>
+            <div class="xrow"><span class="status c-ok"><span class="dot"></span></span><div class="mt"><div class="nm">raw.githubusercontent.com</div><div class="sub">GET /clawix/main/README.md · 88ms</div></div><span class="meta">2m ago</span></div>
+            <div class="xrow"><span class="status c-danger"><span class="dot"></span></span><div class="mt"><div class="nm">telemetry.thirdparty.io</div><div class="sub">Blocked · not on the allow list</div></div><span class="meta">5m ago</span></div>
+            <div class="xrow"><span class="status c-warn"><span class="dot"></span></span><div class="mt"><div class="nm">docs.newhost.dev</div><div class="sub">Waiting for approval</div></div><span class="meta">8m ago</span></div>
+          </div>
+        </div>
+
+        <div style="max-width:560px">
+          <div class="sec-lbl">Access policy</div>
+          <div class="set-card">
+            <div class="set-row"><div class="rl"><div class="rt">Allow localhost</div><div class="rd">Local hosts and the bridge port</div></div><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div>
+            <div class="set-row"><div class="rl"><div class="rt">Ask before new hosts</div><div class="rd">Raise an approval card the first time</div></div><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div>
+            <div class="set-row"><div class="rl"><div class="rt">Block known trackers</div></div><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+</body>
+</html>

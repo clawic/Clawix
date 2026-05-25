@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Settings</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="settings" data-shell="window" data-title="Settings">
+<template id="main">
+  <div class="set-pane">
+    <nav class="set-nav js-setnav">
+      <div class="set-back"><svg class="ic s"><use href="icons.svg#i-chevron-left"/></svg>Back to app</div>
+      <div class="set-cat on"><svg class="ic s"><use href="icons.svg#i-settings"/></svg>General</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-sliders"/></svg>Configuration</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-user"/></svg>Personalization</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-command"/></svg>Shortcuts</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-puzzle"/></svg>Skills</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-mic"/></svg>Dictation</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-bot"/></svg>MCP</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-cpu"/></svg>Machines</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-git"/></svg>Git</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-chart"/></svg>Usage</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-key"/></svg>Secrets</div>
+      <div class="set-cat"><svg class="ic s"><use href="icons.svg#i-grid"/></svg>Apps</div>
+    </nav>
+
+    <div class="set-body">
+      <div class="pg-title">General</div>
+
+      <div class="set-group">
+        <div class="set-h"><div class="t">Appearance</div><div class="s">How Clawix looks on this Mac</div></div>
+        <div class="set-card">
+          <div class="set-row"><div class="rl"><div class="rt">Theme</div><div class="rd">Match the system or pin one</div></div>
+            <div class="seg js-seg"><span class="ind"></span><button class="on">Dark</button><button>Light</button><button>Auto</button></div></div>
+          <div class="set-row"><div class="rl"><div class="rt">Translucent sidebar</div><div class="rd">Blur the desktop behind the sidebar</div></div>
+            <label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div>
+          <div class="set-row"><div class="rl"><div class="rt">Accent</div></div>
+            <div class="dropdown"><div class="field js-pop" style="width:140px;justify-content:space-between;cursor:pointer"><span data-val>Blue</span><svg class="ic s"><use href="icons.svg#i-chevron-down"/></svg></div>
+              <div class="pop-menu" style="left:auto;right:0;transform-origin:top right"><div class="it" data-pick>Blue<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div><div class="it" data-pick>Graphite</div><div class="it" data-pick>Green</div></div></div></div>
+        </div>
+      </div>
+
+      <div class="set-group">
+        <div class="set-h"><div class="t">Behavior</div><div class="s">Defaults for new chats</div></div>
+        <div class="set-card">
+          <div class="set-row"><div class="rl"><div class="rt">Confirm destructive actions</div><div class="rd">Ask before delete or overwrite</div></div>
+            <label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div>
+          <div class="set-row"><div class="rl"><div class="rt">Default model</div></div>
+            <div class="dropdown"><div class="field js-pop" style="width:150px;justify-content:space-between;cursor:pointer"><span data-val>opus 4.7</span><svg class="ic s"><use href="icons.svg#i-chevron-down"/></svg></div>
+              <div class="pop-menu" style="left:auto;right:0;transform-origin:top right"><div class="it" data-pick>opus 4.7<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div><div class="it" data-pick>sonnet 4.6</div><div class="it" data-pick>haiku 4.5</div></div></div></div>
+          <div class="set-row"><div class="rl"><div class="rt">Editor font size</div></div>
+            <div class="slider" data-min="9" data-max="24" data-step="1" data-value="13" style="width:120px"><div class="tr2"></div><div class="fi"></div><div class="kn2"></div></div>
+            <span class="slider-val" style="font-size:12px;font-weight:600;min-width:18px;text-align:right">13</span></div>
+        </div>
+      </div>
+
+      <div class="set-group">
+        <div class="set-h"><div class="t">Startup</div></div>
+        <div class="set-card">
+          <div class="set-row"><div class="rl"><div class="rt">Launch at login</div></div>
+            <label class="toggle"><input type="checkbox"><span class="tr"></span><span class="kn"></span></label></div>
+          <div class="set-row"><div class="rl"><div class="rt">Restore last session</div></div>
+            <label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+</body>
+</html>

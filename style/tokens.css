@@ -1,0 +1,56 @@
+/* ============================================================
+   Clawix Style System - design tokens.
+   THE single source of values: every color, size, radius, weight,
+   duration and curve is declared here. Change one variable and it
+   propagates to every page, component and mocked screen.
+   Always paired with light/dark via :root / [data-theme="dark"].
+   ============================================================ */
+
+:root{
+  --bg:#fbfbfc; --bg-2:#f2f2f4;
+  --text:#171719; --text-2:#56565c; --text-3:#8e8e96;
+  --card:#ffffff; --pop:#ffffff;
+  --hairline:rgba(0,0,0,0.10); --sel:rgba(0,0,0,0.05);
+  --fill:rgba(0,0,0,0.04); --fill-2:rgba(0,0,0,0.07);
+  --strong:#1a1a1c; --strong-fg:#ffffff;
+  --accent:#2f74e6; --accent-bg:rgba(47,116,230,0.12);
+  --ok:#2f8a52; --ok-bg:rgba(47,138,82,0.13);
+  --warn:#9c7a2e; --warn-bg:rgba(180,140,50,0.14);
+  --danger:#c0433a; --danger-bg:rgba(192,67,58,0.12);
+  --track-off:rgba(0,0,0,0.12); --knob-off:#ffffff; --track-on:#1a1a1c; --knob-on:#ffffff; --hover-soft:rgba(0,0,0,0.035); --composer-fill:#f6f6f6; --composer-project:#ededed;
+  --r-card:14px; --r-ctl:10px; --r-s:8px;
+  --h-m:32px; --h-s:26px;   /* the ONLY two heights for button-like / squircle controls */
+  /* motion · curves */
+  --ease:cubic-bezier(.22,.61,.36,1);            /* easeOut — hover, menus, panels, the default */
+  --ease-inout:cubic-bezier(.42,0,.58,1);        /* symmetric — disclosures & content reflow */
+  --ease-spring:cubic-bezier(.34,1.5,.5,1);      /* soft overshoot — toggle knob */
+  --ease-spring-soft:cubic-bezier(.25,1.2,.4,1); /* barely-there settle — toast arrival */
+  /* motion · durations (one per interaction class, like the macOS app) */
+  --dur-hover:.12s;        /* hover / reveal / press feedback */
+  --dur:.18s;              /* generic state change */
+  --dur-menu:.20s;         /* popup / menu / dropdown open */
+  --dur-panel:.22s;        /* panel, sidebar, selection slide */
+  --dur-disclosure:.28s;   /* accordion / section expand-collapse */
+  --dur-out:.15s;          /* popup / menu / tooltip dismiss (fade-only) */
+  --dur-spring:.32s;       /* toggle knob travel */
+  --dur-spring-soft:.42s;  /* toast arrival */
+  --dur-s:.12s;            /* press transforms (alias of --dur-hover) */
+  --delay-tip:1.5s;        /* hover-hint latency before it appears */
+  --wall:linear-gradient(135deg,#dbe3ef,#c6cedb 55%,#b6bec9);
+  --shadow:0 10px 26px rgba(0,0,0,0.14); --shadow-pop:0 8px 24px rgba(0,0,0,0.16);
+}
+[data-theme="dark"]{
+  --bg:#0e0e10; --bg-2:#161618;
+  --text:#f2f2f4; --text-2:#9a9aa0; --text-3:#67676c;
+  --card:#151515; --pop:#1a1a1a;
+  --hairline:rgba(255,255,255,0.08); --sel:rgba(255,255,255,0.05);
+  --fill:rgba(255,255,255,0.05); --fill-2:rgba(255,255,255,0.09);
+  --strong:#ededf0; --strong-fg:#1b1b1d;
+  --accent:#73a6ff; --accent-bg:rgba(115,166,255,0.18);
+  --ok:#86c79a; --ok-bg:rgba(120,190,140,0.16);
+  --warn:#d4af6e; --warn-bg:rgba(210,170,90,0.16);
+  --danger:#d98a82; --danger-bg:rgba(192,80,72,0.18);
+  --track-off:rgba(255,255,255,0.06); --knob-off:#8c8c8c; --track-on:rgba(255,255,255,0.10); --knob-on:#ffffff; --hover-soft:rgba(255,255,255,0.035); --composer-fill:#222222; --composer-project:#161616;
+  --wall:linear-gradient(135deg,#2a3550,#14161f 55%,#0a0b10);
+  --shadow:0 12px 30px rgba(0,0,0,0.5); --shadow-pop:0 10px 28px rgba(0,0,0,0.55);
+}

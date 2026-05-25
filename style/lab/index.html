@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Style Lab</title>
+<link rel="stylesheet" href="../ui.css">
+<script defer src="../app.js"></script>
+<style>
+  .hub{max-width:1080px;margin:0 auto;padding:42px 28px 100px;}
+  .hub .hero .t{font-size:28px;font-weight:800;letter-spacing:-0.8px;}
+  .hub .hero .s{font-size:13.5px;color:var(--text-2);margin-top:10px;max-width:660px;line-height:1.55;}
+  .method{margin-top:22px;border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);padding:6px 4px;}
+  .method .step{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;}
+  .method .step + .step{border-top:0.5px solid var(--hairline);}
+  .method .step .nm{width:22px;height:22px;flex:0 0 auto;border-radius:6px;background:var(--strong);color:var(--strong-fg);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .method .step .tx{font-size:12.5px;line-height:1.5;color:var(--text);}
+  .method .step .tx b{font-weight:600;}
+  .method .step .tx .d{color:var(--text-2);font-size:11.5px;}
+  .hub-sub{font-size:12px;font-weight:700;letter-spacing:-0.2px;color:var(--text-2);margin:36px 2px 0;display:flex;align-items:center;gap:9px;}
+  .hub-sub .ln{flex:1;height:0.5px;background:var(--hairline);}
+  .hub-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;}
+  .hub-card{display:flex;gap:14px;align-items:flex-start;border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);padding:18px;text-decoration:none;color:var(--text);transition:background var(--dur-hover) var(--ease),transform var(--dur-s) var(--ease);}
+  .hub-card:hover{background:var(--fill);transform:translateY(-1px);}
+  .hub-card .ec{width:38px;height:38px;border-radius:11px;background:var(--fill-2);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .hub-card .ht{font-size:14px;font-weight:700;letter-spacing:-0.3px;}
+  .hub-card .hd{font-size:11.5px;color:var(--text-2);margin-top:4px;line-height:1.5;}
+</style>
+</head>
+<body data-base="../" data-page="lab">
+<div class="hub">
+  <div class="hero">
+    <div class="t">Style Lab</div>
+    <div class="s">Where the visual language gets iterated, in isolation, before any change touches product code. The rule of the lab: never remove or override a curated treatment to force a fundamental. Drift is made visible, compared against a real reference, and only then decided.</div>
+  </div>
+
+  <div class="method">
+    <div class="step"><span class="nm">1</span><div class="tx"><b>Find the drift, don't fix it silently.</b> <span class="d">When a surface breaks a rule or has quietly acquired a different radius, curve, weight or color, record it as a discordance instead of editing it away.</span></div></div>
+    <div class="step"><span class="nm">2</span><div class="tx"><b>Show both, side by side, with the exact difference.</b> <span class="d">Every discordance renders A and B live, describes precisely what differs, and asks one specific question. The decision is made on a validated visual, not on abstract rule text.</span></div></div>
+    <div class="step"><span class="nm">3</span><div class="tx"><b>Record the verdict, then fold it into canon.</b> <span class="d">Settled calls land on the decisions board and are then pushed into <span class="mono">tokens.css</span> / <span class="mono">ui.css</span> so the standard and every screen update together.</span></div></div>
+  </div>
+
+  <div class="hub-sub">Workspaces<span class="ln"></span></div>
+  <div class="hub-grid">
+    <a class="hub-card" href="discordances.html">
+      <span class="ec"><svg class="ic l"><use href="../icons.svg#i-git"/></svg></span>
+      <div><div class="ht">Discordances</div><div class="hd">Side-by-side A / B of where the app and the fundamentals diverge, each with a description and a pointed question to resolve.</div></div>
+    </a>
+    <a class="hub-card" href="decisions.html">
+      <span class="ec"><svg class="ic l"><use href="../icons.svg#i-check"/></svg></span>
+      <div><div class="ht">Decisions board</div><div class="hd">The running ledger: decided, experiments in flight, and items still to add. Each decision links back to its discordance.</div></div>
+    </a>
+  </div>
+
+  <div class="hub-sub">Staging experiments<span class="ln"></span></div>
+  <div class="hub-grid">
+    <a class="hub-card" href="lab-overlays.html">
+      <span class="ec"><svg class="ic l"><use href="../icons.svg#i-command"/></svg></span>
+      <div><div class="ht">Overlays</div><div class="hd">Dropdowns, submenus, popovers, modals, drawers, sheets, toasts and the command palette, fixed-position.</div></div>
+    </a>
+    <a class="hub-card" href="lab-forms.html">
+      <span class="ec"><svg class="ic l"><use href="../icons.svg#i-pencil"/></svg></span>
+      <div><div class="ht">Forms</div><div class="hd">Every field type and state: steppers, autosize, combobox, tag input, OTP, dropzone, ranges, wizard.</div></div>
+    </a>
+    <a class="hub-card" href="lab-data.html">
+      <span class="ec"><svg class="ic l"><use href="../icons.svg#i-chart"/></svg></span>
+      <div><div class="ht">Data</div><div class="hd">KPIs, charts, a sortable / selectable / expandable table, timeline, feed and a range calendar.</div></div>
+    </a>
+    <a class="hub-card" href="lab-resolved.html">
+      <span class="ec"><svg class="ic l"><use href="../icons.svg#i-archive"/></svg></span>
+      <div><div class="ht">Resolved staging</div><div class="hd">Decided treatments held here until they are folded into the canonical tokens and components.</div></div>
+    </a>
+  </div>
+</div>
+</body>
+</html>

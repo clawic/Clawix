@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Style System (lab · resolved)</title>
+<!-- Additive lab page. Links ui.css for tokens + Manrope ONLY; all resolved
+     component styles live in this file's <style>. ui.css / components.html are
+     NOT touched, so this never collides with the concurrent styleguide build.
+     To fold back into canon when the shared files are free: move the :root
+     tokens + component rules below into ui.css and the demos into components/
+     foundations/chat-catalog. -->
+<link rel="stylesheet" href="ui.css">
+<style>
+/* ===== resolved tokens (overlay(x) → color-mix(var(--text) x%, transparent), theme-aware) ===== */
+:root{
+  --set-card:#f2f2f2; --composer:#f6f6f6; --menu-glass:rgba(250,250,250,0.82);
+  --seg-well:#e9e9ec; --seg-ind:#ffffff; --seg-ind-sh:0 1px 2px rgba(0,0,0,0.14); --seg-ind-bd:rgba(0,0,0,0.07);
+  --accent-fill:#2f74e6; --pastel:#73a6ff;
+  --mono-off:#dcdce0; --mono-on:#1a1c1f; --mono-knob:#fff; --mono-knob-on:#fff;
+}
+[data-theme="dark"]{
+  --set-card:#161616; --composer:#222222; --menu-glass:rgba(26,26,26,0.82);
+  --seg-well:#0e0e0e; --seg-ind:rgba(255,255,255,0.10); --seg-ind-sh:0 0 0 0 transparent; --seg-ind-bd:rgba(255,255,255,0.08);
+  --accent-fill:#4f93ff; --pastel:#73a6ff;
+  --mono-off:#383838; --mono-on:#f0f0f0; --mono-knob:#bcbcbc; --mono-knob-on:#1b1b1d;
+}
+.mf{font-family:"Manrope",system-ui,sans-serif;}
+
+/* ===== shell ===== */
+body{padding-bottom:120px;}
+.topnav{position:sticky;top:0;z-index:200;display:flex;align-items:center;gap:14px;padding:12px 26px;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);border-bottom:0.5px solid var(--hairline);}
+.topnav .b{font-size:15px;font-weight:800;letter-spacing:-0.5px;} .topnav .b span{color:var(--text-2);font-weight:600;}
+.topnav .nl{display:flex;gap:2px;margin-left:14px;} .topnav .nl a{font-size:12px;font-weight:600;color:var(--text-2);padding:6px 11px;border-radius:8px;text-decoration:none;}
+.topnav .nl a:hover{background:var(--fill-2);color:var(--text);} .topnav .sp{flex:1;}
+.tt{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:8px;background:var(--fill-2);border:0.5px solid var(--hairline);font-size:12px;font-weight:600;color:var(--text);cursor:pointer;}
+.page{max-width:1120px;margin:0 auto;padding:30px 26px 60px;}
+.lead{font-size:28px;font-weight:800;letter-spacing:-0.8px;}
+.sub{font-size:13.5px;color:var(--text-2);line-height:1.6;max-width:880px;margin-top:10px;}
+.foldnote{margin-top:16px;border:0.5px solid color-mix(in srgb,var(--warn) 30%,transparent);background:var(--warn-bg);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text);line-height:1.55;}
+.sech{display:flex;align-items:center;gap:12px;margin:46px 0 6px;padding-bottom:10px;border-bottom:0.5px solid var(--hairline);}
+.sech .n{font-size:11px;font-weight:800;color:var(--strong-fg);background:var(--strong);min-width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 7px;}
+.sech .t{font-size:18px;font-weight:800;letter-spacing:-0.5px;} .sech .d{margin-left:auto;font-size:12px;color:var(--text-3);}
+.secintro{font-size:12.5px;color:var(--text-2);line-height:1.6;margin-top:12px;max-width:880px;}
+
+.it2{border:0.5px solid var(--hairline);border-radius:14px;background:var(--card);overflow:hidden;margin-top:18px;}
+.it2-h{display:flex;align-items:center;gap:11px;padding:13px 18px;border-bottom:0.5px solid var(--hairline);}
+.it2-id{font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;background:var(--strong);color:var(--strong-fg);padding:3px 8px;border-radius:6px;}
+.it2-t{font-size:14px;font-weight:700;letter-spacing:-0.3px;}
+.it2-badge{margin-left:auto;font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--ok-bg);color:var(--ok);}
+.it2-b{padding:20px;}
+.decided{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--ok);margin-bottom:12px;}
+.stage{min-height:88px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:18px;padding:22px;background:var(--bg);border-radius:10px;border:0.5px solid var(--hairline);}
+.stage.col{flex-direction:column;align-items:stretch;} .stage.start{justify-content:flex-start;}
+.note{margin-top:13px;font-size:12px;color:var(--text-2);line-height:1.55;} .note b{color:var(--text);font-weight:700;}
+.note .src{color:var(--text-3);font-family:ui-monospace,Menlo,monospace;font-size:9.5px;}
+
+.grp{font-size:13px;font-weight:800;letter-spacing:-0.2px;margin:30px 0 2px;display:flex;align-items:center;gap:9px;}
+.grp .c{font-size:10px;font-weight:700;color:var(--text-3);background:var(--fill-2);border-radius:6px;padding:2px 7px;}
+.add{border:0.5px solid var(--hairline);border-radius:12px;background:var(--card);padding:16px 18px;margin-top:13px;}
+.add-h{display:flex;align-items:center;gap:9px;margin-bottom:3px;}
+.add-id{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;color:var(--text-3);}
+.add-t{font-size:13.5px;font-weight:700;letter-spacing:-0.2px;}
+.add-d{font-size:11.5px;color:var(--text-2);line-height:1.55;} .add-d .src{color:var(--text-3);font-family:ui-monospace,Menlo,monospace;font-size:9px;}
+.add-stage{margin-top:12px;padding:18px;background:var(--bg);border:0.5px solid var(--hairline);border-radius:10px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+
+/* ===================== RESOLVED COMPONENTS ===================== */
+
+/* toggle — monochrome high-contrast (no blue, no green) */
+.r-toggle{position:relative;width:34px;height:20px;border-radius:999px;background:var(--mono-off);cursor:pointer;flex:0 0 auto;transition:background .2s var(--ease,cubic-bezier(.22,.61,.36,1));}
+.r-toggle.on{background:var(--mono-on);}
+.r-toggle .kn{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:999px;background:var(--mono-knob);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .2s var(--ease,cubic-bezier(.22,.61,.36,1)),background .2s;}
+.r-toggle.on .kn{transform:translateX(14px);background:var(--mono-knob-on);}
+
+/* segmented — A3 final: recessed well, soft card indicator, r13/h30, fixed for light */
+.r-seg{position:relative;display:inline-flex;height:30px;border-radius:13px;padding:3px;background:var(--seg-well);}
+.r-seg .ind{position:absolute;top:3px;bottom:3px;border-radius:10px;background:var(--seg-ind);box-shadow:var(--seg-ind-sh);border:0.5px solid var(--seg-ind-bd);transition:left .3s cubic-bezier(.3,1.2,.5,1),width .3s cubic-bezier(.3,1.2,.5,1);}
+.r-seg button{appearance:none;border:none;background:transparent;cursor:pointer;position:relative;z-index:1;font-family:"Manrope",sans-serif;font-size:12px;color:var(--text-2);padding:0 16px;height:24px;}
+.r-seg button.on{color:var(--text);font-weight:600;}
+/* section selector (big, strong) — replaces the banned underline-tabs */
+.r-seg.big{height:36px;border-radius:11px;} .r-seg.big button{height:30px;font-size:13px;}
+.r-seg.big .ind{border-radius:8px;background:var(--strong);box-shadow:none;border:none;} .r-seg.big button.on{color:var(--strong-fg);}
+
+/* settings card — Mac: radius 10, clean fill */
+.r-card{border-radius:10px;background:var(--set-card);border:0.5px solid color-mix(in srgb,var(--text) 10%,transparent);overflow:hidden;width:100%;max-width:360px;}
+.r-row{display:flex;align-items:center;gap:14px;padding:12px 14px;}
+.r-row + .r-row{border-top:1px solid color-mix(in srgb,var(--text) 7%,transparent);}
+.r-row .rt{font-size:12.5px;font-weight:600;} .r-row .rd{font-size:11px;color:var(--text-2);margin-top:2px;} .r-card .rl{flex:1;}
+
+/* menu — subtle glass, radius 12 */
+.r-menu{border-radius:12px;background:var(--menu-glass);backdrop-filter:blur(14px);border:0.5px solid color-mix(in srgb,var(--text) 10%,transparent);box-shadow:0 10px 18px rgba(0,0,0,0.4);padding:4px;width:200px;}
+.r-menu .gh{font-size:10px;font-weight:600;color:var(--text-3);padding:6px 9px 3px;}
+.r-menu .it{display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:8px;font-size:12.5px;color:var(--text);cursor:pointer;}
+.r-menu .it.on,.r-menu .it:hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
+.r-menu .it .ic{color:var(--text-2);} .r-menu .it .ck{margin-left:auto;}
+
+/* toast — squircle 18, glass */
+.r-toast{display:inline-flex;align-items:center;gap:10px;border-radius:18px;background:var(--menu-glass);backdrop-filter:blur(18px);border:0.6px solid color-mix(in srgb,var(--text) 10%,transparent);box-shadow:0 8px 18px rgba(0,0,0,.34);padding:8px 8px 8px 14px;animation:tin .26s var(--ease,cubic-bezier(.22,.61,.36,1));}
+@keyframes tin{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
+.r-toast .tt2{font-size:13px;font-weight:600;} .r-toast .td2{font-size:10.5px;color:var(--text-2);}
+.r-toast .ac{font-size:12px;font-weight:600;color:var(--text);padding:0 6px;cursor:pointer;}
+.r-toast .x{width:18px;height:18px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--text-3);}
+
+/* tabs — Mac X (subtle circle) + hover-reveal gradient + Manrope */
+.r-tabbar{display:flex;gap:4px;}
+.r-tab{position:relative;display:inline-flex;align-items:center;gap:6px;padding:6px 28px 6px 10px;border-radius:8px;font-family:"Manrope",sans-serif;font-size:11.5px;color:var(--text);background:color-mix(in srgb,var(--text) 4%,transparent);cursor:pointer;overflow:hidden;min-width:96px;}
+.r-tab:hover{background:color-mix(in srgb,var(--text) 5%,transparent);} .r-tab.on{background:color-mix(in srgb,var(--text) 8%,transparent);}
+.r-tab .ic{color:var(--text-3);flex:0 0 auto;}
+.r-tab .nm{white-space:nowrap;overflow:hidden;-webkit-mask-image:linear-gradient(to right,#000 80%,transparent);mask-image:linear-gradient(to right,#000 80%,transparent);}
+.r-tab .x{position:absolute;right:0;top:0;bottom:0;width:30px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;opacity:0;transition:opacity .12s var(--ease,cubic-bezier(.22,.61,.36,1));background:linear-gradient(to right,transparent,color-mix(in srgb,var(--text) 4%,var(--bg)) 45%);}
+.r-tab.on .x{background:linear-gradient(to right,transparent,color-mix(in srgb,var(--text) 8%,var(--bg)) 45%);}
+.r-tab:hover .x{opacity:1;}
+.r-tab .x i{width:14px;height:14px;border-radius:999px;background:color-mix(in srgb,var(--text) 18%,transparent);display:flex;align-items:center;justify-content:center;color:var(--text);}
+
+/* model pill — minimal rest, hover bg */
+.r-model{display:inline-flex;align-items:center;gap:5px;padding:4px 6px;border-radius:8px;font-family:"Manrope",sans-serif;font-size:11.5px;font-weight:500;color:var(--text);cursor:pointer;transition:background .14s var(--ease,cubic-bezier(.22,.61,.36,1));}
+.r-model:hover{background:color-mix(in srgb,var(--text) 6%,transparent);} .r-model .lo{color:var(--text-2);} .r-model .ic{color:var(--text-2);}
+
+/* unified field (resolved search/text) */
+.r-field{display:flex;align-items:center;gap:8px;height:32px;border-radius:10px;background:color-mix(in srgb,var(--text) 5%,transparent);border:0.5px solid color-mix(in srgb,var(--text) 10%,transparent);padding:0 11px;font-size:12.5px;color:var(--text);width:240px;}
+.r-field:focus-within{border-color:color-mix(in srgb,var(--text) 35%,transparent);}
+.r-field .ic{color:var(--text-3);} .r-field input{appearance:none;background:transparent;border:none;outline:none;font:inherit;color:inherit;width:100%;}
+.r-field input::placeholder{color:var(--text-3);}
+
+/* assistant prose — weight 500, mono code, accent link */
+.r-md{font-size:13.5px;font-weight:500;line-height:1.6;color:var(--text);max-width:100%;}
+.r-md code{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:400;background:color-mix(in srgb,var(--text) 9%,transparent);border-radius:6px;padding:1px 6px;}
+.r-md .lnk{font-weight:600;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;}
+
+/* suggestion chip — pill + icon */
+.r-sug{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 13px;border-radius:999px;background:color-mix(in srgb,var(--text) 5%,transparent);font-family:"Manrope",sans-serif;font-size:12.5px;font-weight:500;color:var(--text-2);cursor:pointer;}
+.r-sug:hover{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text);} .r-sug .ic{color:var(--text-3);}
+
+/* action chip — accent fill (resolved blue) */
+.r-actionchip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 11px;font-family:"Manrope",sans-serif;font-size:12px;font-weight:600;background:var(--accent-fill);color:#fff;cursor:pointer;} .r-actionchip .ic{color:#fff;}
+
+/* two-ring quiet spinner */
+.r-spin{width:18px;height:18px;border-radius:999px;border:1.7px solid color-mix(in srgb,var(--text) 12%,transparent);border-top-color:color-mix(in srgb,var(--text) 55%,transparent);animation:rspin 2.4s linear infinite;}
+.r-spin.s{width:13px;height:13px;border-width:1.4px;} .r-spin.l{width:26px;height:26px;border-width:2px;}
+@keyframes rspin{to{transform:rotate(360deg);}}
+
+/* shimmer text */
+.shim{background:linear-gradient(90deg,color-mix(in srgb,var(--text) 40%,transparent) 35%,color-mix(in srgb,var(--text) 96%,transparent) 50%,color-mix(in srgb,var(--text) 40%,transparent) 65%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmv 3s linear infinite;}
+@keyframes shimmv{to{background-position:-220% 0;}}
+.pdot{width:5px;height:5px;border-radius:999px;background:color-mix(in srgb,var(--text) 60%,transparent);animation:pd .9s ease-in-out infinite;}
+@keyframes pd{0%,100%{opacity:.4;}50%{opacity:1;}}
+
+/* misc reusable */
+.kc{display:inline-flex;align-items:center;font-family:"Manrope",sans-serif;font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;background:color-mix(in srgb,var(--text) 6%,transparent);border:0.5px solid color-mix(in srgb,var(--text) 6%,transparent);color:var(--text-2);}
+.hl2{height:2px;border-radius:999px;background:color-mix(in srgb,var(--text) 6%,transparent);overflow:hidden;} .hl2 > i{display:block;height:100%;border-radius:999px;background:var(--pastel);}
+.spill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;color:#fff;}
+.eq{display:inline-flex;gap:2px;align-items:flex-end;height:18px;} .eq i{width:3px;border-radius:2px;background:rgba(255,255,255,.85);animation:eqa 1s ease-in-out infinite;}
+@keyframes eqa{0%,100%{height:5px;}50%{height:16px;}}
+</style>
+</head>
+<body data-page="lab-resolved">
+
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+<symbol id="i-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></symbol>
+<symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></symbol>
+<symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></symbol>
+</defs></svg>
+
+<div class="topnav">
+  <span class="b">Clawix <span>· Lab · Resolved</span></span>
+  <nav class="nl">
+    <a href="#r">Resuelto</a>
+    <a href="#a">Nuevos</a>
+    <a href="lab-index.html">Lab</a>
+    <a href="components.html">Components</a>
+    <a href="foundations.html">Foundations</a>
+  </nav>
+  <span class="sp"></span>
+  <span class="tt" id="themeBtn"><svg class="ic s"><use href="#i-sparkles"/></svg><span id="themeLbl">Oscuro</span></span>
+</div>
+
+<div class="page">
+  <div class="lead">Sistema resuelto</div>
+  <p class="sub">Tus decisiones aplicadas, en forma final. Vive como página de lab (additiva): <b>no toca <span class="mono" style="font-size:11px">ui.css</span> ni <span class="mono" style="font-size:11px">components.html</span></b> para no pisar la expansión en curso. Cuando los archivos compartidos estén libres, esto se funde a canónico (mover los tokens <span class="mono" style="font-size:11px">:root</span> y reglas de este <span class="mono" style="font-size:11px">&lt;style&gt;</span> a ui.css, y los demos a components/foundations/chat).</p>
+  <div class="foldnote"><b>Para fundir a canon:</b> 1) tokens <code>--seg-well/--seg-ind/--set-card/--menu-glass/--accent-fill/--mono-*</code> → <code>ui.css :root</code>. 2) reglas <code>.r-*</code> → reemplazan <code>.toggle/.seg/.set-card/.pop-menu/.toast/.tab/.cmp-model/.ai-md</code>. 3) demos → <code>components.html / foundations.html / chat-catalog.html</code>. 4) cambiar <code>.ai-md font-weight 300→500</code> y <code>.titlebar height 40→38</code>.</div>
+
+<!-- ===================== RESUELTO ===================== -->
+<div class="sech" id="r"><span class="n">✓</span><span class="t">Componentes resueltos</span><span class="d">forma final</span></div>
+<p class="secintro">Cambia claro/oscuro arriba a la derecha. Toggles y segmenteds: clic. Pestañas y pastilla de modelo: hover.</p>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">D1</span><span class="it2-t">Toggle — monocromo</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>Monocromo alto contraste. Sin azul, sin verde.</div>
+  <div class="stage mf"><div class="r-toggle on" data-rt><span class="kn"></span></div><div class="r-toggle" data-rt><span class="kn"></span></div></div>
+  <div class="note">Track invierte por tema (oscuro: track claro + knob oscuro), knob de contraste. <span class="src">PillToggle → ON sin color</span></div>
+</div></div>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">D2</span><span class="it2-t">Segmented — A3 (inline) + selector de sección</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>A3 como referencia (alto 30, curva radio-13, pozo limpio, indicador suave), modo claro arreglado. Underline (B2) prohibido → selector de sección = segmented grande.</div>
+  <div class="stage col" style="gap:16px;align-items:center">
+    <div class="r-seg mf" data-seg style="width:220px"><span class="ind"></span><button class="on">Chat</button><button>Diff</button><button>Logs</button></div>
+    <div class="r-seg big mf" data-seg style="width:320px"><span class="ind"></span><button class="on">Sesiones</button><button>Diff</button><button>Terminal</button></div>
+  </div>
+  <div class="note">Arriba inline (filas/toolbars), abajo el selector de sección grande (sólido). El "pozo" se adapta a claro/oscuro. <span class="src">SlidingSegmented → A3</span></div>
+</div></div>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">D3</span><span class="it2-t">Tarjeta de Settings — radio 10</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>La de Mac: relleno oscuro limpio, radio 10.</div>
+  <div class="stage mf"><div class="r-card">
+    <div class="r-row"><div class="rl"><div class="rt">Theme</div></div><div class="r-seg" data-seg style="width:130px"><span class="ind"></span><button class="on">Dark</button><button>Light</button></div></div>
+    <div class="r-row"><div class="rl"><div class="rt">Translucency</div><div class="rd">Difumina el fondo tras los paneles</div></div><div class="r-toggle on" data-rt><span class="kn"></span></div></div>
+  </div></div>
+  <div class="note">Con el segmented nuevo dentro. <span class="src">SettingsCard radius 10</span></div>
+</div></div>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">D4</span><span class="it2-t">Menú — vidrio sutil</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>Vidrio sutil: algo de blur pero tinte opaco → la selección manda.</div>
+  <div class="stage mf" style="background:var(--wall)"><div class="r-menu"><div class="gh">Model</div><div class="it on">opus 4.7<span class="ck"><svg class="ic xs"><use href="#i-check"/></svg></span></div><div class="it">sonnet 4.6</div><div class="it">haiku 4.5</div></div></div>
+  <div class="note">Radio 12, blur 14, tinte 0.82. <span class="src">MenuStyle → vidrio sutil</span></div>
+</div></div>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">D5</span><span class="it2-t">Prosa del asistente — peso 500 + azul guía</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>Peso 500, code en mono, enlace en azul guía (<code>--accent</code>) con icono.</div>
+  <div class="stage start mf"><div class="r-md">Moví la validación a <code>AuthService</code> y actualicé las tres llamadas. Mira el <a class="lnk" href="#"><svg class="ic xs"><use href="#i-globe"/></svg>pull request</a> para el diff completo.</div></div>
+  <div class="note">Enlace = <code>--accent</code> (azul guía). <span class="src">AssistantMarkdownText → wght 500</span></div>
+</div></div>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">D6</span><span class="it2-t">Sugerencias del home — chips + icono</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>Pills con icono delante.</div>
+  <div class="stage mf"><span class="r-sug"><svg class="ic xs ic"><use href="#i-sparkles"/></svg>Resumen de cambios</span><span class="r-sug"><svg class="ic xs ic"><use href="#i-search"/></svg>Dónde se valida login</span><span class="r-sug"><svg class="ic xs ic"><use href="#i-terminal"/></svg>Correr los tests</span></div>
+  <div class="note"><span class="src">HomeSuggestions → chip + icon</span></div>
+</div></div>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">D7</span><span class="it2-t">Toast — squircle 18, glass</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>Vidrio del Mac, squircle 18. Variantes: éxito / error+acción / progreso.</div>
+  <div class="stage mf" style="background:var(--wall);gap:14px">
+    <div class="r-toast"><svg class="ic s" style="color:var(--ok)"><use href="#i-check"/></svg><span class="tt2">Sesión guardada</span><span class="x"><svg class="ic xs"><use href="#i-x"/></svg></span></div>
+    <div class="r-toast"><svg class="ic s" style="color:var(--danger)"><use href="#i-alert"/></svg><div><div class="tt2">Host desconectado</div><div class="td2">Reintentando en 5s</div></div><span class="ac">Reintentar</span></div>
+    <div class="r-toast"><span class="r-spin s"></span><span class="tt2">Compilando…</span></div>
+  </div>
+  <div class="note"><span class="src">ToastPill → r18 glass, entrada easeOut</span></div>
+</div></div>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">D8</span><span class="it2-t">Pestañas — X Mac + reveal + Manrope</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>X estilo Mac que aparece al hover con degradado; Manrope; X igual en seleccionada y normales.</div>
+  <div class="stage"><div class="r-tabbar">
+    <div class="r-tab on"><svg class="ic s ic"><use href="#i-terminal"/></svg><span class="nm">zsh · clawix</span><span class="x"><i><svg class="ic xs"><use href="#i-x"/></svg></i></span></div>
+    <div class="r-tab"><svg class="ic s ic"><use href="#i-terminal"/></svg><span class="nm">build output muy largo</span><span class="x"><i><svg class="ic xs"><use href="#i-x"/></svg></i></span></div>
+    <div class="r-tab"><svg class="ic s ic"><use href="#i-terminal"/></svg><span class="nm">logs</span><span class="x"><i><svg class="ic xs"><use href="#i-x"/></svg></i></span></div>
+  </div></div>
+  <div class="note"><b>Pasa el ratón.</b> <span class="src">TerminalTabBar → Manrope + reveal</span></div>
+</div></div>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">D10/D13</span><span class="it2-t">Pastilla de modelo + campo unificado</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>Modelo: mínimo en reposo, fondo al hover. Campo: uno solo, foco monocromo.</div>
+  <div class="stage col mf" style="align-items:center;gap:14px">
+    <span class="r-model">opus 4.7 <span class="lo">High</span> <svg class="ic xs"><use href="#i-chevron-down"/></svg></span>
+    <div class="r-field"><svg class="ic s"><use href="#i-search"/></svg><input value="swiftdata"></div>
+  </div>
+  <div class="note">Pastilla: <b>hover</b> revela fondo radio-8. <span class="src">ComposerView model pill · field unificado</span></div>
+</div></div>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">D12</span><span class="it2-t">Chip de acción — relleno azul</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>Formato Mac, relleno azul guía. Sin escala al hover.</div>
+  <div class="stage mf"><span class="r-actionchip"><svg class="ic xs"><use href="#i-download"/></svg>Update</span></div>
+  <div class="note">"Update available" como status informativo se queda para settings; este chip es la acción. <span class="src">UpdateChip → action chip azul</span></div>
+</div></div>
+
+<div class="it2"><div class="it2-h"><span class="it2-id">C3/C5</span><span class="it2-t">Spinner de dos anillos + scroll-to-bottom</span><span class="it2-badge">final</span></div><div class="it2-b">
+  <div class="decided"><svg class="ic s"><use href="#i-check"/></svg>Spinner canónico (sustituye al del sistema) + botón scroll-to-bottom.</div>
+  <div class="stage" style="gap:24px"><span class="r-spin s"></span><span class="r-spin"></span><span class="r-spin l"></span>
+    <div style="width:32px;height:32px;border-radius:999px;background:var(--card);border:0.5px solid color-mix(in srgb,var(--text) 10%,transparent);box-shadow:0 8px 14px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:var(--text)"><svg class="ic s"><use href="#i-chevron-down"/></svg></div>
+  </div>
+  <div class="note"><span class="src">SidebarChatRowSpinner · ScrollToBottomButton</span></div>
+</div></div>
+
+<!-- ===================== NUEVOS ===================== -->
+<div class="sech" id="a"><span class="n">+</span><span class="t">Componentes nuevos (a fundir a canon)</span><span class="d">todo lo del Mac que falta</span></div>
+<p class="secintro">Renderizados con los tokens reales del styleguide. Ninguno queda fuera.</p>
+
+<div class="grp"><span class="c">scaffolding del agente</span></div>
+
+<div class="add"><div class="add-h"><span class="add-id">C1</span><span class="add-t">"Worked for Xs" / Live working header</span></div>
+  <div class="add-d">Disclosure de tiempo trabajado con hairline 0.5pt. <span class="src">WorkSummaryHeader.swift:11</span></div>
+  <div class="add-stage mf"><div style="width:100%;max-width:380px"><div style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:500;color:var(--text-2)">Worked for 42s <svg class="ic xs" style="color:var(--text-3)"><use href="#i-chevron-right"/></svg></div><div style="height:0.5px;background:color-mix(in srgb,var(--text) 18%,transparent);margin-top:8px"></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C2</span><span class="add-t">Reasoning block (con shimmer)</span></div>
+  <div class="add-d">El de verdad: shimmer en la etiqueta mientras razona, cuerpo sangrado, dot que pulsa. <span class="src">ReasoningBlock.swift:10 + ThinkingShimmer.swift:7</span></div>
+  <div class="add-stage mf"><div><div style="display:flex;align-items:center;gap:6px"><svg class="ic xs" style="color:var(--text-3)"><use href="#i-chevron-down"/></svg><span class="shim" style="font-size:12.5px;font-weight:600">Reasoning…</span></div><div style="font-size:12.5px;color:var(--text-2);padding-left:20px;margin-top:6px;max-width:360px;line-height:1.5">Necesito comprobar dónde se valida el usuario antes de mover nada…</div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C4</span><span class="add-t">Divisor "Steered conversation"</span></div>
+  <div class="add-d">Separador con etiqueta centrada entre dos reglas finas. <span class="src">SteeredConversationDivider.swift:8</span></div>
+  <div class="add-stage mf"><div style="display:flex;align-items:center;gap:10px;width:100%;max-width:380px;color:var(--text-2)"><div style="flex:1;height:1px;background:color-mix(in srgb,var(--text) 8%,transparent)"></div><div style="display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600"><svg class="ic xs"><use href="#i-message"/></svg>Steered conversation</div><div style="flex:1;height:1px;background:color-mix(in srgb,var(--text) 8%,transparent)"></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C6</span><span class="add-t">Fila de mensajes en cola</span></div>
+  <div class="add-d">Chips de follow-up pendientes sobre el composer. <span class="src">QueuedMessagesRow.swift:8</span></div>
+  <div class="add-stage mf"><span style="display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:0.6px solid color-mix(in srgb,var(--text) 18%,transparent);padding:5px 11px;font-size:12.5px;color:var(--text)"><svg class="ic xs" style="color:var(--text-3)"><use href="#i-clock"/></svg>y luego corre los tests</span></div>
+</div>
+
+<div class="grp"><span class="c">plan mode</span></div>
+
+<div class="add"><div class="add-h"><span class="add-id">C8</span><span class="add-t">Plan card (colapsable + fade + "Expand")</span></div>
+  <div class="add-d">Tarjeta de plan con gradiente hacia el fill y pill flotante. Título con shimmer al escribir. <span class="src">PlanCardView.swift:80</span></div>
+  <div class="add-stage mf"><div style="position:relative;width:100%;max-width:400px;height:104px;border-radius:14px;background:var(--set-card);border:0.5px solid color-mix(in srgb,var(--text) 6%,transparent);overflow:hidden;color:var(--text)"><div style="padding:14px"><div class="shim" style="font-size:14px;font-weight:700">Writing plan…</div><div style="font-size:12.5px;color:var(--text-2);margin-top:6px;line-height:1.5">1. Mover validación a AuthService<br>2. Centralizar mensajes de error<br>3. Actualizar tres llamadas</div></div><div style="position:absolute;left:0;right:0;bottom:0;height:60px;background:linear-gradient(to top,var(--set-card),transparent);display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px"><span style="font-size:13px;font-weight:600;background:var(--strong);color:var(--strong-fg);border-radius:999px;padding:5px 14px;box-shadow:0 8px 14px rgba(0,0,0,.3)">Expand plan</span></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C9</span><span class="add-t">Plan question card (opciones + keycaps)</span></div>
+  <div class="add-d">Prompt multi-opción numerado, fila "otra", footer con keycaps, navegable por flechas. <span class="src">PlanQuestionCard.swift:20</span></div>
+  <div class="add-stage mf"><div style="width:100%;max-width:400px;border-radius:16px;background:var(--set-card);border:0.5px solid color-mix(in srgb,var(--text) 6%,transparent);padding:14px;color:var(--text)"><div style="font-size:13px;font-weight:600;margin-bottom:10px">¿Qué enfoque prefieres?</div><div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;background:color-mix(in srgb,var(--text) 6%,transparent)"><span style="width:18px;color:var(--text-3);font-size:12px">1.</span><span style="font-size:13.5px;font-weight:700">Mover todo a AuthService</span></div><div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px"><span style="width:18px;color:var(--text-3);font-size:12px">2.</span><span style="font-size:13.5px">Centralizar solo los errores</span></div><div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11.5px;color:var(--text-2)"><span class="kc">esc</span>Ignorar <span style="flex:1"></span><span class="r-actionchip" style="border-radius:8px">Enviar <span class="kc" style="background:rgba(255,255,255,.18);border-color:transparent;color:#fff">↵</span></span></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C10</span><span class="add-t">Plan suggestion bar</span></div>
+  <div class="add-d">Cápsula flotante sobre el composer + keycap "⇧ Tab". <span class="src">PlanSuggestionBar.swift:7</span></div>
+  <div class="add-stage mf"><span style="display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--composer);border:0.5px solid color-mix(in srgb,var(--text) 6%,transparent);box-shadow:0 6px 12px rgba(0,0,0,.18);padding:6px 8px 6px 12px;font-size:12.5px;color:var(--text)"><svg class="ic s" style="color:var(--text-2)"><use href="#i-list"/></svg>Create a plan <span class="kc" style="border-radius:999px">⇧ Tab</span></span></div>
+</div>
+
+<div class="grp"><span class="c">objetivos / estado</span></div>
+
+<div class="add"><div class="add-h"><span class="add-id">C11</span><span class="add-t">Goal banner (+ hairline de presupuesto)</span></div>
+  <div class="add-d">Strip persistente con overline de estado, objetivo, budget mono y hairline de 2pt de progreso. <span class="src">Goals/GoalBannerView.swift:10</span></div>
+  <div class="add-stage mf"><div style="width:100%;max-width:420px;border-radius:14px;background:var(--card);border:0.5px solid color-mix(in srgb,var(--text) 10%,transparent);padding:11px 14px 9px;color:var(--text)"><div style="font-size:10.5px;font-weight:600;color:var(--pastel);letter-spacing:.2px">PERSIGUIENDO OBJETIVO</div><div style="display:flex;align-items:center;gap:8px;margin-top:3px"><span style="font-size:12.5px;font-weight:500;flex:1">Que pasen todos los tests de auth</span><span style="font-family:ui-monospace;font-size:11px;color:var(--text-2)">2.1k / 8k</span></div><div class="hl2" style="margin-top:9px"><i style="width:42%"></i></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C12</span><span class="add-t">Remote job card (status pill + log mono)</span></div>
+  <div class="add-d">Estado de job de mesh con mapa de estados y log de eventos mono colapsable. <span class="src">Bridge/RemoteJobCard.swift:10</span></div>
+  <div class="add-stage mf"><div style="width:100%;max-width:380px;border-radius:12px;background:color-mix(in srgb,var(--text) 4%,transparent);padding:12px;color:var(--text)"><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:99px;background:var(--warn)"></span><span style="font-size:13px;font-weight:600;flex:1">build-and-test</span><span class="spill" style="background:color-mix(in srgb,var(--warn) 55%,transparent)">running</span></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C13</span><span class="add-t">Status panel / context bar + Thread summary</span></div>
+  <div class="add-d">Filas label/valor (mono), context bar (track 3pt + pastelBlue), iconos de plan-step + contador done/total. <span class="src">StatusPanel.swift:9 · ThreadSummaryPanel.swift:53</span></div>
+  <div class="add-stage mf"><div style="width:100%;max-width:300px;color:var(--text)"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:8px"><span style="color:var(--text-2)">Context</span><span style="font-family:ui-monospace">8.2k / 13k</span></div><div style="height:3px;border-radius:99px;background:color-mix(in srgb,var(--text) 8%,transparent);overflow:hidden"><i style="display:block;height:100%;width:62%;background:var(--pastel);border-radius:99px"></i></div></div></div>
+</div>
+
+<div class="grp"><span class="c">paneles</span></div>
+
+<div class="add"><div class="add-h"><span class="add-id">C14</span><span class="add-t">Side-panel launcher (grid de tiles)</span></div>
+  <div class="add-d">Empty-state 2 col (Files/Browser/Review/Terminal). <span class="src">SidePanelLauncher.swift:11</span></div>
+  <div class="add-stage mf"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:360px"><div style="border-radius:16px;background:var(--card);border:0.5px solid color-mix(in srgb,var(--text) 10%,transparent);padding:14px;min-height:88px;color:var(--text)"><svg class="ic l" style="color:var(--text-2)"><use href="#i-file"/></svg><div style="font-size:13.5px;font-weight:600;margin-top:10px">Files</div><div style="font-size:11.5px;color:var(--text-2)">Árbol del proyecto</div></div><div style="border-radius:16px;background:var(--card);border:0.5px solid color-mix(in srgb,var(--text) 10%,transparent);padding:14px;min-height:88px;color:var(--text)"><svg class="ic l" style="color:var(--text-2)"><use href="#i-globe"/></svg><div style="font-size:13.5px;font-weight:600;margin-top:10px">Browser</div><div style="font-size:11.5px;color:var(--text-2)">Vista web</div></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C15</span><span class="add-t">Radio-as-card (anillo grueso)</span></div>
+  <div class="add-d">Fila con fill pastelBlue@.08 al elegir + anillo de stroke grueso. <span class="src">BrowserWebsiteApprovalCard.swift:106 · PersonalityPickerSheet.swift:11</span></div>
+  <div class="add-stage mf"><div style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:6px;color:var(--text)"><div style="display:flex;align-items:center;gap:10px;padding:11px;border-radius:10px;background:color-mix(in srgb,var(--pastel) 8%,transparent)"><span style="width:16px;height:16px;border-radius:99px;border:5px solid var(--pastel)"></span><span style="font-size:13px;font-weight:600">Solo esta sesión</span></div><div style="display:flex;align-items:center;gap:10px;padding:11px;border-radius:10px"><span style="width:16px;height:16px;border-radius:99px;border:1.5px solid var(--text-3)"></span><span style="font-size:13px">Siempre en este dominio</span></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C24b</span><span class="add-t">Pairing QR card</span></div>
+  <div class="add-d">Tile QR placeholder 180×180 + fingerprint mono. <span class="src">Pairing/PairingScreen.swift:8</span></div>
+  <div class="add-stage mf"><div style="width:140px;height:140px;border-radius:12px;background:color-mix(in srgb,var(--text) 6%,transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-2)"><svg style="width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.75"><use href="#i-scan"/></svg><span style="font-family:ui-monospace;font-size:10px">a1b2·c3d4</span></div></div>
+</div>
+
+<div class="grp"><span class="c">HUD / dictado</span> (excepción always-dark)</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C16</span><span class="add-t">Dictation HUD pill + visualizer</span></div>
+  <div class="add-d">Cápsula siempre oscura con mic / visualizador 15 barras / stop. Excepción consciente al tema. <span class="src">Dictation/DictationOverlayView.swift:20</span></div>
+  <div class="add-stage"><div style="display:inline-flex;align-items:center;gap:10px;background:#161616;border:0.5px solid rgba(255,255,255,.18);border-radius:20px;height:40px;padding:0 14px;color:#fff" class="mf"><svg class="ic s" style="color:#fff"><use href="#i-mic"/></svg><span class="eq"><i style="animation-delay:0s"></i><i style="animation-delay:.1s"></i><i style="animation-delay:.2s"></i><i style="animation-delay:.15s"></i><i style="animation-delay:.05s"></i><i style="animation-delay:.25s"></i></span><span style="width:18px;height:18px;border-radius:99px;background:#eb4242;display:flex;align-items:center;justify-content:center"><i style="width:7px;height:7px;background:#fff;border-radius:1px"></i></span></div></div>
+</div>
+
+<div class="grp"><span class="c">onboarding</span></div>
+
+<div class="add"><div class="add-h"><span class="add-id">C18</span><span class="add-t">Login gate + BrandMark</span></div>
+  <div class="add-d">Tarjeta centrada con BrandMark (tile 56 r14 glifo mono <code>&gt;_</code>) y CTA con estado "Waiting…". <span class="src">LoginGateView.swift:7</span></div>
+  <div class="add-stage mf"><div style="display:flex;align-items:center;gap:12px;color:var(--text)"><span style="width:56px;height:56px;border-radius:14px;background:color-mix(in srgb,var(--text) 6%,transparent);display:flex;align-items:center;justify-content:center;font-family:ui-monospace;font-size:20px;font-weight:700">&gt;_</span><div><div style="font-size:15px;font-weight:700">Clawix</div><div style="font-size:12px;color:var(--text-2)">Inicia sesión para empezar</div></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C19</span><span class="add-t">Recovery phrase grid (24 palabras)</span></div>
+  <div class="add-d">Grid 3-col, celda r7, índice derecha, palabra 12.5/600. <span class="src">RecoveryPhraseSheet.swift:153</span></div>
+  <div class="add-stage mf"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;max-width:340px;color:var(--text)"><div style="display:flex;justify-content:space-between;padding:6px 9px;border-radius:7px;background:color-mix(in srgb,var(--text) 4%,transparent);font-size:12.5px;font-weight:600">ocean<span style="color:var(--text-3)">1</span></div><div style="display:flex;justify-content:space-between;padding:6px 9px;border-radius:7px;background:color-mix(in srgb,var(--text) 4%,transparent);font-size:12.5px;font-weight:600">forest<span style="color:var(--text-3)">2</span></div><div style="display:flex;justify-content:space-between;padding:6px 9px;border-radius:7px;background:color-mix(in srgb,var(--text) 4%,transparent);font-size:12.5px;font-weight:600">cobalt<span style="color:var(--text-3)">3</span></div></div></div>
+</div>
+
+<div class="grp"><span class="c">widgets de dominio</span></div>
+
+<div class="add"><div class="add-h"><span class="add-id">C20</span><span class="add-t">Index entity card (+ gradiente sobre foto)</span></div>
+  <div class="add-d">Tarjeta de catálogo con gradiente inferior sobre foto (negro 0→.55, nunca pill) + precio/estrellas. <span class="src">IndexCard.swift:7</span></div>
+  <div class="add-stage mf"><div style="width:150px;border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--text) 4%,transparent);border:0.5px solid color-mix(in srgb,var(--text) 10%,transparent);color:var(--text)"><div style="height:80px;background:linear-gradient(135deg,#3a3f4a,#1c1f26);position:relative"><div style="position:absolute;left:0;right:0;bottom:0;height:40px;background:linear-gradient(to top,rgba(0,0,0,.55),transparent)"></div><span style="position:absolute;left:9px;bottom:7px;color:#fff;font-size:11.5px;font-weight:700">€1,240</span></div><div style="padding:9px"><div style="font-size:10.5px;color:var(--text-3)">PROPIEDAD</div><div style="font-size:13px;font-weight:600">Ático en Chamberí</div></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C21</span><span class="add-t">IoT device card (tint por estado + risk badge)</span></div>
+  <div class="add-d">Tarjeta tintada cuando ON, tile icono 32, control inline. <span class="src">IoT/Views/DeviceCard.swift:8</span></div>
+  <div class="add-stage mf"><div style="width:200px;border-radius:14px;background:color-mix(in srgb,var(--ok) 8%,transparent);border:0.5px solid color-mix(in srgb,var(--ok) 30%,transparent);padding:12px;color:var(--text)"><div style="display:flex;align-items:center;gap:9px"><span style="width:32px;height:32px;border-radius:8px;background:color-mix(in srgb,var(--text) 6%,transparent);display:flex;align-items:center;justify-content:center"><svg class="ic s" style="color:var(--text-2)"><use href="#i-settings"/></svg></span><div style="flex:1"><div style="font-size:12.5px;font-weight:600">Termostato</div><div style="font-size:10px;color:var(--text-2)">Salón</div></div><div class="r-toggle on" data-rt><span class="kn"></span></div></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C22/C23</span><span class="add-t">Event chip + contacts avatar (iniciales deterministas)</span></div>
+  <div class="add-d">Chip de evento de calendario (3 estilos) y avatar con color determinista por id. <span class="src">EventChip.swift:3 · ContactsAvatar.swift:4</span></div>
+  <div class="add-stage mf"><span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text)"><span style="width:6px;height:6px;border-radius:99px;background:#e0894b"></span>09:00 · Standup</span><span style="width:40px;height:40px;border-radius:999px;background:#c2683f;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">IG</span><span style="width:40px;height:40px;border-radius:999px;background:#3f6dc2;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">AL</span></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">C24</span><span class="add-t">Mesh target pill + IDE context chip</span></div>
+  <div class="add-d">Selector "Run on:" con popup de dispositivos. Chip "IDE" al detectar editor (check pastelBlue = regla del 1%). <span class="src">MeshTargetPill.swift:18 · IDEContext.swift:66</span></div>
+  <div class="add-stage mf"><span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-2)"><svg class="ic s"><use href="#i-settings"/></svg>Run on: <span style="color:var(--text);font-weight:600">MacBook</span> <svg class="ic xs"><use href="#i-chevron-down"/></svg></span><span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text);border-radius:11px;padding:4px 9px;background:color-mix(in srgb,var(--text) 6%,transparent)"><svg class="ic xs"><use href="#i-file"/></svg>IDE <svg class="ic xs" style="color:var(--pastel)"><use href="#i-check"/></svg></span></div>
+</div>
+
+<div class="grp"><span class="c">primitivas</span></div>
+
+<div class="add"><div class="add-h"><span class="add-id">P1</span><span class="add-t">Keycaps de atajo</span></div>
+  <div class="add-d">Canonizar uno (radio 5, 11/600). <span class="src">CommandPaletteView.swift:419 · PlanQuestionCard.swift</span></div>
+  <div class="add-stage"><span class="kc">esc</span><span class="kc">⌘N</span><span class="kc">↵</span><span class="kc" style="border-radius:999px">⇧ Tab</span></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">P2</span><span class="add-t">Hairline de progreso (2pt) vs barra (6pt)</span></div>
+  <div class="add-d">Ambiental = hairline 2pt; explícito = barra 6pt. <span class="src">GoalBannerView · StatusPanel.swift:78</span></div>
+  <div class="add-stage" style="flex-direction:column;align-items:stretch;gap:12px"><div class="hl2" style="max-width:280px"><i style="width:62%"></i></div><div class="pbar" style="width:280px"><div class="f" style="width:62%"></div></div></div>
+</div>
+
+<div class="add"><div class="add-h"><span class="add-id">P3 / P4</span><span class="add-t">Fade-to-bg en colapsables · regla "always-dark glass HUD"</span></div>
+  <div class="add-d">Contenido que se desvanece hacia el fill (plan card, "Show more"). Y declarar que los HUD flotantes sobre cualquier contenido son always-dark glass (no excepción silenciosa). <span class="src">PlanCardView · DictationOverlayView.swift:20</span></div>
+</div>
+
+<div style="margin-top:40px;font-size:11.5px;color:var(--text-3);border-top:0.5px solid var(--hairline);padding-top:18px;line-height:1.6">
+  Página de lab additiva. <code>ui.css</code> y <code>components.html</code> intactos (snapshot de seguridad guardado). Cuando los archivos compartidos estén libres, fundir según la nota amarilla de arriba.
+</div>
+
+</div><!-- /page -->
+
+<script>
+(function(){
+  var html=document.documentElement, btn=document.getElementById('themeBtn'), lbl=document.getElementById('themeLbl');
+  function setT(d){ if(d){html.setAttribute('data-theme','dark');lbl.textContent='Oscuro';} else {html.removeAttribute('data-theme');lbl.textContent='Claro';} }
+  btn.addEventListener('click',function(){ setT(!html.hasAttribute('data-theme')); });
+  document.querySelectorAll('[data-rt]').forEach(function(t){ t.addEventListener('click',function(){ t.classList.toggle('on'); }); });
+  function sizeSeg(s){ var ind=s.querySelector('.ind'); if(!ind)return; var on=s.querySelector('button.on')||s.querySelector('button'); if(!on)return; ind.style.left=on.offsetLeft+'px'; ind.style.width=on.offsetWidth+'px'; }
+  document.querySelectorAll('[data-seg]').forEach(function(s){ sizeSeg(s); s.querySelectorAll('button').forEach(function(b){ b.addEventListener('click',function(){ s.querySelectorAll('button').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); sizeSeg(s); }); }); });
+  window.addEventListener('resize',function(){ document.querySelectorAll('[data-seg]').forEach(sizeSeg); });
+  setTimeout(function(){ document.querySelectorAll('[data-seg]').forEach(sizeSeg); },60);
+})();
+</script>
+</body>
+</html>

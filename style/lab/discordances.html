@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Discordances</title>
+<link rel="stylesheet" href="../ui.css">
+<script defer src="../app.js"></script>
+<style>
+  .wrap{max-width:1000px;}
+  .disc-intro{font-size:13.5px;color:var(--text-2);margin-top:10px;max-width:680px;line-height:1.55;}
+  .disc{border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);margin-top:18px;overflow:hidden;}
+  .disc-h{padding:14px 16px;display:flex;align-items:flex-start;gap:12px;}
+  .disc-h .grow{flex:1;}
+  .disc-h .t{font-size:13.5px;font-weight:700;letter-spacing:-0.2px;}
+  .disc-h .s{font-size:11.5px;color:var(--text-2);margin-top:3px;line-height:1.5;}
+  .lean{font-size:10px;font-weight:700;letter-spacing:0.01em;padding:3px 9px;border-radius:999px;background:var(--fill-2);color:var(--text-2);border:0.5px solid var(--hairline);white-space:nowrap;flex:0 0 auto;}
+  .lean.open{color:var(--warn);background:var(--warn-bg);border-color:transparent;}
+  .disc-ab{display:grid;grid-template-columns:1fr 1fr;border-top:0.5px solid var(--hairline);}
+  .disc-pane{padding:16px;display:flex;flex-direction:column;gap:11px;}
+  .disc-pane.b{border-left:0.5px solid var(--hairline);}
+  .disc-tag{font-size:10px;font-weight:700;letter-spacing:0.02em;color:var(--text-3);display:flex;align-items:center;gap:7px;}
+  .disc-tag .k{width:18px;height:18px;border-radius:5px;background:var(--fill-2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-2);font-weight:700;}
+  .disc-tag .src{margin-left:auto;font-weight:500;color:var(--text-3);letter-spacing:0;}
+  .disc-demo{padding:18px 14px;border:0.5px dashed var(--hairline);border-radius:var(--r-ctl);display:flex;align-items:center;justify-content:center;min-height:84px;}
+  .disc-diff{font-size:11.5px;color:var(--text-2);line-height:1.5;}
+  .disc-diff b{color:var(--text);font-weight:600;}
+  .disc-q{padding:13px 16px;border-top:0.5px solid var(--hairline);background:var(--fill);}
+  .disc-q .ql{font-size:10px;font-weight:700;letter-spacing:0.03em;color:var(--text-3);}
+  .disc-q .qt{font-size:12.5px;margin-top:4px;line-height:1.45;}
+  /* local demo helpers */
+  .pcard{width:120px;height:64px;background:var(--fill-2);border:0.5px solid var(--hairline);}
+  .prose{font-size:13.5px;line-height:1.5;color:var(--text);max-width:230px;}
+</style>
+</head>
+<body data-base="../" data-page="lab">
+<div class="wrap">
+  <div style="font-size:28px;font-weight:800;letter-spacing:-0.8px">Discordances</div>
+  <p class="disc-intro">Recorded divergences between the shipping app (<b>A</b>) and the web fundamentals (<b>B</b>), each shown live so the call is made on a real visual, not on rule text. Where a leaning already exists it is labelled, but nothing is folded into the tokens or components until it is confirmed here. Toggle light / dark from the top bar, since many of these read differently per theme.</p>
+
+  <div class="disc">
+    <div class="disc-h">
+      <div class="grow">
+        <div class="t">Assistant prose weight</div>
+        <div class="s">The weight of the agent's plain-text answer in a conversation.</div>
+      </div>
+      <span class="lean">Leaning: A</span>
+    </div>
+    <div class="disc-ab">
+      <div class="disc-pane">
+        <div class="disc-tag"><span class="k">A</span>App<span class="src">weight 500</span></div>
+        <div class="disc-demo"><div class="prose" style="font-weight:500">Migrated the database layer and updated the failing tests so the suite is green again.</div></div>
+        <div class="disc-diff">Reads <b>solid and present</b>; matches the rest of the app's Manrope body. Heavier blocks of text can feel dense.</div>
+      </div>
+      <div class="disc-pane b">
+        <div class="disc-tag"><span class="k">B</span>Fundamentals<span class="src">weight 300</span></div>
+        <div class="disc-demo"><div class="prose" style="font-weight:300">Migrated the database layer and updated the failing tests so the suite is green again.</div></div>
+        <div class="disc-diff">Reads <b>lighter and calmer</b> for long answers, but can look thin against the heavier UI chrome around it.</div>
+      </div>
+    </div>
+    <div class="disc-q">
+      <div class="ql">QUESTION</div>
+      <div class="qt">Which weight is the canonical assistant body, 500 (matches the app) or 300 (lighter for long reads)? The chosen value becomes <span class="mono">--prose-weight</span>.</div>
+    </div>
+  </div>
+
+  <div class="disc">
+    <div class="disc-h">
+      <div class="grow">
+        <div class="t">Container / settings-card radius</div>
+        <div class="s">The corner radius of section and settings cards.</div>
+      </div>
+      <span class="lean">Leaning: A</span>
+    </div>
+    <div class="disc-ab">
+      <div class="disc-pane">
+        <div class="disc-tag"><span class="k">A</span>App<span class="src">radius 10</span></div>
+        <div class="disc-demo"><div class="pcard" style="border-radius:10px"></div></div>
+        <div class="disc-diff">Tighter corner, <b>crisper</b> on dense settings pages with many stacked cards.</div>
+      </div>
+      <div class="disc-pane b">
+        <div class="disc-tag"><span class="k">B</span>Fundamentals<span class="src">radius 14 (--r-card)</span></div>
+        <div class="disc-demo"><div class="pcard" style="border-radius:14px"></div></div>
+        <div class="disc-diff">Softer corner, <b>friendlier</b> and consistent with the single <span class="mono">--r-card</span> token used everywhere else.</div>
+      </div>
+    </div>
+    <div class="disc-q">
+      <div class="ql">QUESTION</div>
+      <div class="qt">Do containers keep one radius token (14) for consistency, or do dense cards get their own tighter token (<span class="mono">--r-card-tight</span> 10)?</div>
+    </div>
+  </div>
+
+  <div class="disc">
+    <div class="disc-h">
+      <div class="grow">
+        <div class="t">Inline link color</div>
+        <div class="s">The blue used for links inside assistant prose.</div>
+      </div>
+      <span class="lean open">Open</span>
+    </div>
+    <div class="disc-ab">
+      <div class="disc-pane">
+        <div class="disc-tag"><span class="k">A</span>App<span class="src">#6bb8ff</span></div>
+        <div class="disc-demo"><span style="color:#6bb8ff;font-weight:600;font-size:13.5px">Open the pull request</span></div>
+        <div class="disc-diff">Slightly <b>brighter, cooler</b> blue tuned on the dark chat surface.</div>
+      </div>
+      <div class="disc-pane b">
+        <div class="disc-tag"><span class="k">B</span>Fundamentals<span class="src">--accent</span></div>
+        <div class="disc-demo"><a class="md-link" href="#" style="font-size:13.5px">Open the pull request</a></div>
+        <div class="disc-diff">The single <span class="mono">--accent</span> token, reused for every signal so blue means one thing.</div>
+      </div>
+    </div>
+    <div class="disc-q">
+      <div class="ql">QUESTION</div>
+      <div class="qt">Should links use the shared <span class="mono">--accent</span>, or does the chat surface keep its own tuned blue? If shared, does <span class="mono">--accent</span> shift toward the brighter value?</div>
+    </div>
+  </div>
+
+  <p class="disc-intro" style="margin-top:26px">This is the format. The full audit (popups, toasts, menu surface, segmented well, toggle, titlebar height and the rest of the recorded divergences) is ported in here one entry at a time, each as an A / B with a question, so the backlog stays comparable and nothing curated is removed by force.</p>
+</div>
+</body>
+</html>

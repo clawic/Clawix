@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Browser</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="tool-browser" data-shell="app" data-title="Browser" data-active="browser">
+<template id="main">
+  <div class="browser">
+    <div class="b-tabs">
+      <div class="b-tab on"><span class="fav"><svg class="ic xs"><use href="icons.svg#i-globe"/></svg></span><span class="nm">Agents · research</span></div>
+      <div class="b-tab"><span class="fav"><svg class="ic xs"><use href="icons.svg#i-file"/></svg></span><span class="nm">RecordsTableView.swift</span></div>
+      <div class="b-tab"><span class="fav"><svg class="ic xs"><use href="icons.svg#i-search"/></svg></span><span class="nm">swiftdata index</span></div>
+      <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-plus"/></svg></span>
+      <div class="sp" style="flex:1"></div>
+      <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-sliders"/></svg></span>
+    </div>
+
+    <div class="b-nav">
+      <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-chevron-left"/></svg></span>
+      <span class="iconbtn s" style="color:var(--text-3)"><svg class="ic s"><use href="icons.svg#i-chevron-right"/></svg></span>
+      <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-refresh"/></svg></span>
+      <div class="field b-addr"><svg class="ic s"><use href="icons.svg#i-globe"/></svg><input value="example.com/research/agents"><span class="iconbtn s" style="margin-right:-6px"><svg class="ic xs"><use href="icons.svg#i-star"/></svg></span></div>
+      <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-more"/></svg></span>
+    </div>
+
+    <div class="b-page">
+      <div class="b-web">
+        <h1>Agents that operate software</h1>
+        <div class="lede">A short field guide to how an autonomous agent reads a screen, decides on an action, and verifies the result before moving on.</div>
+        <h2>Reading the screen</h2>
+        <p>Before acting, the agent resolves the accessibility tree of the frontmost window. Each node carries a role and a label, which is enough to locate a control without depending on pixel coordinates.</p>
+        <div class="ph" style="width:96%"></div>
+        <div class="ph" style="width:88%"></div>
+        <div class="ph" style="width:92%"></div>
+        <h2>Acting and verifying</h2>
+        <p>Actions are applied through the same accessibility layer, then the agent re-reads the tree to confirm the new state. A click that reports success but changes nothing is treated as a failure.</p>
+        <div class="ph" style="width:90%"></div>
+        <div class="ph" style="width:70%"></div>
+      </div>
+    </div>
+
+    <div class="approve">
+      <div class="approve-card">
+        <div class="ah"><span class="gi"><svg class="ic s"><use href="icons.svg#i-globe"/></svg></span><div>Allow Clawix to open <span class="mono">example.com</span>?</div></div>
+        <div class="scope-rows">
+          <div class="scope-row on"><div class="top"><span class="rc"></span><span class="rt">Just this time</span></div></div>
+          <div class="scope-row"><div class="top"><span class="rc"></span><span class="rt">Always for this site</span></div></div>
+          <div class="scope-row"><div class="top"><span class="rc"></span><span class="rt">Always for any website</span></div><div class="warn"><span class="dot"></span>The agent won't ask again before opening other sites.</div></div>
+        </div>
+        <div class="af"><button class="ctl m btn-secondary">Cancel</button><button class="ctl m btn-primary">Allow</button></div>
+      </div>
+    </div>
+  </div>
+</template>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Chat catalog</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="chat">
+<div class="wrap">
+
+  <section style="margin-top:8px">
+    <div class="h-sec"><span class="n">A</span>Message content <span class="d">how prose, code and quotes render in a reply</span></div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl">Inline code &amp; emphasis</div>
+        <div class="ai-md"><p>Call <code>AuthService.isValid(user)</code> before <code>login()</code>. The flag is <b>required</b> and the path is <i>case-sensitive</i>.</p></div>
+      </div>
+      <div class="spec"><div class="lbl">Link (icon + label)</div>
+        <div class="ai-md"><p>See the <a class="md-link" href="#"><svg class="ic xs"><use href="icons.svg#i-globe"/></svg>pull request</a> and <a class="md-link" href="#"><svg class="ic xs"><use href="icons.svg#i-file"/></svg>auth.swift</a>.</p></div>
+      </div>
+      <div class="spec flush"><div class="lbl">Code block (copy)</div>
+        <div class="code mono"><div class="ct">swift · AuthService.swift</div><span class="cp"><svg class="ic s"><use href="icons.svg#i-copy"/></svg></span><div class="cc"><span class="tk-k">func</span> <span class="tk-f">login</span>(_ u: User) <span class="tk-k">throws</span> {
+  <span class="tk-k">guard</span> auth.<span class="tk-f">isValid</span>(u) <span class="tk-k">else</span> {
+    <span class="tk-k">throw</span> .<span class="tk-f">denied</span>
+  }
+}</div></div>
+      </div>
+      <div class="spec"><div class="lbl">Quote, lists &amp; headings</div>
+        <div class="ai-md">
+          <h3 style="font-size:14.5px;font-weight:600;margin:0 0 8px">Summary</h3>
+          <p>Moved validation into <code>AuthService</code>:</p>
+          <div class="md"><ul><li>Centralized error messages</li><li>Updated three call sites</li></ul><blockquote>Apply the same to signup?</blockquote></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">B</span>User message <span class="d">no avatar, no name · copy + edit on hover · edit mode</span></div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl">Sent message (hover → copy / edit)</div>
+        <div class="cat-stage">
+          <div class="msg-user"><div class="user-bubble">Refactor the login flow so validation lives in <code class="mono">AuthService</code>. Keep the error messages.</div></div>
+          <div style="display:flex;justify-content:flex-end;gap:1px;margin-top:6px">
+            <span class="t" style="font-size:11px;color:var(--text-3);padding:0 6px;align-self:center">2:14 PM</span>
+            <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-copy"/></svg></span>
+            <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-pencil"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="spec"><div class="lbl">Edit mode</div>
+        <div class="cat-stage">
+          <div class="msg-edit">
+            <textarea>Refactor the login flow so validation lives in AuthService. Keep the error messages.</textarea>
+            <div class="acts"><span class="cancel">Cancel</span><span class="send">Send</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">C</span>Cards under a message <span class="d">changed file &amp; website preview · trailing "Open"</span></div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl">Changed-file card</div>
+        <div class="cat-stage">
+          <div class="file-card">
+            <span class="badge"><svg class="ic l"><use href="icons.svg#i-file"/></svg></span>
+            <div class="meta"><div class="fn">AuthService.swift</div><div class="fs">Document · SWIFT</div></div>
+            <span class="open">Open<svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="spec"><div class="lbl">Website preview card</div>
+        <div class="cat-stage">
+          <div class="link-card">
+            <span class="badge"><svg class="ic s"><use href="icons.svg#i-globe"/></svg></span>
+            <div class="meta"><div class="fn">Building agents · research</div><div class="fs">Website</div></div>
+            <span class="open">Open</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">D</span>Mentions &amp; attachments <span class="d">@file / @web chips · image thumbnail</span></div>
+    <div class="spec flush"><div class="cat-stage" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <span class="mention-chip"><svg class="ic s"><use href="icons.svg#i-file"/></svg>auth.swift</span>
+      <span class="mention-chip"><svg class="ic s"><use href="icons.svg#i-folder"/></svg>Sources/Clawix</span>
+      <span class="mention-chip"><svg class="ic s"><use href="icons.svg#i-globe"/></svg>example.com</span>
+      <span class="img-thumb"><svg class="ic l"><use href="icons.svg#i-grid"/></svg></span>
+    </div></div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">E</span>Assistant scaffolding <span class="d">"Worked for Xs" disclosure + flat tool timeline</span></div>
+    <div class="spec flush"><div class="cat-stage">
+      <div class="msg-ai">
+        <div class="work open js-work">
+          <div class="work-head">Worked for 42s<svg class="ic xs"><use href="icons.svg#i-chevron-right"/></svg></div>
+          <div class="work-line"></div>
+          <div class="work-body"><div class="work-body-inner">
+            <div class="tool-group">
+              <div class="tool-row"><svg class="ic s"><use href="icons.svg#i-file"/></svg>Read auth.swift</div>
+              <div class="tool-row"><svg class="ic s"><use href="icons.svg#i-pencil"/></svg>Edited AuthService.swift &middot; +18 &minus;4</div>
+              <div class="tool-row"><svg class="ic s"><use href="icons.svg#i-terminal"/></svg>Ran swift build</div>
+            </div>
+          </div></div>
+        </div>
+        <div class="ai-md"><p>Moved validation into <code>AuthService</code> and updated the three call sites.</p></div>
+      </div>
+    </div></div>
+  </section>
+
+</div>
+</body>
+</html>

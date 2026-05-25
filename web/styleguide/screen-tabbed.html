@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Tabbed workspace</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="tabbed" data-shell="app" data-title="Index" data-active="index">
+<template id="main">
+  <div class="surface">
+    <div class="surf-head">
+      <div class="tt">
+        <div class="h"><svg class="ic"><use href="icons.svg#i-stack"/></svg>Index<span class="count c-warn" style="margin-left:2px">2</span></div>
+        <div class="s">Saved searches, the monitors that re-run them on a schedule, and everything they have observed.</div>
+      </div>
+      <div class="sp"></div>
+      <div class="acts">
+        <span class="iconbtn"><svg class="ic s"><use href="icons.svg#i-refresh"/></svg></span>
+        <button class="ctl m btn-primary"><svg class="ic xs"><use href="icons.svg#i-plus"/></svg>New search</button>
+      </div>
+    </div>
+
+    <div class="surf-tools">
+      <div class="seg js-seg"><span class="ind"></span><button>Catalog</button><button>Searches</button><button>Monitors</button><button class="on">Runs</button><button>Alerts</button></div>
+      <div class="sp"></div>
+      <span class="chip on">All</span>
+      <span class="chip">Alerts only</span>
+      <span class="iconbtn s"><svg class="ic s"><use href="icons.svg#i-sliders"/></svg></span>
+    </div>
+
+    <div class="surf-body">
+      <div class="sec-lbl">Today</div>
+      <div class="list" style="margin-bottom:8px">
+        <div class="xrow"><span class="status c-ok"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span><div class="mt"><div class="nm">New releases in tracked repos</div><div class="sub">128 entities · 12 observations · 2 alerts</div></div><span class="meta">14:02</span></div>
+        <div class="xrow"><span class="status c-ok"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span><div class="mt"><div class="nm">Pricing pages · weekly</div><div class="sub">34 entities · 3 observations</div></div><span class="meta">09:00</span></div>
+        <div class="xrow"><span class="status c-warn"><span class="dot live"></span></span><div class="mt"><div class="nm">Job board · backend roles</div><div class="sub">Running… 61 of 90 pages</div></div><span class="meta">08:31</span></div>
+      </div>
+
+      <div class="sec-lbl">Earlier</div>
+      <div class="list">
+        <div class="xrow"><span class="status c-danger"><svg class="ic xs"><use href="icons.svg#i-x"/></svg></span><div class="mt"><div class="nm">Docs changelog</div><div class="sub">Failed · host returned 503</div></div><span class="meta">Yesterday</span></div>
+        <div class="xrow"><span class="status c-ok"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span><div class="mt"><div class="nm">Competitor blog · manual run</div><div class="sub">9 entities · 1 observation</div></div><span class="meta">Yesterday</span></div>
+        <div class="xrow"><span class="status c-ok"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span><div class="mt"><div class="nm">New releases in tracked repos</div><div class="sub">126 entities · 0 observations</div></div><span class="meta">2 days ago</span></div>
+        <div class="xrow"><span class="status c-ok"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span><div class="mt"><div class="nm">Pricing pages · weekly</div><div class="sub">34 entities · 5 observations · 1 alert</div></div><span class="meta">3 days ago</span></div>
+      </div>
+    </div>
+  </div>
+</template>
+</body>
+</html>

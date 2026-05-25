@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Browse / grid</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="browse" data-shell="app" data-title="Skills" data-active="skills">
+<template id="main">
+  <div class="surface">
+    <div class="surf-head">
+      <div class="tt">
+        <div class="h"><svg class="ic"><use href="icons.svg#i-puzzle"/></svg>Skills</div>
+        <div class="s">Your central library. Activate a skill per chat, per project or globally, and sync it to your other agents.</div>
+      </div>
+      <div class="sp"></div>
+      <div class="acts">
+        <button class="ctl m btn-secondary"><svg class="ic xs"><use href="icons.svg#i-refresh"/></svg>Sync now</button>
+        <button class="ctl m btn-primary"><svg class="ic xs"><use href="icons.svg#i-plus"/></svg>New skill</button>
+      </div>
+    </div>
+
+    <div class="surf-tools">
+      <div class="field" style="width:240px"><svg class="ic s"><use href="icons.svg#i-search"/></svg><input placeholder="Search skills…"></div>
+      <span class="js-chips" style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="chip on">All kinds</span>
+        <span class="chip">Procedure</span>
+        <span class="chip">Template</span>
+        <span class="chip">Shim</span>
+      </span>
+      <div class="sp"></div>
+      <span class="chip">#api</span>
+      <span class="chip">#git</span>
+    </div>
+
+    <div class="surf-body">
+      <div class="browse-grid">
+        <div class="s-card">
+          <div class="top"><span class="ec"><svg class="ic"><use href="icons.svg#i-message"/></svg></span><span class="sp"></span><span class="badge c-accent">Active</span></div>
+          <div class="nm">Summarize a thread</div>
+          <div class="desc">Condense a long conversation into a tight recap with decisions, open questions and next steps.</div>
+          <div class="pills"><span class="s-pill">Procedure</span><span class="s-pill"><svg class="ic xs"><use href="icons.svg#i-refresh"/></svg>2</span></div>
+        </div>
+        <div class="s-card">
+          <div class="top"><span class="ec"><svg class="ic"><use href="icons.svg#i-git"/></svg></span></div>
+          <div class="nm">Open a pull request</div>
+          <div class="desc">Branch, commit the working tree by intention, push and draft a PR body from the diff.</div>
+          <div class="pills"><span class="s-pill">Procedure</span><span class="s-pill">Built-in</span></div>
+        </div>
+        <div class="s-card">
+          <div class="top"><span class="ec"><svg class="ic"><use href="icons.svg#i-file"/></svg></span></div>
+          <div class="nm">Weekly report</div>
+          <div class="desc">Fill a fixed template from this week's sessions and commits, ready to paste.</div>
+          <div class="pills"><span class="s-pill">Template</span></div>
+        </div>
+        <div class="s-card">
+          <div class="top"><span class="ec"><svg class="ic"><use href="icons.svg#i-search"/></svg></span><span class="sp"></span><span class="badge c-accent">Active</span></div>
+          <div class="nm">Explain this repo</div>
+          <div class="desc">Map the architecture, entry points and conventions of an unfamiliar codebase.</div>
+          <div class="pills"><span class="s-pill">Procedure</span><span class="s-pill">Built-in</span></div>
+        </div>
+        <div class="s-card">
+          <div class="top"><span class="ec"><svg class="ic"><use href="icons.svg#i-shield"/></svg></span></div>
+          <div class="nm">Security review</div>
+          <div class="desc">Audit the pending diff for injection, secret leaks and unsafe shell before it ships.</div>
+          <div class="pills"><span class="s-pill">Procedure</span><span class="s-pill">via marketplace</span></div>
+        </div>
+        <div class="s-card">
+          <div class="top"><span class="ec"><svg class="ic"><use href="icons.svg#i-database"/></svg></span></div>
+          <div class="nm">Migrate a schema</div>
+          <div class="desc">Generate a reversible migration, dry-run it against a copy, then apply on approval.</div>
+          <div class="pills"><span class="s-pill">Procedure</span></div>
+        </div>
+        <div class="s-card">
+          <div class="top"><span class="ec"><svg class="ic"><use href="icons.svg#i-sparkles"/></svg></span></div>
+          <div class="nm">Polish copy</div>
+          <div class="desc">Tighten product copy to the house voice: plain, concrete, no marketing fluff.</div>
+          <div class="pills"><span class="s-pill">Procedure</span><span class="s-pill">instance</span></div>
+        </div>
+        <div class="s-card">
+          <div class="top"><span class="ec"><svg class="ic"><use href="icons.svg#i-terminal"/></svg></span></div>
+          <div class="nm">Run the test suite</div>
+          <div class="desc">Pick the right runner for the project, run it, and report only the failures that matter.</div>
+          <div class="pills"><span class="s-pill">Shim</span><span class="s-pill">Built-in</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+</body>
+</html>

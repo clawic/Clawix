@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - App / Sidebar</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="sidebar" data-shell="app" data-title="Clawix" data-active="home">
+<template id="main">
+  <div class="home">
+    <div class="home-greet">
+      <div class="t">What should we build?</div>
+      <div class="s">Start a chat, or pick up one of your sessions.</div>
+    </div>
+
+    <div class="home-dock">
+      <div class="composer-card">
+        <textarea placeholder="Ask Clawix anything. Type @ to mention files"></textarea>
+        <div class="composer-tools">
+          <span class="cmp-btn"><svg class="ic"><use href="icons.svg#i-plus"/></svg></span>
+          <span class="cmp-perm"><svg class="ic s"><use href="icons.svg#i-shield"/></svg>Agent</span>
+          <span class="sp"></span>
+          <span class="dropdown">
+            <span class="cmp-model js-pop"><span data-val>opus 4.7</span><span class="lo">High</span><svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></span>
+            <div class="pop-menu" style="left:auto;right:0;transform-origin:top right">
+              <div class="gh">Model</div>
+              <div class="it" data-pick>opus 4.7<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div>
+              <div class="it" data-pick>sonnet 4.6</div>
+              <div class="it" data-pick>haiku 4.5</div>
+            </div>
+          </span>
+          <span class="cmp-btn"><svg class="ic s"><use href="icons.svg#i-mic"/></svg></span>
+          <span class="cmp-send"><svg class="ic s"><use href="icons.svg#i-arrow-up"/></svg></span>
+        </div>
+      </div>
+      <div class="cmp-project">
+        <svg class="ic s"><use href="icons.svg#i-folder"/></svg>Work on a project
+        <span class="sp"></span>
+        <svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg>
+      </div>
+    </div>
+
+    <div class="suggest">
+      <span class="chip"><svg class="ic xs"><use href="icons.svg#i-stack"/></svg>Explain this repo</span>
+      <span class="chip"><svg class="ic xs"><use href="icons.svg#i-check"/></svg>Write tests for AuthService</span>
+      <span class="chip"><svg class="ic xs"><use href="icons.svg#i-terminal"/></svg>Open the terminal</span>
+      <span class="chip"><svg class="ic xs"><use href="icons.svg#i-git"/></svg>Review my diff</span>
+    </div>
+  </div>
+</template>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Foundations</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="foundations">
+<div class="guide">
+  <div style="font-size:28px;font-weight:800;letter-spacing:-0.8px">Foundations</div>
+  <p class="guide-intro">The rules behind every component. Each card shows the rule, what it implies, and how it looks applied. The values live as tokens in <span class="mono">ui.css</span>, so changing one here changes the whole system.</p>
+
+  <div class="rule">
+    <div class="rh"><span class="rt">Color &amp; where it applies</span><span class="rtok">--accent · --ok · --warn · --danger · --strong</span></div>
+    <div class="rd"><b>Blue is for signals only</b> (links, subtle accents), never a primary button fill. <b>Primary CTAs are solid dark</b> (<span class="mono">--strong</span>). <b>Green / amber / red are status only</b> (done / running / error). Backgrounds stay clean, no warm tint.</div>
+    <div class="demos">
+      <div><div class="shape" style="background:var(--strong);border-color:transparent"></div><div class="demo-lab">strong · CTA</div></div>
+      <div><div class="shape" style="background:var(--accent);border-color:transparent"></div><div class="demo-lab">accent · signals</div></div>
+      <div><div class="shape" style="background:var(--ok);border-color:transparent"></div><div class="demo-lab">ok</div></div>
+      <div><div class="shape" style="background:var(--warn);border-color:transparent"></div><div class="demo-lab">warn</div></div>
+      <div><div class="shape" style="background:var(--danger);border-color:transparent"></div><div class="demo-lab">danger</div></div>
+    </div>
+    <div class="usage-where">
+      <button class="ctl s btn-primary">Primary</button>
+      <span class="status c-ok"><svg class="ic xs"><use href="icons.svg#i-check"/></svg>Done</span>
+      <span class="status c-warn"><span class="dot live"></span>Running</span>
+      <span class="status c-danger">Error</span>
+      <a class="md-link" href="#"><svg class="ic xs"><use href="icons.svg#i-globe"/></svg>a link</a>
+    </div>
+  </div>
+
+  <div class="rule">
+    <div class="rh"><span class="rt">Geometry &amp; radius</span><span class="rtok">--r-card 14 · --r-ctl 10 · --r-s 8</span></div>
+    <div class="rd"><b>Squircle (continuous), never a full pill for button-like controls.</b> Cards use 14, controls 10, small chips 8. Capsules (999) are reserved for chips, dropdown triggers and the composer card.</div>
+    <div class="demos">
+      <div><div class="shape" style="border-radius:14px"></div><div class="demo-lab">card · 14</div></div>
+      <div><div class="shape" style="border-radius:10px"></div><div class="demo-lab">control · 10</div></div>
+      <div><div class="shape" style="border-radius:8px"></div><div class="demo-lab">small · 8</div></div>
+      <div><div class="shape" style="border-radius:999px"></div><div class="demo-lab">capsule · pills only</div></div>
+    </div>
+  </div>
+
+  <div class="rule">
+    <div class="rh"><span class="rt">Control heights</span><span class="rtok">--h-m 32 · --h-s 26</span></div>
+    <div class="rd"><b>Only two heights</b> for button-like / squircle controls, so toolbars and rows align. Medium for primary actions, small for dense chrome.</div>
+    <div class="demos" style="align-items:center">
+      <div><button class="ctl m btn-secondary">Medium · 32</button></div>
+      <div><button class="ctl s btn-secondary">Small · 26</button></div>
+      <div><span class="chip on">Chip · 26</span></div>
+    </div>
+  </div>
+
+  <div class="rule">
+    <div class="rh"><span class="rt">Spacing</span><span class="rtok">4px grid</span></div>
+    <div class="rd">Every gap and padding is a <b>multiple of 4</b> (4 · 8 · 12 · 16 · 24). No off-grid numbers.</div>
+    <div class="demos" style="align-items:center;gap:24px">
+      <div><div class="spacer-bar" style="width:4px"></div><div class="demo-lab">4</div></div>
+      <div><div class="spacer-bar" style="width:8px"></div><div class="demo-lab">8</div></div>
+      <div><div class="spacer-bar" style="width:12px"></div><div class="demo-lab">12</div></div>
+      <div><div class="spacer-bar" style="width:16px"></div><div class="demo-lab">16</div></div>
+      <div><div class="spacer-bar" style="width:24px"></div><div class="demo-lab">24</div></div>
+    </div>
+  </div>
+
+  <div class="rule">
+    <div class="rh"><span class="rt">Typography</span><span class="rtok">Manrope · tight tracking</span></div>
+    <div class="rd"><b>Manrope everywhere; mono only inside code.</b> Tight letter-spacing (<span class="mono">-0.4</span> headlines, <span class="mono">-0.2</span> body). Numbers render in Manrope, not mono. <b>Microcopy is sentence/title case, never UPPERCASE</b> with wide tracking.</div>
+    <div class="scale-row">
+      <div class="t-h1">Heading · 28 / 800</div>
+      <div class="t-h2">Subheading · 20 / 700</div>
+      <div class="t-body">Body text in Manrope · 13 / 500</div>
+      <div class="t-sub">Secondary / meta · 12</div>
+      <div class="row" style="gap:10px"><span class="t-num">1,240</span><span class="t-sub">numbers stay in Manrope</span></div>
+    </div>
+  </div>
+
+  <div class="rule">
+    <div class="rh"><span class="rt">Motion · curves</span><span class="rtok">--ease · --ease-inout · --ease-spring · linear</span></div>
+    <div class="rd"><b>Four curves, each with one job</b> — mirrors the macOS app. <b>easeOut</b> (<span class="mono">--ease</span>) is the default: hover, menus, panels. <b>easeInOut</b> (<span class="mono">--ease-inout</span>) is for things that open and close symmetrically: disclosures, content reflow. <b>spring</b> (<span class="mono">--ease-spring</span>, soft overshoot) is reserved for playful feedback: the toggle knob and toast. <b>linear</b> only spins (loaders, shimmer). The knobs below travel on each real curve.</div>
+    <div class="demos" style="flex-direction:column;align-items:stretch;gap:12px">
+      <div><div class="motion-track ease"><i></i></div><div class="demo-lab" style="text-align:left">--ease · easeOut — hover, menus, panels (the default)</div></div>
+      <div><div class="motion-track einout"><i></i></div><div class="demo-lab" style="text-align:left">--ease-inout · disclosures &amp; reflow (symmetric)</div></div>
+      <div><div class="motion-track spring"><i></i></div><div class="demo-lab" style="text-align:left">--ease-spring · toggle &amp; toast (soft overshoot)</div></div>
+      <div><div class="motion-track linear"><i></i></div><div class="demo-lab" style="text-align:left">linear · spinners &amp; shimmer only</div></div>
+    </div>
+  </div>
+
+  <div class="rule">
+    <div class="rh"><span class="rt">Motion · timing by interaction</span><span class="rtok">hover .12 · state .18 · menu .20 · panel .22 · disclosure .28</span></div>
+    <div class="rd"><b>Speed is chosen by what is moving, never one duration for everything.</b> Hover and press are the fastest so the UI feels instant; surfaces that carry more weight take longer. Dismissals are quicker than appearances (<span class="mono">--dur-out .15s</span>) so closing never lingers.</div>
+    <div class="tok-row" style="margin-bottom:14px">
+      <span class="tok">--dur-hover&nbsp;·&nbsp;.12s — hover / reveal / press</span>
+      <span class="tok">--dur&nbsp;·&nbsp;.18s — generic state</span>
+      <span class="tok">--dur-menu&nbsp;·&nbsp;.20s — popup open</span>
+      <span class="tok">--dur-panel&nbsp;·&nbsp;.22s — panel / selection slide</span>
+      <span class="tok">--dur-disclosure&nbsp;·&nbsp;.28s — expand / collapse</span>
+      <span class="tok">--dur-out&nbsp;·&nbsp;.15s — dismiss</span>
+    </div>
+    <div class="demos" style="align-items:center;gap:18px">
+      <div><div class="seg js-seg"><span class="ind"></span><button class="on">Slide</button><button>between</button><button>tabs</button></div><div class="demo-lab">selection slide · --dur-panel</div></div>
+      <div style="max-width:300px;width:100%"><div class="acc js-acc"><div class="ah">Disclosure<svg class="ic s arr"><use href="icons.svg#i-chevron-right"/></svg></div><div class="ab">Opens and closes on --ease-inout at --dur-disclosure (.28s).</div></div><div class="demo-lab">disclosure · --ease-inout</div></div>
+    </div>
+  </div>
+
+  <div class="rule">
+    <div class="rh"><span class="rt">Motion · appear &amp; disappear</span><span class="rtok">nudge-in + fade · fade-out · tooltip delay 1.5s</span></div>
+    <div class="rd"><b>Transient surfaces emerge from their anchor and leave quietly.</b> Menus, dropdowns and popovers <b>appear</b> with a 4px directional nudge + fade (<span class="mono">--dur-menu</span>) and <b>disappear</b> with fade only (<span class="mono">--dur-out</span>), never sliding back out. <b>Hover-hints wait 1.5s</b> (<span class="mono">--delay-tip</span>) before showing, so they never flash when the cursor just passes through. The <b>toggle and toast</b> carry the only bounce in the system. Try each below.</div>
+    <div class="demos" style="align-items:center;gap:18px">
+      <div><div class="dropdown"><button class="ctl s btn-secondary js-pop">Open menu</button><div class="pop-menu"><div class="it">Nudge in, fade out<span class="sc"><span class="kbd soft">⌘1</span></span></div><div class="it">Second item</div><div class="dv"></div><div class="it">Third item</div></div></div><div class="demo-lab">click · popup in/out</div></div>
+      <div><span class="tip-host"><button class="ctl s btn-secondary">Hover &amp; wait</button><span class="tooltip">Appears after 1.5s</span></span><div class="demo-lab">hover · tooltip delay</div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label><div class="demo-lab">click · spring knob</div></div>
+      <div><div class="toast"><svg class="ic s" style="color:var(--ok)"><use href="icons.svg#i-check"/></svg><div><div class="tt">Saved</div><div class="td">Arrives on the soft spring</div></div></div><div class="demo-lab">toast · spring-soft (on load)</div></div>
+    </div>
+  </div>
+
+  <div class="rule">
+    <div class="rh"><span class="rt">Elevation &amp; hairline</span><span class="rtok">--shadow · --hairline ~8–10%</span></div>
+    <div class="rd"><b>Hairlines are 0.5px at ~8–10% opacity</b>; shadows are soft and only on things that truly float (popups, the composer, the window). Cards rest on a hairline, not a shadow.</div>
+    <div class="demos" style="align-items:center">
+      <div><div class="elev-card" style="box-shadow:var(--shadow);border-color:transparent"></div><div class="demo-lab">floats · shadow</div></div>
+      <div><div class="elev-card"></div><div class="demo-lab">rests · hairline only</div></div>
+    </div>
+  </div>
+
+  <div class="rule">
+    <div class="rh"><span class="rt">Selection vs hover</span><span class="rtok">--sel 6% · --hover-soft 3.5%</span></div>
+    <div class="rd"><b>Hover is always subtler than selection.</b> A selected row sits at ~6% white overlay, a hovered row at ~3.5%, so the two never read the same. Lists keep a small gap so adjacent states don't touch.</div>
+    <div class="demos" style="flex-direction:column;align-items:stretch;gap:3px;max-width:260px">
+      <div class="sb-item on"><svg class="ic"><use href="icons.svg#i-message"/></svg><span class="nm">Selected · 6%</span></div>
+      <div class="sb-item" style="background:var(--hover-soft)"><svg class="ic"><use href="icons.svg#i-search"/></svg><span class="nm">Hover · 3.5%</span></div>
+      <div class="sb-item"><svg class="ic"><use href="icons.svg#i-folder"/></svg><span class="nm">Rest</span></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

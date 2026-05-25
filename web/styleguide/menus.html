@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Menus &amp; popups</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="menus">
+<div class="wrap">
+
+  <section style="margin-top:8px">
+    <div class="h-sec"><span class="n">A</span>Composer menus <span class="d">what each control in the input opens · shown open</span></div>
+    <div class="grid g4">
+      <div class="spec flush"><div class="lbl">"+" add menu</div>
+        <div class="menu-static" style="width:200px">
+          <div class="it"><svg class="ic s"><use href="icons.svg#i-image"/></svg>Add photos and files</div>
+          <div class="it"><svg class="ic s"><use href="icons.svg#i-grid"/></svg>Attach window</div>
+          <div class="dv"></div>
+          <label class="it" style="cursor:pointer"><svg class="ic s"><use href="icons.svg#i-check"/></svg>Plan mode<span style="margin-left:auto"><span class="toggle s"><input type="checkbox"><span class="tr"></span><span class="kn"></span></span></span></label>
+          <div class="it"><svg class="ic s"><use href="icons.svg#i-circle"/></svg>Pursue a goal</div>
+          <div class="dv"></div>
+          <div class="it"><svg class="ic s"><use href="icons.svg#i-puzzle"/></svg>Plugins<span class="arr"><svg class="ic s"><use href="icons.svg#i-chevron-right"/></svg></span></div>
+        </div>
+      </div>
+      <div class="spec flush"><div class="lbl">Permissions menu</div>
+        <div class="menu-static" style="width:230px">
+          <div class="it on"><svg class="ic s"><use href="icons.svg#i-shield"/></svg>Agent<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div>
+          <div class="it"><svg class="ic s"><use href="icons.svg#i-check"/></svg>Plan</div>
+          <div class="it"><svg class="ic s"><use href="icons.svg#i-eye"/></svg>Read only</div>
+          <div class="it"><svg class="ic s"><use href="icons.svg#i-shield"/></svg>Full access</div>
+        </div>
+      </div>
+      <div class="spec flush"><div class="lbl">Model menu (submenus)</div>
+        <div class="menu-static" style="width:220px">
+          <div class="gh">Model</div>
+          <div class="it on">opus 4.7<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div>
+          <div class="it">sonnet 4.6</div>
+          <div class="it">haiku 4.5</div>
+          <div class="dv"></div>
+          <div class="it">Intelligence<span class="arr"><svg class="ic s"><use href="icons.svg#i-chevron-right"/></svg></span></div>
+          <div class="it">Speed<span class="arr"><svg class="ic s"><use href="icons.svg#i-chevron-right"/></svg></span></div>
+          <div class="it">Other models<span class="arr"><svg class="ic s"><use href="icons.svg#i-chevron-right"/></svg></span></div>
+        </div>
+      </div>
+      <div class="spec flush"><div class="lbl">Project picker</div>
+        <div class="menu-static" style="width:210px">
+          <div class="gh">Projects</div>
+          <div class="it on"><svg class="ic s"><use href="icons.svg#i-folder"/></svg>clawix<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div>
+          <div class="it"><svg class="ic s"><use href="icons.svg#i-folder"/></svg>landing</div>
+          <div class="dv"></div>
+          <div class="it"><svg class="ic s"><use href="icons.svg#i-plus"/></svg>New project</div>
+        </div>
+      </div>
+    </div>
+    <div class="lbl" style="margin-top:12px">Live: click the model pill to open (functional)</div>
+    <div class="row">
+      <span class="dropdown">
+        <span class="cmp-model js-pop" style="background:var(--fill);border-radius:8px"><span data-val>opus 4.7</span><span class="lo">High</span><svg class="ic xs"><use href="icons.svg#i-chevron-down"/></svg></span>
+        <div class="pop-menu"><div class="gh">Model</div><div class="it" data-pick>opus 4.7<span class="ck"><svg class="ic xs"><use href="icons.svg#i-check"/></svg></span></div><div class="it" data-pick>sonnet 4.6</div><div class="it" data-pick>haiku 4.5</div></div>
+      </span>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">B</span>Context &amp; usage <span class="d">context donut + tooltip · usage limit bar</span></div>
+    <div class="grid g3">
+      <div class="spec"><div class="lbl">Context ring (composer)</div>
+        <div class="row" style="gap:18px;align-items:center">
+          <span class="ctx-ring" style="--p:30"></span>
+          <span class="ctx-ring" style="--p:62"></span>
+          <span class="ctx-ring" style="--p:90"></span>
+        </div>
+      </div>
+      <div class="spec flush"><div class="lbl">Context tooltip (hover)</div>
+        <div class="ctx-tip">
+          <div class="h">Context window:</div>
+          <div class="v">62 % used (38 % remaining)</div>
+          <div class="v mono">8.2k / 13k tokens used</div>
+          <div class="note">Clawix automatically compacts its context</div>
+        </div>
+      </div>
+      <div class="spec"><div class="lbl">Usage limit bar (warn / reached)</div>
+        <div class="col">
+          <div class="usage-bar warn"><svg class="ic s"><use href="icons.svg#i-alert"/></svg>92% of your usage limit · 5h<span class="sp"></span><span class="x"><svg class="ic xs"><use href="icons.svg#i-x"/></svg></span></div>
+          <div class="usage-bar reached"><svg class="ic s"><use href="icons.svg#i-alert"/></svg>Usage limit reached · 5h · resets in 3h</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">C</span>Collapsible sidebar sections <span class="d">click a header to collapse · chevron rotates</span></div>
+    <div class="spec flush"><div class="cat-stage" style="max-width:280px">
+      <aside class="app-sidebar" style="width:100%;background:transparent;border:none;backdrop-filter:none">
+        <div class="sb-scroll" style="padding:0">
+          <div class="sb-section">
+            <div class="sb-head js-collapse"><svg class="ic xs arr"><use href="icons.svg#i-chevron-down"/></svg><span>Projects</span><span class="sp"></span></div>
+            <div class="sb-nav">
+              <div class="sb-item"><svg class="ic"><use href="icons.svg#i-folder"/></svg><span class="nm">clawix</span></div>
+              <div class="sb-item"><svg class="ic"><use href="icons.svg#i-folder"/></svg><span class="nm">landing</span></div>
+            </div>
+          </div>
+          <div class="sb-section">
+            <div class="sb-head js-collapse"><svg class="ic xs arr"><use href="icons.svg#i-chevron-down"/></svg><span>All chats</span><span class="sp"></span></div>
+            <div class="sb-nav">
+              <div class="sb-chat on"><span class="nm">Refactor the login flow</span></div>
+              <div class="sb-chat"><span class="nm">Migrate the database layer</span><span class="un"></span></div>
+              <div class="sb-chat"><span class="nm">Style system pages</span></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div></div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">D</span>Settings extras <span class="d">info banners · icon chips · filter chips · action-pill row</span></div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl">Info banners (ok / error / warn)</div>
+        <div class="col">
+          <div class="info-banner ok"><svg class="ic s"><use href="icons.svg#i-check"/></svg>Diagnostics folder opened</div>
+          <div class="info-banner error"><svg class="ic s"><use href="icons.svg#i-alert"/></svg>config.toml not found</div>
+          <div class="info-banner warn"><svg class="ic s"><use href="icons.svg#i-shield"/></svg>This secret is flagged as compromised</div>
+        </div>
+      </div>
+      <div class="spec"><div class="lbl">Icon chips &amp; filter chips</div>
+        <div class="row"><span class="icon-chip"><svg class="ic xs"><use href="icons.svg#i-eye"/></svg>Reveal</span><span class="icon-chip"><svg class="ic xs"><use href="icons.svg#i-copy"/></svg>Copy</span><span class="icon-chip"><svg class="ic xs"><use href="icons.svg#i-plus"/></svg>Add secret</span></div>
+        <div class="row js-chips" style="margin-top:12px"><span class="chip on">All</span><span class="chip">Created</span><span class="chip">Updated</span><span class="chip">Errors</span></div>
+      </div>
+      <div class="spec flush"><div class="lbl">Action-pill row (in a card)</div>
+        <div class="set-card"><div class="action-row"><div class="rl"><div class="rt">Project config</div><div class="rd">Edit config.toml for this project</div></div><span class="pill">Open</span></div></div>
+      </div>
+      <div class="spec flush"><div class="lbl">Segmented row (in a card)</div>
+        <div class="set-card"><div class="set-row"><div class="rl"><div class="rt">Reasoning</div></div><div class="seg js-seg"><span class="ind"></span><button class="on">Low</button><button>Medium</button><button>High</button></div></div></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

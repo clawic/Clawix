@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Style System (lab)</title>
+<link rel="stylesheet" href="ui.css">
+<link rel="stylesheet" href="lab.css">
+<script defer src="app.js"></script>
+<script defer src="lab.js"></script>
+<style>
+  .lab-hub{max-width:1040px;margin:0 auto;padding:38px 28px 100px;}
+  .lab-hub .hero .t{font-size:30px;font-weight:800;letter-spacing:-0.9px;}
+  .lab-hub .hero .s{font-size:13.5px;color:var(--text-2);margin-top:8px;max-width:620px;line-height:1.55;}
+  .lab-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:28px;}
+  .lab-card{display:flex;flex-direction:column;gap:10px;border:0.5px solid var(--hairline);border-radius:var(--r-card);background:var(--card);padding:18px;text-decoration:none;color:var(--text);transition:background var(--dur) var(--ease),transform var(--dur-s) var(--ease);}
+  .lab-card:hover{background:var(--fill);transform:translateY(-1px);}
+  .lab-card .ec{width:38px;height:38px;border-radius:11px;background:var(--fill-2);display:flex;align-items:center;justify-content:center;color:var(--text);}
+  .lab-card .ht{font-size:14px;font-weight:700;letter-spacing:-0.3px;}
+  .lab-card .hd{font-size:11.5px;color:var(--text-2);margin-top:3px;line-height:1.5;}
+  .lab-card .cnt{font-size:10px;font-weight:600;color:var(--text-3);margin-top:auto;}
+  @media(max-width:860px){.lab-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body data-page="lab-index">
+<div class="lab-hub">
+  <div class="hero">
+    <div class="t">Style System · Lab</div>
+    <div class="s">An additive extension to the canonical pages: more components, every one interactive, plus a fixed-position overlay system so menus are never clipped. Built to be folded back into <span class="mono">components.html</span> / <span class="mono">ui.css</span> when the shared files are free.</div>
+  </div>
+
+  <div class="x-note" style="margin-top:22px"><b>The dropdown clipping bug is solved here.</b> Every menu, popover, tooltip, modal, drawer, sheet and the command bar open as <span class="mono">position:fixed</span> anchored to their trigger, so an <span class="mono">overflow:hidden</span> ancestor or a later stacking context can no longer hide them. See the bug-vs-fix demo and the drop-in patch on the Overlays page.</div>
+
+  <div class="lab-grid">
+    <a class="lab-card" href="lab-overlays.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-stack"/></svg></span>
+      <div class="ht">Overlays &amp; menus</div>
+      <div class="hd">Dropdowns, combobox, submenus, context menu, tooltips, popovers, modals, drawer, bottom sheet, toasts and ⌘K command bar.</div>
+      <div class="cnt">fixed-position · never clipped · includes the fix</div>
+    </a>
+    <a class="lab-card" href="lab-forms.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-sliders"/></svg></span>
+      <div class="ht">Forms &amp; inputs</div>
+      <div class="hd">Every field type and state: text, password reveal, number, autosize textarea, select, combobox, tags, choices, sliders, code input, upload, date, wizard.</div>
+      <div class="cnt">validation states · all interactive</div>
+    </a>
+    <a class="lab-card" href="lab-data.html">
+      <span class="ec"><svg class="ic l"><use href="icons.svg#i-chart"/></svg></span>
+      <div class="ht">Data &amp; charts</div>
+      <div class="hd">KPIs, bar / grouped / line / area charts, donut and progress rings, progress bars, a sortable-selectable-expandable table, timeline, activity feed and a range calendar.</div>
+      <div class="cnt">inline SVG · token-driven · no chart lib</div>
+    </a>
+  </div>
+
+  <div style="margin-top:30px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:11px;color:var(--text-3)">Canonical pages:</span>
+    <a class="b" style="font-size:11.5px;font-weight:600;color:var(--text-2);padding:6px 11px;border-radius:8px;background:var(--fill);text-decoration:none" href="components.html">Components</a>
+    <a class="b" style="font-size:11.5px;font-weight:600;color:var(--text-2);padding:6px 11px;border-radius:8px;background:var(--fill);text-decoration:none" href="foundations.html">Foundations</a>
+    <a class="b" style="font-size:11.5px;font-weight:600;color:var(--text-2);padding:6px 11px;border-radius:8px;background:var(--fill);text-decoration:none" href="index.html">Hub</a>
+  </div>
+</div>
+</body>
+</html>

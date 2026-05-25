@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Forms &amp; inputs (lab)</title>
+<link rel="stylesheet" href="../ui.css">
+<link rel="stylesheet" href="lab.css">
+<script defer src="../app.js"></script>
+<script defer src="lab.js"></script>
+</head>
+<body data-base="../" data-page="lab-forms">
+<div class="wrap">
+
+  <div class="x-labnav">
+    <a class="b" href="index.html">Lab home</a>
+    <a class="b" href="lab-overlays.html">Overlays &amp; menus</a>
+    <a class="b on" href="lab-forms.html">Forms &amp; inputs</a>
+    <a class="b" href="lab-data.html">Data &amp; charts</a>
+    <span class="tag">additive lab · mergeable into canon</span>
+  </div>
+  <div class="x-note">Every field type and state in one place, all interactive. Focus is a <b>monochrome border</b> (no blue glow); validation uses the status palette only on the border and helper text. Selects, comboboxes and the date field reuse the fixed-position menu from the overlays page.</div>
+
+  <section style="margin-top:8px">
+    <div class="h-sec"><span class="n">A</span>Text fields &amp; states</div>
+    <div class="grid g3">
+      <div class="x-field-row"><span class="fl">Default</span><div class="field"><input placeholder="Session name"></div><span class="fh">A short, human label.</span></div>
+      <div class="x-field-row"><span class="fl">With leading icon</span><div class="field"><svg class="ic s"><use href="../icons.svg#i-globe"/></svg><input value="localhost:24080"></div></div>
+      <div class="x-field-row"><span class="fl">Clearable search</span><div class="field"><svg class="ic s"><use href="../icons.svg#i-search"/></svg><input value="swiftdata"><span class="iconbtn s" style="margin-right:-6px"><svg class="ic xs"><use href="../icons.svg#i-x"/></svg></span></div></div>
+      <div class="x-field-row is-err"><span class="fl">Error</span><div class="field"><input value="localhost:"></div><span class="fh">Missing port number.</span></div>
+      <div class="x-field-row is-ok"><span class="fl">Valid</span><div class="field"><input value="localhost:24080"><svg class="ic s" style="color:var(--ok)"><use href="../icons.svg#i-check"/></svg></div><span class="fh" style="color:var(--ok)">Reachable.</span></div>
+      <div class="x-field-row"><span class="fl">Disabled</span><div class="field disabled"><input value="Managed by host"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">B</span>Password, number &amp; textarea</div>
+    <div class="grid g3">
+      <div class="x-field-row"><span class="fl">Password (reveal)</span>
+        <div class="field"><svg class="ic s"><use href="../icons.svg#i-key"/></svg><input id="pw" type="password" value="hunter2supersecret"><span class="iconbtn s" data-x-reveal="#pw" style="margin-right:-6px"><svg class="ic xs"><use href="../icons.svg#i-eye"/></svg></span></div>
+        <span class="fh">Stored only on this Mac.</span></div>
+      <div class="x-field-row"><span class="fl">Number (stepper)</span>
+        <div class="row"><div class="stepper x-stepper" data-min="1" data-max="16" data-step="1"><div class="b"><svg class="ic s"><use href="../icons.svg#i-minus"/></svg></div><div class="v">4</div><div class="b"><svg class="ic s"><use href="../icons.svg#i-plus"/></svg></div></div><span style="font-size:11px;color:var(--text-3)">parallel agents</span></div></div>
+      <div class="x-field-row"><span class="fl">Instructions <span style="color:var(--text-3);font-weight:500;float:right" id="cc"></span></span>
+        <textarea class="x-textarea" data-x-autosize data-x-count="#cc" maxlength="280" placeholder="System instructions for the agent…">Keep changes minimal and explain each edit.</textarea></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">C</span>Selects, combobox &amp; tags</div>
+    <div class="grid g3">
+      <div class="x-field-row"><span class="fl">Select</span>
+        <div class="x-dd" data-align="start" style="display:block"><button class="x-dd-trigger" type="button" style="width:100%"><span class="x-dd-val">opus 4.7</span><span class="sp"></span><svg class="ic s"><use href="../icons.svg#i-chevron-down"/></svg></button>
+          <div class="x-menu x-surface"><div class="x-gh">Model</div><div class="x-item on" data-pick>opus 4.7<span class="ck"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg></span></div><div class="x-item" data-pick>sonnet 4.6</div><div class="x-item" data-pick>haiku 4.5</div></div></div></div>
+      <div class="x-field-row"><span class="fl">Combobox (filter)</span>
+        <div class="x-dd" data-align="start" data-select style="display:block"><button class="x-dd-trigger" type="button" style="width:100%"><svg class="ic s"><use href="../icons.svg#i-folder"/></svg><span class="x-dd-val">Pick a repo…</span><span class="sp"></span><svg class="ic xs"><use href="../icons.svg#i-chevron-down"/></svg></button>
+          <div class="x-menu x-surface" style="width:240px"><div class="x-search"><svg class="ic s"><use href="../icons.svg#i-search"/></svg><input placeholder="Search repos…"></div>
+            <div class="x-item" data-pick><svg class="ic s"><use href="../icons.svg#i-folder"/></svg>clawix</div><div class="x-item" data-pick><svg class="ic s"><use href="../icons.svg#i-folder"/></svg>landing</div><div class="x-item" data-pick><svg class="ic s"><use href="../icons.svg#i-folder"/></svg>agent-spec</div><div class="x-item" data-pick><svg class="ic s"><use href="../icons.svg#i-folder"/></svg>web</div><div class="x-empty-row" style="display:none">No matches</div></div></div></div>
+      <div class="x-field-row"><span class="fl">Tag / token input</span>
+        <div class="x-tagin"><span class="tg">swift<span class="rm"><svg class="ic xs"><use href="../icons.svg#i-x"/></svg></span></span><span class="tg">macos<span class="rm"><svg class="ic xs"><use href="../icons.svg#i-x"/></svg></span></span><input placeholder="Add tag…"></div>
+        <span class="fh">Press Enter to add, Backspace to remove.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">D</span>Choices: checkbox, radio, switch, segmented</div>
+    <div class="grid g4">
+      <div class="spec"><div class="lbl">Checkbox group</div><div class="col">
+        <label class="check"><input type="checkbox" checked><span class="bx"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg></span>Read files</label>
+        <label class="check"><input type="checkbox" checked><span class="bx"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg></span>Edit files</label>
+        <label class="check"><input type="checkbox"><span class="bx"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg></span>Run commands</label></div></div>
+      <div class="spec"><div class="lbl">Radio (scope)</div><div class="col">
+        <label class="radio"><input type="radio" name="sc" checked><span class="rx"></span>Whole repo</label>
+        <label class="radio"><input type="radio" name="sc"><span class="rx"></span>This folder</label>
+        <label class="radio"><input type="radio" name="sc"><span class="rx"></span>Selected files</label></div></div>
+      <div class="spec"><div class="lbl">Switch rows</div>
+        <div class="x-switch-row"><div class="rl"><div class="rt">Plan mode</div><div class="rd">Propose before editing</div></div><label class="toggle"><input type="checkbox"><span class="tr"></span><span class="kn"></span></label></div>
+        <div class="x-switch-row"><div class="rl"><div class="rt">Auto-commit</div><div class="rd">Commit each step</div></div><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div></div>
+      <div class="spec"><div class="lbl">Segmented</div><div class="col">
+        <div class="seg js-seg"><span class="ind"></span><button class="on">Low</button><button>Medium</button><button>High</button></div>
+        <div class="seg subtle js-seg"><span class="ind"></span><button class="on">Auto</button><button>Manual</button></div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">E</span>Sliders, code &amp; upload</div>
+    <div class="grid g3">
+      <div class="spec"><div class="lbl">Single slider</div><div class="row"><div class="slider" data-min="0" data-max="1" data-step="0.05" data-value="0.7" style="width:150px"><div class="tr2"></div><div class="fi"></div><div class="kn2"></div></div><span class="slider-val" style="font-size:12px;font-weight:600">0.70</span></div>
+        <div class="lbl" style="margin-top:16px">Range (dual knob)</div><div class="row"><div class="x-range" data-min="0" data-max="100" data-out="#rg" style="width:150px"><div class="tr"></div><div class="fi"></div><div class="kn" data-value="20"></div><div class="kn" data-value="70"></div></div><span id="rg" style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums">20 – 70</span></div></div>
+      <div class="spec"><div class="lbl">Verification code</div><div class="x-otp"><input maxlength="1" value="4"><input maxlength="1" value="2"><input maxlength="1"><input maxlength="1"><input maxlength="1"><input maxlength="1"></div><span class="fh" style="margin-top:10px;display:block">Auto-advances as you type.</span></div>
+      <div class="spec flush"><div class="lbl">File upload</div><div class="x-dropzone"><span class="di"><svg class="ic l"><use href="../icons.svg#i-download"/></svg></span><span class="dt">Drop files or click to browse</span><span class="dd">Up to 25 MB · png, pdf, swift</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="h-sec"><span class="n">F</span>Date field &amp; a full form</div>
+    <div class="grid g2">
+      <div class="spec"><div class="lbl">Date field (opens a calendar)</div>
+        <div class="x-dd" data-align="start"><button class="x-dd-trigger" type="button" style="width:180px"><svg class="ic s"><use href="../icons.svg#i-calendar"/></svg><span class="x-dd-val">May 12, 2026</span><span class="sp"></span><svg class="ic xs"><use href="../icons.svg#i-chevron-down"/></svg></button>
+          <div class="x-menu x-surface" style="padding:0;width:auto">
+            <div class="x-cal" style="border:none;background:transparent">
+              <div class="ch"><span class="m">May 2026</span><span class="nav"><span class="iconbtn s"><svg class="ic xs"><use href="../icons.svg#i-chevron-left"/></svg></span><span class="iconbtn s"><svg class="ic xs"><use href="../icons.svg#i-chevron-right"/></svg></span></span></div>
+              <div class="g7"><span class="wd">M</span><span class="wd">T</span><span class="wd">W</span><span class="wd">T</span><span class="wd">F</span><span class="wd">S</span><span class="wd">S</span>
+                <span class="dy mut">28</span><span class="dy mut">29</span><span class="dy mut">30</span><span class="dy">1</span><span class="dy">2</span><span class="dy">3</span><span class="dy">4</span>
+                <span class="dy">5</span><span class="dy">6</span><span class="dy">7</span><span class="dy">8</span><span class="dy">9</span><span class="dy">10</span><span class="dy">11</span>
+                <span class="dy end">12</span><span class="dy">13</span><span class="dy">14</span><span class="dy">15</span><span class="dy">16</span><span class="dy">17</span><span class="dy">18</span></div>
+            </div>
+          </div></div>
+      </div>
+      <div class="spec"><div class="lbl">Multi-step form</div>
+        <div class="x-wizard" style="margin-bottom:18px"><div class="st done"><span class="cir"><svg class="ic xs"><use href="../icons.svg#i-check"/></svg></span><span class="nm">Repo</span></div><div class="bar done"></div><div class="st now"><span class="cir">2</span><span class="nm">Model</span></div><div class="bar"></div><div class="st"><span class="cir">3</span><span class="nm">Review</span></div></div>
+        <div class="x-field-row" style="margin-bottom:12px"><span class="fl">Model</span><div class="x-dd" data-align="start" style="display:block"><button class="x-dd-trigger" type="button" style="width:100%"><span class="x-dd-val">opus 4.7</span><span class="sp"></span><svg class="ic s"><use href="../icons.svg#i-chevron-down"/></svg></button><div class="x-menu x-surface"><div class="x-item on" data-pick>opus 4.7</div><div class="x-item" data-pick>sonnet 4.6</div></div></div></div>
+        <div class="x-switch-row" style="border-top:none;padding-top:0"><div class="rl"><div class="rt">Confirm destructive actions</div></div><label class="toggle"><input type="checkbox" checked><span class="tr"></span><span class="kn"></span></label></div>
+        <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="ctl m btn-ghost">Back</button><button class="ctl m btn-primary">Continue</button></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

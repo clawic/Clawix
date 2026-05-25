@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clawix - Terminal</title>
+<link rel="stylesheet" href="ui.css">
+<script defer src="app.js"></script>
+</head>
+<body data-page="tool-terminal" data-shell="app" data-title="Terminal" data-active="terminal">
+<template id="main">
+  <div class="term">
+    <div class="term-tabs">
+      <div class="tabs js-tabs">
+        <div class="tab on"><svg class="ic s"><use href="icons.svg#i-terminal"/></svg><span class="nm">1 · zsh — clawix</span><span class="x"><i><svg class="ic xs"><use href="icons.svg#i-x"/></svg></i></span></div>
+        <div class="tab"><svg class="ic s"><use href="icons.svg#i-terminal"/></svg><span class="nm">2 · swift build</span><span class="x"><i><svg class="ic xs"><use href="icons.svg#i-x"/></svg></i></span></div>
+        <div class="tab"><svg class="ic s"><use href="icons.svg#i-terminal"/></svg><span class="nm">3 · logs</span><span class="x"><i><svg class="ic xs"><use href="icons.svg#i-x"/></svg></i></span></div>
+        <span class="iconbtn s" style="margin-left:2px"><svg class="ic s"><use href="icons.svg#i-plus"/></svg></span>
+      </div>
+    </div>
+
+    <div class="term-body">
+      <div class="term-pane">
+        <div class="bar"><span class="cwd">~/Desktop/Clawix/clawix/macos</span><span class="sp"></span><span class="sx" title="Split right"><svg class="ic xs"><use href="icons.svg#i-stack"/></svg></span><span class="sx" title="Clear"><svg class="ic xs"><use href="icons.svg#i-trash"/></svg></span></div>
+        <div class="term-out"><span class="pr">➜</span> <span class="cm">swift</span> build
+<span class="mut">Building for debugging...</span>
+<span class="mut">[142/142] Compiling Clawix App.swift</span>
+<span class="mut">Build complete! (38.4s)</span>
+
+<span class="pr">➜</span> <span class="cm">swift</span> test --filter AuthTests
+<span class="mut">Test Suite 'AuthTests' started</span>
+<span class="ok">✔ login_movesValidationToService (0.04s)</span>
+<span class="ok">✔ login_keepsErrorMessages (0.02s)</span>
+<span class="ok">Executed 12 tests, 0 failures (0.41s)</span>
+
+<span class="pr">➜</span> git status <span class="mut">--short</span>
+<span class="wn"> M</span> Sources/Clawix/Auth/AuthService.swift
+<span class="wn"> M</span> Sources/Clawix/Auth/LoginView.swift
+
+<span class="pr">➜</span> <span class="term-cur"></span></div>
+      </div>
+
+      <div class="term-pane sub">
+        <div class="bar"><span class="cwd">tail · clawjs.log</span><span class="sp"></span><span class="status c-warn" style="font-size:9px"><span class="dot live"></span>live</span></div>
+        <div class="term-out"><span class="mut">12:04:18</span> <span class="ok">ready</span>  bridge listening :7420
+<span class="mut">12:04:19</span> <span class="cm">info</span>  session opened · refactor-login
+<span class="mut">12:04:22</span> <span class="cm">info</span>  tool read · AuthService.swift
+<span class="mut">12:04:25</span> <span class="cm">info</span>  tool edit · +18 −4
+<span class="mut">12:04:31</span> <span class="er">warn</span>  rate-limit window 62% used
+<span class="mut">12:04:40</span> <span class="ok">ok</span>    build complete 38.4s</div>
+      </div>
+    </div>
+  </div>
+</template>
+</body>
+</html>
