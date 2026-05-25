@@ -302,8 +302,22 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
             sessionInventory.rows.first?.provenanceLabel,
             "runtime-session-sqlite, runtime hermes, /Users/tester/.hermes/state.db"
         )
+        XCTAssertEqual(sessionInventory.rows.first?.attributeCount, 18)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("parent session: parent-session") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("input tokens: 11") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("output tokens: 23") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("cache read tokens: 5") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("cache write tokens: 7") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("reasoning tokens: 13") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("billing provider: openai") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("billing mode: api_key") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("estimated cost usd: 0.0123") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("actual cost usd: 0.0101") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("cost status: estimated") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("api calls: 2") == true)
         XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("native identifier sessionId") == true)
         XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("provenance source runtime-session-sqlite") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("attributes 18") == true)
 
         let skillsInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "skills" })
         XCTAssertEqual(skillsInventory.totalResourceCount, 1)

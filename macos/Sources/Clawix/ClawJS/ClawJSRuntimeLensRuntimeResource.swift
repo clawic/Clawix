@@ -67,6 +67,19 @@ struct ClawJSRuntimeLensRuntimeResource: Decodable, Equatable, Identifiable {
     let source: String?
     let isDefault: Bool?
     let scope: String?
+    let parentSessionId: String?
+    let toolCallCount: Int?
+    let inputTokens: Int?
+    let outputTokens: Int?
+    let cacheReadTokens: Int?
+    let cacheWriteTokens: Int?
+    let reasoningTokens: Int?
+    let billingProvider: String?
+    let billingMode: String?
+    let estimatedCostUsd: Double?
+    let actualCostUsd: Double?
+    let costStatus: String?
+    let apiCallCount: Int?
     let providerAuth: ProviderAuth?
     let envVars: [String]?
     let lastError: String?
@@ -96,6 +109,19 @@ struct ClawJSRuntimeLensRuntimeResource: Decodable, Equatable, Identifiable {
         case source
         case isDefault
         case scope
+        case parentSessionId
+        case toolCallCount
+        case inputTokens
+        case outputTokens
+        case cacheReadTokens
+        case cacheWriteTokens
+        case reasoningTokens
+        case billingProvider
+        case billingMode
+        case estimatedCostUsd
+        case actualCostUsd
+        case costStatus
+        case apiCallCount
         case providerAuth = "auth"
         case envVars
         case lastError
@@ -130,6 +156,19 @@ struct ClawJSRuntimeLensRuntimeResource: Decodable, Equatable, Identifiable {
             source: source,
             isDefault: isDefault,
             scope: scope,
+            parentSessionId: parentSessionId,
+            toolCallCount: toolCallCount,
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            cacheReadTokens: cacheReadTokens,
+            cacheWriteTokens: cacheWriteTokens,
+            reasoningTokens: reasoningTokens,
+            billingProvider: billingProvider,
+            billingMode: billingMode,
+            estimatedCostUsd: estimatedCostUsd,
+            actualCostUsd: actualCostUsd,
+            costStatus: costStatus,
+            apiCallCount: apiCallCount,
             providerAuth: providerAuth,
             envVars: envVars,
             lastError: lastError,
