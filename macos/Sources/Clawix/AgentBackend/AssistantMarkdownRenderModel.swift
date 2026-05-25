@@ -49,6 +49,7 @@ final class AssistantMarkdownRenderModel: ObservableObject {
                 guard let self, self.latestRequest == request else { return }
                 self.result = parsed
                 self.fulfilledRequest = request
+                self.markRenderReady(parsed, request: request)
                 self.logRenderTimingIfNeeded(parsed, request: request)
             }
         }
@@ -66,6 +67,26 @@ final class AssistantMarkdownRenderModel: ObservableObject {
     func waitForCurrentRenderForTesting() async {
         let task = parseTask
         await task?.value
+    }
+
+    private func markRenderReady(
+        _ parsed: MarkdownParseCache.Result,
+        request: AssistantMarkdownRenderRequest
+    ) {
+        RenderProbe.markPassive(
+            "AssistantMarkdownRenderReady",
+            fields: [
+                "annotateMs": String(format: "%.2f", parsed.annotateMs),
+                "blocks": "\(parsed.blocks.count)",
+                "cacheHit": "\(parsed.cacheHit)",
+                "parseMs": String(format: "%.2f", parsed.parseMs),
+                "phase": request.phase.renderProbeName,
+                "renderKey": request.renderKey?.renderProbeName ?? "none",
+                "reparsedChars": "\(parsed.reparsedCharacterCount)",
+                "reusedBlocks": "\(parsed.reusedBlockCount)",
+                "textChars": "\(request.text.count)"
+            ]
+        )
     }
 
     private func logRenderTimingIfNeeded(
@@ -97,6 +118,30 @@ final class AssistantMarkdownRenderModel: ObservableObject {
             // hot-path-ok maxBytes: 2097152 reason:=parse-runs-off-body-through-bounded-cache
             MarkdownParseCache.parse(text, renderKey: renderKey, phase: phase)
         }.value
+    }
+}
+
+private extension MarkdownParseCachePhase {
+    var renderProbeName: String {
+        switch self {
+        case .streamingIntermediate:
+            return "streamingIntermediate"
+        case .settled:
+            return "settled"
+        }
+    }
+}
+
+private extension AssistantMarkdownRenderKey {
+    var renderProbeName: String {
+        switch scope {
+        case .message(let id):
+            return "message:\(id.uuidString)"
+        case .timeline(let id):
+            return "timeline:\(id.uuidString)"
+        case .custom(let value):
+            return "custom:\(value)"
+        }
     }
 }
 

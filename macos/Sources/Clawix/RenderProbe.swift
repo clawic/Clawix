@@ -76,6 +76,14 @@ enum RenderProbe {
     }
 
     static func mark(_ name: String, fields: [String: String] = [:]) {
+        mark(name, fields: fields, recordsActivity: true)
+    }
+
+    static func markPassive(_ name: String, fields: [String: String] = [:]) {
+        mark(name, fields: fields, recordsActivity: false)
+    }
+
+    private static func mark(_ name: String, fields: [String: String], recordsActivity: Bool) {
         guard isEnabled else { return }
         let stamp = timestamp()
         let suffix = fields
@@ -84,7 +92,9 @@ enum RenderProbe {
             .joined(separator: " ")
         let body = suffix.isEmpty ? name : "\(name) \(suffix)"
         queue.async {
-            lastActivityAt = CFAbsoluteTimeGetCurrent()
+            if recordsActivity {
+                lastActivityAt = CFAbsoluteTimeGetCurrent()
+            }
             startIfNeeded()
             writeLine("[\(stamp)] === EVENT: \(body) ===\n")
         }
