@@ -242,4 +242,68 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(authInventory.rows.first?.enabledLabel, "enabled: false")
         XCTAssertEqual(authInventory.rows.first { $0.id == "openai" }?.summaryLabel, "****1234")
     }
+
+    func testHermesRuntimePortalFixtureFeedsInventoryAndSupportPresentations() async throws {
+        let snapshot = try await ClawJSRuntimeLensTestFixtures.hermesRuntimePortalSnapshot()
+
+        let domainPresentation = ClawJSRuntimeLensDomainPresentation.make(domains: snapshot.domains)
+        XCTAssertEqual(domainPresentation.domainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
+        XCTAssertEqual(domainPresentation.rows.map(\.domain), ClawJSRuntimeLensSnapshot.canonicalDomains)
+        XCTAssertTrue(domainPresentation.accessibilityLabel.contains("Runtime domains"))
+
+        let supportContracts = ClawJSRuntimeLensSupportContractPresentation.make(snapshot: snapshot)
+        XCTAssertEqual(supportContracts.contractDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
+        XCTAssertEqual(supportContracts.rows.map(\.domain), ClawJSRuntimeLensSnapshot.canonicalDomains)
+        XCTAssertEqual(supportContracts.writeBackAllowedCount, 2)
+        XCTAssertEqual(supportContracts.blockedWriteBackCount, 10)
+        XCTAssertEqual(supportContracts.externalPendingCount, 1)
+        XCTAssertEqual(supportContracts.evidenceRequirementCount, 11)
+        XCTAssertEqual(supportContracts.nativeCommandDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
+        XCTAssertEqual(supportContracts.contractAuthorityDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
+        XCTAssertEqual(supportContracts.provenanceDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
+        XCTAssertEqual(supportContracts.rows.first { $0.domain == "channels" }?.externalPending, true)
+        XCTAssertEqual(supportContracts.rows.first { $0.domain == "doctorCompat" }?.writeBackAllowed, true)
+        XCTAssertTrue(supportContracts.rows.allSatisfy { $0.provenanceRuntimeId == "hermes" })
+        XCTAssertTrue(supportContracts.accessibilityLabel.contains("Runtime support contracts"))
+
+        let inventory = ClawJSRuntimeLensInventoryPresentation.make(snapshot: snapshot, rowLimit: 40)
+        XCTAssertEqual(inventory.sectionCount, 9)
+        XCTAssertEqual(
+            inventory.sections.map(\.domain),
+            [
+                "sessions",
+                "channels",
+                "providers",
+                "auth",
+                "plugins",
+                "gateway",
+                "doctorCompat",
+                "sandboxPermissions",
+                "configuration"
+            ]
+        )
+        XCTAssertGreaterThanOrEqual(inventory.totalResourceCount, 70)
+        XCTAssertTrue(inventory.accessibilityLabel.contains("Runtime inventory"))
+
+        let missingInventoryDomains = ClawJSRuntimeLensSnapshot.canonicalDomains.filter { domain in
+            !inventory.sections.contains { $0.domain == domain }
+        }
+        XCTAssertEqual(missingInventoryDomains, ["skills", "memory", "models", "scheduler"])
+
+        let authInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "auth" })
+        XCTAssertEqual(authInventory.totalResourceCount, 28)
+        XCTAssertEqual(authInventory.statusLabel, "configured 1, missing 26, redacted 1")
+        let scalarAuthRow = try XCTUnwrap(authInventory.rows.first { $0.id == "tencent-tokenhub" })
+        XCTAssertEqual(scalarAuthRow.statusLabel, "redacted")
+        XCTAssertNil(scalarAuthRow.summaryLabel)
+        XCTAssertEqual(scalarAuthRow.attributesLabel, "auth scalar: redacted_value")
+
+        let pluginInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "plugins" })
+        XCTAssertEqual(pluginInventory.totalResourceCount, 3)
+        XCTAssertTrue(pluginInventory.rows.contains { $0.id == "plugin-status" })
+
+        let configurationInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "configuration" })
+        XCTAssertEqual(configurationInventory.totalResourceCount, 6)
+        XCTAssertGreaterThanOrEqual(configurationInventory.pathCount, 5)
+    }
 }
