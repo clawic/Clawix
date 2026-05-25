@@ -154,6 +154,22 @@ final class ChatTranscriptStore: ObservableObject, Identifiable {
         return messagesById[id]?.message
     }
 
+    func lastMessageId(where predicate: (ChatMessage) -> Bool) -> UUID? {
+        for id in messageIds.reversed() {
+            guard let message = messagesById[id]?.message else { continue }
+            if predicate(message) { return id }
+        }
+        return nil
+    }
+
+    func lastMessage(where predicate: (ChatMessage) -> Bool) -> ChatMessage? {
+        for id in messageIds.reversed() {
+            guard let message = messagesById[id]?.message else { continue }
+            if predicate(message) { return message }
+        }
+        return nil
+    }
+
     func messageStore(id: UUID) -> ChatMessageStore? {
         messagesById[id]
     }

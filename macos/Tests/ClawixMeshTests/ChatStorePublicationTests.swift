@@ -46,7 +46,7 @@ final class ChatStorePublicationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
-    func testAssistantDeltasCoalesceBeforeOneTranscriptPublication() {
+    func testAssistantDeltasPublishImmediatelyWithoutLegacyChatPublication() {
         let state = AppState()
         let chatId = UUID()
         let assistant = ChatMessage(role: .assistant, content: "", streamingFinished: false)
@@ -69,12 +69,13 @@ final class ChatStorePublicationTests: XCTestCase {
         }
 
         XCTAssertEqual(chatsPublishes, 0)
-        XCTAssertEqual(messagePublishes, 0)
+        XCTAssertEqual(messagePublishes, 3)
+        XCTAssertEqual(messageStore?.message.content, "hello world")
 
         state.flushPendingAssistantTextDeltas(chatId: chatId)
 
         XCTAssertEqual(chatsPublishes, 0)
-        XCTAssertEqual(messagePublishes, 1)
+        XCTAssertEqual(messagePublishes, 3)
         XCTAssertEqual(messageStore?.message.content, "hello world")
     }
 
@@ -118,7 +119,7 @@ final class ChatStorePublicationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
-    func testReasoningDeltasCoalesceWithoutPublishingLegacyChats() {
+    func testReasoningDeltasPublishImmediatelyWithoutLegacyChats() {
         let state = AppState()
         let chatId = UUID()
         let assistant = ChatMessage(role: .assistant, content: "", streamingFinished: false)
@@ -140,12 +141,14 @@ final class ChatStorePublicationTests: XCTestCase {
         state.appendReasoningDelta(chatId: chatId, delta: "more ")
 
         XCTAssertEqual(chatsPublishes, 0)
-        XCTAssertEqual(messagePublishes, 0)
+        XCTAssertEqual(messagePublishes, 2)
+        XCTAssertEqual(messageStore?.message.reasoningText, "think more ")
+        XCTAssertEqual(reasoningTexts(in: messageStore?.message.timeline ?? []), ["think more "])
 
         state.flushPendingReasoningDeltas(chatId: chatId)
 
         XCTAssertEqual(chatsPublishes, 0)
-        XCTAssertEqual(messagePublishes, 1)
+        XCTAssertEqual(messagePublishes, 2)
         XCTAssertEqual(messageStore?.message.reasoningText, "think more ")
         XCTAssertEqual(reasoningTexts(in: messageStore?.message.timeline ?? []), ["think more "])
     }
@@ -251,6 +254,26 @@ final class ChatStorePublicationTests: XCTestCase {
         XCTAssertLessThan(bridgePublishes, 5)
         XCTAssertEqual(lastBridgeContent, "hello world")
         XCTAssertEqual(state.chats.first?.messages.count, 0)
+    }
+
+    func testTranscriptReverseLookupsFindActionBarMessagesWithoutMaterializingSnapshot() {
+        let transcript = ChatTranscriptStore(chatId: UUID(), messages: [
+            ChatMessage(role: .user, content: "first"),
+            ChatMessage(role: .assistant, content: "old", streamingFinished: true),
+            ChatMessage(role: .user, content: "latest"),
+            ChatMessage(role: .assistant, content: "streaming", streamingFinished: false),
+            ChatMessage(role: .assistant, content: "failed", streamingFinished: true, isError: true)
+        ])
+
+        let lastUserId = transcript.lastMessageId { $0.role == .user }
+        let lastCompletedAssistantId = transcript.lastMessageId {
+            $0.role == .assistant && $0.streamingFinished && !$0.isError
+        }
+        let lastAssistant = transcript.lastMessage { $0.role == .assistant }
+
+        XCTAssertEqual(lastUserId, transcript.messageStores[2].id)
+        XCTAssertEqual(lastCompletedAssistantId, transcript.messageStores[1].id)
+        XCTAssertEqual(lastAssistant?.content, "failed")
     }
 
     func testPendingReasoningFlushesBeforeToolTimelineEntry() {

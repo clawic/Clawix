@@ -128,6 +128,7 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
 
     func testAppStateInitDoesNotStartPostFirstFrameWork() throws {
         let source = try readSource("AppState.swift")
+        let appSource = try readSource("App.swift")
         let runtimeSessionsSource = try readSource("AppState/RuntimeSessions.swift")
         guard let initStart = source.range(of: "    init(\n") else {
             XCTFail("AppState.init not found")
@@ -142,8 +143,18 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
 
         XCTAssertFalse(initBody.contains("FaviconCache.shared.primeDiskCache()"))
         XCTAssertFalse(initBody.contains("clawix.startIfNeeded("))
+        XCTAssertTrue(appSource.contains(".onAppear"))
+        XCTAssertTrue(appSource.contains("appState.startPostFirstFramePersistence()"))
+        XCTAssertTrue(source.contains("bootstrapCodexSessionIndexForLaunchIfNeeded()"))
+        XCTAssertTrue(source.contains("scheduleAutomaticPostFirstFramePersistenceIfNeeded()"))
+        XCTAssertTrue(source.contains("XCTestConfigurationFilePath"))
         XCTAssertTrue(runtimeSessionsSource.contains("startPostFirstFramePersistence()"))
+        XCTAssertTrue(runtimeSessionsSource.contains("AgentThreadStore.codexSessionIndexThreads("))
+        XCTAssertTrue(runtimeSessionsSource.contains("AgentThreadStore.codexPinnedThreadIds()"))
         XCTAssertTrue(runtimeSessionsSource.contains("startPostFirstFrameFaviconCache()"))
+        XCTAssertTrue(runtimeSessionsSource.contains("scheduleIdleAppStateCanonicalReconciliation(delayNanos: 250_000_000)"))
+        XCTAssertTrue(runtimeSessionsSource.contains("scheduleDeferredCodexImport()"))
+        XCTAssertTrue(runtimeSessionsSource.contains("CLAWIX_DISABLE_BACKEND"))
         XCTAssertTrue(source.contains("Bridge transport is no longer opened on app launch"))
     }
 

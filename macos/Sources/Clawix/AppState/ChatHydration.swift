@@ -152,8 +152,12 @@ extension AppState {
         } else if let path = chat.rolloutPath {
             hydrateHistoryFromLocalRollout(path: path, chatId: chatId, blocking: blocking)
         }
-        if let threadId = chat.clawixThreadId, let clawix {
+        if blocking, let threadId = chat.clawixThreadId, let clawix {
             Task { @MainActor in
+                RenderProbe.mark(
+                    "ChatRuntimeAttachBlockingHydration",
+                    fields: ["chat": chat.id.uuidString]
+                )
                 await clawix.attach(chatId: chat.id, threadId: threadId)
             }
         }
@@ -168,14 +172,68 @@ extension AppState {
         if blocking {
             applyRolloutResult(RolloutReader.readTailWithStatus(path: path), chatId: chatId)
         } else {
-            Task.detached(priority: .userInitiated) { [weak self] in
+            guard localRolloutHydrationTasks[chatId] == nil else { return }
+            RenderProbe.mark(
+                "ChatHydrationLocalStart",
+                fields: [
+                    "chat": chatId.uuidString,
+                    "path": path.lastPathComponent
+                ]
+            )
+            localRolloutHydrationTasks[chatId] = Task.detached(priority: .userInitiated) { [weak self] in
+                let readStarted = CFAbsoluteTimeGetCurrent()
                 let result = RolloutReader.readTailWithStatus(path: path)
+                let readMs = (CFAbsoluteTimeGetCurrent() - readStarted) * 1000
+                RenderProbe.mark(
+                    "ChatHydrationLocalRead",
+                    fields: [
+                        "chat": chatId.uuidString,
+                        "entries": "\(result.entries.count)",
+                        "parsedRecords": "\(result.parsedRecordCount)",
+                        "readMode": result.readMode,
+                        "readEntireFile": "\(result.readEntireFile)",
+                        "totalBytes": "\(result.totalFileBytes)",
+                        "readBytes": "\(result.readBytes)",
+                        "requestedMaxBytes": "\(result.requestedMaxBytes)",
+                        "alignedOffset": "\(result.alignedOffset)",
+                        "hasMore": "\(result.hasMoreBefore)",
+                        "ms": String(format: "%.1f", readMs)
+                    ]
+                )
+                let convertStarted = CFAbsoluteTimeGetCurrent()
                 let messages = rolloutChatMessages(from: result)
+                let convertMs = (CFAbsoluteTimeGetCurrent() - convertStarted) * 1000
+                RenderProbe.mark(
+                    "ChatHydrationLocalConvert",
+                    fields: [
+                        "chat": chatId.uuidString,
+                        "messages": "\(messages.count)",
+                        "ms": String(format: "%.1f", convertMs)
+                    ]
+                )
                 await MainActor.run { [weak self] in
-                    self?.applyRolloutMessages(
+                    guard let self else { return }
+                    self.localRolloutHydrationTasks[chatId] = nil
+                    RenderProbe.mark(
+                        "ChatHydrationLocalApply",
+                        fields: [
+                            "chat": chatId.uuidString,
+                            "messages": "\(messages.count)"
+                        ]
+                    )
+                    let applyStarted = CFAbsoluteTimeGetCurrent()
+                    self.applyRolloutMessages(
                         messages,
                         lastTurnInterrupted: result.lastTurnInterrupted,
                         chatId: chatId
+                    )
+                    let applyMs = (CFAbsoluteTimeGetCurrent() - applyStarted) * 1000
+                    RenderProbe.mark(
+                        "ChatHydrationLocalApplyEnd",
+                        fields: [
+                            "chat": chatId.uuidString,
+                            "ms": String(format: "%.1f", applyMs)
+                        ]
                     )
                 }
             }
@@ -774,6 +832,20 @@ extension AppState {
               !pag.loadingOlder,
               let cursor = pag.oldestKnownId else { return }
         messagesPaginationByChat[chatId]?.loadingOlder = true
+        if Self.prefersLocalRolloutHydration, let path = chat(byId: chatId)?.rolloutPath {
+            Task { @MainActor [weak self] in
+                let result = await Task.detached(priority: .userInitiated) {
+                    RolloutReader.readWindowBefore(path: path, beforeMessageId: cursor)
+                }.value
+                let messages = rolloutChatMessages(from: result).map { $0.toWire() }
+                self?.applyDaemonMessagesPage(
+                    chatId: chatId.uuidString,
+                    messages: messages,
+                    hasMore: result.hasMoreBefore
+                )
+            }
+            return
+        }
         guard let client = daemonBridgeClient,
               client.loadOlderMessages(chatId: chatId, beforeMessageId: cursor)
         else {

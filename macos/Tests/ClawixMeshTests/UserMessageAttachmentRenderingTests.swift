@@ -111,12 +111,53 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
 
         let tail = RolloutReader.readTailWithStatus(path: rollout, maxBytes: 260)
         XCTAssertTrue(tail.hasMoreBefore)
+        XCTAssertEqual(tail.readMode, "tail")
+        XCTAssertFalse(tail.readEntireFile)
+        XCTAssertEqual(tail.requestedMaxBytes, 260)
+        XCTAssertGreaterThan(tail.totalFileBytes, UInt64(tail.readBytes))
+        XCTAssertGreaterThan(tail.parsedRecordCount, 0)
         let cursor = try XCTUnwrap(tail.entries.first?.id.uuidString)
 
         let page = RolloutReader.readWindowBefore(path: rollout, beforeMessageId: cursor, limit: 2, maxBytes: 512)
 
         XCTAssertEqual(page.entries.map(\.text), ["prompt 4", "prompt 5"])
         XCTAssertTrue(page.hasMoreBefore)
+        XCTAssertEqual(page.readMode, "window-before")
+        XCTAssertEqual(page.requestedMaxBytes, 512)
+        XCTAssertGreaterThan(page.parsedRecordCount, 0)
+    }
+
+    func testRolloutChatMessagesAreSettledForHistoricalRendering() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-09T10:00:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-09T10:00:01.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Done.",
+                "phase": "final_answer"
+            ]),
+            jsonLine(timestamp: "2026-05-09T10:00:02.000Z", type: "event_msg", payload: [
+                "type": "task_complete",
+                "duration_ms": 1_000
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout)
+        let messages = rolloutChatMessages(from: result)
+        let assistant = try XCTUnwrap(messages.first)
+
+        XCTAssertEqual(assistant.role, .assistant)
+        XCTAssertTrue(assistant.streamingFinished)
+        XCTAssertTrue(assistant.streamCheckpoints.isEmpty)
+        XCTAssertTrue(assistant.reasoningCheckpoints.isEmpty)
+        XCTAssertTrue(assistant.streamPendingTail.isEmpty)
+        XCTAssertTrue(assistant.reasoningPendingTails.isEmpty)
     }
 
     private func jsonLine(timestamp: String, type: String, payload: [String: Any]) -> String {

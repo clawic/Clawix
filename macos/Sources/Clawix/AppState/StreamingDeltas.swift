@@ -3,9 +3,17 @@ import Foundation
 extension AppState {
     func appendAssistantDelta(chatId: UUID, delta: String) {
         if delta.isEmpty { return }
+        RenderProbe.mark(
+            "LiveStreamAppendEnter",
+            fields: [
+                "chat": chatId.uuidString,
+                "kind": "content",
+                "deltaChars": "\(delta.count)",
+                "deltaWords": "\(Self.completeWordCount(in: delta))"
+            ]
+        )
         flushPendingReasoningDeltas(chatId: chatId)
-        pendingAssistantTextBuffers[chatId, default: ""] += delta
-        scheduleAssistantTextFlush()
+        applyAssistantTextDelta(chatId: chatId, delta: delta)
     }
 
     /// Mark the most-recent assistant placeholder of a chat as finished.
@@ -56,14 +64,6 @@ extension AppState {
         scheduleStreamingCheckpointSettlement(chatId: chatId, messageId: messageId)
     }
 
-    private func scheduleAssistantTextFlush() {
-        guard !assistantTextFlushScheduled else { return }
-        assistantTextFlushScheduled = true
-        DispatchQueue.main.async { [weak self] in
-            self?.flushPendingAssistantTextDeltas()
-        }
-    }
-
     /// Flush every chat's pending text. Called once per main-runloop
     /// tick by the scheduler. Safe to call directly when an external
     /// event needs the buffer drained synchronously (e.g. before
@@ -98,14 +98,6 @@ extension AppState {
         pendingAssistantTextBuffers.removeValue(forKey: chatId)
     }
 
-    private func scheduleReasoningFlush() {
-        guard !reasoningFlushScheduled else { return }
-        reasoningFlushScheduled = true
-        DispatchQueue.main.async { [weak self] in
-            self?.flushPendingReasoningDeltas()
-        }
-    }
-
     func flushPendingReasoningDeltas() {
         reasoningFlushScheduled = false
         guard !pendingReasoningBuffers.isEmpty else { return }
@@ -138,7 +130,9 @@ extension AppState {
         var pendingTailCount = 0
         var checkpointDeltaCount = 0
         var queueDepth: Double = 0
+        var messageId = lastMessage.id
         transcript.mutateMessage(id: lastMessage.id) { message in
+            messageId = message.id
             message.content += delta
             // Mirror into the chronological timeline so message text
             // interleaves with reasoning and tool groups in arrival order
@@ -172,8 +166,22 @@ extension AppState {
             totalCps = message.streamCheckpoints.count
             pendingTailCount = result.pendingTail.count
             checkpointDeltaCount = result.newCheckpoints.count
-            queueDepth = max(0, lastAt.timeIntervalSinceNow * 1000)
+            queueDepth = max(0, (message.streamCheckpoints.last?.addedAt ?? lastAt).timeIntervalSinceNow * 1000)
         }
+        RenderProbe.mark(
+            "LiveStreamModelAppend",
+            fields: [
+                "chat": chatId.uuidString,
+                "message": messageId.uuidString,
+                "deltaChars": "\(delta.count)",
+                "deltaWords": "\(Self.completeWordCount(in: delta))",
+                "totalChars": "\(totalLen)",
+                "checkpoints": "\(totalCps)",
+                "checkpointDelta": "\(checkpointDeltaCount)",
+                "pendingTail": "\(pendingTailCount)",
+                "queueAheadMs": String(format: "%.1f", queueDepth)
+            ]
+        )
         if streamingPerfLogEnabled {
             let t1 = CFAbsoluteTimeGetCurrent()
             let dt = lastDeltaArrivalTime > 0 ? (t0 - lastDeltaArrivalTime) * 1000 : 0
@@ -189,14 +197,23 @@ extension AppState {
     }
 
     func appendReasoningDelta(chatId: UUID, delta: String) {
+        guard !delta.isEmpty else { return }
+        RenderProbe.mark(
+            "LiveStreamAppendEnter",
+            fields: [
+                "chat": chatId.uuidString,
+                "kind": "reasoning",
+                "deltaChars": "\(delta.count)",
+                "deltaWords": "\(Self.completeWordCount(in: delta))"
+            ]
+        )
         // Drain any pending agent-message deltas FIRST so the text the
         // model emitted before this reasoning chunk lands in the timeline
         // ahead of the new `.reasoning` entry. Without this, buffered text
         // applied a runloop tick later would appear after reasoning that
         // arrived later in the stream.
         flushPendingAssistantTextDeltas(chatId: chatId)
-        pendingReasoningBuffers[chatId, default: ""] += delta
-        scheduleReasoningFlush()
+        applyReasoningDelta(chatId: chatId, delta: delta)
     }
 
     private func applyReasoningDelta(chatId: UUID, delta: String) {
@@ -204,27 +221,36 @@ extension AppState {
               let lastMessage = transcript.lastMessage,
               lastMessage.role == .assistant
         else { return }
+        var messageId = lastMessage.id
+        var entryId = UUID()
+        var totalChars = 0
+        var checkpointCount = 0
+        var checkpointDeltaCount = 0
+        var pendingTailCount = 0
+        var queueDepth: Double = 0
         transcript.mutateMessage(id: lastMessage.id) { message in
+            messageId = message.id
             message.reasoningText += delta
             // Extend the trailing reasoning chunk in the timeline, or open a
             // new one if the last entry is a tools group (so the row order
             // becomes text -> tools -> text -> tools -> ...).
             let timeline = message.timeline
-            let entryId: UUID
+            let nextEntryId: UUID
             let newText: String
             if let lastEntry = timeline.last,
                case .reasoning(let existingId, let existing) = lastEntry {
-                entryId = existingId
+                nextEntryId = existingId
                 newText = existing + delta
                 message.timeline[timeline.count - 1] =
-                    .reasoning(id: entryId, text: newText)
+                    .reasoning(id: nextEntryId, text: newText)
             } else {
-                entryId = UUID()
+                nextEntryId = UUID()
                 newText = delta
                 message.timeline.append(
-                    .reasoning(id: entryId, text: newText)
+                    .reasoning(id: nextEntryId, text: newText)
                 )
             }
+            entryId = nextEntryId
             let bucket = message.reasoningCheckpoints[entryId, default: []]
             let pending = message.reasoningPendingTails[entryId, default: ""]
             let result = StreamingFade.ingest(
@@ -241,7 +267,30 @@ extension AppState {
                 checkpoints: message.reasoningCheckpoints[entryId] ?? []
             )
             message.reasoningPendingTails[entryId] = result.pendingTail
+            totalChars = message.reasoningText.count
+            checkpointCount = message.reasoningCheckpoints[entryId]?.count ?? 0
+            checkpointDeltaCount = result.newCheckpoints.count
+            pendingTailCount = result.pendingTail.count
+            queueDepth = max(
+                0,
+                (message.reasoningCheckpoints[entryId]?.last?.addedAt ?? .distantPast).timeIntervalSinceNow * 1000
+            )
         }
+        RenderProbe.mark(
+            "LiveStreamReasoningModelAppend",
+            fields: [
+                "chat": chatId.uuidString,
+                "message": messageId.uuidString,
+                "entry": entryId.uuidString,
+                "deltaChars": "\(delta.count)",
+                "deltaWords": "\(Self.completeWordCount(in: delta))",
+                "totalChars": "\(totalChars)",
+                "checkpoints": "\(checkpointCount)",
+                "checkpointDelta": "\(checkpointDeltaCount)",
+                "pendingTail": "\(pendingTailCount)",
+                "queueAheadMs": String(format: "%.1f", queueDepth)
+            ]
+        )
     }
 
     func markAssistantCompleted(chatId: UUID, finalText: String?) {
@@ -297,5 +346,9 @@ extension AppState {
                 self?.dispatchNextQueuedMessage(forChatId: chatId)
             }
         }
+    }
+
+    private static func completeWordCount(in text: String) -> Int {
+        text.split(whereSeparator: { $0.isWhitespace }).count
     }
 }

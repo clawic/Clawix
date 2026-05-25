@@ -12,6 +12,13 @@ extension AppState {
     func navigate(to route: SidebarRoute) {
         let visibleRoute = route.visibleRoute(isVisible: FeatureFlags.shared.isVisible)
         guard currentRoute != visibleRoute else { return }
+        RenderProbe.mark(
+            "AppStateNavigateRequest",
+            fields: [
+                "from": currentRoute.renderProbeIdentifier,
+                "to": visibleRoute.renderProbeIdentifier
+            ]
+        )
         currentRoute = visibleRoute
     }
 
@@ -184,6 +191,111 @@ enum SidebarRoute: Equatable {
 }
 
 extension SidebarRoute {
+    var renderProbeIdentifier: String {
+        switch self {
+        case .chat(let id):
+            return "chat:\(id.uuidString)"
+        case .app(let id):
+            return "app:\(id.uuidString)"
+        case .databaseCollection(let name):
+            return "databaseCollection:\(name)"
+        case .driveFolder(let folderId):
+            return "driveFolder:\(folderId)"
+        case .skillDetail(let slug):
+            return "skillDetail:\(slug)"
+        case .iotDeviceDetail(let id):
+            return "iotDeviceDetail:\(id)"
+        case .designStyleDetail(let id):
+            return "designStyleDetail:\(id)"
+        case .designTemplateDetail(let id):
+            return "designTemplateDetail:\(id)"
+        case .designEditor(let documentId):
+            return "designEditor:\(documentId)"
+        case .agentDetail(let id):
+            return "agentDetail:\(id)"
+        case .personalityDetail(let id):
+            return "personalityDetail:\(id)"
+        case .skillCollectionDetail(let id):
+            return "skillCollectionDetail:\(id)"
+        case .connectionDetail(let id):
+            return "connectionDetail:\(id)"
+        case .publishingComposer:
+            return "publishingComposer"
+        case .lifeVertical(let id):
+            return "lifeVertical:\(id)"
+        case .home:
+            return "home"
+        case .search:
+            return "search"
+        case .plugins:
+            return "plugins"
+        case .automations:
+            return "automations"
+        case .project:
+            return "project"
+        case .appsHome:
+            return "appsHome"
+        case .settings:
+            return "settings"
+        case .rescue:
+            return "rescue"
+        case .secretsHome:
+            return "secretsHome"
+        case .databaseHome:
+            return "databaseHome"
+        case .databaseWorkbench:
+            return "databaseWorkbench"
+        case .memoryHome:
+            return "memoryHome"
+        case .indexHome:
+            return "indexHome"
+        case .macCare:
+            return "macCare"
+        case .marketplaceHome:
+            return "marketplaceHome"
+        case .driveAdmin:
+            return "driveAdmin"
+        case .drivePhotos:
+            return "drivePhotos"
+        case .driveDocuments:
+            return "driveDocuments"
+        case .driveRecent:
+            return "driveRecent"
+        case .calendarHome:
+            return "calendarHome"
+        case .contactsHome:
+            return "contactsHome"
+        case .networkControl:
+            return "networkControl"
+        case .skills:
+            return "skills"
+        case .iotHome:
+            return "iotHome"
+        case .designStylesHome:
+            return "designStylesHome"
+        case .designTemplatesHome:
+            return "designTemplatesHome"
+        case .designReferencesHome:
+            return "designReferencesHome"
+        case .agentsHome:
+            return "agentsHome"
+        case .personalitiesHome:
+            return "personalitiesHome"
+        case .connectionsHome:
+            return "connectionsHome"
+        case .skillCollectionsHome:
+            return "skillCollectionsHome"
+        case .publishingHome:
+            return "publishingHome"
+        case .publishingChannels:
+            return "publishingChannels"
+        case .lifeHome:
+            return "lifeHome"
+        case .lifeSettings:
+            return "lifeSettings"
+        }
+    }
+
     var gatedFeature: AppFeature? {
         switch self {
         case .appsHome, .app:

@@ -489,7 +489,7 @@ private final class WeakBox<T: AnyObject> {
 
 enum ClawixEventStreamLimits {
     static let eventBufferCount = 512
-    static let maxCoalescedDeltaBytes = 64 * 1024
+    static let maxDeltaBytes = 64 * 1024
 }
 
 enum ClawixRequestLimits {
@@ -502,46 +502,27 @@ enum ClawixRequestLimits {
 
 struct ClawixServerEventCoalescer {
     private let maxDeltaBytes: Int
-    private var pendingDelta: PendingServerDelta?
 
-    init(maxDeltaBytes: Int = ClawixEventStreamLimits.maxCoalescedDeltaBytes) {
+    init(maxDeltaBytes: Int = ClawixEventStreamLimits.maxDeltaBytes) {
         self.maxDeltaBytes = max(1, maxDeltaBytes)
     }
 
     mutating func ingest(_ event: ClawixServerEvent) -> [ClawixServerEvent] {
         guard let delta = PendingServerDelta(event: event) else {
-            var emitted = flush()
-            emitted.append(event)
-            return emitted
+            return [event]
         }
 
-        var emitted: [ClawixServerEvent] = []
-        for chunk in delta.chunks(maxBytes: maxDeltaBytes) {
+        return delta.chunks(maxBytes: maxDeltaBytes).map { chunk in
             PerfSignpost.ipcClient.event("event.delta.bytes", chunk.byteCount)
-            if let pendingDelta {
-                if pendingDelta.canCoalesce(with: chunk),
-                   pendingDelta.byteCount + chunk.byteCount <= maxDeltaBytes {
-                    self.pendingDelta = pendingDelta.appending(chunk)
-                    PerfSignpost.ipcClient.event("event.coalesced")
-                } else {
-                    emitted.append(pendingDelta.event)
-                    self.pendingDelta = chunk
-                }
-            } else {
-                self.pendingDelta = chunk
-            }
+            return chunk.event
         }
-        return emitted
     }
 
     mutating func flush() -> [ClawixServerEvent] {
-        guard let delta = pendingDelta else { return [] }
-        pendingDelta = nil
-        return [delta.event]
+        []
     }
 
     mutating func reset() {
-        pendingDelta = nil
     }
 }
 

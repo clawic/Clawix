@@ -7,12 +7,20 @@ extension AppState {
 
         let preferredPrimary = ["5.5", "5.4"]
         let primary = preferredPrimary.filter { labels.contains($0) }
+        let nextAvailableModels: [String]
+        let nextOtherModels: [String]
         if primary.isEmpty {
-            availableModels = Array(labels.prefix(2))
-            otherModels = Array(labels.dropFirst(2))
+            nextAvailableModels = Array(labels.prefix(2))
+            nextOtherModels = Array(labels.dropFirst(2))
         } else {
-            availableModels = primary
-            otherModels = labels.filter { !primary.contains($0) }
+            nextAvailableModels = primary
+            nextOtherModels = labels.filter { !primary.contains($0) }
+        }
+        if availableModels != nextAvailableModels {
+            availableModels = nextAvailableModels
+        }
+        if otherModels != nextOtherModels {
+            otherModels = nextOtherModels
         }
     }
 

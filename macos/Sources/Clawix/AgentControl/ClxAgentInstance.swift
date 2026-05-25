@@ -31,6 +31,7 @@ enum ClxAgentInstance {
             "--clawix-control-token": "CLAWIX_CONTROL_TOKEN",
             "--clawix-bridge-port": "CLAWIX_BRIDGE_PORT",
             "--clawix-bridge-http-port": "CLAWIX_BRIDGE_HTTP_PORT",
+            "--clawix-thread-fixture": "CLAWIX_THREAD_FIXTURE",
         ]
         var index = 0
         while index < arguments.count {

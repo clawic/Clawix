@@ -92,6 +92,22 @@ private extension KeyedDecodingContainer where Key == AgentThreadSummary.DecodeK
 }
 
 enum AgentThreadStore {
+    private struct CodexSessionIndexRecord: Decodable {
+        let id: String
+        let threadName: String?
+        let updatedAt: String?
+        let createdAt: String?
+        let cwd: String?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case threadName = "thread_name"
+            case updatedAt = "updated_at"
+            case createdAt = "created_at"
+            case cwd
+        }
+    }
+
     static func fixtureThreads() -> [AgentThreadSummary]? {
         guard
             let raw = ClawixEnv.value(ClawixEnv.threadFixture),
@@ -100,5 +116,80 @@ enum AgentThreadStore {
         let url = URL(fileURLWithPath: (raw as NSString).expandingTildeInPath)
         guard let data = try? Data(contentsOf: url) else { return [] }
         return (try? JSONDecoder().decode([AgentThreadSummary].self, from: data)) ?? []
+    }
+
+    static func codexSessionIndexThreads(
+        indexURL: URL = ClawixAgentBackendRoutes.codexDirectory()
+            .appendingPathComponent("session_index.jsonl", isDirectory: false),
+        limit: Int,
+        includeThreadIds: [String] = []
+    ) -> [AgentThreadSummary] {
+        guard limit > 0,
+              let raw = try? String(contentsOf: indexURL, encoding: .utf8)
+        else { return [] }
+
+        let decoder = JSONDecoder()
+        let records = raw.split(whereSeparator: \.isNewline).compactMap { line -> AgentThreadSummary? in
+            guard let data = String(line).data(using: .utf8),
+                  let record = try? decoder.decode(CodexSessionIndexRecord.self, from: data),
+                  !record.id.isEmpty
+            else { return nil }
+            let updatedAt = parseCodexTimestamp(record.updatedAt) ?? parseCodexTimestamp(record.createdAt) ?? 0
+            return AgentThreadSummary(
+                id: record.id,
+                cwd: record.cwd,
+                name: record.threadName,
+                preview: "",
+                path: nil,
+                createdAt: updatedAt,
+                updatedAt: updatedAt,
+                archived: false
+            )
+        }
+
+        var latestById: [String: AgentThreadSummary] = [:]
+        for record in records {
+            guard let existing = latestById[record.id] else {
+                latestById[record.id] = record
+                continue
+            }
+            if record.updatedAt >= existing.updatedAt {
+                latestById[record.id] = record
+            }
+        }
+
+        var selected = Array(latestById.values.sorted { $0.updatedAt > $1.updatedAt }.prefix(limit))
+        var selectedIds = Set(selected.map(\.id))
+        for threadId in includeThreadIds where !selectedIds.contains(threadId) {
+            guard let thread = latestById[threadId] else { continue }
+            selected.append(thread)
+            selectedIds.insert(threadId)
+        }
+        return selected
+    }
+
+    static func codexPinnedThreadIds(
+        globalStateURL: URL = ClawixAgentBackendRoutes.codexDirectory()
+            .appendingPathComponent(".codex-global-state.json", isDirectory: false)
+    ) -> [String] {
+        guard let data = try? Data(contentsOf: globalStateURL),
+              let object = try? JSONSerialization.jsonObject(with: data),
+              let dictionary = object as? [String: Any],
+              let ids = dictionary["pinned-thread-ids"] as? [String]
+        else { return [] }
+        var seen: Set<String> = []
+        return ids.filter { !$0.isEmpty && seen.insert($0).inserted }
+    }
+
+    private static func parseCodexTimestamp(_ value: String?) -> Int64? {
+        guard let value, !value.isEmpty else { return nil }
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: value) {
+            return Int64(date.timeIntervalSince1970)
+        }
+        let standard = ISO8601DateFormatter()
+        standard.formatOptions = [.withInternetDateTime]
+        return standard.date(from: value).map { Int64($0.timeIntervalSince1970) }
     }
 }

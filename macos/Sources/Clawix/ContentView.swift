@@ -383,6 +383,9 @@ struct ContentView: View {
             appState.enforceCurrentRouteVisibility()
             appState.enforceRuntimeVisibility()
         }
+        .onAppear {
+            ClxControlHandlers.bind(appState: appState)
+        }
         .overlay(CommandPaletteOverlay(appState: appState))
         .overlay(KeyboardShortcutsReferenceOverlay(appState: appState))
         .overlay(ImagePreviewOverlay(appState: appState))

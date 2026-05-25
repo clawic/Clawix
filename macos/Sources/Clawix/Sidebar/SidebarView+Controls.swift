@@ -607,10 +607,16 @@ struct RecentChatRow: View, Equatable {
                 .fill(rowBackground)
         )
         .padding(.trailing, 3)
-        .onTapGesture(perform: callbacks.onSelect)
+        .onTapGesture(perform: selectChat)
         .sidebarHover { hovered = $0 }
         .animation(.easeOut(duration: 0.12), value: hovered)
         .animation(.easeOut(duration: 0.12), value: pinHovered)
+        .clxControl(
+            "sidebar.chat.\(chat.clawixThreadId ?? chat.id.uuidString)",
+            role: "button",
+            label: title,
+            activate: selectChat
+        )
         // Window has `isMovableByWindowBackground = true`, so without an
         // NSView in the row that returns `mouseDownCanMoveWindow = false`
         // AppKit hijacks mouseDown for a window drag and SwiftUI's
@@ -638,6 +644,18 @@ struct RecentChatRow: View, Equatable {
             Color.clear.frame(width: 1, height: 1)
         }
         .contextMenu { nativeContextMenu }
+    }
+
+    private func selectChat() {
+        RenderProbe.mark(
+            "SidebarChatRowSelect",
+            fields: [
+                "chat": chat.id.uuidString,
+                "selected": "\(isSelected)",
+                "thread": chat.clawixThreadId ?? "none"
+            ]
+        )
+        callbacks.onSelect()
     }
 
     @ViewBuilder

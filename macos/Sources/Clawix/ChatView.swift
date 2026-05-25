@@ -4,6 +4,162 @@ import ClawixCore
 
 let chatRailMaxWidth: CGFloat = 720
 
+private struct ChatVisibleWindowEvidence: Equatable {
+    let chatId: UUID
+    let visibleCount: Int
+    let totalCount: Int
+    let hiddenCount: Int
+    let firstMessageId: UUID?
+    let lastMessageId: UUID?
+    let bottomArmed: Bool
+    let messages: [ChatVisibleWindowMessageEvidence]
+}
+
+private struct ChatVisibleWindowMessageEvidence: Equatable {
+    let id: UUID
+    let role: String
+    let contentReady: Bool
+    let streamingFinished: Bool
+    let isError: Bool
+
+    init(message: ChatMessage) {
+        id = message.id
+        switch message.role {
+        case .user:
+            role = "user"
+            contentReady = !message.content.isEmpty
+        case .assistant:
+            role = "assistant"
+            contentReady = message.streamingFinished && !message.isError && !message.content.isEmpty
+        }
+        streamingFinished = message.streamingFinished
+        isError = message.isError
+    }
+}
+
+private enum ChatVisibleWindowRenderLog {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var lastEvidence: ChatVisibleWindowEvidence?
+    nonisolated(unsafe) private static var lastLoggedAt: CFAbsoluteTime = 0
+    private static let duplicateWindow: TimeInterval = 0.25
+
+    static func record(_ evidence: ChatVisibleWindowEvidence, reason: String) {
+        guard evidence.visibleCount > 0 else { return }
+        let now = CFAbsoluteTimeGetCurrent()
+        lock.lock()
+        if lastEvidence == evidence, now - lastLoggedAt < duplicateWindow {
+            lock.unlock()
+            return
+        }
+        let previousEvidence = lastEvidence
+        lastEvidence = evidence
+        lastLoggedAt = now
+        lock.unlock()
+
+        PerfSignpost.uiChat.event("visible.window", evidence.visibleCount)
+        RenderProbe.mark(
+            "ChatVisibleWindow",
+            fields: [
+                "chat": evidence.chatId.uuidString,
+                "first": evidence.firstMessageId?.uuidString ?? "none",
+                "hidden": "\(evidence.hiddenCount)",
+                "last": evidence.lastMessageId?.uuidString ?? "none",
+                "bottomArmed": "\(evidence.bottomArmed)",
+                "reason": reason,
+                "total": "\(evidence.totalCount)",
+                "visible": "\(evidence.visibleCount)"
+            ]
+        )
+        recordCompleteFinalWindow(evidence, reason: reason, batch: now)
+        if let previousEvidence {
+            recordOlderHistoryInsertionIfNeeded(
+                previous: previousEvidence,
+                next: evidence,
+                reason: reason
+            )
+        }
+    }
+
+    private static func recordCompleteFinalWindow(
+        _ evidence: ChatVisibleWindowEvidence,
+        reason: String,
+        batch: CFAbsoluteTime
+    ) {
+        let batchId = String(format: "%.6f", batch)
+        let userRows = evidence.messages.filter { $0.role == "user" }.count
+        let assistantRows = evidence.messages.filter { $0.role == "assistant" }.count
+        let assistantReadyRows = evidence.messages.filter {
+            $0.role == "assistant" && $0.contentReady
+        }.count
+        let incompleteRows = evidence.messages.filter { !$0.contentReady }.count
+        let roleSequence = evidence.messages
+            .map { $0.role == "assistant" ? "a" : "u" }
+            .joined()
+        RenderProbe.mark(
+            "ChatFinalWindow",
+            fields: [
+                "batch": batchId,
+                "bottomArmed": "\(evidence.bottomArmed)",
+                "chat": evidence.chatId.uuidString,
+                "first": evidence.firstMessageId?.uuidString ?? "none",
+                "hidden": "\(evidence.hiddenCount)",
+                "incompleteRows": "\(incompleteRows)",
+                "last": evidence.lastMessageId?.uuidString ?? "none",
+                "reason": reason,
+                "roleSequence": roleSequence.isEmpty ? "none" : roleSequence,
+                "assistantReady": "\(assistantReadyRows)",
+                "assistantRows": "\(assistantRows)",
+                "total": "\(evidence.totalCount)",
+                "userRows": "\(userRows)",
+                "visible": "\(evidence.visibleCount)",
+                "windowComplete": "\(incompleteRows == 0 && evidence.bottomArmed)"
+            ]
+        )
+        for (index, message) in evidence.messages.enumerated() {
+            RenderProbe.mark(
+                "ChatFinalWindowMessage",
+                fields: [
+                    "batch": batchId,
+                    "chat": evidence.chatId.uuidString,
+                    "contentReady": "\(message.contentReady)",
+                    "id": message.id.uuidString,
+                    "index": "\(index)",
+                    "isError": "\(message.isError)",
+                    "role": message.role,
+                    "streamingFinished": "\(message.streamingFinished)",
+                    "visible": "\(evidence.visibleCount)"
+                ]
+            )
+        }
+    }
+
+    private static func recordOlderHistoryInsertionIfNeeded(
+        previous: ChatVisibleWindowEvidence,
+        next: ChatVisibleWindowEvidence,
+        reason: String
+    ) {
+        guard previous.chatId == next.chatId,
+              previous.lastMessageId == next.lastMessageId,
+              previous.firstMessageId != next.firstMessageId,
+              next.visibleCount > previous.visibleCount
+        else { return }
+        RenderProbe.mark(
+            "ChatOlderHistoryInsertedAbove",
+            fields: [
+                "chat": next.chatId.uuidString,
+                "fromFirst": previous.firstMessageId?.uuidString ?? "none",
+                "fromVisible": "\(previous.visibleCount)",
+                "last": next.lastMessageId?.uuidString ?? "none",
+                "reason": reason,
+                "toFirst": next.firstMessageId?.uuidString ?? "none",
+                "toVisible": "\(next.visibleCount)",
+                "bottomArmed": "\(next.bottomArmed)",
+                "anchorStableCandidate": "\((previous.lastMessageId == next.lastMessageId) && next.bottomArmed)"
+            ]
+        )
+    }
+}
+
 struct ChatView: View {
     let chatId: UUID
     /// True when this ChatView lives inside a parent chat's right
@@ -36,6 +192,9 @@ struct ChatView: View {
     @State private var branchSearch = ""
     @State private var visibleMessageLimit = Self.initialVisibleMessageLimit
     @State private var lastLocalRevealAt: Date = .distantPast
+    @State private var firstVisibleRuntimeDemandChatId: UUID?
+    @State private var closedMetadataReadyChatId: UUID?
+    @State private var closedMetadataScheduledChatId: UUID?
     /// Drives `scrollPosition`. `chatTailId` is the canonical "you are
     /// at the tail" marker; an `id`'d clear rectangle at the end of
     /// the LazyVStack carries the same id so SwiftUI knows where the
@@ -62,7 +221,7 @@ struct ChatView: View {
     /// at 80pt from the top gives the daemon a chance to deliver the
     /// next page before the user sees the gap.
     static let loadOlderThreshold: CGFloat = 80
-    static let initialVisibleMessageLimit = 14
+    static let initialVisibleMessageLimit = 8
     static let visibleMessagePageSize = 6
     static let localRevealThrottle: TimeInterval = 0.5
 
@@ -72,6 +231,18 @@ struct ChatView: View {
             if let chat, let transcript {
                 let visibleMessageStores: [ChatMessageStore] = Array(transcript.messageStores.suffix(visibleMessageLimit))
                 let hiddenLocalMessageCount = max(0, transcript.messageIds.count - visibleMessageStores.count)
+                let visibleWindowEvidence = ChatVisibleWindowEvidence(
+                    chatId: chatId,
+                    visibleCount: visibleMessageStores.count,
+                    totalCount: transcript.messageIds.count,
+                    hiddenCount: hiddenLocalMessageCount,
+                    firstMessageId: visibleMessageStores.first?.id,
+                    lastMessageId: visibleMessageStores.last?.id,
+                    bottomArmed: bottomId == chatTailId,
+                    messages: visibleMessageStores.map {
+                        ChatVisibleWindowMessageEvidence(message: $0.message)
+                    }
+                )
                 let _ = PerfSignpost.uiChat.event("messages.visible", visibleMessageStores.count)
                 VStack(spacing: 0) {
                     ChatTranscriptScrollerView(
@@ -84,9 +255,20 @@ struct ChatView: View {
                         visibleMessageLimit: $visibleMessageLimit,
                         lastLocalRevealAt: $lastLocalRevealAt,
                         bottomId: $bottomId,
+                        closedMetadataReady: closedMetadataReadyChatId == chatId,
                         chatTailId: chatTailId,
                         publishingReady: publishingReady
                     )
+                    .onAppear {
+                        recordVisibleWindowIfNeeded(visibleWindowEvidence, reason: "appear")
+                        notifyFirstVisibleWindowIfNeeded(visibleWindowEvidence)
+                        markClosedMetadataReadyIfNeeded(visibleWindowEvidence)
+                    }
+                    .onChange(of: visibleWindowEvidence) { _, next in
+                        recordVisibleWindowIfNeeded(next, reason: "change")
+                        notifyFirstVisibleWindowIfNeeded(next)
+                        markClosedMetadataReadyIfNeeded(next)
+                    }
 
                     VStack(spacing: 14) {
                         let activeRemoteJobs = flags.isVisible(.remoteMesh)
@@ -230,7 +412,38 @@ struct ChatView: View {
                     .foregroundColor(Palette.textTertiary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Palette.background)
-            }
+        }
+    }
+    }
+
+    private func recordVisibleWindowIfNeeded(_ evidence: ChatVisibleWindowEvidence, reason: String) {
+        ChatVisibleWindowRenderLog.record(evidence, reason: reason)
+    }
+
+    private func notifyFirstVisibleWindowIfNeeded(_ evidence: ChatVisibleWindowEvidence) {
+        guard firstVisibleRuntimeDemandChatId != evidence.chatId,
+              evidence.visibleCount > 0
+        else { return }
+        firstVisibleRuntimeDemandChatId = evidence.chatId
+        appState.noteChatFirstVisibleForRuntimeDemand(chatId: evidence.chatId)
+    }
+
+    private func markClosedMetadataReadyIfNeeded(_ evidence: ChatVisibleWindowEvidence) {
+        guard closedMetadataReadyChatId != evidence.chatId else { return }
+        guard closedMetadataScheduledChatId != evidence.chatId else { return }
+        guard evidence.visibleCount > 0, evidence.bottomArmed else { return }
+        guard evidence.messages.allSatisfy(\.contentReady) else { return }
+        closedMetadataScheduledChatId = evidence.chatId
+        DispatchQueue.main.async {
+            guard closedMetadataReadyChatId != evidence.chatId else { return }
+            RenderProbe.mark(
+                "ChatClosedMetadataReady",
+                fields: [
+                    "chat": evidence.chatId.uuidString,
+                    "visible": "\(evidence.visibleCount)"
+                ]
+            )
+            closedMetadataReadyChatId = evidence.chatId
         }
     }
 

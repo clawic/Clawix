@@ -2,13 +2,14 @@ import SwiftUI
 
 struct RescueDiagnosticsView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var backendStatusStore: BackendStatusStore
 
     private var summary: RescueRepairStatusSummary? {
-        RescueRepairStatusSummary(decision: appState.rescueDecision)
+        RescueRepairStatusSummary(decision: backendStatusStore.rescueDecision)
     }
 
     private var modeLabel: String {
-        switch appState.rescueDecision.mode {
+        switch backendStatusStore.rescueDecision.mode {
         case .normal: return "Ready"
         case .degraded: return "Repair pending"
         case .ephemeralChat: return "Temporary chat"

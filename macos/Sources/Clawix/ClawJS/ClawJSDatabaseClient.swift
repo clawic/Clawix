@@ -151,7 +151,7 @@ struct ClawJSDatabaseClient {
 
 /// Minimal type-erased JSON value. Lives here (rather than in a shared
 /// utilities module) because this file is the only consumer today.
-indirect enum AnyJSON: Codable, Hashable, Equatable {
+indirect enum AnyJSON: Codable, Hashable, Equatable, Sendable {
     case null
     case bool(Bool)
     case number(Double)

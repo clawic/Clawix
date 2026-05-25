@@ -70,9 +70,19 @@ enum RolloutReader {
         var entries: [RolloutHistoryEntry]
         var lastTurnInterrupted: Bool
         var hasMoreBefore: Bool = false
+        var readMode: String = "unknown"
+        var totalFileBytes: UInt64 = 0
+        var requestedMaxBytes: Int = 0
+        var readBytes: Int = 0
+        var alignedOffset: UInt64 = 0
+        var parsedRecordCount: Int = 0
         /// Most recent `update_plan` checklist in the parsed window, if any.
         /// Drives the thread-summary panel's Progress section. Last wins.
         var latestPlan: [PlanStep]? = nil
+
+        var readEntireFile: Bool {
+            totalFileBytes == 0 || (alignedOffset == 0 && UInt64(readBytes) >= totalFileBytes)
+        }
     }
 
     /// Decode an `update_plan` tool call's `arguments` JSON
@@ -101,12 +111,15 @@ enum RolloutReader {
     /// after a daemon respawn.
     static let interruptedThreshold: TimeInterval = 30
 
-    /// Default tail-read window for `readTailWithStatus`. 4 MB covers
-    /// dozens to hundreds of typical assistant turns (more than any
-    /// viewport ever shows on first paint), while keeping the parse
-    /// cost bounded regardless of how big the rollout has grown; raw
-    /// runtime artifacts can reach 100+ MB. Read the head
-    /// (`tailHeadProbeBytes`) separately to recover `session_meta`.
+    /// Initial tail-read window for `readTailWithStatus`. The first
+    /// paint needs the final visible window, not the whole rollout, so
+    /// start small and grow only if the parsed tail cannot supply the
+    /// requested page.
+    static let initialTailBytes: Int = 256 * 1024
+
+    /// Hard cap for tail reads. Raw runtime artifacts can reach 100+
+    /// MB; this cap prevents the UI hydration path from walking the
+    /// whole transcript before first paint.
     static let defaultTailBytes: Int = 4 * 1024 * 1024
 
     /// Bytes scanned at the start of the file to recover the
@@ -144,6 +157,7 @@ enum RolloutReader {
     /// `readWindowBefore`.
     static func readTailWithStatus(
         path: URL,
+        limit: Int = bridgeInitialPageLimit,
         maxBytes: Int = defaultTailBytes,
         now: Date = Date()
     ) -> ReadResult {
@@ -156,21 +170,55 @@ enum RolloutReader {
         if totalSize == 0 {
             return ReadResult(entries: [], lastTurnInterrupted: false)
         }
-        let boundedBytes = min(totalSize, UInt64(maxBytes))
-
         // Step 1: head probe to recover session_meta.
         try? handle.seek(toOffset: 0)
         let probeSize = min(UInt64(tailHeadProbeBytes), totalSize)
         let headData = (try? handle.read(upToCount: Int(probeSize))) ?? Data()
         let sessionMetaLine = extractSessionMetaLine(headData)
 
-        // Step 2: tail bytes from the file.
-        let tailOffset = totalSize - boundedBytes
+        let maxTailBytes = min(totalSize, UInt64(maxBytes))
+        var targetTailBytes = min(maxTailBytes, UInt64(initialTailBytes))
+        var lastResult = readTailSlice(
+            handle: handle,
+            totalSize: totalSize,
+            tailBytes: targetTailBytes,
+            maxBytes: maxBytes,
+            sessionMetaLine: sessionMetaLine,
+            now: now
+        )
+        while lastResult.entries.count < limit, targetTailBytes < maxTailBytes {
+            targetTailBytes = min(maxTailBytes, max(targetTailBytes * 2, targetTailBytes + 1))
+            lastResult = readTailSlice(
+                handle: handle,
+                totalSize: totalSize,
+                tailBytes: targetTailBytes,
+                maxBytes: maxBytes,
+                sessionMetaLine: sessionMetaLine,
+                now: now
+            )
+        }
+        if lastResult.entries.count > limit {
+            lastResult.entries = Array(lastResult.entries.suffix(limit))
+            lastResult.hasMoreBefore = true
+        }
+        return lastResult
+    }
+
+    private static func readTailSlice(
+        handle: FileHandle,
+        totalSize: UInt64,
+        tailBytes: UInt64,
+        maxBytes: Int,
+        sessionMetaLine: Data?,
+        now: Date
+    ) -> ReadResult {
+        // Tail bytes from the file.
+        let tailOffset = totalSize - tailBytes
         try? handle.seek(toOffset: tailOffset)
         var tailData = (try? handle.readToEnd()) ?? Data()
         var alignedOffset = tailOffset
 
-        // Step 3: drop the leading partial line so parse never sees
+        // Drop the leading partial line so parse never sees
         // a half-record.
         if tailOffset > 0, let firstNL = tailData.firstIndex(of: 0x0a) {
             let alignStart = tailData.index(after: firstNL)
@@ -186,6 +234,11 @@ enum RolloutReader {
         }
         slices.append(ParseSlice(data: tailData, baseOffset: alignedOffset))
         var result = parse(slices: slices, now: now)
+        result.readMode = "tail"
+        result.totalFileBytes = totalSize
+        result.requestedMaxBytes = maxBytes
+        result.readBytes = slices.reduce(0) { $0 + $1.data.count }
+        result.alignedOffset = alignedOffset
         result.hasMoreBefore = alignedOffset > 0
         return result
     }
@@ -232,6 +285,11 @@ enum RolloutReader {
         }
         slices.append(ParseSlice(data: data, baseOffset: alignedOffset))
         var result = parse(slices: slices, now: now)
+        result.readMode = "window-before"
+        result.totalFileBytes = totalSize
+        result.requestedMaxBytes = maxBytes
+        result.readBytes = slices.reduce(0) { $0 + $1.data.count }
+        result.alignedOffset = alignedOffset
         if result.entries.count > limit {
             result.entries = Array(result.entries.suffix(limit))
             result.hasMoreBefore = true
@@ -308,6 +366,7 @@ enum RolloutReader {
         var lastParsedTimestamp: Date? = nil
         var sawClose = false
         var sawAnyAssistantWork = false
+        var parsedRecordCount = 0
 
         for slice in slices {
             var start = slice.data.startIndex
@@ -320,6 +379,7 @@ enum RolloutReader {
             guard let obj = (try? JSONSerialization.jsonObject(with: line, options: [])) as? [String: Any] else {
                 continue
             }
+            parsedRecordCount += 1
 
             // `parsedTimestamp` is the strictly-from-JSON value; only
             // those advance `lastParsedTimestamp` so a synthetic
@@ -664,7 +724,12 @@ enum RolloutReader {
                   let last = lastParsedTimestamp else { return false }
             return now.timeIntervalSince(last) > interruptedThreshold
         }()
-        return ReadResult(entries: out, lastTurnInterrupted: interrupted, latestPlan: latestPlan)
+        return ReadResult(
+            entries: out,
+            lastTurnInterrupted: interrupted,
+            parsedRecordCount: parsedRecordCount,
+            latestPlan: latestPlan
+        )
     }
 
     /// Clawix parses each shell command into one or more semantic actions

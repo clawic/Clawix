@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 /// Lightweight metadata sidecar for a programmatically controllable UI element.
@@ -25,4 +26,45 @@ final class ClxControlRegistry {
     func remove(id: String) { controls[id] = nil }
     func all() -> [ClxControlDescriptor] { Array(controls.values) }
     func get(_ id: String) -> ClxControlDescriptor? { controls[id] }
+}
+
+@MainActor
+final class ClxScrollRegistry {
+    static let shared = ClxScrollRegistry()
+
+    private final class WeakScrollView {
+        weak var value: NSScrollView?
+        init(_ value: NSScrollView) {
+            self.value = value
+        }
+    }
+
+    private var scrollViews: [String: WeakScrollView] = [:]
+
+    private init() {}
+
+    func upsert(_ scrollView: NSScrollView, id: String) {
+        guard ClxAgentInstance.isAgent else { return }
+        scrollViews[id] = WeakScrollView(scrollView)
+    }
+
+    func remove(id: String, scrollView: NSScrollView) {
+        guard ClxAgentInstance.isAgent else { return }
+        if scrollViews[id]?.value === scrollView {
+            scrollViews.removeValue(forKey: id)
+        }
+    }
+
+    func get(_ id: String) -> NSScrollView? {
+        guard let scrollView = scrollViews[id]?.value else {
+            scrollViews.removeValue(forKey: id)
+            return nil
+        }
+        return scrollView
+    }
+
+    func allIds() -> [String] {
+        scrollViews = scrollViews.filter { $0.value.value != nil }
+        return Array(scrollViews.keys).sorted()
+    }
 }

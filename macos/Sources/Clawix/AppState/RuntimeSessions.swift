@@ -3,6 +3,26 @@ import SwiftUI
 import ClawixCore
 
 extension AppState {
+    func bootstrapCodexSessionIndexForLaunchIfNeeded() {
+        guard snapshotEnabled,
+              ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
+              ProcessInfo.processInfo.environment["CLAWIX_DUMMY_MODE"] != "1",
+              ProcessInfo.processInfo.environment["CLAWIX_DISABLE_BACKEND"] != "1",
+              AgentThreadStore.fixtureThreads() == nil
+        else { return }
+        let pinnedThreadIds = AgentThreadStore.codexPinnedThreadIds()
+        if chats.isEmpty {
+            let indexThreads = AgentThreadStore.codexSessionIndexThreads(
+                limit: Self.sidebarBootstrapRecentLimit,
+                includeThreadIds: pinnedThreadIds
+            )
+            guard !indexThreads.isEmpty else { return }
+            applyThreads(indexThreads)
+        } else if !pinnedThreadIds.isEmpty {
+            applyCodexPinnedThreadIds(pinnedThreadIds)
+        }
+    }
+
     func loadThreadsFromRuntime() async {
         // When a thread fixture drives the sidebar (showcase / E2E /
         // demo recordings), the runtime is intentionally empty and a
@@ -12,6 +32,18 @@ extension AppState {
         if AgentThreadStore.fixtureThreads() != nil { return }
         if await loadThreadsFromClawJSSessions() {
             return
+        }
+        if runtimeThreadPageLoader == nil,
+           ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+            let pinnedThreadIds = AgentThreadStore.codexPinnedThreadIds()
+            let indexThreads = AgentThreadStore.codexSessionIndexThreads(
+                limit: Self.sidebarBootstrapRecentLimit,
+                includeThreadIds: pinnedThreadIds
+            )
+            if !indexThreads.isEmpty {
+                applyThreads(indexThreads, extraPinnedThreadIds: pinnedThreadIds)
+                return
+            }
         }
         let pageLoader: (_ cursor: String?, _ limit: Int) async throws -> ClawixService.ThreadListPage
         if let runtimeThreadPageLoader {
@@ -57,7 +89,9 @@ extension AppState {
             defer { Task { await ClawJSServiceManager.shared.release(lease) } }
             guard let clawix = self.clawix else { return false }
             let ready = await clawix.startIfNeeded(reason: reason)
-            self.clawixBackendStatus = clawix.status
+            if self.clawixBackendStatus != clawix.status {
+                self.clawixBackendStatus = clawix.status
+            }
             if ready {
                 await self.seedArchivesIfNeeded()
                 self.drainProjectRefreshQueue()
@@ -68,6 +102,49 @@ extension AppState {
         let ready = await task.value
         agentRuntimeStartTask = nil
         return ready
+    }
+
+    func scheduleRouteChatRuntimeDemand(chatId: UUID) {
+        if shouldDeferChatRuntimeDemandUntilFirstVisible(chatId: chatId) {
+            chatRuntimeDemandWaitingForFirstVisible.insert(chatId)
+            RenderProbe.mark(
+                "ChatRuntimeDemandDeferred",
+                fields: [
+                    "chat": chatId.uuidString,
+                    "reason": "local-first-paint"
+                ]
+            )
+            return
+        }
+        openChatRuntimeSession(chatId: chatId)
+        scheduleChatRuntimeDemandIfReady(chatId: chatId)
+    }
+
+    func noteChatFirstVisibleForRuntimeDemand(chatId: UUID) {
+        guard chatRuntimeDemandWaitingForFirstVisible.remove(chatId) != nil else { return }
+        guard case let .chat(currentChatId) = currentRoute, currentChatId == chatId else { return }
+        RenderProbe.mark(
+            "ChatRuntimeDemandAfterFirstVisible",
+            fields: ["chat": chatId.uuidString]
+        )
+        openChatRuntimeSession(chatId: chatId)
+        scheduleChatRuntimeDemandIfReady(chatId: chatId)
+    }
+
+    private func shouldDeferChatRuntimeDemandUntilFirstVisible(chatId: UUID) -> Bool {
+        guard postFirstFramePersistenceStarted,
+              case let .chat(currentChatId) = currentRoute,
+              currentChatId == chatId,
+              let chat = chat(byId: chatId)
+        else { return false }
+        if chatStore.transcript(for: chatId)?.messageIds.isEmpty == false {
+            return true
+        }
+        return chat.rolloutPath != nil
+    }
+
+    private func openChatRuntimeSession(chatId: UUID) {
+        daemonBridgeClient?.openSession(chatId)
     }
 
     func scheduleChatRuntimeDemandIfReady(chatId: UUID) {
@@ -113,7 +190,7 @@ extension AppState {
             let pinned = try await pinnedRequest
             let recent = try await recentRequest
             let sessions = mergeClawJSSessions(pinned: pinned, recent: recent)
-            if sessions.isEmpty, shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() {
+            if sessions.isEmpty {
                 clawJSSessionsCanonicalActive = false
                 return false
             }
@@ -121,7 +198,7 @@ extension AppState {
             clawJSSessionsProjectsLoaded = false
             applyThreads(
                 sessions.map(threadSummary(from:)),
-                extraPinnedThreadIds: pinned.map { $0.id }
+                extraPinnedThreadIds: pinned.map { $0.id } + AgentThreadStore.codexPinnedThreadIds()
             )
             return true
         } catch {
@@ -182,6 +259,11 @@ extension AppState {
         if case let .chat(id) = currentRoute {
             scheduleChatRuntimeDemand(chatId: id)
         }
+        if snapshotEnabled,
+           ProcessInfo.processInfo.environment["CLAWIX_DISABLE_BACKEND"] != "1" {
+            scheduleIdleAppStateCanonicalReconciliation(delayNanos: 250_000_000)
+            scheduleDeferredCodexImport()
+        }
         Task { @MainActor [weak self] in
             guard let self else { return }
             let provider = self.databaseProvider
@@ -209,10 +291,10 @@ extension AppState {
             applySnapshotForFirstPaint()
             loadCachedSnapshot()
         case .failed(let failure):
-            rescueDecision = RescueSurvivalPolicy.evaluate(
+            setRescueDecision(RescueSurvivalPolicy.evaluate(
                 signals: [failure.signal],
                 availableRuntimeCount: 1
-            )
+            ))
             appendRuntimeStatusError("Local database unavailable: \(failure.error.localizedDescription)")
         case .idle, .opening:
             break
@@ -245,6 +327,20 @@ extension AppState {
             merged.append(session)
         }
         return merged
+    }
+
+    private func applyCodexPinnedThreadIds(_ threadIds: [String]) {
+        let pinnedSet = Set(threadIds)
+        let threadToChat = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
+            chat.clawixThreadId.map { ($0, chat.id) }
+        })
+        var nextChats = chats
+        for index in nextChats.indices {
+            guard let threadId = nextChats[index].clawixThreadId else { continue }
+            nextChats[index].isPinned = pinnedSet.contains(threadId) && !nextChats[index].isArchived
+        }
+        chats = nextChats
+        pinnedOrder = threadIds.compactMap { threadToChat[$0] }
     }
 
     func threadSummary(from session: ClawJSSessionsClient.SessionRecord) -> AgentThreadSummary {

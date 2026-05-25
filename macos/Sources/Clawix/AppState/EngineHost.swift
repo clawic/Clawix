@@ -151,11 +151,27 @@ extension AppState: EngineHost {
     }
 
     private func bridgeSnapshots(summaries: [ChatSummary]) -> [BridgeChatSnapshot] {
-        summaries.map { summary in
+        let shouldProbe = RenderProbe.isEnabled
+        let t0 = shouldProbe ? CFAbsoluteTimeGetCurrent() : 0
+        var messageCount = 0
+        let snapshots = summaries.map { summary in
             let chat = summary.summarySnapshot()
             let messages = chatStore.transcript(for: summary.id)?.messages ?? []
+            messageCount += messages.count
             return bridgeSnapshot(from: chat, messages: messages)
         }
+        if shouldProbe {
+            let elapsedMs = (CFAbsoluteTimeGetCurrent() - t0) * 1000
+            RenderProbe.mark(
+                "BridgeSnapshotsBuild",
+                fields: [
+                    "chats": "\(summaries.count)",
+                    "messages": "\(messageCount)",
+                    "ms": String(format: "%.1f", elapsedMs)
+                ]
+            )
+        }
+        return snapshots
     }
 
     private func bridgeSnapshot(from chat: Chat, messages: [ChatMessage]) -> BridgeChatSnapshot {

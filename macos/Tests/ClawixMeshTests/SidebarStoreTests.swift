@@ -119,6 +119,95 @@ final class SidebarStoreTests: XCTestCase {
         XCTAssertEqual(store.snapshot.chrono.first?.hasUnreadCompletion, true)
     }
 
+    func testRouteOnlyChangeUpdatesSelectionWithoutRebuildingSnapshot() {
+        let state = AppState()
+        let firstId = UUID()
+        let secondId = UUID()
+        state.projects = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        state.chats = [
+            Chat(id: firstId, title: "First", messages: [], createdAt: Date(timeIntervalSince1970: 100)),
+            Chat(id: secondId, title: "Second", messages: [], createdAt: Date(timeIntervalSince1970: 200))
+        ]
+        let store = SidebarStore(appState: state)
+        let initialRevision = store.revision
+        let initialChrono = store.snapshot.chrono.map(\.id)
+
+        state.currentRoute = .chat(secondId)
+
+        XCTAssertEqual(store.selectedRoute, .chat(secondId))
+        XCTAssertEqual(store.revision, initialRevision)
+        XCTAssertEqual(store.snapshot.chrono.map(\.id), initialChrono)
+
+        state.markChat(chatId: secondId, hasActiveTurn: true)
+
+        XCTAssertGreaterThan(store.revision, initialRevision)
+        XCTAssertEqual(store.snapshot.currentRoute, .chat(secondId))
+    }
+
+    func testHydrationOnlySummaryChangesDoNotRebuildSidebarSnapshot() {
+        let state = AppState()
+        let chatId = UUID()
+        state.projects = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        state.chats = [
+            Chat(id: chatId, title: "Hydration", messages: [], createdAt: Date(timeIntervalSince1970: 100))
+        ]
+        let store = SidebarStore(appState: state)
+        let initialRevision = store.revision
+        let initialChrono = store.snapshot.chrono.map(\.id)
+
+        state.chatStore.updateSummary(id: chatId) { summary in
+            summary.historyHydrated = true
+            summary.lastMessageAt = Date(timeIntervalSince1970: 200)
+            summary.lastTurnInterrupted = true
+        }
+
+        XCTAssertEqual(store.revision, initialRevision)
+        XCTAssertEqual(store.snapshot.chrono.map(\.id), initialChrono)
+
+        state.chatStore.updateSummary(id: chatId) { summary in
+            summary.title = "Renamed"
+        }
+
+        XCTAssertGreaterThan(store.revision, initialRevision)
+        XCTAssertEqual(store.snapshot.chrono.first?.title, "Renamed")
+    }
+
+    func testNoOpStructuralSidebarPublicationsDoNotAdvanceRevision() {
+        let state = AppState()
+        let project = Project(id: UUID(), name: "Alpha", path: "")
+        let chatId = UUID()
+        state.projects = [project]
+        state.manualProjectOrder = [project.id]
+        state.pinnedOrder = [chatId]
+        state.archivedLoading = false
+        state.archivedChats = []
+        state.chats = [
+            Chat(id: chatId, title: "Pinned", messages: [], createdAt: Date(), isPinned: true)
+        ]
+        let store = SidebarStore(appState: state)
+        let initialRevision = store.revision
+        let initialPinned = store.snapshot.pinned.map(\.id)
+        let initialProjects = store.snapshot.projectsCustom.map(\.id)
+
+        state.pinnedOrder = [chatId]
+        state.projects = [project]
+        state.manualProjectOrder = [project.id]
+        state.archivedLoading = false
+
+        XCTAssertEqual(store.revision, initialRevision)
+        XCTAssertEqual(store.snapshot.pinned.map(\.id), initialPinned)
+        XCTAssertEqual(store.snapshot.projectsCustom.map(\.id), initialProjects)
+
+        state.archivedLoading = true
+
+        XCTAssertGreaterThan(store.revision, initialRevision)
+        XCTAssertTrue(store.snapshot.archivedLoading)
+    }
+
     func testPinMoveArchiveAndCustomProjectSortUpdateSnapshot() {
         let state = AppState()
         let projectA = Project(id: UUID(), name: "Alpha", path: "")

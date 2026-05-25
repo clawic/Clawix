@@ -264,7 +264,9 @@ final class ClawJSServiceSupervisorTests: XCTestCase {
         XCTAssertTrue(launchAdapterSource.contains("--input-type=module"))
         XCTAssertTrue(launchAdapterSource.contains("--eval"))
         XCTAssertTrue(launchAdapterSource.contains("buildRuntimeApp"))
+        XCTAssertTrue(launchAdapterSource.contains("const { app, config } = buildRuntimeApp()"))
         XCTAssertTrue(launchAdapterSource.contains("await app.listen"))
+        XCTAssertFalse(launchAdapterSource.contains("const app = buildRuntimeApp()"))
     }
 
     func testPublishingLaunchAdapterUsesDirectBundledServer() throws {

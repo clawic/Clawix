@@ -43,14 +43,14 @@ struct ClawJSSessionsClient {
         return ClawJSSessionsClient(bearerToken: token)
     }
 
-    struct HealthResponse: Decodable, Equatable {
+    struct HealthResponse: Decodable, Equatable, Sendable {
         let ok: Bool
         let service: String
         let host: String
         let port: Int
     }
 
-    struct Project: Codable, Identifiable, Equatable, Hashable {
+    struct Project: Codable, Identifiable, Equatable, Hashable, Sendable {
         let id: String
         let resourceId: String?
         let displayName: String
@@ -62,7 +62,7 @@ struct ClawJSSessionsClient {
         let updatedAt: Int64
     }
 
-    struct SessionRecord: Codable, Identifiable, Equatable {
+    struct SessionRecord: Codable, Identifiable, Equatable, Sendable {
         let id: String
         let agent: String
         let runtime: String?
@@ -85,7 +85,7 @@ struct ClawJSSessionsClient {
         let customMetadata: AnyJSON?
     }
 
-    struct MessageRecord: Codable, Identifiable, Equatable {
+    struct MessageRecord: Codable, Identifiable, Equatable, Sendable {
         let id: String
         let sessionId: String
         let role: String
@@ -101,30 +101,30 @@ struct ClawJSSessionsClient {
         let sourceNativeId: String?
     }
 
-    struct AudioRef: Codable, Equatable, Hashable {
+    struct AudioRef: Codable, Equatable, Hashable, Sendable {
         let id: String
         let mimeType: String
         let durationMs: Int
     }
 
-    struct ListProjectsResponse: Decodable {
+    struct ListProjectsResponse: Decodable, Sendable {
         let items: [Project]
         let total: Int
     }
 
-    struct ListSessionsResponse: Decodable {
+    struct ListSessionsResponse: Decodable, Sendable {
         let items: [SessionRecord]
         let total: Int
     }
 
-    struct SidebarBootstrapResponse: Decodable, Equatable {
+    struct SidebarBootstrapResponse: Decodable, Equatable, Sendable {
         let projects: [Project]
         let pinned: [SessionRecord]
         let recent: [SessionRecord]
         let totalActiveVisible: Int
     }
 
-    struct QuickSwitchSessionsResponse: Decodable, Equatable {
+    struct QuickSwitchSessionsResponse: Decodable, Equatable, Sendable {
         let items: [SessionRecord]
         let total: Int
         let query: String
@@ -134,37 +134,37 @@ struct ClawJSSessionsClient {
         let searchedMessageHistory: Bool
     }
 
-    struct MessagesResponse: Decodable {
+    struct MessagesResponse: Decodable, Sendable {
         let items: [MessageRecord]
     }
 
-    struct SearchResponse: Decodable {
+    struct SearchResponse: Decodable, Sendable {
         let items: [SearchHit]
     }
 
-    struct SearchHit: Decodable, Equatable {
+    struct SearchHit: Decodable, Equatable, Sendable {
         let session: SessionRecord
         let message: MessageRecord
         let snippet: String
         let rank: Double
     }
 
-    struct SessionWithMessages: Decodable {
+    struct SessionWithMessages: Decodable, Sendable {
         let session: SessionRecord
         let messages: [MessageRecord]
     }
 
-    struct SessionTurnSummaryRecord: Decodable, Equatable {
+    struct SessionTurnSummaryRecord: Decodable, Equatable, Sendable {
         let sessionId: String
         let turnId: String
     }
 
-    struct SessionProjectionMetaRecord: Decodable, Equatable {
+    struct SessionProjectionMetaRecord: Decodable, Equatable, Sendable {
         let sessionId: String
         let projectionStatus: String
     }
 
-    struct SessionDynamicToolRecord: Decodable, Equatable {
+    struct SessionDynamicToolRecord: Decodable, Equatable, Sendable {
         let sessionId: String
         let position: Int
         let name: String
@@ -178,7 +178,7 @@ struct ClawJSSessionsClient {
         let updatedAt: Int64
     }
 
-    struct HydratedSessionResult: Decodable, Equatable {
+    struct HydratedSessionResult: Decodable, Equatable, Sendable {
         let session: SessionRecord
         let messages: [MessageRecord]
         let messageOffset: Int
@@ -193,19 +193,19 @@ struct ClawJSSessionsClient {
         let fallbackRequired: Bool
     }
 
-    struct TurnResponse: Decodable {
+    struct TurnResponse: Decodable, Sendable {
         let session: SessionRecord?
         let userMessage: MessageRecord
         let assistantMessage: MessageRecord?
     }
 
-    struct InterruptResponse: Decodable {
+    struct InterruptResponse: Decodable, Sendable {
         let interrupted: Bool
         let session: SessionRecord
     }
 
-    struct ImportCodexResponse: Decodable {
-        struct Item: Decodable {
+    struct ImportCodexResponse: Decodable, Sendable {
+        struct Item: Decodable, Sendable {
             let filePath: String
             let sessionId: String?
             let messagesImported: Int
@@ -475,7 +475,7 @@ struct ClawJSSessionsClient {
         )
     }
 
-    private func request<T: Decodable>(
+    private func request<T: Decodable & Sendable>(
         _ path: String,
         queryItems: [URLQueryItem] = [],
         method: String = "GET",
@@ -515,15 +515,31 @@ struct ClawJSSessionsClient {
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw Error.http(status: http.statusCode, body: String(data: data, encoding: .utf8))
         }
-        do {
-            return try JSONDecoder().decode(T.self, from: data)
-        } catch {
-            throw Error.decoding(error)
+        return try await Self.decodeResponse(T.self, from: data)
+    }
+
+    static func decodeResponse<T: Decodable & Sendable>(_ type: T.Type, from data: Data) async throws -> T {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, Swift.Error>) in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let result: Result<T, Swift.Error> = PerfSignpost.ipcClient.interval("decode") {
+                    RenderProbe.time("SessionsDecode") {
+                        Result {
+                            try JSONDecoder().decode(type, from: data)
+                        }
+                    }
+                }
+                switch result {
+                case .success(let decoded):
+                    continuation.resume(returning: decoded)
+                case .failure(let error):
+                    continuation.resume(throwing: Error.decoding(error))
+                }
+            }
         }
     }
 
     private struct EmptyRequest: Encodable {}
-    private struct EmptyResponse: Decodable {}
+    private struct EmptyResponse: Decodable, Sendable {}
 
     private struct AppStateApplyRequest: Encodable {
         let operations: [ClawJSAppStateOperation]

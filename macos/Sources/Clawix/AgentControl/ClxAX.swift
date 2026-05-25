@@ -31,6 +31,18 @@ enum ClxAX {
         return (value as? NSNumber)?.boolValue
     }
 
+    static func number(_ element: AXUIElement, _ attribute: String) -> Double? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success,
+              let value else { return nil }
+        if let number = value as? NSNumber { return number.doubleValue }
+        return nil
+    }
+
+    static func setNumber(_ element: AXUIElement, _ attribute: String, _ number: Double) -> Bool {
+        AXUIElementSetAttributeValue(element, attribute as CFString, NSNumber(value: number)) == .success
+    }
+
     static func children(_ element: AXUIElement) -> [AXUIElement] {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &value) == .success else {
@@ -96,6 +108,36 @@ enum ClxAX {
             let label = string(element, kAXTitleAttribute) ?? string(element, kAXDescriptionAttribute)
             if label == title { found = element }
         }
+        return found
+    }
+
+    static func findScrollArea(target: String?) -> AXUIElement? {
+        var found: AXUIElement?
+        walk(appElement()) { element, _ in
+            guard found == nil else { return }
+            guard string(element, kAXRoleAttribute) == "AXScrollArea" else { return }
+            if target == "sidebar" {
+                guard let frame = frame(element), frame.width <= 500, frame.height >= 200 else { return }
+            }
+            found = element
+        }
+        return found
+    }
+
+    static func firstDescendant(of root: AXUIElement, role targetRole: String) -> AXUIElement? {
+        var found: AXUIElement?
+        func recurse(_ element: AXUIElement) {
+            guard found == nil else { return }
+            if string(element, kAXRoleAttribute) == targetRole {
+                found = element
+                return
+            }
+            for child in children(element) {
+                recurse(child)
+                if found != nil { return }
+            }
+        }
+        recurse(root)
         return found
     }
 }

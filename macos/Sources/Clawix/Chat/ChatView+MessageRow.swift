@@ -49,7 +49,18 @@ struct ChatMarkdownPrewarmKey: Hashable {
 
 enum ChatMarkdownPrewarmer {
     static func prewarm(messages: [ChatMessage], timelineEntryLimit: Int) async {
-        let texts = markdownTexts(messages: messages, timelineEntryLimit: timelineEntryLimit)
+        let prewarmSet = markdownTexts(messages: messages, timelineEntryLimit: timelineEntryLimit)
+        PerfSignpost.renderMarkdown.event("prewarm.content_texts", prewarmSet.contentCount)
+        PerfSignpost.renderMarkdown.event("prewarm.timeline_texts", prewarmSet.timelineCount)
+        RenderProbe.mark(
+            "MarkdownPrewarmSet",
+            fields: [
+                "content": "\(prewarmSet.contentCount)",
+                "timeline": "\(prewarmSet.timelineCount)",
+                "total": "\(prewarmSet.texts.count)"
+            ]
+        )
+        let texts = prewarmSet.texts
         guard !texts.isEmpty else { return }
         PerfSignpost.renderMarkdown.event("prewarm.texts", texts.count)
         await Task.detached(priority: .utility) {
@@ -59,19 +70,27 @@ enum ChatMarkdownPrewarmer {
         }.value
     }
 
-    private static func markdownTexts(messages: [ChatMessage], timelineEntryLimit: Int) -> [String] {
-        var result: [String] = []
-        result.reserveCapacity(messages.count * 2)
+    private struct PrewarmTextSet {
+        var texts: [String] = []
+        var contentCount = 0
+        var timelineCount = 0
+    }
+
+    private static func markdownTexts(messages: [ChatMessage], timelineEntryLimit: Int) -> PrewarmTextSet {
+        var result = PrewarmTextSet()
+        result.texts.reserveCapacity(messages.count * 2)
         for message in messages where message.role == .assistant {
             if !message.content.isEmpty {
-                result.append(message.content)
+                result.texts.append(message.content)
+                result.contentCount += 1
             }
             let timeline = message.timeline.suffix(timelineEntryLimit)
             for entry in timeline {
                 switch entry {
                 case .reasoning(_, let text), .message(_, let text):
                     if !text.isEmpty {
-                        result.append(text)
+                        result.texts.append(text)
+                        result.timelineCount += 1
                     }
                 case .tools:
                     break
@@ -100,6 +119,7 @@ struct MessageRow: View, Equatable {
     var isLastUserMessage: Bool = false
     var isLastAssistantMessage: Bool = false
     var responseStreaming: Bool = false
+    var codeBlockWordWrap: Bool = true
     /// Empty unless the in-page find bar is open. Threaded down from
     /// `ChatView` instead of read off `AppState` here so an unrelated
     /// `@Published` change on `AppState` (any streaming delta, hover
@@ -107,6 +127,7 @@ struct MessageRow: View, Equatable {
     /// row's body. Combined with `.equatable()` on the row's call site,
     /// a delta on a single message only re-renders that one row.
     var findQuery: String = ""
+    var closedMetadataReady: Bool = true
     var onTimelineExpanded: ((UUID) -> Void)? = nil
     var onUserBubbleExpanded: ((UUID) -> Void)? = nil
     /// Closures bridge back to the `AppState` mutation surface from the
@@ -116,6 +137,7 @@ struct MessageRow: View, Equatable {
     var onEditUserMessage: (String) -> Void = { _ in }
     var onForkConversation: () -> Void = {}
     var onOpenImage: (URL) -> Void = { _ in }
+    var onOpenLink: (URL) -> Void = { _ in }
     var onCopyMessage: (String, @escaping () -> Void) -> Void = { content, copied in
         let pb = NSPasteboard.general
         pb.clearContents()
@@ -123,6 +145,7 @@ struct MessageRow: View, Equatable {
         copied()
     }
     var onPushToPublishing: (String) -> Void = { _ in }
+    var onToggleCodeBlockWordWrap: () -> Void = {}
     var publishingReady: Bool = false
     @State private var rowHovered = false
     @State private var justCopied = false
@@ -149,12 +172,18 @@ struct MessageRow: View, Equatable {
             && lhs.isLastUserMessage == rhs.isLastUserMessage
             && lhs.isLastAssistantMessage == rhs.isLastAssistantMessage
             && lhs.responseStreaming == rhs.responseStreaming
+            && lhs.codeBlockWordWrap == rhs.codeBlockWordWrap
             && lhs.findQuery == rhs.findQuery
+            && lhs.closedMetadataReady == rhs.closedMetadataReady
             && lhs.publishingReady == rhs.publishingReady
     }
 
     var body: some View {
+        let _ = RenderProbe.tick("MessageRow")
+        let _ = tickStreamingRowCategory()
         let _ = PerfSignpost.uiChat.event("row.body")
+        let _ = markLiveStreamRowBodyIfNeeded()
+        let _ = markLiveStreamRenderableModelIfNeeded()
         VStack(alignment: isUser ? .trailing : .leading, spacing: 24) {
             if isUser {
                 if message.steeredByAnnotation {
@@ -283,7 +312,10 @@ struct MessageRow: View, Equatable {
                                     : Palette.textPrimary,
                                 checkpoints: onlyTextSegment ? message.streamCheckpoints : [],
                                 streamingFinished: message.streamingFinished,
-                                findQuery: findQuery
+                                codeBlockWordWrap: codeBlockWordWrap,
+                                findQuery: findQuery,
+                                openLink: onOpenLink,
+                                onToggleCodeBlockWordWrap: onToggleCodeBlockWordWrap
                             )
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityHidden(!exposeMessageAccessibility)
@@ -296,20 +328,22 @@ struct MessageRow: View, Equatable {
                 }
 
                 // One pill per file the agent edited during this turn,
-                // mirroring the Codex Desktop "README.md / Document · MD"
+                // mirroring compact "README.md / Document / MD"
                 // attachment cards. Order matches first-touch, deduped.
                 // Only surfaces once the turn fully ends so the cards
                 // don't pop in beside the still-streaming reasoning.
-                let changedFiles = ChangedFilePathCache.shared.paths(for: message)
-                if !changedFiles.isEmpty, message.streamingFinished {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(changedFiles, id: \.self) { path in
-                            ChangedFileCard(path: path)
-                                .frame(maxWidth: chatRailMaxWidth * 0.7, alignment: .leading)
+                if closedMetadataReady, message.streamingFinished {
+                    let changedFiles = ChangedFilePathCache.shared.paths(for: message)
+                    if !changedFiles.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(changedFiles, id: \.self) { path in
+                                ChangedFileCard(path: path)
+                                    .frame(maxWidth: chatRailMaxWidth * 0.7, alignment: .leading)
+                            }
                         }
+                        .padding(.top, 4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.top, 4)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 // The runtime shows a "Website · Open" preview card under the
@@ -319,12 +353,11 @@ struct MessageRow: View, Equatable {
                 // URL inside the plan body doesn't double up as a separate
                 // trailing card.
                 if isLastAssistantMessage,
+                   closedMetadataReady,
                    message.streamingFinished,
                    !message.isError,
                    !PlanSegmenter.containsPlan(message.content),
-                   let lastURL = AssistantMarkdown
-                       .extractLinkURLs(in: message.content)
-                       .last(where: { !$0.isFileURL }) {
+                   let lastURL = finalAssistantLinkPreviewURL {
                     LinkPreviewCard(url: lastURL)
                         .padding(.top, 4)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -369,6 +402,78 @@ struct MessageRow: View, Equatable {
 
     private var hiddenTimelineEntryCount: Int {
         max(0, message.timeline.count - visibleTimelineEntryLimit)
+    }
+
+    private var finalAssistantLinkPreviewURL: URL? {
+        RenderProbe.mark(
+            "LinkPreviewURLExtract",
+            fields: [
+                "message": message.id.uuidString,
+                "bytes": "\(message.content.utf8.count)"
+            ]
+        )
+        return AssistantMarkdown
+            .extractLinkURLs(in: message.content)
+            .last(where: { !$0.isFileURL })
+    }
+
+    private func tickStreamingRowCategory() {
+        guard responseStreaming else { return }
+        if message.role == .assistant, !message.streamingFinished, !message.isError {
+            RenderProbe.tick("MessageRow.activeStreaming")
+        } else {
+            RenderProbe.tick("MessageRow.nonActiveDuringStream")
+        }
+    }
+
+    private func markLiveStreamRowBodyIfNeeded() {
+        guard message.role == .assistant, !message.streamingFinished, !message.isError else { return }
+        RenderProbe.mark(
+            "LiveStreamRowBody",
+            fields: [
+                "chat": chatId.uuidString,
+                "message": message.id.uuidString,
+                "contentChars": "\(message.content.count)",
+                "reasoningChars": "\(message.reasoningText.count)",
+                "timeline": "\(message.timeline.count)",
+                "checkpoints": "\(message.streamCheckpoints.count)",
+                "pendingTail": "\(message.streamPendingTail.count)"
+            ]
+        )
+    }
+
+    private func markLiveStreamRenderableModelIfNeeded() {
+        guard message.role == .assistant, !message.streamingFinished, !message.isError else { return }
+        var timelineMessageEntries = 0
+        var timelineReasoningEntries = 0
+        var timelineToolEntries = 0
+        for entry in message.timeline {
+            switch entry {
+            case .message:
+                timelineMessageEntries += 1
+            case .reasoning:
+                timelineReasoningEntries += 1
+            case .tools:
+                timelineToolEntries += 1
+            }
+        }
+        let reasoningCheckpointCount = message.reasoningCheckpoints.values.reduce(0) { $0 + $1.count }
+        RenderProbe.mark(
+            "LiveStreamRenderableModelAvailable",
+            fields: [
+                "chat": chatId.uuidString,
+                "message": message.id.uuidString,
+                "contentChars": "\(message.content.count)",
+                "contentCheckpoints": "\(message.streamCheckpoints.count)",
+                "pendingTail": "\(message.streamPendingTail.count)",
+                "reasoningChars": "\(message.reasoningText.count)",
+                "reasoningCheckpoints": "\(reasoningCheckpointCount)",
+                "timeline": "\(message.timeline.count)",
+                "timelineMessages": "\(timelineMessageEntries)",
+                "timelineReasoning": "\(timelineReasoningEntries)",
+                "timelineTools": "\(timelineToolEntries)"
+            ]
+        )
     }
 
     private func visibleTimelineEntries(isStreaming: Bool) -> [AssistantTimelineEntry] {
@@ -433,7 +538,10 @@ struct MessageRow: View, Equatable {
                 color: Palette.textPrimary,
                 checkpoints: message.reasoningCheckpoints[entryId] ?? [],
                 streamingFinished: message.streamingFinished,
-                findQuery: findQuery
+                codeBlockWordWrap: codeBlockWordWrap,
+                findQuery: findQuery,
+                openLink: onOpenLink,
+                onToggleCodeBlockWordWrap: onToggleCodeBlockWordWrap
             )
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityHidden(!exposeMessageAccessibility)
@@ -485,7 +593,10 @@ struct MessageRow: View, Equatable {
                             : Palette.textPrimary,
                         checkpoints: useCheckpoints ? message.streamCheckpoints : [],
                         streamingFinished: message.streamingFinished,
-                        findQuery: findQuery
+                        codeBlockWordWrap: codeBlockWordWrap,
+                        findQuery: findQuery,
+                        openLink: onOpenLink,
+                        onToggleCodeBlockWordWrap: onToggleCodeBlockWordWrap
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
                 case .plan(let body, let completed):
@@ -663,6 +774,14 @@ final class ChangedFilePathCache {
         if let cached = values[key] {
             return cached
         }
+
+        RenderProbe.mark(
+            "ChangedFilePathsCompute",
+            fields: [
+                "message": message.id.uuidString,
+                "timeline": "\(message.timeline.count)"
+            ]
+        )
 
         var seen: Set<String> = []
         var result: [String] = []

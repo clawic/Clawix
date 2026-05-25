@@ -80,11 +80,11 @@ struct ClawJSAppStateSyncStatus: Equatable, Sendable {
     var applied: Int
 }
 
-struct ClawJSAppStateApplyResponse: Decodable {
+struct ClawJSAppStateApplyResponse: Decodable, Sendable {
     let receipt: ClawJSAppStateSyncReceipt
 }
 
-struct ClawJSAppStateSyncReceipt: Codable {
+struct ClawJSAppStateSyncReceipt: Codable, Sendable {
     let receiptId: String
     let requestId: String
     let hostId: String
@@ -94,7 +94,7 @@ struct ClawJSAppStateSyncReceipt: Codable {
     let error: ClawJSAppStateReceiptError?
 }
 
-struct ClawJSAppStateReceiptError: Codable {
+struct ClawJSAppStateReceiptError: Codable, Sendable {
     let code: String
     let message: String
 }

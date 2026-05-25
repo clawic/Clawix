@@ -73,6 +73,16 @@ extension AppState {
     /// on the given assistant message. Lazily creates the WorkSummary if
     /// the start event was missed.
     func upsertWorkItem(chatId: UUID, messageId: UUID, item: WorkItem) {
+        RenderProbe.mark(
+            "LiveStreamAppendEnter",
+            fields: [
+                "chat": chatId.uuidString,
+                "message": messageId.uuidString,
+                "kind": "tool",
+                "item": item.id,
+                "status": item.status.liveStreamProbeStatus
+            ]
+        )
         // Drain any pending agent-message deltas FIRST so any text the
         // model emitted before this tool call lands in the timeline ahead
         // of the new `.tools` entry. Otherwise the buffered preamble
@@ -137,6 +147,16 @@ extension AppState {
                 ))
             }
         }
+        RenderProbe.mark(
+            "LiveStreamToolModelAppend",
+            fields: [
+                "chat": chatId.uuidString,
+                "message": messageId.uuidString,
+                "item": item.id,
+                "kind": item.kind.liveStreamProbeKind,
+                "status": item.status.liveStreamProbeStatus
+            ]
+        )
     }
 
     /// Mark the WorkSummary as finished (turn/completed). Records the end
@@ -773,6 +793,32 @@ extension AppState {
                 self.archivedChats.insert(moved, at: min(idx, self.archivedChats.count))
                 self.appendErrorBubble(chatId: chatId, message: "Could not unarchive on the runtime: \(error)")
             }
+        }
+    }
+}
+
+private extension WorkItemKind {
+    var liveStreamProbeKind: String {
+        switch self {
+        case .command: return "command"
+        case .fileChange: return "fileChange"
+        case .webSearch: return "webSearch"
+        case .mcpTool: return "mcpTool"
+        case .dynamicTool: return "dynamicTool"
+        case .imageGeneration: return "imageGeneration"
+        case .imageView: return "imageView"
+        case .jsCall: return "jsCall"
+        case .jsReset: return "jsReset"
+        }
+    }
+}
+
+private extension WorkItemStatus {
+    var liveStreamProbeStatus: String {
+        switch self {
+        case .inProgress: return "inProgress"
+        case .completed: return "completed"
+        case .failed: return "failed"
         }
     }
 }

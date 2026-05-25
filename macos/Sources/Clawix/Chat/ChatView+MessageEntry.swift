@@ -10,6 +10,7 @@ struct ChatMessageEntryView: View {
     let lastAssistantMessageId: UUID?
     let responseStreaming: Bool
     let activeFindQuery: String
+    let closedMetadataReady: Bool
     let publishingReady: Bool
     let proxy: ScrollViewProxy
 
@@ -21,7 +22,9 @@ struct ChatMessageEntryView: View {
             isLastUserMessage: message.id == lastUserMessageId,
             isLastAssistantMessage: message.id == lastAssistantMessageId,
             responseStreaming: responseStreaming,
+            codeBlockWordWrap: appState.chatCodeBlockWordWrap,
             findQuery: activeFindQuery,
+            closedMetadataReady: closedMetadataReady,
             onTimelineExpanded: { expandedId in
                 // Pin the bottom of the expanded bubble so inserted content grows upward.
                 DispatchQueue.main.async {
@@ -50,6 +53,9 @@ struct ChatMessageEntryView: View {
             onOpenImage: { url in
                 appState.imagePreviewURL = url
             },
+            onOpenLink: { url in
+                appState.openLinkInBrowser(url)
+            },
             onCopyMessage: { content, copied in
                 LegalSafetyStore.shared.requestSensitiveActionReview(action: .exportShare, appState: appState) {
                     let pb = NSPasteboard.general
@@ -60,6 +66,9 @@ struct ChatMessageEntryView: View {
             },
             onPushToPublishing: { body in
                 appState.navigate(to: .publishingComposer(prefillBody: body, prefillScheduleAt: nil))
+            },
+            onToggleCodeBlockWordWrap: {
+                appState.chatCodeBlockWordWrap.toggle()
             },
             publishingReady: publishingReady
         )

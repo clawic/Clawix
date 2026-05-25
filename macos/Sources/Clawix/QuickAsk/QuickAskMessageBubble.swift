@@ -57,9 +57,11 @@ struct QuickAskMessageBubble: View {
                 weight: .regular,
                 color: Palette.danger,
                 checkpoints: [],
-                streamingFinished: true
+                streamingFinished: true,
+                codeBlockWordWrap: appState.chatCodeBlockWordWrap,
+                openLink: { url in appState.openLinkInBrowser(url) },
+                onToggleCodeBlockWordWrap: { appState.chatCodeBlockWordWrap.toggle() }
             )
-            .environmentObject(appState)
             .fixedSize(horizontal: false, vertical: true)
         } else if displayText.isEmpty && !message.streamingFinished {
             ThinkingShimmer(
@@ -76,9 +78,11 @@ struct QuickAskMessageBubble: View {
                 weight: .light,
                 color: Palette.textPrimary,
                 checkpoints: message.streamCheckpoints,
-                streamingFinished: message.streamingFinished
+                streamingFinished: message.streamingFinished,
+                codeBlockWordWrap: appState.chatCodeBlockWordWrap,
+                openLink: { url in appState.openLinkInBrowser(url) },
+                onToggleCodeBlockWordWrap: { appState.chatCodeBlockWordWrap.toggle() }
             )
-            .environmentObject(appState)
             .fixedSize(horizontal: false, vertical: true)
         }
     }

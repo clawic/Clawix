@@ -2,12 +2,10 @@ import SwiftUI
 import os
 
 // Streaming fade-in for assistant text. The unit of animation is the
-// WORD: every word ramps from opacity 0 → 1 over `duration`. Words are
-// scheduled with a leaky-bucket stagger so a bursty delta (one chunk
-// dumping ten words at once) is replayed left-to-right at a stable
-// pace, giving the answer a "typing" feel even when the backend
-// streams in spikes. When the stream goes idle the queue empties on
-// its own and the next delta starts a fresh schedule from `now`.
+// WORD: every word ramps from opacity 0 to 1 over `duration`. The fade
+// starts when the word is appended to the renderable model. It must not
+// queue words into the future, because live streaming has to reflect the
+// backend stream instead of replaying a delayed visual backlog.
 
 /// Toggle to surface streaming-pipeline timing in the dev log. Flip to
 /// `false` once we've root-caused the perceived slowness; the logs are
@@ -19,12 +17,11 @@ enum StreamingFade {
     /// How long a word takes to ramp from invisible to fully opaque.
     static let duration: Double = 0.22
 
-    /// Minimum gap between consecutive words' fade-start times. A delta
-    /// carrying N words spreads them across N · stagger seconds; deltas
-    /// that arrive farther apart than this gap don't queue (each starts
-    /// at its arrival time). Tuned tight enough that a burst feels like
-    /// the natural stream pace rather than a forced metronome.
-    static let stagger: Double = 0.008
+    /// Historical compatibility constant for callers/tests that refer to
+    /// the old spacing knob. It is intentionally zero: opacity may smooth
+    /// a word that is already in the model, but it cannot create a delayed
+    /// word queue.
+    static let stagger: Double = 0
 
     /// Opacity for the character at `offset` in the streamed string.
     /// Characters past the last scheduled word (i.e. a trailing partial
@@ -146,17 +143,18 @@ enum StreamingFade {
     }
 
     /// Walks `pendingTail + delta` and emits one `StreamCheckpoint` per
-    /// complete word (non-whitespace followed by whitespace), with
-    /// leaky-bucket spacing so a burst still reads as typing. The new
-    /// pending tail (the trailing partial word, or `""` if nothing is
-    /// outstanding) comes back so the caller can hand it to the next
-    /// delta. This is O(pendingTail + delta) per call; the caller
-    /// avoids the previous O(content) reparse on every token.
+    /// complete word (non-whitespace followed by whitespace). A burst
+    /// of already-complete words gets the same `now` timestamp so the
+    /// renderer never turns a fast stream into a delayed visual replay.
+    /// The new pending tail (the trailing partial word, or `""` if
+    /// nothing is outstanding) comes back so the caller can hand it to
+    /// the next delta. This is O(pendingTail + delta) per call; the
+    /// caller avoids the previous O(content) reparse on every token.
     static func ingest(
         delta: String,
         pendingTail: String,
         scheduledLength: Int,
-        lastFadeStart: Date,
+        lastFadeStart _: Date,
         flush: Bool = false,
         now: Date = Date()
     ) -> ScheduleResult {
@@ -165,7 +163,6 @@ enum StreamingFade {
         var checkpoints: [StreamCheckpoint] = []
         var i = combined.startIndex
         var iCount = 0
-        var fadeStart = lastFadeStart
         let endIdx = combined.endIndex
 
         while i < endIdx {
@@ -179,11 +176,9 @@ enum StreamingFade {
             if j == endIdx {
                 // Pure whitespace tail.
                 if flush {
-                    let nextSlot = max(now, fadeStart.addingTimeInterval(stagger))
                     checkpoints.append(StreamCheckpoint(
-                        prefixCount: scheduledLength + jCount, addedAt: nextSlot
+                        prefixCount: scheduledLength + jCount, addedAt: now
                     ))
-                    fadeStart = nextSlot
                     i = j; iCount = jCount
                 }
                 break
@@ -195,11 +190,9 @@ enum StreamingFade {
             if j == endIdx {
                 // No closing whitespace yet → defer the partial word.
                 if flush {
-                    let nextSlot = max(now, fadeStart.addingTimeInterval(stagger))
                     checkpoints.append(StreamCheckpoint(
-                        prefixCount: scheduledLength + jCount, addedAt: nextSlot
+                        prefixCount: scheduledLength + jCount, addedAt: now
                     ))
-                    fadeStart = nextSlot
                     i = j; iCount = jCount
                 }
                 break
@@ -209,11 +202,9 @@ enum StreamingFade {
             while j < endIdx, combined[j].isWhitespace {
                 j = combined.index(after: j); jCount += 1
             }
-            let nextSlot = max(now, fadeStart.addingTimeInterval(stagger))
             checkpoints.append(StreamCheckpoint(
-                prefixCount: scheduledLength + jCount, addedAt: nextSlot
+                prefixCount: scheduledLength + jCount, addedAt: now
             ))
-            fadeStart = nextSlot
             i = j; iCount = jCount
         }
 

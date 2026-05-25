@@ -12,6 +12,7 @@ struct ChatTranscriptScrollerView: View {
     @Binding var visibleMessageLimit: Int
     @Binding var lastLocalRevealAt: Date
     @Binding var bottomId: String?
+    let closedMetadataReady: Bool
     let chatTailId: String
     let publishingReady: Bool
 
@@ -45,9 +46,10 @@ struct ChatTranscriptScrollerView: View {
                         .frame(height: 28)
                         .transition(.opacity)
                     }
-                    let messages = transcript.messages
-                    let lastUserMessageId = lastUserMessageId(in: messages)
-                    let lastAssistantMessageId = lastCompletedAssistantMessageId(in: messages)
+                    let lastUserMessageId = transcript.lastMessageId { $0.role == .user }
+                    let lastAssistantMessageId = transcript.lastMessageId {
+                        $0.role == .assistant && $0.streamingFinished && !$0.isError
+                    }
                     let responseStreaming = isResponseStreaming(chat)
                     let activeFindQuery = appState.isFindBarOpen ? appState.findQuery : ""
                     ForEach(visibleMessageStores) { messageStore in
@@ -59,6 +61,7 @@ struct ChatTranscriptScrollerView: View {
                             lastAssistantMessageId: lastAssistantMessageId,
                             responseStreaming: responseStreaming,
                             activeFindQuery: activeFindQuery,
+                            closedMetadataReady: closedMetadataReady,
                             publishingReady: publishingReady,
                             proxy: proxy
                         )
@@ -72,7 +75,10 @@ struct ChatTranscriptScrollerView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
                 .padding(.bottom, 12)
-                .background(ThinScrollerInstaller(style: .clawixAlwaysVisible).allowsHitTesting(false))
+                .background(ThinScrollerInstaller(
+                    style: .clawixAlwaysVisible,
+                    controlId: "chat.transcript.scroll"
+                ).allowsHitTesting(false))
             }
             .scrollPosition(id: bottomScrollBinding, anchor: .bottom)
             .modifier(ChatScrollDeclarativeAnchors())
@@ -102,6 +108,7 @@ struct ChatTranscriptScrollerView: View {
                 lastLocalRevealAt = .distantPast
                 bottomId = chatTailId
                 awayFromBottom = false
+                markBottomAnchor("appear")
             }
             .onChange(of: chatId) { _, _ in
                 appState.ensureSelectedChat()
@@ -110,6 +117,7 @@ struct ChatTranscriptScrollerView: View {
                 lastLocalRevealAt = .distantPast
                 bottomId = chatTailId
                 awayFromBottom = false
+                markBottomAnchor("chat-change")
             }
             .onChange(of: appState.currentFindIndex) { _, _ in
                 scrollToCurrentFindMatch(proxy: proxy)
@@ -118,21 +126,34 @@ struct ChatTranscriptScrollerView: View {
                 scrollToCurrentFindMatch(proxy: proxy)
             }
             .task(id: prewarmKey) {
+                if visibleMessageStores.last?.message.streamingFinished == false {
+                    RenderProbe.mark(
+                        "MarkdownPrewarmSkippedActiveStream",
+                        fields: [
+                            "chat": chat.id.uuidString,
+                            "visible": "\(visibleMessageStores.count)"
+                        ]
+                    )
+                    return
+                }
                 await ChatMarkdownPrewarmer.prewarm(
                     messages: visibleMessageStores.map(\.message),
-                    timelineEntryLimit: MessageRow.initialTimelineEntryLimit
+                    timelineEntryLimit: 0
                 )
             }
         }
     }
 
     private var prewarmKey: ChatMarkdownPrewarmKey {
-        ChatMarkdownPrewarmKey(
+        let lastMessage = visibleMessageStores.last?.message
+        return ChatMarkdownPrewarmKey(
             chatId: chat.id,
             visibleMessageCount: visibleMessageStores.count,
             firstMessageId: visibleMessageStores.first?.id,
             lastMessageId: visibleMessageStores.last?.id,
-            lastTimelineCount: visibleMessageStores.last?.message.timeline.count ?? 0
+            lastTimelineCount: lastMessage?.streamingFinished == false
+                ? 0
+                : lastMessage?.timeline.count ?? 0
         )
     }
 
@@ -150,6 +171,7 @@ struct ChatTranscriptScrollerView: View {
     private func returnToTail(proxy: ScrollViewProxy) {
         awayFromBottom = false
         bottomId = chatTailId
+        markBottomAnchor("return-to-tail")
         withAnimation(.easeOut(duration: 0.25)) {
             proxy.scrollTo(chatTailId, anchor: .bottom)
         }
@@ -164,6 +186,18 @@ struct ChatTranscriptScrollerView: View {
             lastLocalRevealAt = now
             let anchorId = visibleMessageStores.first?.id
             bottomId = nil
+            RenderProbe.mark(
+                "ChatOlderHistoryRevealStart",
+                fields: [
+                    "anchor": anchorId?.uuidString ?? "none",
+                    "bottomArmed": "false",
+                    "chat": chatId.uuidString,
+                    "fromVisible": "\(visibleMessageLimit)",
+                    "hiddenBefore": "\(hiddenLocalMessageCount)",
+                    "last": visibleMessageStores.last?.id.uuidString ?? "none",
+                    "total": "\(transcript.messageIds.count)"
+                ]
+            )
             visibleMessageLimit = min(
                 transcript.messageIds.count,
                 visibleMessageLimit + ChatView.visibleMessagePageSize
@@ -175,6 +209,15 @@ struct ChatTranscriptScrollerView: View {
                     withTransaction(transaction) {
                         proxy.scrollTo(anchorId, anchor: .top)
                     }
+                    RenderProbe.mark(
+                        "ChatOlderHistoryRevealAnchored",
+                        fields: [
+                            "anchor": anchorId.uuidString,
+                            "chat": chatId.uuidString,
+                            "last": visibleMessageStores.last?.id.uuidString ?? "none",
+                            "toVisible": "\(visibleMessageLimit)"
+                        ]
+                    )
                 }
             }
         } else {
@@ -182,18 +225,20 @@ struct ChatTranscriptScrollerView: View {
         }
     }
 
-    private func lastUserMessageId(in messages: [ChatMessage]) -> UUID? {
-        messages.last(where: { $0.role == .user })?.id
-    }
-
-    private func lastCompletedAssistantMessageId(in messages: [ChatMessage]) -> UUID? {
-        messages.last { message in
-            message.role == .assistant && message.streamingFinished && !message.isError
-        }?.id
+    private func markBottomAnchor(_ reason: String) {
+        RenderProbe.mark(
+            "ChatBottomAnchorArmed",
+            fields: [
+                "bottomId": bottomId ?? "nil",
+                "chat": chatId.uuidString,
+                "reason": reason,
+                "tail": chatTailId
+            ]
+        )
     }
 
     private func isResponseStreaming(_ chat: Chat) -> Bool {
-        if let lastAssistant = transcript.messages.last(where: { $0.role == .assistant }) {
+        if let lastAssistant = transcript.lastMessage(where: { $0.role == .assistant }) {
             return !lastAssistant.streamingFinished
         }
         return chat.hasActiveTurn

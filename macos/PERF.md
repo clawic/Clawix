@@ -100,7 +100,7 @@ All capture artifacts land in one place when you run `perf-capture.sh`:
 
 | Category | Emitted from | What you see |
 | --- | --- | --- |
-| `ui.chat` | `ChatView.swift` `MessageRow` body | One `row.body` event per message body re-eval |
+| `ui.chat` | `ChatView.swift` and `MessageRow` body | `messages.visible` / `visible.window` events for transcript first-window evidence, plus one `row.body` event per message body re-eval |
 | `ui.sidebar` | `SidebarView.swift:145` `makeSnapshot` | One `snapshot` interval per body invocation |
 | `launch` | app entry, root window, sidebar, composer, startup core | One-shot events: `process_start`, `app_init_start`, `app_init_end`, `first_window`, `first_sidebar_paint`, `first_chat_interactive`, `core_ready` |
 | `state.appstate` | `AppState.swift` `objectWillChange` ticks via `RenderProbe` | High-rate ticks correlated with publisher emissions |

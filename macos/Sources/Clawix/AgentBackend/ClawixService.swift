@@ -39,6 +39,7 @@ final class ClawixService: ObservableObject {
     /// are dropped so they cannot resurrect the assistant placeholder we
     /// just cleared. An entry is removed when its turn/completed arrives.
     private var interruptedTurnIds: Set<String> = []
+    private var liveStreamProbeSequenceByTurn: [String: Int] = [:]
 
     enum BackendMetadataRefreshReason {
         case startupIdle
@@ -629,6 +630,14 @@ final class ClawixService: ObservableObject {
         case let .agentMessageDelta(payload):
             if !interruptedTurnIds.contains(payload.turnId),
                let chatId = chatByThread[payload.threadId] {
+                markLiveStreamDeltaReceived(
+                    chatId: chatId,
+                    threadId: payload.threadId,
+                    turnId: payload.turnId,
+                    kind: "content",
+                    chars: payload.delta.count,
+                    words: Self.completeWordCount(in: payload.delta)
+                )
                 ensureAssistantPlaceholder(chatId: chatId, turnId: payload.turnId)
                 appState?.appendAssistantDelta(chatId: chatId, delta: payload.delta)
             }
@@ -636,6 +645,14 @@ final class ClawixService: ObservableObject {
         case let .reasoningTextDelta(payload), let .reasoningSummaryTextDelta(payload):
             if !interruptedTurnIds.contains(payload.turnId),
                let chatId = chatByThread[payload.threadId] {
+                markLiveStreamDeltaReceived(
+                    chatId: chatId,
+                    threadId: payload.threadId,
+                    turnId: payload.turnId,
+                    kind: "reasoning",
+                    chars: payload.delta.count,
+                    words: Self.completeWordCount(in: payload.delta)
+                )
                 ensureAssistantPlaceholder(chatId: chatId, turnId: payload.turnId)
                 appState?.appendReasoningDelta(chatId: chatId, delta: payload.delta)
             }
@@ -673,6 +690,7 @@ final class ClawixService: ObservableObject {
                     appState?.pendingPlanQuestions[chatId] = nil
                     appState?.maybeGenerateTitleAfterTurn(chatId: chatId)
                 }
+                liveStreamProbeSequenceByTurn[turnId] = nil
             }
 
         case .threadStarted(_):
@@ -748,6 +766,19 @@ final class ClawixService: ObservableObject {
         }
 
         guard let kind = workItemKind(from: payload.item) else { return }
+        markLiveStreamDeltaReceived(
+            chatId: chatId,
+            threadId: payload.threadId,
+            turnId: payload.turnId,
+            kind: "tool",
+            chars: 0,
+            words: 0,
+            extraFields: [
+                "item": payload.item.id,
+                "itemType": payload.item.type,
+                "status": completed ? "completed" : "started"
+            ]
+        )
         ensureAssistantPlaceholder(chatId: chatId, turnId: payload.turnId)
         guard let messageId = activeTurnByChat[chatId]?.assistantMessageId else { return }
         let status: WorkItemStatus = mapWorkStatus(payload.item.status, completed: completed)
@@ -771,6 +802,36 @@ final class ClawixService: ObservableObject {
             generatedImagePath: generatedImagePath
         )
         appState?.upsertWorkItem(chatId: chatId, messageId: messageId, item: item)
+    }
+
+    private func markLiveStreamDeltaReceived(
+        chatId: UUID,
+        threadId: String,
+        turnId: String,
+        kind: String,
+        chars: Int,
+        words: Int,
+        extraFields: [String: String] = [:]
+    ) {
+        let sequence = (liveStreamProbeSequenceByTurn[turnId] ?? 0) + 1
+        liveStreamProbeSequenceByTurn[turnId] = sequence
+        var fields: [String: String] = [
+            "chat": chatId.uuidString,
+            "thread": threadId,
+            "turn": turnId,
+            "kind": kind,
+            "seq": "\(sequence)",
+            "chars": "\(chars)",
+            "words": "\(words)"
+        ]
+        for (key, value) in extraFields {
+            fields[key] = value.replacingOccurrences(of: " ", with: "_")
+        }
+        RenderProbe.mark("LiveStreamDeltaReceived", fields: fields)
+    }
+
+    private static func completeWordCount(in text: String) -> Int {
+        text.split(whereSeparator: { $0.isWhitespace }).count
     }
 
     private func workItemKind(from item: ItemPayload) -> WorkItemKind? {

@@ -140,7 +140,7 @@ struct SidebarView: View {
     }
 
     private var selectedChatId: UUID? {
-        if case let .chat(id) = sidebarStore.snapshot.currentRoute { return id }
+        if case let .chat(id) = sidebarStore.selectedRoute { return id }
         return nil
     }
 
@@ -655,7 +655,7 @@ struct SidebarView: View {
         } else {
             ToolsReorderableList(
                 tools: visible,
-                selectedRoute: sidebarStore.snapshot.currentRoute,
+                selectedRoute: sidebarStore.selectedRoute,
                 onSelect: { route in appState.navigate(to: route) },
                 onReorder: { toolId, beforeId in
                     reorderTools(toolId: toolId, beforeId: beforeId)
@@ -698,11 +698,7 @@ struct SidebarView: View {
                     SidebarButton(title: "Network",
                                   icon: "network",
                                   route: .networkControl)
-                    if let rescueSummary = RescueRepairStatusSummary(decision: appState.rescueDecision) {
-                        RescueRepairSidebarButton(summary: rescueSummary) {
-                            appState.openRescueSurface()
-                        }
-                    }
+                    RescueRepairSidebarStatus(appState: appState)
                     /*
                     SidebarButton(title: "Plugins",
                                   icon: "circle.grid.2x2",
@@ -721,7 +717,7 @@ struct SidebarView: View {
                 // Legacy mode reserves the scroller's 14pt column outside
                 // the clipView, so the gutter only needs the small breathing
                 // strip between content and that column.
-                ThinScrollView(trailingGutter: 4) {
+                ThinScrollView(trailingGutter: 4, controlId: "sidebar.scroll") {
                     sidebarScrollContent(snapshot: sidebarSnapshot)
                         .background(SidebarScrollStateInstaller().allowsHitTesting(false))
                 }
@@ -745,7 +741,7 @@ struct SidebarView: View {
             }
         }
         .animation(.easeOut(duration: 0.20), value: settingsPopoverOpen)
-        .onChange(of: sidebarSnapshot.currentRoute) { _, _ in
+        .onChange(of: sidebarStore.selectedRoute) { _, _ in
             settingsPopoverOpen = false
         }
         .sheet(item: $projectEditor) { ctx in
@@ -1152,6 +1148,24 @@ struct SidebarView: View {
             appState.selectedProject = project
             appState.currentRoute = .home
             expandedProjects.insert(project.id)
+        }
+    }
+}
+
+private struct RescueRepairSidebarStatus: View {
+    let appState: AppState
+    @ObservedObject private var backendStatusStore: BackendStatusStore
+
+    init(appState: AppState) {
+        self.appState = appState
+        _backendStatusStore = ObservedObject(wrappedValue: appState.backendStatusStore)
+    }
+
+    var body: some View {
+        if let rescueSummary = RescueRepairStatusSummary(decision: backendStatusStore.rescueDecision) {
+            RescueRepairSidebarButton(summary: rescueSummary) {
+                appState.openRescueSurface()
+            }
         }
     }
 }

@@ -18,7 +18,13 @@ struct MermaidDiagramView: View {
 
     var body: some View {
         if failed {
-            AssistantCodeBlockView(language: "mermaid", code: code, ordinal: ordinal)
+            AssistantCodeBlockView(
+                language: "mermaid",
+                code: code,
+                ordinal: ordinal,
+                wordWrapEnabled: true,
+                onToggleWordWrap: {}
+            )
         } else {
             MermaidWebView(code: code, height: $height, failed: $failed)
                 .frame(height: height)

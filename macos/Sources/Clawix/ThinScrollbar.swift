@@ -12,6 +12,7 @@ extension NSScroller.Style {
 struct ThinScrollView<Content: View>: NSViewRepresentable {
     private let axes: Axis.Set
     private let trailingGutter: CGFloat
+    private let controlId: String?
     private let content: Content
 
     /// `trailingGutter`: width (in pt) of an empty strip reserved on the
@@ -24,14 +25,19 @@ struct ThinScrollView<Content: View>: NSViewRepresentable {
     /// behaviour for menus where the content already pads itself.
     init(_ axes: Axis.Set = .vertical,
          trailingGutter: CGFloat = 0,
+         controlId: String? = nil,
          @ViewBuilder content: () -> Content) {
         self.axes = axes
         self.trailingGutter = trailingGutter
+        self.controlId = controlId
         self.content = content()
     }
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
+        if let controlId {
+            scrollView.identifier = NSUserInterfaceItemIdentifier(controlId)
+        }
         scrollView.drawsBackground = false
         scrollView.hasVerticalScroller = axes.contains(.vertical)
         scrollView.hasHorizontalScroller = axes.contains(.horizontal)
@@ -94,6 +100,9 @@ struct ThinScrollView<Content: View>: NSViewRepresentable {
                                               constant: -trailingGutter),
             hosting.topAnchor.constraint(equalTo: clipView.topAnchor),
         ])
+        if let controlId {
+            ClxScrollRegistry.shared.upsert(scrollView, id: controlId)
+        }
 
         return scrollView
     }
@@ -101,6 +110,15 @@ struct ThinScrollView<Content: View>: NSViewRepresentable {
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         if let hosting = scrollView.documentView as? NSHostingView<Content> {
             hosting.rootView = content
+        }
+        if let controlId {
+            ClxScrollRegistry.shared.upsert(scrollView, id: controlId)
+        }
+    }
+
+    static func dismantleNSView(_ scrollView: NSScrollView, coordinator: ()) {
+        if let id = scrollView.identifier?.rawValue {
+            ClxScrollRegistry.shared.remove(id: id, scrollView: scrollView)
         }
     }
 }
@@ -291,31 +309,52 @@ final class ThinScroller: NSScroller {
 // the next runloop after layout in case AppKit re-tiles.
 struct ThinScrollerInstaller: NSViewRepresentable {
     private let style: NSScroller.Style
+    private let controlId: String?
 
-    init(style: NSScroller.Style = .overlay) {
+    init(style: NSScroller.Style = .overlay, controlId: String? = nil) {
         self.style = style
+        self.controlId = controlId
     }
 
     func makeNSView(context: Context) -> ThinScrollerInstallerView {
-        ThinScrollerInstallerView(style: style)
+        ThinScrollerInstallerView(style: style, controlId: controlId)
     }
 
     func updateNSView(_ nsView: ThinScrollerInstallerView, context: Context) {
+        nsView.updateControlId(controlId)
         nsView.installIfNeeded()
+    }
+
+    static func dismantleNSView(_ nsView: ThinScrollerInstallerView, coordinator: ()) {
+        nsView.unregisterControlId()
     }
 }
 
 final class ThinScrollerInstallerView: NSView {
     private weak var installedScrollView: NSScrollView?
     private let style: NSScroller.Style
+    private var controlId: String?
 
-    init(style: NSScroller.Style) {
+    init(style: NSScroller.Style, controlId: String?) {
         self.style = style
+        self.controlId = controlId
         super.init(frame: .zero)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) is not supported")
+    }
+
+    func updateControlId(_ nextControlId: String?) {
+        guard controlId != nextControlId else { return }
+        unregisterControlId()
+        controlId = nextControlId
+        registerControlIdIfNeeded()
+    }
+
+    func unregisterControlId() {
+        guard let controlId, let installedScrollView else { return }
+        ClxScrollRegistry.shared.remove(id: controlId, scrollView: installedScrollView)
     }
 
     override func viewDidMoveToWindow() {
@@ -334,6 +373,7 @@ final class ThinScrollerInstallerView: NSView {
         if let already = installedScrollView,
            already.verticalScroller is ThinScroller,
            (!already.hasHorizontalScroller || already.horizontalScroller is ThinScroller) {
+            registerControlIdIfNeeded()
             return
         }
         var current: NSView? = self.superview
@@ -341,10 +381,17 @@ final class ThinScrollerInstallerView: NSView {
             if let scrollView = view as? NSScrollView {
                 attachThinScroller(to: scrollView)
                 installedScrollView = scrollView
+                registerControlIdIfNeeded()
                 return
             }
             current = view.superview
         }
+    }
+
+    private func registerControlIdIfNeeded() {
+        guard let controlId, let installedScrollView else { return }
+        installedScrollView.identifier = NSUserInterfaceItemIdentifier(controlId)
+        ClxScrollRegistry.shared.upsert(installedScrollView, id: controlId)
     }
 
     private func attachThinScroller(to scrollView: NSScrollView) {

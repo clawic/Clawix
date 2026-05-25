@@ -28,10 +28,10 @@ enum ClawJSServiceLaunchAdapter {
                 "--eval",
                 """
                 import { buildRuntimeApp } from '@clawjs/runtime';
-                const app = buildRuntimeApp();
+                const { app, config } = buildRuntimeApp();
                 const host = process.env.RUNTIME_HOST || process.env.HOST || '127.0.0.1';
                 const port = Number(process.env.RUNTIME_PORT || process.env.PORT || '24100');
-                await app.listen({ host, port });
+                await app.listen({ host: config.host || host, port: config.port || port });
                 """
             ]
         }

@@ -7,6 +7,30 @@ import ClawixEngine
 
 private let daemonBridgePort: UInt16 = 24080
 
+@MainActor
+final class BackendStatusStore: ObservableObject {
+    @Published private(set) var status: ClawixService.Status
+    @Published private(set) var rescueDecision: RescueSurvivalDecision
+
+    init(
+        status: ClawixService.Status = .idle,
+        rescueDecision: RescueSurvivalDecision = RescueSurvivalPolicy.evaluate(signals: [], availableRuntimeCount: 1)
+    ) {
+        self.status = status
+        self.rescueDecision = rescueDecision
+    }
+
+    func update(status nextStatus: ClawixService.Status) {
+        guard status != nextStatus else { return }
+        status = nextStatus
+    }
+
+    func update(rescueDecision nextDecision: RescueSurvivalDecision) {
+        guard rescueDecision != nextDecision else { return }
+        rescueDecision = nextDecision
+    }
+}
+
 // MARK: - AppState
 
 @MainActor
@@ -31,10 +55,16 @@ final class AppState: ObservableObject {
                 currentRoute = visibleRoute
                 return
             }
+            RenderProbe.mark(
+                "AppStateCurrentRouteDidSet",
+                fields: [
+                    "new": currentRoute.renderProbeIdentifier,
+                    "old": oldValue.renderProbeIdentifier
+                ]
+            )
             clearUnreadIfChatRoute()
             if case let .chat(id) = currentRoute {
-                daemonBridgeClient?.openSession(id)
-                scheduleChatRuntimeDemandIfReady(chatId: id)
+                scheduleRouteChatRuntimeDemand(chatId: id)
             }
             persistLaunchRoute()
             // Scope only outlives the search popup itself; once the user
@@ -334,18 +364,21 @@ final class AppState: ObservableObject {
     /// bottom-trailing rounded-corner cutout blends with whatever the
     /// active page is currently painting at that edge.
     @Published var browserPageBackgroundColors: [UUID: Color] = [:]
-    @Published var clawixBackendStatus: ClawixService.Status = .idle {
+    let backendStatusStore = BackendStatusStore()
+    var clawixBackendStatus: ClawixService.Status = .idle {
         didSet {
-            rescueDecision = RescueRuntimeSignalMapper.decision(
+            guard oldValue != clawixBackendStatus else { return }
+            backendStatusStore.update(status: clawixBackendStatus)
+            setRescueDecision(RescueRuntimeSignalMapper.decision(
                 backendStatus: clawixBackendStatus,
                 runtimeHealth: ResourceSampler.latestHealthSnapshot(
                     bridgeReachable: clawixBackendStatus.isRescueBridgeReachable,
                     runtimeCount: clawixBackendStatus.defaultRescueRuntimeCount
                 )
-            )
+            ))
         }
     }
-    @Published var rescueDecision: RescueSurvivalDecision = RescueSurvivalPolicy.evaluate(signals: [], availableRuntimeCount: 1)
+    var rescueDecision: RescueSurvivalDecision = RescueSurvivalPolicy.evaluate(signals: [], availableRuntimeCount: 1)
     /// Snapshot of the user's primary/secondary rate-limit windows as
     /// reported by the backend (`account/rateLimits/read` once at boot,
     /// then refreshed by `account/rateLimits/updated`). nil while the
@@ -404,6 +437,12 @@ final class AppState: ObservableObject {
 
     @Published var availableModels = ["5.5", "5.4"]
     @Published var otherModels = ["5.4-Mini", "5.3-Pro", "5.3-Pro-Spark", "5.2"]
+
+    func setRescueDecision(_ nextDecision: RescueSurvivalDecision) {
+        guard rescueDecision != nextDecision else { return }
+        rescueDecision = nextDecision
+        backendStatusStore.update(rescueDecision: nextDecision)
+    }
 
     let clawixBinary: ClawixBinaryResolution?
     let clawix: ClawixService?
@@ -499,10 +538,12 @@ final class AppState: ObservableObject {
     var runtimeThreadPageLoader: ((_ cursor: String?, _ limit: Int) async throws -> ClawixService.ThreadListPage)?
     var agentRuntimeStartTask: Task<Bool, Never>?
     var chatRuntimeDemandTask: Task<Void, Never>?
+    var chatRuntimeDemandWaitingForFirstVisible: Set<UUID> = []
     var deferredCodexImportTask: Task<Void, Never>?
     var codexRolloutLocator: @Sendable (String) -> URL? = { CodexRolloutLocator.find(threadId: $0) }
     var codexRolloutPathByThreadId: [String: URL] = [:]
     var missingCodexRolloutPathThreadIds: Set<String> = []
+    var localRolloutHydrationTasks: [UUID: Task<Void, Never>] = [:]
     var sessionHistoryHydrationTasks: [UUID: Task<Void, Never>] = [:]
     var sessionHistoryHydrationAttempts = 8
     var sessionHistoryHydrationInitialDelayNanos: UInt64 = 250_000_000
@@ -527,6 +568,15 @@ final class AppState: ObservableObject {
             job.task?.cancel()
         }
         appStateCanonicalReconciliationTask?.cancel()
+        for task in localRolloutHydrationTasks.values {
+            task.cancel()
+        }
+        for task in sessionHistoryHydrationTasks.values {
+            task.cancel()
+        }
+        for task in gitInspectionTasks.values {
+            task.cancel()
+        }
         let launcher = localBridgeLauncher
         let client = daemonBridgeClient
         Task { @MainActor in
@@ -795,11 +845,13 @@ final class AppState: ObservableObject {
             // ScrollView while the daemon's `messagesSnapshot` races
             // back. Idempotent / silent if the file is missing.
             loadCachedSnapshot()
+            bootstrapCodexSessionIndexForLaunchIfNeeded()
         }
         loadHostFavicons()
         loadChatSidebars()
         applyLaunchRoute()
         syncChatStoreFromLegacySnapshots()
+        scheduleAutomaticPostFirstFramePersistenceIfNeeded()
 
         // Forward auth coordinator changes so views observing AppState
         // also rebuild when login / logout state flips. Coalesce bursts
@@ -833,7 +885,8 @@ final class AppState: ObservableObject {
                 $selectedProject.dropFirst().sink { _ in RenderProbe.tick("AppState.selectedProject") },
                 $currentRoute.dropFirst().sink { _ in RenderProbe.tick("AppState.currentRoute") },
                 $pendingPlanQuestions.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingPlanQuestions") },
-                $clawixBackendStatus.dropFirst().sink { _ in RenderProbe.tick("AppState.clawixBackendStatus") },
+                backendStatusStore.$status.dropFirst().sink { _ in RenderProbe.tick("BackendStatusStore.status") },
+                backendStatusStore.$rescueDecision.dropFirst().sink { _ in RenderProbe.tick("BackendStatusStore.rescueDecision") },
                 $rateLimits.dropFirst().sink { _ in RenderProbe.tick("AppState.rateLimits") },
                 $rateLimitsByLimitId.dropFirst().sink { _ in RenderProbe.tick("AppState.rateLimitsByLimitId") },
                 $hostFavicons.dropFirst().sink { _ in RenderProbe.tick("AppState.hostFavicons") },
@@ -925,6 +978,16 @@ final class AppState: ObservableObject {
             Task { @MainActor in
                 _ = self?.handleOpenURL(url)
             }
+        }
+    }
+
+    private func scheduleAutomaticPostFirstFramePersistenceIfNeeded() {
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
+            return
+        }
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            self?.startPostFirstFramePersistence()
         }
     }
 
@@ -1131,9 +1194,11 @@ final class AppState: ObservableObject {
     /// fades because the StreamCheckpoint schedule keeps its leaky-
     /// bucket spacing inside `applyAssistantTextDelta`).
     ///
-    /// Text and reasoning deltas are coalesced independently. Each
-    /// cross-stream boundary drains the older buffer first so the
-    /// timeline preserves the backend's arrival order.
+    /// Text and reasoning deltas now apply synchronously in the live
+    /// stream path. The buffers remain as a defensive drain point for
+    /// older/finalization paths that may still have queued content, and
+    /// cross-stream boundaries drain before applying the newer chunk so
+    /// the timeline preserves the backend's arrival order.
     var pendingAssistantTextBuffers: [UUID: String] = [:]
     var assistantTextFlushScheduled = false
     var pendingReasoningBuffers: [UUID: String] = [:]

@@ -75,6 +75,21 @@ enum RenderProbe {
         return result
     }
 
+    static func mark(_ name: String, fields: [String: String] = [:]) {
+        guard isEnabled else { return }
+        let stamp = timestamp()
+        let suffix = fields
+            .sorted { $0.key < $1.key }
+            .map { "\($0.key)=\($0.value)" }
+            .joined(separator: " ")
+        let body = suffix.isEmpty ? name : "\(name) \(suffix)"
+        queue.async {
+            lastActivityAt = CFAbsoluteTimeGetCurrent()
+            startIfNeeded()
+            writeLine("[\(stamp)] === EVENT: \(body) ===\n")
+        }
+    }
+
     static func recordHitch(_ name: String, at now: CFAbsoluteTime) {
         guard isEnabled else { return }
         queue.async {
@@ -136,16 +151,20 @@ enum RenderProbe {
             return "\(key)=\(c)"
         }
         let line = "[\(stamp) Δ\(String(format: "%.2f", window))s] \(entries.joined(separator: "  "))\n"
+        writeLine(line)
+        counts.removeAll(keepingCapacity: true)
+        totalMs.removeAll(keepingCapacity: true)
+        maxMs.removeAll(keepingCapacity: true)
+        stopIfIdle(now: now)
+    }
+
+    private static func writeLine(_ line: String) {
         if let data = line.data(using: .utf8),
            let handle = try? FileHandle(forWritingTo: URL(fileURLWithPath: path)) {
             handle.seekToEndOfFile()
             handle.write(data)
             try? handle.close()
         }
-        counts.removeAll(keepingCapacity: true)
-        totalMs.removeAll(keepingCapacity: true)
-        maxMs.removeAll(keepingCapacity: true)
-        stopIfIdle(now: now)
     }
 
     private static func stopIfIdle(now: CFAbsoluteTime) {
@@ -167,6 +186,10 @@ enum RenderProbe {
 
     private static func fmt(_ value: Double) -> String {
         String(format: value < 10 ? "%.2f" : "%.1f", value)
+    }
+
+    private static func timestamp() -> String {
+        String(format: "%.3f", Date().timeIntervalSince1970)
     }
 
     private static var defaultIsDebugBuild: Bool {

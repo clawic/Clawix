@@ -38,4 +38,43 @@ final class AgentThreadSummaryDecodingTests: XCTestCase {
 
         XCTAssertEqual(thread.name, "Manual name")
     }
+
+    func testLoadsCodexSessionIndexAsRecentThreads() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-session-index-\(UUID().uuidString).jsonl")
+        try """
+        {"id":"older","thread_name":"Older thread","updated_at":"2026-05-23T10:00:00.000000Z"}
+        {"id":"newer","thread_name":"Newer thread","updated_at":"2026-05-23T11:00:00.000000Z","cwd":"/tmp/project"}
+        {"id":"older","thread_name":"Older thread renamed","updated_at":"2026-05-23T12:00:00.000000Z"}
+        {"id":"","thread_name":"Invalid","updated_at":"2026-05-23T12:00:00.000000Z"}
+        """.write(to: tmp, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let threads = AgentThreadStore.codexSessionIndexThreads(
+            indexURL: tmp,
+            limit: 2,
+            includeThreadIds: ["newer"]
+        )
+
+        XCTAssertEqual(threads.map(\.id), ["older", "newer"])
+        XCTAssertEqual(threads.first?.name, "Older thread renamed")
+        XCTAssertEqual(threads.last?.cwd, "/tmp/project")
+        XCTAssertEqual(threads.first?.archived, false)
+    }
+
+    func testLoadsCodexPinnedThreadIdsFromGlobalState() throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-global-state-\(UUID().uuidString).json")
+        try """
+        {
+          "pinned-thread-ids": ["pin-1", "pin-2", "pin-1", ""],
+          "project-order": ["project-1"]
+        }
+        """.write(to: tmp, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let ids = AgentThreadStore.codexPinnedThreadIds(globalStateURL: tmp)
+
+        XCTAssertEqual(ids, ["pin-1", "pin-2"])
+    }
 }

@@ -17,11 +17,10 @@ import ClawixCore
 // init (current params: text, weight, color, checkpoints, streamingFinished).
 // Do not fork the renderer.
 //
-// `AssistantMarkdownText` reads `AppState` through `@EnvironmentObject`
-// (link routing into the right-sidebar browser, code-block word-wrap
-// toggle). The main chat gets it from the `WindowGroup` environment
-// automatically; QuickAsk lives outside that group, so its bubble must
-// inject `.environmentObject(appState)` explicitly at the call site.
+// Link routing and code-block word-wrap are passed in explicitly so
+// ordinary AppState changes do not invalidate every visible markdown
+// renderer. If a surface needs AppState-backed behavior, pass only the
+// needed value/action at the call site.
 //
 // File previously inlined inside `ChatView.swift`; extracted here so
 // QuickAsk can reuse the same parser/cache/layout without duplicating
@@ -564,6 +563,7 @@ struct AssistantMarkdownText: View {
     let color: Color
     var checkpoints: [StreamCheckpoint] = []
     var streamingFinished: Bool = true
+    var codeBlockWordWrap: Bool = true
     /// Substring to highlight (case-insensitive). Empty disables the
     /// AttributedString path so steady-state rendering pays nothing.
     /// Wired from `AppState.findQuery` while the in-page find bar is
@@ -571,7 +571,8 @@ struct AssistantMarkdownText: View {
     /// `AtomView` includes it so toggling the bar invalidates the
     /// cached views.
     var findQuery: String = ""
-    @EnvironmentObject var appState: AppState
+    var openLink: (URL) -> Void = { _ in }
+    var onToggleCodeBlockWordWrap: () -> Void = {}
     @StateObject private var renderModel = AssistantMarkdownRenderModel()
     /// Bumped when the trailing fade window closes, so the body
     /// re-evaluates and tears down the `TimelineView` once nothing is
@@ -586,7 +587,10 @@ struct AssistantMarkdownText: View {
         color: Color,
         checkpoints: [StreamCheckpoint] = [],
         streamingFinished: Bool = true,
-        findQuery: String = ""
+        codeBlockWordWrap: Bool = true,
+        findQuery: String = "",
+        openLink: @escaping (URL) -> Void = { _ in },
+        onToggleCodeBlockWordWrap: @escaping () -> Void = {}
     ) {
         self.text = text
         self.renderKey = renderKey
@@ -594,11 +598,15 @@ struct AssistantMarkdownText: View {
         self.color = color
         self.checkpoints = checkpoints
         self.streamingFinished = streamingFinished
+        self.codeBlockWordWrap = codeBlockWordWrap
         self.findQuery = findQuery
+        self.openLink = openLink
+        self.onToggleCodeBlockWordWrap = onToggleCodeBlockWordWrap
     }
 
     var body: some View {
         let _ = RenderProbe.tick("AssistantMarkdownText")
+        let _ = markLiveStreamMarkdownBodyIfNeeded()
         let now = Date()
         let animating = StreamingFade.isAnimating(
             checkpoints: checkpoints,
@@ -607,8 +615,27 @@ struct AssistantMarkdownText: View {
         )
 
         let renderCheckpoints = animating ? checkpoints : []
-        blocksView(renderModel.blocks, checkpoints: renderCheckpoints, now: now)
+        let plainStreamingAtoms = Self.plainStreamingAtomsIfEligible(
+            text: text,
+            streamingFinished: streamingFinished,
+            findQuery: findQuery
+        )
+        Group {
+            if let plainStreamingAtoms {
+                PlainStreamingTextFlow(
+                    atoms: plainStreamingAtoms,
+                    weight: weight,
+                    color: color
+                )
+            } else {
+                blocksView(renderModel.blocks, checkpoints: renderCheckpoints, now: now)
+            }
+        }
         .task(id: renderRequest) {
+            guard plainStreamingAtoms == nil else {
+                renderModel.cancel()
+                return
+            }
             renderModel.request(renderRequest)
         }
         .task(id: TickKey(timestamp: checkpoints.last?.addedAt, finished: streamingFinished)) {
@@ -621,12 +648,77 @@ struct AssistantMarkdownText: View {
         .accessibilityLabel(Text(verbatim: accessibilityPlainText))
     }
 
+    private func markLiveStreamMarkdownBodyIfNeeded() {
+        guard !streamingFinished else { return }
+        RenderProbe.mark(
+            "LiveStreamMarkdownBody",
+            fields: [
+                "renderKey": String(describing: renderKey),
+                "textChars": "\(text.count)",
+                "checkpoints": "\(checkpoints.count)",
+                "lastCheckpoint": "\(checkpoints.last?.prefixCount ?? 0)"
+            ]
+        )
+    }
+
     private var renderRequest: AssistantMarkdownRenderRequest {
         AssistantMarkdownRenderRequest(
             text: text,
             renderKey: renderKey,
             phase: streamingFinished ? .settled : .streamingIntermediate
         )
+    }
+
+    private static func plainStreamingAtomsIfEligible(
+        text: String,
+        streamingFinished: Bool,
+        findQuery: String
+    ) -> [AnnotatedAtom]? {
+        guard !streamingFinished,
+              findQuery.isEmpty,
+              isPlainStreamingText(text)
+        else { return nil }
+        return plainWordAtoms(text)
+    }
+
+    private static func isPlainStreamingText(_ text: String) -> Bool {
+        guard !text.isEmpty else { return true }
+        let markdownSyntax = CharacterSet(charactersIn: "#>*_`[]()|")
+        return text.rangeOfCharacter(from: markdownSyntax) == nil
+            && !text.contains("\n")
+    }
+
+    private static func plainWordAtoms(_ text: String) -> [AnnotatedAtom] {
+        var atoms: [AnnotatedAtom] = []
+        atoms.reserveCapacity(max(1, text.count / 6))
+        var token = ""
+        var tokenStart = text.startIndex
+
+        func appendToken(endingAt end: String.Index) {
+            guard !token.isEmpty else { return }
+            atoms.append(AnnotatedAtom(
+                atom: .word(token),
+                offset: text.distance(from: text.startIndex, to: tokenStart)
+            ))
+            token = ""
+            tokenStart = end
+        }
+
+        var index = text.startIndex
+        while index < text.endIndex {
+            let character = text[index]
+            if token.isEmpty {
+                tokenStart = index
+            }
+            token.append(character)
+            let next = text.index(after: index)
+            if character.isWhitespace {
+                appendToken(endingAt: next)
+            }
+            index = next
+        }
+        appendToken(endingAt: text.endIndex)
+        return atoms
     }
 
     private var accessibilityPlainText: String {
@@ -639,9 +731,8 @@ struct AssistantMarkdownText: View {
     private func scheduleSettle() async {
         guard let last = checkpoints.last else { return }
         let remaining = StreamingFade.duration - Date().timeIntervalSince(last.addedAt)
-        if remaining > 0 {
-            try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
-        }
+        guard remaining > 0 else { return }
+        try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
         animationTick &+= 1
     }
 
@@ -669,6 +760,7 @@ struct AssistantMarkdownText: View {
                     settledBlocks(split.stable, now: now)
                     if !split.animated.isEmpty {
                         TimelineView(.animation) { ctx in
+                            let _ = RenderProbe.tick("AssistantMarkdownTimeline")
                             VStack(alignment: .leading, spacing: 14) {
                                 ForEach(split.animated) { item in
                                     blockView(
@@ -710,7 +802,7 @@ struct AssistantMarkdownText: View {
         switch block {
         case .paragraph(let p):
             ParagraphFlow(paragraph: p, weight: weight, color: color, checkpoints: checkpoints, now: now, findQuery: findQuery) { url in
-                appState.openLinkInBrowser(url)
+                openLink(url)
             }
             .equatable()
             .fixedSize(horizontal: false, vertical: true)
@@ -725,7 +817,7 @@ struct AssistantMarkdownText: View {
                 now: now,
                 findQuery: findQuery
             ) { url in
-                appState.openLinkInBrowser(url)
+                openLink(url)
             }
             .equatable()
             .fixedSize(horizontal: false, vertical: true)
@@ -740,7 +832,7 @@ struct AssistantMarkdownText: View {
                 now: now,
                 findQuery: findQuery
             ) { url in
-                appState.openLinkInBrowser(url)
+                openLink(url)
             }
 
         case .numberedList(let items):
@@ -753,7 +845,7 @@ struct AssistantMarkdownText: View {
                 now: now,
                 findQuery: findQuery
             ) { url in
-                appState.openLinkInBrowser(url)
+                openLink(url)
             }
 
         case .table(let headers, let rows):
@@ -765,14 +857,20 @@ struct AssistantMarkdownText: View {
                 checkpoints: checkpoints,
                 now: now
             ) { url in
-                appState.openLinkInBrowser(url)
+                openLink(url)
             }
 
         case .codeBlock(let language, let code):
             if language.lowercased() == "mermaid" {
                 MermaidDiagramView(code: code, ordinal: codeBlockOrdinal)
             } else {
-                AssistantCodeBlockView(language: language, code: code, ordinal: codeBlockOrdinal)
+                AssistantCodeBlockView(
+                    language: language,
+                    code: code,
+                    ordinal: codeBlockOrdinal,
+                    wordWrapEnabled: codeBlockWordWrap,
+                    onToggleWordWrap: onToggleCodeBlockWordWrap
+                )
             }
         }
     }
@@ -792,6 +890,67 @@ struct IndexedAnnotatedBlock: Identifiable {
     let block: AnnotatedBlock
     let sourceRange: Range<Int>
     let codeBlockOrdinal: Int
+}
+
+private struct PlainStreamingTextFlow: View {
+    let atoms: [AnnotatedAtom]
+    let weight: Font.Weight
+    let color: Color
+    var fontSize: CGFloat = 13.5
+
+    var body: some View {
+        FlowLayout(horizontalSpacing: 0, verticalSpacing: 6) {
+            ForEach(atoms, id: \.offset) { annotated in
+                PlainStreamingWord(
+                    text: plainText(for: annotated.atom),
+                    weight: weight,
+                    color: color,
+                    fontSize: fontSize
+                )
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func plainText(for atom: AssistantMarkdown.Atom) -> String {
+        switch atom {
+        case .word(let text),
+             .bold(let text),
+             .italic(let text),
+             .code(let text):
+            return text
+        case .link(let label, _, _):
+            return label
+        }
+    }
+}
+
+private struct PlainStreamingWord: View, Equatable {
+    let text: String
+    let weight: Font.Weight
+    let color: Color
+    let fontSize: CGFloat
+    @State private var visible = false
+
+    static func == (lhs: PlainStreamingWord, rhs: PlainStreamingWord) -> Bool {
+        lhs.text == rhs.text
+            && lhs.weight == rhs.weight
+            && lhs.color == rhs.color
+            && lhs.fontSize == rhs.fontSize
+    }
+
+    var body: some View {
+        Text(verbatim: text)
+            .font(BodyFont.system(size: fontSize, wght: assistantWght(for: weight)))
+            .foregroundColor(color)
+            .opacity(visible ? 1 : 0)
+            .onAppear {
+                guard !visible else { return }
+                withAnimation(.easeOut(duration: StreamingFade.duration)) {
+                    visible = true
+                }
+            }
+    }
 }
 
 // MARK: - List
@@ -1008,20 +1167,21 @@ struct AssistantCodeBlockView: View {
     let language: String
     let code: String
     let ordinal: Int
+    let wordWrapEnabled: Bool
+    let onToggleWordWrap: () -> Void
 
-    @EnvironmentObject var appState: AppState
     @State private var copied = false
     @State private var hoverCopy = false
     @State private var hoverWrap = false
 
     private var wrapStateProgress: CGFloat {
-        appState.chatCodeBlockWordWrap ? 0 : 1
+        wordWrapEnabled ? 0 : 1
     }
     private var displayProgress: CGFloat {
         hoverWrap ? (1 - wrapStateProgress) : wrapStateProgress
     }
     private var wrapForegroundColor: Color {
-        let on = appState.chatCodeBlockWordWrap
+        let on = wordWrapEnabled
         if hoverWrap { return (on ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.20, dark: 0.85)) }
         return (on ? Color.gray(light: 0.27, dark: 0.78) : Color.gray(light: 0.50, dark: 0.45))
     }
@@ -1046,9 +1206,9 @@ struct AssistantCodeBlockView: View {
                 .buttonStyle(.plain)
                 .onHover { hoverWrap = $0 }
                 .animation(.easeInOut(duration: 0.22), value: hoverWrap)
-                .animation(.easeInOut(duration: 0.22), value: appState.chatCodeBlockWordWrap)
-                .help(appState.chatCodeBlockWordWrap ? "Disable word wrap" : "Enable word wrap")
-                .accessibilityLabel(Text(verbatim: appState.chatCodeBlockWordWrap ? "Disable word wrap" : "Enable word wrap"))
+                .animation(.easeInOut(duration: 0.22), value: wordWrapEnabled)
+                .help(wordWrapEnabled ? "Disable word wrap" : "Enable word wrap")
+                .accessibilityLabel(Text(verbatim: wordWrapEnabled ? "Disable word wrap" : "Enable word wrap"))
                 Button(action: copyCode) {
                     Group {
                         if copied {
@@ -1086,7 +1246,7 @@ struct AssistantCodeBlockView: View {
 
     @ViewBuilder
     private var codeBody: some View {
-        if appState.chatCodeBlockWordWrap {
+        if wordWrapEnabled {
             Text(verbatim: code)
                 .font(BodyFont.system(size: 12.5, design: .monospaced))
                 .foregroundColor(Palette.textPrimary.opacity(0.94))
@@ -1109,7 +1269,7 @@ struct AssistantCodeBlockView: View {
     }
 
     private func toggleWrap() {
-        appState.chatCodeBlockWordWrap.toggle()
+        onToggleWordWrap()
     }
 
     private func copyCode() {

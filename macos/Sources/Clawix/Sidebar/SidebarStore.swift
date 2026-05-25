@@ -4,6 +4,7 @@ import Foundation
 @MainActor
 final class SidebarStore: ObservableObject {
     @Published private(set) var snapshot: SidebarSnapshot = .empty
+    @Published private(set) var selectedRoute: SidebarRoute = .home
     @Published private(set) var revision: UInt64 = 0
 
     private var cancellables: Set<AnyCancellable> = []
@@ -14,6 +15,8 @@ final class SidebarStore: ObservableObject {
     private var manualProjectOrder: [UUID]
     private var currentRoute: SidebarRoute
     private var archivedLoading: Bool
+    private var summarySignature: [SidebarSummarySignature]
+    private var archivedSummarySignature: [SidebarSummarySignature]
 
     init(appState: AppState) {
         summaries = appState.chatStore.summaries
@@ -22,7 +25,10 @@ final class SidebarStore: ObservableObject {
         projects = appState.projects
         manualProjectOrder = appState.manualProjectOrder
         currentRoute = appState.currentRoute
+        selectedRoute = appState.currentRoute
         archivedLoading = appState.archivedLoading
+        summarySignature = Self.signature(for: summaries)
+        archivedSummarySignature = Self.signature(for: archivedSummaries)
         rebuild()
 
         // Sidebar invalidation boundary: observe stable summary projections
@@ -32,40 +38,35 @@ final class SidebarStore: ObservableObject {
         appState.chatStore.$summaries
             .dropFirst()
             .sink { [weak self] summaries in
-                self?.summaries = summaries
-                self?.rebuild()
+                self?.updateSummaries(summaries)
             }
             .store(in: &cancellables)
 
         appState.chatStore.$archivedSummaries
             .dropFirst()
             .sink { [weak self] summaries in
-                self?.archivedSummaries = summaries
-                self?.rebuild()
+                self?.updateArchivedSummaries(summaries)
             }
             .store(in: &cancellables)
 
         appState.$pinnedOrder
             .dropFirst()
             .sink { [weak self] order in
-                self?.pinnedOrder = order
-                self?.rebuild()
+                self?.updatePinnedOrder(order)
             }
             .store(in: &cancellables)
 
         appState.$projects
             .dropFirst()
             .sink { [weak self] projects in
-                self?.projects = projects
-                self?.rebuild()
+                self?.updateProjects(projects)
             }
             .store(in: &cancellables)
 
         appState.$manualProjectOrder
             .dropFirst()
             .sink { [weak self] order in
-                self?.manualProjectOrder = order
-                self?.rebuild()
+                self?.updateManualProjectOrder(order)
             }
             .store(in: &cancellables)
 
@@ -73,17 +74,56 @@ final class SidebarStore: ObservableObject {
             .dropFirst()
             .sink { [weak self] route in
                 self?.currentRoute = route
-                self?.rebuild()
+                self?.selectedRoute = route
             }
             .store(in: &cancellables)
 
         appState.$archivedLoading
             .dropFirst()
             .sink { [weak self] loading in
-                self?.archivedLoading = loading
-                self?.rebuild()
+                self?.updateArchivedLoading(loading)
             }
             .store(in: &cancellables)
+    }
+
+    private func updateSummaries(_ next: [ChatSummary]) {
+        let nextSignature = Self.signature(for: next)
+        summaries = next
+        guard nextSignature != summarySignature else { return }
+        summarySignature = nextSignature
+        rebuild()
+    }
+
+    private func updateArchivedSummaries(_ next: [ChatSummary]) {
+        let nextSignature = Self.signature(for: next)
+        archivedSummaries = next
+        guard nextSignature != archivedSummarySignature else { return }
+        archivedSummarySignature = nextSignature
+        rebuild()
+    }
+
+    private func updatePinnedOrder(_ next: [UUID]) {
+        guard next != pinnedOrder else { return }
+        pinnedOrder = next
+        rebuild()
+    }
+
+    private func updateProjects(_ next: [Project]) {
+        guard next != projects else { return }
+        projects = next
+        rebuild()
+    }
+
+    private func updateManualProjectOrder(_ next: [UUID]) {
+        guard next != manualProjectOrder else { return }
+        manualProjectOrder = next
+        rebuild()
+    }
+
+    private func updateArchivedLoading(_ next: Bool) {
+        guard next != archivedLoading else { return }
+        archivedLoading = next
+        rebuild()
     }
 
     private func rebuild() {
@@ -99,6 +139,48 @@ final class SidebarStore: ObservableObject {
         guard next != snapshot else { return }
         snapshot = next
         revision &+= 1
+    }
+
+    private static func signature(for summaries: [ChatSummary]) -> [SidebarSummarySignature] {
+        summaries.map(SidebarSummarySignature.init)
+    }
+}
+
+private struct SidebarSummarySignature: Equatable {
+    let id: UUID
+    let title: String
+    let createdAt: Date
+    let clawixThreadId: String?
+    let hasActiveTurn: Bool
+    let projectId: UUID?
+    let isArchived: Bool
+    let isPinned: Bool
+    let hasUnreadCompletion: Bool
+    let cwd: String?
+    let forkedFromChatId: UUID?
+    let forkedFromTitle: String?
+    let forkBannerAfterMessageId: UUID?
+    let isQuickAskTemporary: Bool
+    let isSideChat: Bool
+    let agentId: String
+
+    init(_ summary: ChatSummary) {
+        id = summary.id
+        title = summary.title
+        createdAt = summary.createdAt
+        clawixThreadId = summary.clawixThreadId
+        hasActiveTurn = summary.hasActiveTurn
+        projectId = summary.projectId
+        isArchived = summary.isArchived
+        isPinned = summary.isPinned
+        hasUnreadCompletion = summary.hasUnreadCompletion
+        cwd = summary.cwd
+        forkedFromChatId = summary.forkedFromChatId
+        forkedFromTitle = summary.forkedFromTitle
+        forkBannerAfterMessageId = summary.forkBannerAfterMessageId
+        isQuickAskTemporary = summary.isQuickAskTemporary
+        isSideChat = summary.isSideChat
+        agentId = summary.agentId
     }
 }
 

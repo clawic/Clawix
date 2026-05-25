@@ -133,6 +133,7 @@ struct ClawixApp: App {
         // Register Manrope before any SwiftUI view resolves Font.custom("Manrope-…").
         BodyFont.register()
         let state = AppState()
+        ClxControlHandlers.bind(appState: state)
         if !Self.isToolRole {
             // Hand the QuickAsk HUD a back-reference into the live AppState
             // so it can submit prompts into the real chat list and surface
@@ -194,6 +195,7 @@ struct ClawixApp: App {
         WindowGroup(appDisplayName, id: FileMenuActions.mainWindowID) {
             AppRootView()
                 .environmentObject(appState)
+                .environmentObject(appState.backendStatusStore)
                 .environmentObject(appState.composer)
                 .environmentObject(appState.meshStore)
                 .environmentObject(updater)
@@ -212,6 +214,9 @@ struct ClawixApp: App {
                 // the locale changes; re-keying forces a fresh lookup.
                 .id(appState.preferredLanguage.rawValue)
                 .frame(minWidth: mainWindowMinSize.width, minHeight: mainWindowMinSize.height)
+                .onAppear {
+                    appState.startPostFirstFramePersistence()
+                }
                 .task {
                     await Task.yield()
                     appState.startPostFirstFramePersistence()
@@ -273,6 +278,7 @@ struct ClawixApp: App {
         WindowGroup("Pair iPhone", id: "clawix-pair") {
             PairWindowView()
                 .environmentObject(appState)
+                .environmentObject(appState.backendStatusStore)
         }
         .defaultSize(width: 360, height: 540)
         .windowResizability(.contentSize)
@@ -283,14 +289,45 @@ struct ClawixApp: App {
         // quit explicitly. The icon stays visible whenever the app is
         // running, so the user always knows the bridge is alive.
         MenuBarExtra {
-            MenuBarContent()
-                .environmentObject(appState)
-                .environmentObject(vaultManager)
-                .environmentObject(databaseManager)
-                .environmentObject(featureFlags)
+            if ClxAgentInstance.isAgent {
+                AgentInstanceMenuBarContent()
+            } else {
+                MenuBarContent()
+                    .environmentObject(appState)
+                    .environmentObject(appState.backendStatusStore)
+                    .environmentObject(vaultManager)
+                    .environmentObject(databaseManager)
+                    .environmentObject(featureFlags)
+            }
         } label: {
             Image(nsImage: ClawixLogoTemplateImage.make(size: 18))
         }
+    }
+}
+
+private struct AgentInstanceMenuBarContent: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Open Main Window") {
+            openMainWindow()
+        }
+        .clxControl(
+            "agent.openMainWindow",
+            role: "button",
+            label: "Open Main Window",
+            activate: openMainWindow
+        )
+    }
+
+    private func openMainWindow() {
+        for window in NSApp.windows where window.identifier?.rawValue == FileMenuActions.mainWindowID {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        openWindow(id: FileMenuActions.mainWindowID)
+        NSApp.activate(ignoringOtherApps: true)
     }
 }
 
@@ -318,6 +355,7 @@ struct ClawixToolApp: App {
         WindowGroup(role.windowTitle) {
             role.makeView()
                 .environmentObject(appState)
+                .environmentObject(appState.backendStatusStore)
                 .environmentObject(appState.composer)
                 .environmentObject(appState.meshStore)
                 .environmentObject(windowState)
@@ -330,6 +368,9 @@ struct ClawixToolApp: App {
                 .environment(\.locale, appState.preferredLanguage.locale)
                 .id(appState.preferredLanguage.rawValue)
                 .frame(minWidth: 720, minHeight: 480)
+                .onAppear {
+                    appState.startPostFirstFramePersistence()
+                }
                 .task {
                     await Task.yield()
                     appState.startPostFirstFramePersistence()

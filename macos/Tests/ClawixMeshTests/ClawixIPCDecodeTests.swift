@@ -77,60 +77,61 @@ final class ClawixIPCDecodeTests: XCTestCase {
         XCTAssertEqual(method, "unknown/event")
     }
 
-    func testEventCoalescerCombinesCompatibleDeltas() {
+    func testEventCoalescerEmitsCompatibleDeltasImmediately() {
         var coalescer = ClawixServerEventCoalescer()
 
-        XCTAssertTrue(coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("hel")))).isEmpty)
-        XCTAssertTrue(coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("lo")))).isEmpty)
+        let first = coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("hel"))))
+        let second = coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("lo"))))
 
-        let emitted = coalescer.flush()
-        XCTAssertEqual(emitted.count, 1)
-        XCTAssertEqual(Self.agentDeltaText(emitted[0]), "hello")
+        XCTAssertEqual(first.count, 1)
+        XCTAssertEqual(second.count, 1)
+        XCTAssertEqual(Self.agentDeltaText(first[0]), "hel")
+        XCTAssertEqual(Self.agentDeltaText(second[0]), "lo")
+        XCTAssertTrue(coalescer.flush().isEmpty)
     }
 
-    func testEventCoalescerFlushesBeforeNonDeltaEvent() {
+    func testEventCoalescerDoesNotDelayDeltaUntilNonDeltaEvent() {
         var coalescer = ClawixServerEventCoalescer()
-        XCTAssertTrue(coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("hello")))).isEmpty)
+        let delta = coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("hello"))))
+        XCTAssertEqual(delta.count, 1)
+        XCTAssertEqual(Self.agentDeltaText(delta[0]), "hello")
 
         let emitted = coalescer.ingest(.notification(.turnCompleted(TurnEnvelope(
             threadId: "thread-1",
             turn: TurnPayload(id: "turn-1", status: "completed", error: nil)
         ))))
 
-        XCTAssertEqual(emitted.count, 2)
-        XCTAssertEqual(Self.agentDeltaText(emitted[0]), "hello")
-        guard case .notification(.turnCompleted) = emitted[1] else {
-            return XCTFail("Expected turnCompleted after pending delta")
+        XCTAssertEqual(emitted.count, 1)
+        guard case .notification(.turnCompleted) = emitted[0] else {
+            return XCTFail("Expected turnCompleted")
         }
     }
 
-    func testEventCoalescerDoesNotMixDifferentItems() {
+    func testEventCoalescerEmitsDifferentItemsImmediately() {
         var coalescer = ClawixServerEventCoalescer()
-        XCTAssertTrue(coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("first", itemId: "item-1")))).isEmpty)
+        let first = coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("first", itemId: "item-1"))))
+        XCTAssertEqual(first.count, 1)
+        XCTAssertEqual(Self.agentDeltaText(first[0]), "first")
 
         let emitted = coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("second", itemId: "item-2"))))
         XCTAssertEqual(emitted.count, 1)
-        XCTAssertEqual(Self.agentDeltaText(emitted[0]), "first")
-
-        let tail = coalescer.flush()
-        XCTAssertEqual(tail.count, 1)
-        XCTAssertEqual(Self.agentDeltaText(tail[0]), "second")
+        XCTAssertEqual(Self.agentDeltaText(emitted[0]), "second")
+        XCTAssertTrue(coalescer.flush().isEmpty)
     }
 
-    func testEventCoalescerDoesNotMixDifferentDeltaTypes() {
+    func testEventCoalescerEmitsDifferentDeltaTypesImmediately() {
         var coalescer = ClawixServerEventCoalescer()
-        XCTAssertTrue(coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("answer")))).isEmpty)
+        let answer = coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("answer"))))
+        XCTAssertEqual(answer.count, 1)
+        XCTAssertEqual(Self.agentDeltaText(answer[0]), "answer")
 
         let emitted = coalescer.ingest(.notification(.reasoningTextDelta(Self.reasoningDelta("thinking"))))
         XCTAssertEqual(emitted.count, 1)
-        XCTAssertEqual(Self.agentDeltaText(emitted[0]), "answer")
-
-        let tail = coalescer.flush()
-        XCTAssertEqual(tail.count, 1)
-        XCTAssertEqual(Self.reasoningDeltaText(tail[0]), "thinking")
+        XCTAssertEqual(Self.reasoningDeltaText(emitted[0]), "thinking")
+        XCTAssertTrue(coalescer.flush().isEmpty)
     }
 
-    func testEventCoalescerCapsCoalescedDeltaBytes() {
+    func testEventCoalescerCapsIndividualDeltaBytes() {
         var coalescer = ClawixServerEventCoalescer(maxDeltaBytes: 5)
         let emitted = coalescer.ingest(.notification(.agentMessageDelta(Self.agentDelta("abcdefghijkl"))))
         let tail = coalescer.flush()

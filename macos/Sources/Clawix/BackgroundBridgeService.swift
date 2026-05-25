@@ -27,6 +27,9 @@ final class BackgroundBridgeService: ObservableObject {
     private let plistName = "clawix.bridge.plist"
     private let agent: SMAppService
     private var recoveryTimer: Timer?
+    private var recoveryInFlight = false
+    private var recoveryFailureCount = 0
+    private var nextRecoveryBootstrapAt: Date = .distantPast
 
     private init() {
         self.agent = SMAppService.agent(plistName: plistName)
@@ -136,21 +139,15 @@ final class BackgroundBridgeService: ObservableObject {
     func recoverRegisteredDaemonIfNeeded() {
         refresh()
         guard isEnabled, !isDaemonReachable else { return }
-        if BridgeAgentControl.bootstrapBridgeAgentIfInstalled() {
-            lastError = nil
-        } else {
-            lastError = UserFacingFailure.displayMessage(
-                for: "background bridge registered but not loaded",
-                surface: "backgroundBridge.recover"
-            )
-        }
-        refresh()
+        scheduleRecoveryBootstrap()
     }
 
     private func updateRecoveryTimer() {
         guard isEnabled else {
             recoveryTimer?.invalidate()
             recoveryTimer = nil
+            recoveryFailureCount = 0
+            nextRecoveryBootstrapAt = .distantPast
             return
         }
         guard recoveryTimer == nil else { return }
@@ -167,8 +164,55 @@ final class BackgroundBridgeService: ObservableObject {
         if daemonReachable {
             lastError = nil
         } else {
-            recoverRegisteredDaemonIfNeeded()
+            scheduleRecoveryBootstrap()
         }
+    }
+
+    private func scheduleRecoveryBootstrap() {
+        guard !recoveryInFlight else { return }
+        let now = Date()
+        guard now >= nextRecoveryBootstrapAt else { return }
+        recoveryInFlight = true
+        RenderProbe.mark("BackgroundBridgeRecoveryBootstrapStart")
+        Task.detached(priority: .utility) {
+            let recovered = BridgeAgentControl.bootstrapBridgeAgentIfInstalled()
+            await MainActor.run {
+                self.recoveryInFlight = false
+                self.status = self.agent.status
+                self.daemonReachable = self.isDaemonReachable
+                if Self.shouldBackOffRecovery(isEnabled: self.isEnabled, daemonReachable: self.daemonReachable) {
+                    self.lastError = UserFacingFailure.displayMessage(
+                        for: "background bridge registered but not loaded",
+                        surface: "backgroundBridge.recover"
+                    )
+                    self.recoveryFailureCount += 1
+                    self.nextRecoveryBootstrapAt = Date().addingTimeInterval(
+                        Self.recoveryRetryDelaySeconds(afterConsecutiveFailures: self.recoveryFailureCount)
+                    )
+                } else {
+                    self.lastError = nil
+                    self.recoveryFailureCount = 0
+                    self.nextRecoveryBootstrapAt = .distantPast
+                }
+                self.updateRecoveryTimer()
+                RenderProbe.mark(
+                    "BackgroundBridgeRecoveryBootstrapEnd",
+                    fields: [
+                        "recovered": recovered ? "true" : "false",
+                        "reachable": self.daemonReachable ? "true" : "false"
+                    ]
+                )
+            }
+        }
+    }
+
+    nonisolated static func recoveryRetryDelaySeconds(afterConsecutiveFailures failures: Int) -> TimeInterval {
+        let clampedFailures = max(0, min(failures, 4))
+        return min(60, 5 * pow(2, Double(clampedFailures)))
+    }
+
+    nonisolated static func shouldBackOffRecovery(isEnabled: Bool, daemonReachable: Bool) -> Bool {
+        isEnabled && !daemonReachable
     }
 
     /// Snapshot taken before a Sparkle install swap. We unregister the

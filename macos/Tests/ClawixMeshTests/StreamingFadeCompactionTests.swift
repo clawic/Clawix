@@ -62,6 +62,22 @@ final class StreamingFadeCompactionTests: XCTestCase {
         ])
     }
 
+    func testIngestDoesNotScheduleBurstIntoFuture() {
+        let now = Date()
+
+        let result = StreamingFade.ingest(
+            delta: "one two three ",
+            pendingTail: "",
+            scheduledLength: 0,
+            lastFadeStart: now.addingTimeInterval(10),
+            now: now
+        )
+
+        XCTAssertEqual(result.newCheckpoints.map(\.prefixCount), [4, 8, 14])
+        XCTAssertTrue(result.newCheckpoints.allSatisfy { $0.addedAt == now })
+        XCTAssertEqual(result.pendingTail, "")
+    }
+
     func testSettlementDelayForPastCurrentAndFutureCheckpoints() {
         let now = Date()
 

@@ -49,19 +49,22 @@ BIN="$BUNDLE/Contents/MacOS/${APP_NAME}"
 INFO_PLIST="$BUNDLE/Contents/Info.plist"
 
 TEMPLATE="os_signpost"
+REQUESTED_TEMPLATE="$TEMPLATE"
 LABEL=""
 DURATION=""
 SCENARIO=""
+ALL_PROCESSES=0
 
 usage() {
     cat <<USAGE
-Usage: $0 [--template <name>] [--name <label>] [--duration <seconds>] [--scenario <name>]
+Usage: $0 [--template <name>] [--name <label>] [--duration <seconds>] [--scenario <name>] [--all-processes]
 
 Defaults:
   --template "os_signpost"
   --name <unset>          (label appears in the trace directory name)
   --duration <unset>      (record until Ctrl-C / app quit)
   --scenario <unset>      (free-form reproduction label)
+  --all-processes         record all processes and launch Clawix manually
 
 See the header comment of this script for the list of templates and
 PERF.md for which to pick per symptom.
@@ -74,6 +77,7 @@ while [[ $# -gt 0 ]]; do
         --name)     LABEL="$2"; shift 2 ;;
         --duration) DURATION="$2"; shift 2 ;;
         --scenario) SCENARIO="$2"; shift 2 ;;
+        --all-processes) ALL_PROCESSES=1; shift ;;
         -h|--help)  usage; exit 0 ;;
         *)
             echo "ERROR: unknown argument: $1" >&2
@@ -90,6 +94,24 @@ fi
 if ! xcrun xctrace version >/dev/null 2>&1; then
     echo "ERROR: xctrace not available. Install Xcode (full IDE, not just CLT)." >&2
     exit 1
+fi
+
+REQUESTED_TEMPLATE="$TEMPLATE"
+template_available() {
+    local needle="$1"
+    xcrun xctrace list templates 2>/dev/null | awk '{$1=$1; print}' | grep -Fxq "$needle"
+}
+
+if ! template_available "$TEMPLATE"; then
+    if [[ "$TEMPLATE" == "os_signpost" ]] && template_available "Logging"; then
+        echo "==> xctrace template 'os_signpost' is unavailable; using 'Logging' for signpost/log capture"
+        TEMPLATE="Logging"
+    else
+        echo "ERROR: xctrace template unavailable: $TEMPLATE" >&2
+        echo "Available templates:" >&2
+        xcrun xctrace list templates >&2 || true
+        exit 1
+    fi
 fi
 
 # 1) Build via dev.sh, skipping the launch. dev.sh handles squircle
@@ -146,6 +168,7 @@ GIT_HEAD="$(git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || true)"
 GIT_BRANCH="$(git -C "$REPO_DIR" branch --show-current 2>/dev/null || true)"
 git -C "$REPO_DIR" status --short > "$OUT_DIR/git-status.txt" 2>/dev/null || true
 {
+    printf 'requested_template=%q\n' "$REQUESTED_TEMPLATE"
     printf 'template=%q\n' "$TEMPLATE"
     printf 'label=%q\n' "${LABEL:-}"
     printf 'scenario=%q\n' "${SCENARIO:-}"
@@ -153,6 +176,7 @@ git -C "$REPO_DIR" status --short > "$OUT_DIR/git-status.txt" 2>/dev/null || tru
     printf 'captured_utc=%q\n' "$LAUNCH_TIME_UTC"
     printf 'bundle_path=%q\n' "$BUNDLE"
     printf 'binary_path=%q\n' "$BIN"
+    printf 'all_processes=%q\n' "$ALL_PROCESSES"
     printf 'bundle_identifier=%q\n' "$BUNDLE_IDENTIFIER"
     printf 'app_version=%q\n' "${APP_VERSION:-}"
     printf 'build_number=%q\n' "${BUILD_NUMBER:-}"
@@ -187,17 +211,25 @@ XCTRACE_ARGS=(
     record
     --template "$TEMPLATE"
     --output "$TRACE_PATH"
+    --no-prompt
 )
 if [[ -n "$DURATION" ]]; then
     XCTRACE_ARGS+=( --time-limit "${DURATION}s" )
 fi
-XCTRACE_ARGS+=( --launch -- "$BIN" )
+if [[ "$ALL_PROCESSES" == "1" ]]; then
+    XCTRACE_ARGS+=( --all-processes )
+else
+    XCTRACE_ARGS+=( --launch -- "$BUNDLE" )
+fi
 
 echo ""
 echo "==> Recording trace"
 echo "    template:  $TEMPLATE"
+[[ "$REQUESTED_TEMPLATE" != "$TEMPLATE" ]] && echo "    requested: $REQUESTED_TEMPLATE"
 [[ -n "$SCENARIO" ]] && echo "    scenario:  $SCENARIO"
-echo "    target:    $BIN"
+echo "    target:    $BUNDLE"
+echo "    binary:    $BIN"
+[[ "$ALL_PROCESSES" == "1" ]] && echo "    mode:      all-processes + manual launch"
 echo "    bundle:    $BUNDLE_IDENTIFIER"
 echo "    output:    $TRACE_PATH"
 [[ -n "$DURATION" ]] && echo "    duration:  ${DURATION}s"
@@ -209,10 +241,23 @@ echo "    bash macos/scripts/perf-workout.sh"
 echo ""
 
 # Forward Ctrl-C to xctrace so it flushes the trace cleanly.
-trap 'echo "==> Stopping trace…"; kill -INT %1 2>/dev/null || true' INT TERM
 export CLAWIX_FORCE_DIAGNOSTICS_SAMPLERS=1
 export CLAWIX_RENDER_PROBE=1
-xcrun xctrace "${XCTRACE_ARGS[@]}" || true
+TARGET_PID=""
+if [[ "$ALL_PROCESSES" == "1" ]]; then
+    xcrun xctrace "${XCTRACE_ARGS[@]}" &
+    TRACE_PID=$!
+    trap 'echo "==> Stopping trace…"; kill -INT "$TRACE_PID" 2>/dev/null || true; [[ -n "${TARGET_PID:-}" ]] && kill "$TARGET_PID" 2>/dev/null || true' INT TERM
+    sleep 2
+    "$BIN" &
+    TARGET_PID=$!
+    printf 'target_pid=%q\n' "$TARGET_PID" >> "$OUT_DIR/capture-metadata.env"
+    wait "$TRACE_PID" || true
+    kill "$TARGET_PID" 2>/dev/null || true
+else
+    trap 'echo "==> Stopping trace…"; kill -INT %1 2>/dev/null || true' INT TERM
+    xcrun xctrace "${XCTRACE_ARGS[@]}" || true
+fi
 trap - INT TERM
 
 # 4) Collect supplementary artifacts.
