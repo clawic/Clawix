@@ -67,6 +67,10 @@ agent-control-bus action dispatch to visual completion, geometry and scroll
 stability, hitches, resources, fixture profile, and baseline comparison.
 Computer Use may support final witness evidence, but it is not the primary
 measurement dependency for P0 macOS UI performance closure.
+Use `node scripts/run_macos_ux_trace_harness.mjs --self-test` to verify the
+evidence bundle writer, and run the same script with an isolated agent control
+URL and owner token for real scenario measurement. A dry run proves only wiring
+and artifact shape; it does not validate runtime performance.
 
 If the trace does not contain enough evidence to separate UI rendering,
 state publication, IPC/daemon latency, backend latency, disk IO and

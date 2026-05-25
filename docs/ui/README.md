@@ -109,6 +109,11 @@ the public repo.
 - `ux-trace-scenarios.manifest.json`: required macOS scenario manifests for
   control-bus-driven UX trace runs. Computer Use is witness-only; primary
   measurement is in-process agent control.
+- `scripts/run_macos_ux_trace_harness.mjs`: scenario runner that writes
+  per-run `run.json`, `events.jsonl`, `metrics.json`, `failures.json`,
+  `fixture-manifest.json`, and `baseline-comparison.json` evidence bundles.
+  Use `--dry-run` only to validate harness wiring; it is not performance
+  evidence.
 - `pattern-performance.manifest.json`: critical-flow ownership mapping from
   performance budgets back to registry patterns.
 - `private-baselines.manifest.json`: public contract for private visual,

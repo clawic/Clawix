@@ -23,10 +23,14 @@ any UI performance budget change.
 3. For macOS P0 UI work, prefer the UX trace harness path: action-to-visual
    completion through the agent control bus, geometry/scroll stability,
    hitches/resources, and structured evidence. Computer Use is witness-only.
-4. Capture evidence before optimization using the target performance playbook.
-5. Compare against the approved baseline when present. If no approved baseline
+4. For harness wiring changes, run
+   `node scripts/run_macos_ux_trace_harness.mjs --self-test`. For actual
+   performance evidence, run the same runner against an isolated agent
+   control URL and owner token; dry-run output is not runtime evidence.
+5. Capture evidence before optimization using the target performance playbook.
+6. Compare against the approved baseline when present. If no approved baseline
    exists, produce a baseline-capture report for user approval.
-6. Do not retune visual timing, layout, animation, or perceived style unless
+7. Do not retune visual timing, layout, animation, or perceived style unless
    the task is visual-authorized.
 
 ## Constraints

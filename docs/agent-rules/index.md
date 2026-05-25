@@ -102,8 +102,9 @@ domains are assistive only.
   `docs/adr/0040-macos-ux-trace-harness.md`, and sibling ClawJS
   `docs/adr/0036-performance-governance.md`. For macOS P0 UI latency, use
   `docs/ui/ux-trace-harness.registry.json` and
-  `docs/ui/ux-trace-scenarios.manifest.json`; Computer Use is witness-only,
-  not primary measurement evidence.
+  `docs/ui/ux-trace-scenarios.manifest.json`; validate runner wiring with
+  `node scripts/run_macos_ux_trace_harness.mjs --self-test`. Computer Use is
+  witness-only, not primary measurement evidence.
 
 ## Skill Routing
 

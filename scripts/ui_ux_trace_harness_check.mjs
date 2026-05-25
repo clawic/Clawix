@@ -6,6 +6,7 @@ const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const registryPath = "docs/ui/ux-trace-harness.registry.json";
 const evidenceSchemaPath = "docs/ui/ux-trace-evidence.schema.json";
 const scenariosPath = "docs/ui/ux-trace-scenarios.manifest.json";
+const runnerPath = "scripts/run_macos_ux_trace_harness.mjs";
 const errors = [];
 
 const privatePathPattern = /(?:\/Users\/|\.signing\.env|Team ID|signing identity|bundle id|source session|rollout-|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b)/iu;
@@ -325,7 +326,10 @@ if (registry) {
   }
   if (registry.requiredArtifacts?.evidenceSchema !== evidenceSchemaPath) fail(`${registryPath}.requiredArtifacts.evidenceSchema must point to ${evidenceSchemaPath}`);
   if (registry.requiredArtifacts?.scenarioManifest !== scenariosPath) fail(`${registryPath}.requiredArtifacts.scenarioManifest must point to ${scenariosPath}`);
+  if (registry.requiredArtifacts?.runnerCommand !== `node ${runnerPath}`) fail(`${registryPath}.requiredArtifacts.runnerCommand must be node ${runnerPath}`);
+  if (registry.requiredArtifacts?.runnerSelfTestCommand !== `node ${runnerPath} --self-test`) fail(`${registryPath}.requiredArtifacts.runnerSelfTestCommand must be node ${runnerPath} --self-test`);
   if (registry.requiredArtifacts?.verificationCommand !== "node scripts/ui_ux_trace_harness_check.mjs") fail(`${registryPath}.requiredArtifacts.verificationCommand must be node scripts/ui_ux_trace_harness_check.mjs`);
+  if (!fs.existsSync(path.join(rootDir, runnerPath))) fail(`${runnerPath} must exist`);
 
   const surfaces = requireArray(registry.traceSurfaces, `${registryPath}.traceSurfaces`, expectedP0SurfaceIds.length);
   const surfaceIds = requireRecordIds(surfaces, `${registryPath}.traceSurfaces`, expectedP0SurfaceIds);

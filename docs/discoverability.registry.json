@@ -3875,6 +3875,37 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "runner-scripts-run-macos-ux-trace-harness",
+      "kind": "test-harness",
+      "steward": "clawix",
+      "canonicalSource": "scripts/run_macos_ux_trace_harness.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "run_macos_ux_trace_harness",
+        "macOS UX trace harness runner",
+        "UX trace evidence bundle runner",
+        "agent control bus scenario runner"
+      ],
+      "searchQueries": [
+        {
+          "query": "run_macos_ux_trace_harness",
+          "expectPath": "scripts/run_macos_ux_trace_harness.mjs"
+        },
+        {
+          "query": "UX trace evidence bundle runner",
+          "expectPath": "scripts/run_macos_ux_trace_harness.mjs"
+        }
+      ],
+      "guard": "scripts/ui_ux_trace_harness_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "guard-scripts-ui-ux-trace-harness-check",
       "kind": "test-harness",
       "steward": "clawix",

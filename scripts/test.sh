@@ -629,6 +629,7 @@ fast() {
   run node "$ROOT_DIR/scripts/conceptual-vocabulary-guard.mjs"
   run node "$ROOT_DIR/scripts/ui_performance_budget_check.mjs"
   run node "$ROOT_DIR/scripts/ui_ux_trace_harness_check.mjs"
+  run node "$ROOT_DIR/scripts/run_macos_ux_trace_harness.mjs" --self-test
   run node "$ROOT_DIR/scripts/ui_pattern_performance_check.mjs"
   run node "$ROOT_DIR/scripts/ui_pattern_mutation_guard.mjs"
   run node "$ROOT_DIR/scripts/ui_component_extraction_check.mjs"
