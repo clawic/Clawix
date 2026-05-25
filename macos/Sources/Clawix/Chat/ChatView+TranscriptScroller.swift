@@ -68,7 +68,12 @@ struct ChatTranscriptScrollerView: View {
                             publishingReady: publishingReady,
                             proxy: proxy
                         )
-                        .background(ChatMessageFrameProbe(id: messageStore.id))
+                        .background {
+                            ZStack {
+                                ChatMessageFrameProbe(id: messageStore.id)
+                                ChatMessageNativeFrameProbe(id: messageStore.id)
+                            }
+                        }
                     }
                     Color.clear
                         .frame(height: 1)
@@ -227,6 +232,7 @@ struct ChatTranscriptScrollerView: View {
             lastLocalRevealAt = now
             let anchorId = currentScrollAnchorMessageId()
             let anchorFrameBefore = anchorId.flatMap { messageFrames[$0] }
+            let nativeAnchorFrameBefore = anchorId.flatMap { nativeMessageFrame(id: $0) }
             olderAnchorProbeSequence += 1
             let probeId = olderAnchorProbeSequence
             let oldVisibleLimit = visibleMessageLimit
@@ -244,6 +250,7 @@ struct ChatTranscriptScrollerView: View {
                     "mountedRows": "\(visibleMessageStores.count)",
                     "probe": "\(probeId)",
                     "total": "\(transcript.messageIds.count)",
+                    "nativeYBefore": nativeAnchorFrameBefore.map { Self.format($0.minY) } ?? "none",
                     "yBefore": anchorFrameBefore.map { Self.format($0.minY) } ?? "none"
                 ].merging(scrollProbeFields(prefix: "before")) { current, _ in current }
             )
@@ -272,6 +279,7 @@ struct ChatTranscriptScrollerView: View {
                     recordAnchorShift(
                         anchorId: anchorId,
                         before: anchorFrameBefore,
+                        nativeBefore: nativeAnchorFrameBefore,
                         phase: "immediate",
                         probeId: probeId,
                         insertedRows: insertedLocalRows
@@ -280,6 +288,7 @@ struct ChatTranscriptScrollerView: View {
                         recordAnchorShift(
                             anchorId: anchorId,
                             before: anchorFrameBefore,
+                            nativeBefore: nativeAnchorFrameBefore,
                             phase: "settled",
                             probeId: probeId,
                             insertedRows: insertedLocalRows
@@ -337,6 +346,18 @@ struct ChatTranscriptScrollerView: View {
     }
 
     private func currentScrollAnchorMessageId() -> UUID? {
+        if let scrollView = ClxScrollRegistry.shared.get("chat.transcript.scroll") {
+            let nativeCandidates = visibleMessageStores.compactMap { store -> (id: UUID, minY: CGFloat)? in
+                guard let frame = ChatMessageNativeFrameRegistry.shared.frame(
+                    id: store.id,
+                    in: scrollView
+                ) else { return nil }
+                return (store.id, frame.minY)
+            }
+            if let nativeAnchor = nativeCandidates.min(by: { abs($0.minY) < abs($1.minY) })?.id {
+                return nativeAnchor
+            }
+        }
         let candidates = visibleMessageStores.compactMap { store -> (id: UUID, minY: CGFloat)? in
             guard let frame = messageFrames[store.id] else { return nil }
             return (store.id, frame.minY)
@@ -348,6 +369,7 @@ struct ChatTranscriptScrollerView: View {
     private func recordAnchorShift(
         anchorId: UUID,
         before: CGRect?,
+        nativeBefore: CGRect?,
         phase: String,
         probeId: Int,
         insertedRows: Int
@@ -364,6 +386,18 @@ struct ChatTranscriptScrollerView: View {
             "phase": phase,
             "probe": "\(probeId)"
         ].merging(scrollProbeFields(prefix: "after")) { current, _ in current }
+        if let nativeBefore {
+            fields["nativeYBefore"] = Self.format(nativeBefore.minY)
+            if let nativeAfter = nativeMessageFrame(id: anchorId) {
+                fields["nativeDeltaPx"] = Self.format(nativeAfter.minY - nativeBefore.minY)
+                fields["nativeStatus"] = "measured"
+                fields["nativeYAfter"] = Self.format(nativeAfter.minY)
+            } else {
+                fields["nativeStatus"] = "missing-after"
+            }
+        } else {
+            fields["nativeStatus"] = "missing-before"
+        }
         guard let before else {
             fields["status"] = "missing-before"
             RenderProbe.mark("ChatOlderAnchorProbeDelta", fields: fields)
@@ -381,6 +415,11 @@ struct ChatTranscriptScrollerView: View {
         fields["yAfter"] = Self.format(after.minY)
         fields["yBefore"] = Self.format(before.minY)
         RenderProbe.mark("ChatOlderAnchorProbeDelta", fields: fields)
+    }
+
+    private func nativeMessageFrame(id: UUID) -> CGRect? {
+        guard let scrollView = ClxScrollRegistry.shared.get("chat.transcript.scroll") else { return nil }
+        return ChatMessageNativeFrameRegistry.shared.frame(id: id, in: scrollView)
     }
 
     private func scrollProbeFields(prefix: String) -> [String: String] {
@@ -432,5 +471,90 @@ private struct ChatMessageFramePreferenceKey: PreferenceKey {
 
     static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, next in next })
+    }
+}
+
+private struct ChatMessageNativeFrameProbe: NSViewRepresentable {
+    let id: UUID
+
+    func makeNSView(context: Context) -> ChatMessageNativeFrameProbeView {
+        ChatMessageNativeFrameProbeView(id: id)
+    }
+
+    func updateNSView(_ nsView: ChatMessageNativeFrameProbeView, context: Context) {
+        nsView.update(id: id)
+    }
+
+    static func dismantleNSView(_ nsView: ChatMessageNativeFrameProbeView, coordinator: ()) {
+        ChatMessageNativeFrameRegistry.shared.remove(id: nsView.id, view: nsView)
+    }
+}
+
+private final class ChatMessageNativeFrameProbeView: NSView {
+    private(set) var id: UUID
+
+    init(id: UUID) {
+        self.id = id
+        super.init(frame: .zero)
+        translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
+
+    func update(id nextId: UUID) {
+        guard id != nextId else {
+            register()
+            return
+        }
+        ChatMessageNativeFrameRegistry.shared.remove(id: id, view: self)
+        id = nextId
+        register()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        register()
+    }
+
+    private func register() {
+        guard window != nil else { return }
+        ChatMessageNativeFrameRegistry.shared.upsert(id: id, view: self)
+    }
+}
+
+private final class ChatMessageNativeFrameRegistry {
+    static let shared = ChatMessageNativeFrameRegistry()
+
+    private final class WeakView {
+        weak var value: NSView?
+        init(_ value: NSView) {
+            self.value = value
+        }
+    }
+
+    private var views: [UUID: WeakView] = [:]
+
+    private init() {}
+
+    func upsert(id: UUID, view: NSView) {
+        views[id] = WeakView(view)
+    }
+
+    func remove(id: UUID, view: NSView) {
+        if views[id]?.value === view {
+            views.removeValue(forKey: id)
+        }
+    }
+
+    func frame(id: UUID, in scrollView: NSScrollView) -> CGRect? {
+        guard let view = views[id]?.value else {
+            views.removeValue(forKey: id)
+            return nil
+        }
+        scrollView.layoutSubtreeIfNeeded()
+        view.layoutSubtreeIfNeeded()
+        return view.convert(view.bounds, to: scrollView.contentView)
     }
 }
