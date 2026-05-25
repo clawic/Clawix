@@ -19,8 +19,8 @@
         "supportStage": "dev_only",
         "recommended": false,
         "production": false,
-        "uiParityClaim": "partial_template_only",
-        "summary": "Hermes runtime ecosystem support is a dev-only partial projection until official fixture coverage, write policies, and live channel evidence exist.",
+        "uiParityClaim": "partial_runtime_lens",
+        "summary": "Hermes runtime ecosystem support is a dev-only partial runtime lens until official fixture coverage, write policies, and live channel evidence exist.",
         "blockingReasons": [
           "dev_only_runtime_ecosystem",
           "fixture_coverage_pending",
@@ -4261,8 +4261,8 @@
       "supportStage": "dev_only",
       "recommended": false,
       "production": false,
-      "uiParityClaim": "partial_template_only",
-      "summary": "Hermes runtime ecosystem support is a dev-only partial projection until official fixture coverage, write policies, and live channel evidence exist.",
+      "uiParityClaim": "partial_runtime_lens",
+      "summary": "Hermes runtime ecosystem support is a dev-only partial runtime lens until official fixture coverage, write policies, and live channel evidence exist.",
       "blockingReasons": [
         "dev_only_runtime_ecosystem",
         "fixture_coverage_pending",
@@ -5871,7 +5871,7 @@
         "effectiveSupportStage": "dev_only",
         "recommended": false,
         "production": false,
-        "uiParityClaim": "partial_template_only",
+        "uiParityClaim": "partial_runtime_lens",
         "uiParityDisposition": "partial_lens_validated_not_full_native_parity",
         "blockedPromotionClaims": [
           "recommended",
