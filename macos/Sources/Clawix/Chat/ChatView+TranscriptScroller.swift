@@ -152,6 +152,18 @@ struct ChatTranscriptScrollerView: View {
                     )
                     return
                 }
+                if bottomId != chatTailId,
+                   visibleMessageStores.count > ChatView.initialVisibleMessageLimit {
+                    RenderProbe.mark(
+                        "MarkdownPrewarmSkippedScrollback",
+                        fields: [
+                            "chat": chat.id.uuidString,
+                            "hidden": "\(hiddenLocalMessageCount)",
+                            "visible": "\(visibleMessageStores.count)"
+                        ]
+                    )
+                    return
+                }
                 await ChatMarkdownPrewarmer.prewarm(
                     messages: visibleMessageStores.map(\.message),
                     timelineEntryLimit: 0

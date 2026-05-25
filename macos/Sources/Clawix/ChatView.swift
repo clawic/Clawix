@@ -93,9 +93,16 @@ private enum ChatVisibleWindowRenderLog {
             $0.role == "assistant" && $0.contentReady
         }.count
         let incompleteRows = evidence.messages.filter { !$0.contentReady }.count
-        let roleSequence = evidence.messages
+        let roles = evidence.messages
             .map { $0.role == "assistant" ? "a" : "u" }
-            .joined()
+        let roleSequence: String
+        if roles.count <= Self.detailedMessageLimit * 2 {
+            roleSequence = roles.joined()
+        } else {
+            roleSequence = roles.prefix(Self.detailedMessageLimit).joined()
+                + "+\(roles.count - (Self.detailedMessageLimit * 2))+"
+                + roles.suffix(Self.detailedMessageLimit).joined()
+        }
         let shouldRecordMessageDetails = evidence.visibleCount <= detailedMessageLimit
         RenderProbe.mark(
             "ChatFinalWindow",
@@ -226,7 +233,7 @@ struct ChatView: View {
     /// next page before the user sees the gap.
     static let loadOlderThreshold: CGFloat = 80
     static let initialVisibleMessageLimit = 8
-    static let visibleMessagePageSize = 6
+    static let visibleMessagePageSize = 12
     static let localRevealThrottle: TimeInterval = 0.5
 
     var body: some View {
