@@ -1329,7 +1329,7 @@
       ],
       "searchQueries": [
         {
-          "query": "Clawix canonical catalog skill",
+          "query": "skills/canonical-catalog-expansion/SKILL.md",
           "expectPath": "skills/canonical-catalog-expansion/SKILL.md"
         }
       ],
@@ -1884,7 +1884,7 @@
       ],
       "searchQueries": [
         {
-          "query": "Clawix surface route skill",
+          "query": "skills/surface-route-work/SKILL.md",
           "expectPath": "skills/surface-route-work/SKILL.md"
         }
       ],
