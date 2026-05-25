@@ -9,13 +9,24 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
         let persistence: String?
         let delegatesTo: String?
         let guardName: String?
+        let officialProtocol: String?
         let officialMethod: String?
+        let officialContractSource: String?
         let requiredEvidenceCount: Int
         let requiredEvidenceLabel: String?
         let writeDisposition: String
 
         var detailLabel: String? {
-            let values = [authority, persistence, delegatesTo, guardName, officialMethod, requiredEvidenceLabel].compactMap { $0 }
+            let values = [
+                authority,
+                persistence,
+                delegatesTo,
+                guardName,
+                officialProtocol,
+                officialMethod,
+                officialContractSource,
+                requiredEvidenceLabel
+            ].compactMap { $0 }
             guard !values.isEmpty else { return nil }
             return values.joined(separator: ", ")
         }
@@ -29,7 +40,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 persistence.map { "persistence \($0)" },
                 delegatesTo.map { "delegates to \($0)" },
                 guardName.map { "guard \($0)" },
+                officialProtocol.map { "official protocol \($0)" },
                 officialMethod.map { "official method \($0)" },
+                officialContractSource.map { "official contract source \($0)" },
                 "required evidence count \(requiredEvidenceCount)",
                 requiredEvidenceLabel.map { "required evidence \($0)" }
             ]
@@ -80,7 +93,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 persistence: action.persistence,
                 delegatesTo: action.delegatesTo,
                 guardName: action.guardName,
+                officialProtocol: action.officialProtocol,
                 officialMethod: action.officialMethod,
+                officialContractSource: action.officialContractSource,
                 requiredEvidenceCount: action.requiredEvidence?.count ?? 0,
                 requiredEvidenceLabel: listLabel(action.requiredEvidence ?? [], limit: 5),
                 writeDisposition: writeDisposition(for: action)
