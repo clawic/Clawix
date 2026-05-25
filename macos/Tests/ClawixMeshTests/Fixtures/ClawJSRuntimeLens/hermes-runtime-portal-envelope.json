@@ -1303,17 +1303,26 @@
         },
         "sessions": [
           {
-            "id": "2026/05/21/runtime-session",
-            "label": "runtime-session",
+            "id": "hermes-sqlite-session",
+            "label": "SQLite Session",
+            "title": "SQLite Session",
             "kind": "session",
-            "path": "/Users/tester/.hermes/sessions/2026/05/21/runtime-session.jsonl",
-            "updatedAt": "2026-05-25T12:00:00.000Z",
-            "sizeBytes": 174,
+            "source": "cli",
+            "model": "openai/gpt-4.1",
+            "startedAt": "2026-05-25T12:26:40.000Z",
+            "updatedAt": "2026-05-25T12:26:43.000Z",
+            "messageCount": 3,
             "status": "projected",
+            "contentIncluded": false,
+            "nativeIdentifier": {
+              "name": "sessionId"
+            },
+            "sessionStorageContract": "sqlite_with_gateway_transcripts",
             "provenance": {
-              "source": "runtime-session-store",
+              "source": "runtime-session-sqlite",
               "runtimeId": "hermes",
-              "path": "/Users/tester/.hermes/sessions/2026/05/21/runtime-session.jsonl"
+              "path": "/Users/tester/.hermes/state.db",
+              "table": "sessions"
             },
             "localOverlay": {
               "pinned": false,

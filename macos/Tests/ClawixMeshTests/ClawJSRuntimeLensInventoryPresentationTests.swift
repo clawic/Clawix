@@ -293,6 +293,18 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         }
         XCTAssertEqual(missingInventoryDomains, [])
 
+        let sessionInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "sessions" })
+        XCTAssertEqual(sessionInventory.totalResourceCount, 1)
+        XCTAssertEqual(sessionInventory.rows.first?.id, "hermes-sqlite-session")
+        XCTAssertEqual(sessionInventory.rows.first?.displayLabel, "SQLite Session")
+        XCTAssertEqual(sessionInventory.rows.first?.nativeIdentifierLabel, "native id: sessionId")
+        XCTAssertEqual(
+            sessionInventory.rows.first?.provenanceLabel,
+            "runtime-session-sqlite, runtime hermes, /Users/tester/.hermes/state.db"
+        )
+        XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("native identifier sessionId") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("provenance source runtime-session-sqlite") == true)
+
         let skillsInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "skills" })
         XCTAssertEqual(skillsInventory.totalResourceCount, 1)
         XCTAssertEqual(skillsInventory.rows.first?.id, "browser-helper")
