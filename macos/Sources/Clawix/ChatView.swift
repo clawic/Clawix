@@ -233,7 +233,7 @@ struct ChatView: View {
     /// next page before the user sees the gap.
     static let loadOlderThreshold: CGFloat = 80
     static let initialVisibleMessageLimit = 8
-    static let visibleMessagePageSize = 12
+    static let visibleMessagePageSize = 6
     static let localRevealThrottle: TimeInterval = 0.5
 
     var body: some View {
