@@ -390,4 +390,133 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
             "supported: true, strategy: config, diagnostic source: config, probe: config"
         )
     }
+
+    func testHermesPolicyFallbackResourcesRenderDomainProvenance() throws {
+        struct RuntimeLensEnvelope: Decodable {
+            let data: ClawJSRuntimeLensSnapshot
+        }
+
+        let data = Data("""
+        {
+          "data": {
+            "runtimeId": "hermes",
+            "runtimeName": "Hermes Agent",
+            "status": {},
+            "domains": [],
+            "domainData": {
+              "skills": {
+                "skills": [{
+                  "id": "hermes-skills-inventory-policy",
+                  "label": "Hermes skills inventory",
+                  "status": "degraded",
+                  "kind": "native_skill_inventory",
+                  "path": "/Users/tester/.hermes/skills",
+                  "enabled": false,
+                  "summary": "Native Hermes skills are inventoried read-only.",
+                  "limitations": ["write back: blocked_until_fixture_coverage"],
+                  "attributes": ["promotion path: explicit_claw_skill_promotion_only"],
+                  "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "skills", "path": "/Users/tester/.hermes/skills" }
+                }]
+              },
+              "memory": {
+                "memory": [{
+                  "id": "hermes-memory-sensitive-projection-policy",
+                  "label": "Hermes memory sensitive projection",
+                  "status": "degraded",
+                  "kind": "sensitive_memory_projection",
+                  "path": "/Users/tester/.hermes/MEMORY.md",
+                  "enabled": false,
+                  "summary": "Hermes memory is projected as metadata by default.",
+                  "limitations": ["write back: blocked_until_policy"],
+                  "attributes": ["content access: metadata_default_explicit_content_only"],
+                  "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "memory", "path": "/Users/tester/.hermes/MEMORY.md" }
+                }]
+              },
+              "models": {
+                "models": [{
+                  "id": "hermes-model-catalog-policy",
+                  "label": "Hermes model catalog",
+                  "status": "degraded",
+                  "kind": "model_catalog_projection",
+                  "enabled": false,
+                  "summary": "Hermes model projection is read-only.",
+                  "limitations": ["write back: blocked_until_fixture_coverage"],
+                  "attributes": ["default model write-back: blocked_until_fixture_coverage"],
+                  "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "models" }
+                }]
+              },
+              "scheduler": {
+                "schedulers": [{
+                  "id": "hermes-scheduler-inventory-policy",
+                  "label": "Hermes scheduler inventory",
+                  "status": "degraded",
+                  "kind": "scheduler_projection",
+                  "path": "/Users/tester/.hermes/cron",
+                  "enabled": false,
+                  "summary": "Hermes scheduler jobs are inventoried read-only.",
+                  "limitations": ["write back: blocked_until_fixture_coverage"],
+                  "attributes": ["mutation policy: no_silent_scheduler_change"],
+                  "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "scheduler", "path": "/Users/tester/.hermes/cron" }
+                }]
+              },
+              "plugins": {
+                "plugins": [{
+                  "id": "hermes-plugins-tools-mcp-policy",
+                  "label": "Hermes plugins, tools, and MCP inventory",
+                  "status": "degraded",
+                  "kind": "plugin_tool_mcp_inventory",
+                  "path": "/Users/tester/.hermes/plugins",
+                  "enabled": false,
+                  "summary": "Hermes plugins, tools, toolsets, MCP, ACP, hooks, and Computer Use are inventoried read-only without auto-enable.",
+                  "limitations": ["write back: blocked_until_fixture_coverage"],
+                  "attributes": ["enable policy: no_auto_enable"],
+                  "provenance": { "source": "runtime-ecosystem-manifest", "runtimeId": "hermes", "domain": "plugins", "path": "/Users/tester/.hermes/plugins" }
+                }]
+              }
+            }
+          }
+        }
+        """.utf8)
+
+        let snapshot = try JSONDecoder().decode(RuntimeLensEnvelope.self, from: data).data
+        let inventory = ClawJSRuntimeLensInventoryPresentation.make(snapshot: snapshot, rowLimit: 10)
+
+        XCTAssertEqual(inventory.sectionCount, 5)
+        XCTAssertEqual(inventory.totalResourceCount, 5)
+        XCTAssertEqual(inventory.provenanceResourceCount, 5)
+        XCTAssertEqual(inventory.limitationResourceCount, 5)
+        XCTAssertEqual(inventory.attributeResourceCount, 5)
+        XCTAssertEqual(inventory.sections.map(\.domain), ["skills", "memory", "models", "scheduler", "plugins"])
+
+        let skillsRow = try XCTUnwrap(inventory.sections.first { $0.domain == "skills" }?.rows.first)
+        XCTAssertEqual(skillsRow.id, "hermes-skills-inventory-policy")
+        XCTAssertEqual(
+            skillsRow.provenanceLabel,
+            "runtime-ecosystem-manifest, runtime hermes, domain skills, /Users/tester/.hermes/skills"
+        )
+        XCTAssertTrue(skillsRow.accessibilityLabel.contains("provenance domain skills"))
+        XCTAssertTrue(skillsRow.attributes.contains("promotion path: explicit_claw_skill_promotion_only"))
+        XCTAssertEqual(skillsRow.statusLabel, "degraded")
+        XCTAssertEqual(skillsRow.enabledLabel, "enabled: false")
+
+        let memoryRow = try XCTUnwrap(inventory.sections.first { $0.domain == "memory" }?.rows.first)
+        XCTAssertEqual(memoryRow.id, "hermes-memory-sensitive-projection-policy")
+        XCTAssertTrue(memoryRow.provenanceLabel?.contains("domain memory") == true)
+        XCTAssertTrue(memoryRow.attributes.contains("content access: metadata_default_explicit_content_only"))
+
+        let modelRow = try XCTUnwrap(inventory.sections.first { $0.domain == "models" }?.rows.first)
+        XCTAssertEqual(modelRow.id, "hermes-model-catalog-policy")
+        XCTAssertEqual(modelRow.provenanceLabel, "runtime-ecosystem-manifest, runtime hermes, domain models")
+        XCTAssertTrue(modelRow.attributes.contains("default model write-back: blocked_until_fixture_coverage"))
+
+        let schedulerRow = try XCTUnwrap(inventory.sections.first { $0.domain == "scheduler" }?.rows.first)
+        XCTAssertEqual(schedulerRow.id, "hermes-scheduler-inventory-policy")
+        XCTAssertTrue(schedulerRow.provenanceLabel?.contains("domain scheduler") == true)
+        XCTAssertTrue(schedulerRow.attributes.contains("mutation policy: no_silent_scheduler_change"))
+
+        let pluginRow = try XCTUnwrap(inventory.sections.first { $0.domain == "plugins" }?.rows.first)
+        XCTAssertEqual(pluginRow.id, "hermes-plugins-tools-mcp-policy")
+        XCTAssertTrue(pluginRow.provenanceLabel?.contains("domain plugins") == true)
+        XCTAssertTrue(pluginRow.attributes.contains("enable policy: no_auto_enable"))
+    }
 }

@@ -31,6 +31,7 @@ struct ClawJSRuntimeLensRuntimeResource: Decodable, Equatable, Identifiable {
     struct Provenance: Decodable, Equatable {
         let source: String?
         let runtimeId: String?
+        let domain: String?
         let path: String?
     }
 

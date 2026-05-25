@@ -52,6 +52,7 @@ struct ClawJSRuntimeLensInventoryPresentation: Equatable {
         let nativeIdentifierName: String?
         let provenanceSource: String?
         let provenanceRuntimeId: String?
+        let provenanceDomain: String?
         let provenancePath: String?
         let limitations: [String]
         let attributes: [String]
@@ -85,6 +86,7 @@ struct ClawJSRuntimeLensInventoryPresentation: Equatable {
             let values = [
                 provenanceSource,
                 provenanceRuntimeId.map { "runtime \($0)" },
+                provenanceDomain.map { "domain \($0)" },
                 provenancePath
             ]
             .compactMap { $0 }
@@ -123,6 +125,7 @@ struct ClawJSRuntimeLensInventoryPresentation: Equatable {
                 nativeIdentifierName.map { "native identifier \($0)" },
                 provenanceSource.map { "provenance source \($0)" },
                 provenanceRuntimeId.map { "provenance runtime \($0)" },
+                provenanceDomain.map { "provenance domain \($0)" },
                 provenancePath.map { "provenance path \($0)" },
                 "limitations \(limitationCount)",
                 limitationsLabel.map { "limitations \($0)" },
@@ -205,6 +208,7 @@ struct ClawJSRuntimeLensInventoryPresentation: Equatable {
                     nativeIdentifierName: resource.nativeIdentifier?.name,
                     provenanceSource: resource.provenance?.source,
                     provenanceRuntimeId: resource.provenance?.runtimeId,
+                    provenanceDomain: resource.provenance?.domain,
                     provenancePath: resource.provenance?.path,
                     limitations: resource.limitations ?? [],
                     attributes: resource.attributes ?? []
