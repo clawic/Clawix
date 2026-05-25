@@ -1194,7 +1194,7 @@
           "kind": "knowledge",
           "path": "/Users/tester/.hermes/memories/profile.md",
           "summary": "Hermes memory file; content is not exposed by default.",
-          "updatedAt": "2026-05-25T12:23:00.376Z"
+          "updatedAt": "2026-05-25T12:00:00.000Z"
         }
       ],
       "skills": [
@@ -1289,7 +1289,7 @@
             "label": "runtime-session",
             "kind": "session",
             "path": "/Users/tester/.hermes/sessions/2026/05/21/runtime-session.jsonl",
-            "updatedAt": "2026-05-25T12:23:00.385Z",
+            "updatedAt": "2026-05-25T12:00:00.000Z",
             "sizeBytes": 174,
             "status": "projected",
             "provenance": {
@@ -1429,27 +1429,48 @@
             "status": "blocked",
             "authority": "runtime",
             "writesRuntime": false,
+            "wouldWriteRuntime": true,
             "persistence": "none",
             "delegatesTo": "blocked until native send contract",
-            "guard": "blocked_until_send_contract"
+            "guard": "blocked_until_send_contract",
+            "requiredEvidence": [
+              "official_send_command_or_api",
+              "non_destructive_fixture",
+              "confirmation_or_dry_run_policy",
+              "round_trip_native_visibility"
+            ]
           },
           {
             "action": "inject",
             "status": "blocked",
             "authority": "runtime",
             "writesRuntime": false,
+            "wouldWriteRuntime": true,
             "persistence": "none",
             "delegatesTo": "blocked until native inject contract",
-            "guard": "blocked_until_inject_contract"
+            "guard": "blocked_until_inject_contract",
+            "requiredEvidence": [
+              "official_inject_command_or_api",
+              "non_destructive_fixture",
+              "confirmation_or_dry_run_policy",
+              "round_trip_native_visibility"
+            ]
           },
           {
             "action": "abort",
             "status": "blocked",
             "authority": "runtime",
             "writesRuntime": false,
+            "wouldWriteRuntime": true,
             "persistence": "none",
             "delegatesTo": "blocked until native abort contract",
-            "guard": "blocked_until_abort_contract"
+            "guard": "blocked_until_abort_contract",
+            "requiredEvidence": [
+              "official_abort_command_or_api",
+              "non_destructive_fixture",
+              "confirmation_or_dry_run_policy",
+              "round_trip_control_receipt"
+            ]
           },
           {
             "action": "create",
@@ -1550,27 +1571,48 @@
             "status": "blocked",
             "authority": "runtime",
             "writesRuntime": false,
+            "wouldWriteRuntime": true,
             "persistence": "none",
             "delegatesTo": "blocked until native send contract",
-            "guard": "blocked_until_send_contract"
+            "guard": "blocked_until_send_contract",
+            "requiredEvidence": [
+              "official_send_command_or_api",
+              "non_destructive_fixture",
+              "confirmation_or_dry_run_policy",
+              "round_trip_native_visibility"
+            ]
           },
           {
             "action": "inject",
             "status": "blocked",
             "authority": "runtime",
             "writesRuntime": false,
+            "wouldWriteRuntime": true,
             "persistence": "none",
             "delegatesTo": "blocked until native inject contract",
-            "guard": "blocked_until_inject_contract"
+            "guard": "blocked_until_inject_contract",
+            "requiredEvidence": [
+              "official_inject_command_or_api",
+              "non_destructive_fixture",
+              "confirmation_or_dry_run_policy",
+              "round_trip_native_visibility"
+            ]
           },
           {
             "action": "abort",
             "status": "blocked",
             "authority": "runtime",
             "writesRuntime": false,
+            "wouldWriteRuntime": true,
             "persistence": "none",
             "delegatesTo": "blocked until native abort contract",
-            "guard": "blocked_until_abort_contract"
+            "guard": "blocked_until_abort_contract",
+            "requiredEvidence": [
+              "official_abort_command_or_api",
+              "non_destructive_fixture",
+              "confirmation_or_dry_run_policy",
+              "round_trip_control_receipt"
+            ]
           },
           {
             "action": "create",
@@ -1714,7 +1756,7 @@
             "kind": "knowledge",
             "path": "/Users/tester/.hermes/memories/profile.md",
             "summary": "Hermes memory file; content is not exposed by default.",
-            "updatedAt": "2026-05-25T12:23:00.376Z"
+            "updatedAt": "2026-05-25T12:00:00.000Z"
           }
         ],
         "supportContract": {
@@ -3190,17 +3232,20 @@
         {
           "command": "runtime hermes sessions send --session-key <id> --message <text> --confirm-runtime-write",
           "delegatesTo": "blocked until native send contract",
-          "writesRuntime": false
+          "writesRuntime": false,
+          "wouldWriteRuntime": true
         },
         {
           "command": "runtime hermes sessions inject --session-key <id> --message <text> --confirm-runtime-write",
           "delegatesTo": "blocked until native inject contract",
-          "writesRuntime": false
+          "writesRuntime": false,
+          "wouldWriteRuntime": true
         },
         {
           "command": "runtime hermes sessions abort --session-key <id> --confirm-runtime-write",
           "delegatesTo": "blocked until native abort contract",
-          "writesRuntime": false
+          "writesRuntime": false,
+          "wouldWriteRuntime": true
         },
         {
           "command": "runtime hermes sessions create --title <title>",
@@ -3211,17 +3256,20 @@
         {
           "command": "runtime hermes sessions pin --session-key <id>",
           "delegatesTo": "ClawJS app-state local overlay",
-          "writesRuntime": false
+          "writesRuntime": false,
+          "writesLocalOverlay": true
         },
         {
           "command": "runtime hermes sessions unpin --session-key <id>",
           "delegatesTo": "ClawJS app-state local overlay",
-          "writesRuntime": false
+          "writesRuntime": false,
+          "writesLocalOverlay": true
         },
         {
           "command": "runtime hermes sessions conflicts",
           "delegatesTo": "ClawJS app-state local overlay reconciliation report",
-          "writesRuntime": false
+          "writesRuntime": false,
+          "writesLocalOverlay": false
         },
         {
           "command": "runtime hermes install --dry-run",
@@ -4445,8 +4493,9 @@
           "approvalRequired": false,
           "commandShape": "not_executable_until_official_runtime_send_contract_exists",
           "expectedEvidence": [
-            "official_runtime_cli_or_api",
+            "official_send_command_or_api",
             "non_destructive_fixture",
+            "confirmation_or_dry_run_policy",
             "round_trip_native_visibility"
           ],
           "riskControls": [
@@ -4470,8 +4519,9 @@
           "approvalRequired": false,
           "commandShape": "not_executable_until_official_runtime_inject_contract_exists",
           "expectedEvidence": [
-            "official_runtime_cli_or_api",
+            "official_inject_command_or_api",
             "non_destructive_fixture",
+            "confirmation_or_dry_run_policy",
             "round_trip_native_visibility"
           ],
           "riskControls": [
@@ -4495,9 +4545,10 @@
           "approvalRequired": false,
           "commandShape": "not_executable_until_official_runtime_abort_contract_exists",
           "expectedEvidence": [
-            "official_runtime_cli_or_api",
+            "official_abort_command_or_api",
             "non_destructive_fixture",
-            "round_trip_native_visibility"
+            "confirmation_or_dry_run_policy",
+            "round_trip_control_receipt"
           ],
           "riskControls": [
             "no_silent_runtime_write",
@@ -6042,8 +6093,9 @@
           "approvalRequired": false,
           "commandShape": "not_executable_until_official_runtime_send_contract_exists",
           "expectedEvidence": [
-            "official_runtime_cli_or_api",
+            "official_send_command_or_api",
             "non_destructive_fixture",
+            "confirmation_or_dry_run_policy",
             "round_trip_native_visibility"
           ],
           "riskControls": [
@@ -6066,8 +6118,9 @@
           "approvalRequired": false,
           "commandShape": "not_executable_until_official_runtime_inject_contract_exists",
           "expectedEvidence": [
-            "official_runtime_cli_or_api",
+            "official_inject_command_or_api",
             "non_destructive_fixture",
+            "confirmation_or_dry_run_policy",
             "round_trip_native_visibility"
           ],
           "riskControls": [
@@ -6090,9 +6143,10 @@
           "approvalRequired": false,
           "commandShape": "not_executable_until_official_runtime_abort_contract_exists",
           "expectedEvidence": [
-            "official_runtime_cli_or_api",
+            "official_abort_command_or_api",
             "non_destructive_fixture",
-            "round_trip_native_visibility"
+            "confirmation_or_dry_run_policy",
+            "round_trip_control_receipt"
           ],
           "riskControls": [
             "no_silent_runtime_write",
