@@ -617,6 +617,9 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let supportResolution: String?
         let userVisibleContract: String?
         let promotionGate: String?
+        let officialProtocol: String?
+        let officialMethod: String?
+        let officialContractSource: String?
     }
 
     struct SessionActionPolicy: Decodable, Equatable, Identifiable {
@@ -629,6 +632,9 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let persistence: String?
         let delegatesTo: String?
         let guardName: String?
+        let officialProtocol: String?
+        let officialMethod: String?
+        let officialContractSource: String?
         let requiredEvidence: [String]?
 
         enum CodingKeys: String, CodingKey {
@@ -639,6 +645,9 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             case wouldWriteRuntime
             case persistence
             case delegatesTo
+            case officialProtocol
+            case officialMethod
+            case officialContractSource
             case requiredEvidence
             case guardName = "guard"
         }

@@ -1471,10 +1471,13 @@
             "writesRuntime": false,
             "wouldWriteRuntime": true,
             "persistence": "none",
-            "delegatesTo": "blocked until native send contract",
-            "guard": "blocked_until_send_contract",
+            "delegatesTo": "tui_gateway.prompt.submit",
+            "guard": "blocked_until_tui_gateway_wrapper_fixture",
+            "officialProtocol": "tui_gateway_json_rpc",
+            "officialMethod": "prompt.submit",
+            "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "requiredEvidence": [
-              "official_send_command_or_api",
+              "tui_gateway_prompt_submit_fixture",
               "non_destructive_fixture",
               "confirmation_or_dry_run_policy",
               "round_trip_native_visibility"
@@ -1487,10 +1490,13 @@
             "writesRuntime": false,
             "wouldWriteRuntime": true,
             "persistence": "none",
-            "delegatesTo": "blocked until native inject contract",
-            "guard": "blocked_until_inject_contract",
+            "delegatesTo": "tui_gateway.session.steer",
+            "guard": "blocked_until_tui_gateway_wrapper_fixture",
+            "officialProtocol": "tui_gateway_json_rpc",
+            "officialMethod": "session.steer",
+            "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "requiredEvidence": [
-              "official_inject_command_or_api",
+              "tui_gateway_session_steer_fixture",
               "non_destructive_fixture",
               "confirmation_or_dry_run_policy",
               "round_trip_native_visibility"
@@ -1503,10 +1509,13 @@
             "writesRuntime": false,
             "wouldWriteRuntime": true,
             "persistence": "none",
-            "delegatesTo": "blocked until native abort contract",
-            "guard": "blocked_until_abort_contract",
+            "delegatesTo": "tui_gateway.session.interrupt",
+            "guard": "blocked_until_tui_gateway_wrapper_fixture",
+            "officialProtocol": "tui_gateway_json_rpc",
+            "officialMethod": "session.interrupt",
+            "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "requiredEvidence": [
-              "official_abort_command_or_api",
+              "tui_gateway_session_interrupt_fixture",
               "non_destructive_fixture",
               "confirmation_or_dry_run_policy",
               "round_trip_control_receipt"
@@ -1519,10 +1528,13 @@
             "writesRuntime": false,
             "wouldWriteRuntime": true,
             "persistence": "none",
-            "delegatesTo": "blocked until official runtime create contract and fixture",
-            "guard": "blocked_until_official_create_fixture",
+            "delegatesTo": "tui_gateway.session.create",
+            "guard": "blocked_until_tui_gateway_wrapper_fixture",
+            "officialProtocol": "tui_gateway_json_rpc",
+            "officialMethod": "session.create",
+            "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "requiredEvidence": [
-              "official_create_command_or_api",
+              "tui_gateway_session_create_fixture",
               "non_destructive_fixture",
               "confirmation_or_dry_run_policy",
               "round_trip_native_list_evidence"
@@ -1613,10 +1625,13 @@
             "writesRuntime": false,
             "wouldWriteRuntime": true,
             "persistence": "none",
-            "delegatesTo": "blocked until native send contract",
-            "guard": "blocked_until_send_contract",
+            "delegatesTo": "tui_gateway.prompt.submit",
+            "guard": "blocked_until_tui_gateway_wrapper_fixture",
+            "officialProtocol": "tui_gateway_json_rpc",
+            "officialMethod": "prompt.submit",
+            "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "requiredEvidence": [
-              "official_send_command_or_api",
+              "tui_gateway_prompt_submit_fixture",
               "non_destructive_fixture",
               "confirmation_or_dry_run_policy",
               "round_trip_native_visibility"
@@ -1629,10 +1644,13 @@
             "writesRuntime": false,
             "wouldWriteRuntime": true,
             "persistence": "none",
-            "delegatesTo": "blocked until native inject contract",
-            "guard": "blocked_until_inject_contract",
+            "delegatesTo": "tui_gateway.session.steer",
+            "guard": "blocked_until_tui_gateway_wrapper_fixture",
+            "officialProtocol": "tui_gateway_json_rpc",
+            "officialMethod": "session.steer",
+            "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "requiredEvidence": [
-              "official_inject_command_or_api",
+              "tui_gateway_session_steer_fixture",
               "non_destructive_fixture",
               "confirmation_or_dry_run_policy",
               "round_trip_native_visibility"
@@ -1645,10 +1663,13 @@
             "writesRuntime": false,
             "wouldWriteRuntime": true,
             "persistence": "none",
-            "delegatesTo": "blocked until native abort contract",
-            "guard": "blocked_until_abort_contract",
+            "delegatesTo": "tui_gateway.session.interrupt",
+            "guard": "blocked_until_tui_gateway_wrapper_fixture",
+            "officialProtocol": "tui_gateway_json_rpc",
+            "officialMethod": "session.interrupt",
+            "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "requiredEvidence": [
-              "official_abort_command_or_api",
+              "tui_gateway_session_interrupt_fixture",
               "non_destructive_fixture",
               "confirmation_or_dry_run_policy",
               "round_trip_control_receipt"
@@ -1661,10 +1682,13 @@
             "writesRuntime": false,
             "wouldWriteRuntime": true,
             "persistence": "none",
-            "delegatesTo": "blocked until official runtime create contract and fixture",
-            "guard": "blocked_until_official_create_fixture",
+            "delegatesTo": "tui_gateway.session.create",
+            "guard": "blocked_until_tui_gateway_wrapper_fixture",
+            "officialProtocol": "tui_gateway_json_rpc",
+            "officialMethod": "session.create",
+            "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "requiredEvidence": [
-              "official_create_command_or_api",
+              "tui_gateway_session_create_fixture",
               "non_destructive_fixture",
               "confirmation_or_dry_run_policy",
               "round_trip_native_list_evidence"
@@ -3356,25 +3380,25 @@
         },
         {
           "command": "runtime hermes sessions send --session-key <id> --message <text> --confirm-runtime-write",
-          "delegatesTo": "blocked until native send contract",
+          "delegatesTo": "tui_gateway.prompt.submit",
           "writesRuntime": false,
           "wouldWriteRuntime": true
         },
         {
           "command": "runtime hermes sessions inject --session-key <id> --message <text> --confirm-runtime-write",
-          "delegatesTo": "blocked until native inject contract",
+          "delegatesTo": "tui_gateway.session.steer",
           "writesRuntime": false,
           "wouldWriteRuntime": true
         },
         {
           "command": "runtime hermes sessions abort --session-key <id> --confirm-runtime-write",
-          "delegatesTo": "blocked until native abort contract",
+          "delegatesTo": "tui_gateway.session.interrupt",
           "writesRuntime": false,
           "wouldWriteRuntime": true
         },
         {
           "command": "runtime hermes sessions create --title <title>",
-          "delegatesTo": "blocked until official runtime create contract and fixture",
+          "delegatesTo": "tui_gateway.session.create",
           "writesRuntime": false,
           "wouldWriteRuntime": true
         },
@@ -4616,9 +4640,9 @@
           "id": "hermes.sessions.send.action_contract",
           "blockerClass": "direct_blocker",
           "approvalRequired": false,
-          "commandShape": "not_executable_until_official_runtime_send_contract_exists",
+          "commandShape": "not_executable_until_tui_gateway_send_wrapper_fixture_exists",
           "expectedEvidence": [
-            "official_send_command_or_api",
+            "tui_gateway_prompt_submit_fixture",
             "non_destructive_fixture",
             "confirmation_or_dry_run_policy",
             "round_trip_native_visibility"
@@ -4628,23 +4652,23 @@
             "no_direct_runtime_store_mutation",
             "local_overlay_only_until_contract_exists"
           ],
-          "evidenceDisposition": "blocked_until_official_runtime_action_contract",
+          "evidenceDisposition": "blocked_until_tui_gateway_wrapper_fixture",
           "currentBehavior": "non_executable_action_plan_only",
           "fallbackPolicy": "do_not_synthesize_native_runtime_action",
           "claimEffect": "blocks_recommended_production_native_parity",
-          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
-          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "reentryCondition": "add_tui_gateway_json_rpc_wrapper_fixture_and_round_trip_evidence",
+          "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
-          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
-          "promotionGate": "session_action_claim_remains_blocked_until_official_contract_fixture_and_round_trip_evidence_exist"
+          "userVisibleContract": "non_executable_until_tui_gateway_wrapper_fixture_exists",
+          "promotionGate": "session_action_claim_remains_blocked_until_tui_gateway_wrapper_fixture_and_round_trip_evidence_exist"
         },
         {
           "id": "hermes.sessions.inject.action_contract",
           "blockerClass": "direct_blocker",
           "approvalRequired": false,
-          "commandShape": "not_executable_until_official_runtime_inject_contract_exists",
+          "commandShape": "not_executable_until_tui_gateway_inject_wrapper_fixture_exists",
           "expectedEvidence": [
-            "official_inject_command_or_api",
+            "tui_gateway_session_steer_fixture",
             "non_destructive_fixture",
             "confirmation_or_dry_run_policy",
             "round_trip_native_visibility"
@@ -4654,23 +4678,23 @@
             "no_direct_runtime_store_mutation",
             "local_overlay_only_until_contract_exists"
           ],
-          "evidenceDisposition": "blocked_until_official_runtime_action_contract",
+          "evidenceDisposition": "blocked_until_tui_gateway_wrapper_fixture",
           "currentBehavior": "non_executable_action_plan_only",
           "fallbackPolicy": "do_not_synthesize_native_runtime_action",
           "claimEffect": "blocks_recommended_production_native_parity",
-          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
-          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "reentryCondition": "add_tui_gateway_json_rpc_wrapper_fixture_and_round_trip_evidence",
+          "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
-          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
-          "promotionGate": "session_action_claim_remains_blocked_until_official_contract_fixture_and_round_trip_evidence_exist"
+          "userVisibleContract": "non_executable_until_tui_gateway_wrapper_fixture_exists",
+          "promotionGate": "session_action_claim_remains_blocked_until_tui_gateway_wrapper_fixture_and_round_trip_evidence_exist"
         },
         {
           "id": "hermes.sessions.abort.action_contract",
           "blockerClass": "direct_blocker",
           "approvalRequired": false,
-          "commandShape": "not_executable_until_official_runtime_abort_contract_exists",
+          "commandShape": "not_executable_until_tui_gateway_abort_wrapper_fixture_exists",
           "expectedEvidence": [
-            "official_abort_command_or_api",
+            "tui_gateway_session_interrupt_fixture",
             "non_destructive_fixture",
             "confirmation_or_dry_run_policy",
             "round_trip_control_receipt"
@@ -4680,23 +4704,23 @@
             "no_direct_runtime_store_mutation",
             "local_overlay_only_until_contract_exists"
           ],
-          "evidenceDisposition": "blocked_until_official_runtime_action_contract",
+          "evidenceDisposition": "blocked_until_tui_gateway_wrapper_fixture",
           "currentBehavior": "non_executable_action_plan_only",
           "fallbackPolicy": "do_not_synthesize_native_runtime_action",
           "claimEffect": "blocks_recommended_production_native_parity",
-          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
-          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "reentryCondition": "add_tui_gateway_json_rpc_wrapper_fixture_and_round_trip_evidence",
+          "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
-          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
-          "promotionGate": "session_action_claim_remains_blocked_until_official_contract_fixture_and_round_trip_evidence_exist"
+          "userVisibleContract": "non_executable_until_tui_gateway_wrapper_fixture_exists",
+          "promotionGate": "session_action_claim_remains_blocked_until_tui_gateway_wrapper_fixture_and_round_trip_evidence_exist"
         },
         {
           "id": "hermes.sessions.create.action_contract",
           "blockerClass": "direct_blocker",
           "approvalRequired": false,
-          "commandShape": "not_executable_until_official_runtime_create_contract_exists",
+          "commandShape": "not_executable_until_tui_gateway_create_wrapper_fixture_exists",
           "expectedEvidence": [
-            "official_create_command_or_api",
+            "tui_gateway_session_create_fixture",
             "non_destructive_fixture",
             "confirmation_or_dry_run_policy",
             "round_trip_native_list_evidence"
@@ -4706,15 +4730,15 @@
             "no_direct_runtime_store_mutation",
             "local_overlay_only_until_contract_exists"
           ],
-          "evidenceDisposition": "blocked_until_official_runtime_action_contract",
+          "evidenceDisposition": "blocked_until_tui_gateway_wrapper_fixture",
           "currentBehavior": "non_executable_action_plan_only",
           "fallbackPolicy": "do_not_synthesize_native_runtime_action",
           "claimEffect": "blocks_recommended_production_native_parity",
-          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
-          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "reentryCondition": "add_tui_gateway_json_rpc_wrapper_fixture_and_round_trip_evidence",
+          "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
-          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
-          "promotionGate": "session_action_claim_remains_blocked_until_official_contract_fixture_and_round_trip_evidence_exist"
+          "userVisibleContract": "non_executable_until_tui_gateway_wrapper_fixture_exists",
+          "promotionGate": "session_action_claim_remains_blocked_until_tui_gateway_wrapper_fixture_and_round_trip_evidence_exist"
         },
         {
           "id": "hermes.sessions.pin.native_write_back_contract",
@@ -4787,7 +4811,7 @@
           ],
           "evidenceDispositions": [
             "blocked_until_official_runtime_contract",
-            "blocked_until_official_runtime_action_contract",
+            "blocked_until_tui_gateway_wrapper_fixture",
             "local_overlay_until_official_runtime_write_back_contract"
           ],
           "supportResolutions": [
@@ -6216,9 +6240,9 @@
           "blockerClass": "direct_blocker",
           "status": "blocked_until_upstream_contract",
           "approvalRequired": false,
-          "commandShape": "not_executable_until_official_runtime_send_contract_exists",
+          "commandShape": "not_executable_until_tui_gateway_send_wrapper_fixture_exists",
           "expectedEvidence": [
-            "official_send_command_or_api",
+            "tui_gateway_prompt_submit_fixture",
             "non_destructive_fixture",
             "confirmation_or_dry_run_policy",
             "round_trip_native_visibility"
@@ -6231,7 +6255,7 @@
           "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
           "claimEffect": "blocks_recommended_production_native_parity",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
-          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
           "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
         },
@@ -6241,9 +6265,9 @@
           "blockerClass": "direct_blocker",
           "status": "blocked_until_upstream_contract",
           "approvalRequired": false,
-          "commandShape": "not_executable_until_official_runtime_inject_contract_exists",
+          "commandShape": "not_executable_until_tui_gateway_inject_wrapper_fixture_exists",
           "expectedEvidence": [
-            "official_inject_command_or_api",
+            "tui_gateway_session_steer_fixture",
             "non_destructive_fixture",
             "confirmation_or_dry_run_policy",
             "round_trip_native_visibility"
@@ -6256,7 +6280,7 @@
           "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
           "claimEffect": "blocks_recommended_production_native_parity",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
-          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
           "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
         },
@@ -6266,9 +6290,9 @@
           "blockerClass": "direct_blocker",
           "status": "blocked_until_upstream_contract",
           "approvalRequired": false,
-          "commandShape": "not_executable_until_official_runtime_abort_contract_exists",
+          "commandShape": "not_executable_until_tui_gateway_abort_wrapper_fixture_exists",
           "expectedEvidence": [
-            "official_abort_command_or_api",
+            "tui_gateway_session_interrupt_fixture",
             "non_destructive_fixture",
             "confirmation_or_dry_run_policy",
             "round_trip_control_receipt"
@@ -6281,7 +6305,7 @@
           "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
           "claimEffect": "blocks_recommended_production_native_parity",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
-          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
           "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
         },
@@ -6291,9 +6315,9 @@
           "blockerClass": "direct_blocker",
           "status": "blocked_until_upstream_contract",
           "approvalRequired": false,
-          "commandShape": "not_executable_until_official_runtime_create_contract_exists",
+          "commandShape": "not_executable_until_tui_gateway_create_wrapper_fixture_exists",
           "expectedEvidence": [
-            "official_create_command_or_api",
+            "tui_gateway_session_create_fixture",
             "non_destructive_fixture",
             "confirmation_or_dry_run_policy",
             "round_trip_native_list_evidence"
@@ -6306,7 +6330,7 @@
           "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
           "claimEffect": "blocks_recommended_production_native_parity",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
-          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
           "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
         },

@@ -7,13 +7,15 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
         let status: String?
         let authority: String?
         let persistence: String?
+        let delegatesTo: String?
         let guardName: String?
+        let officialMethod: String?
         let requiredEvidenceCount: Int
         let requiredEvidenceLabel: String?
         let writeDisposition: String
 
         var detailLabel: String? {
-            let values = [authority, persistence, guardName, requiredEvidenceLabel].compactMap { $0 }
+            let values = [authority, persistence, delegatesTo, guardName, officialMethod, requiredEvidenceLabel].compactMap { $0 }
             guard !values.isEmpty else { return nil }
             return values.joined(separator: ", ")
         }
@@ -25,7 +27,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 "disposition \(writeDisposition)",
                 authority.map { "authority \($0)" },
                 persistence.map { "persistence \($0)" },
+                delegatesTo.map { "delegates to \($0)" },
                 guardName.map { "guard \($0)" },
+                officialMethod.map { "official method \($0)" },
                 "required evidence count \(requiredEvidenceCount)",
                 requiredEvidenceLabel.map { "required evidence \($0)" }
             ]
@@ -74,7 +78,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 status: action.status,
                 authority: action.authority,
                 persistence: action.persistence,
+                delegatesTo: action.delegatesTo,
                 guardName: action.guardName,
+                officialMethod: action.officialMethod,
                 requiredEvidenceCount: action.requiredEvidence?.count ?? 0,
                 requiredEvidenceLabel: listLabel(action.requiredEvidence ?? [], limit: 5),
                 writeDisposition: writeDisposition(for: action)

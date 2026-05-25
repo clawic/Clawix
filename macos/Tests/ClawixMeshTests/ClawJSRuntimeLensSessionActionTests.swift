@@ -20,10 +20,14 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
             "conflicts"
         ])
         XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "send" }?.status, "blocked")
-        XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "send" }?.guardName, "blocked_until_send_contract")
+        XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "send" }?.guardName, "blocked_until_tui_gateway_wrapper_fixture")
+        XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "send" }?.officialMethod, "prompt.submit")
         XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "inject" }?.status, "blocked")
+        XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "inject" }?.officialMethod, "session.steer")
         XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "abort" }?.status, "blocked")
+        XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "abort" }?.officialMethod, "session.interrupt")
         XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "create" }?.wouldWriteRuntime, true)
+        XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "create" }?.officialMethod, "session.create")
         XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "pin" }?.authority, "clawix_local_overlay")
         XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "pin" }?.writesRuntime, false)
         XCTAssertEqual(sessionBucket.actionPolicy?.first { $0.action == "unpin" }?.authority, "clawix_local_overlay")
@@ -45,8 +49,10 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.requiredEvidenceCount, 4)
         XCTAssertEqual(
             actionPresentation.rows.first { $0.action == "send" }?.requiredEvidenceLabel,
-            "official_send_command_or_api, non_destructive_fixture, confirmation_or_dry_run_policy, round_trip_native_visibility"
+            "tui_gateway_prompt_submit_fixture, non_destructive_fixture, confirmation_or_dry_run_policy, round_trip_native_visibility"
         )
+        XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.delegatesTo, "tui_gateway.prompt.submit")
+        XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.officialMethod, "prompt.submit")
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "create" }?.writeDisposition, "would write")
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "pin" }?.authority, "clawix_local_overlay")
         XCTAssertTrue(actionPresentation.accessibilityLabel.contains("blocked actions send, inject, abort, create"))
@@ -64,6 +70,8 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(contractPresentation.localOverlayContractCount, 2)
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "history" }?.statusChanged, true)
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "create" }?.contractWriteDisposition, "would write")
+        XCTAssertEqual(contractPresentation.rows.first { $0.action == "create" }?.delegatesTo, "tui_gateway.session.create")
+        XCTAssertEqual(contractPresentation.rows.first { $0.action == "create" }?.officialMethod, "session.create")
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "pin" }?.authority, "clawix_local_overlay")
 
         let commandPresentation = ClawJSRuntimeLensCommandMatrixPresentation.make(
@@ -160,7 +168,7 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(sessionActionPresentation.statusLabel, "blocked 4, implemented 5, local_overlay_only 2")
         XCTAssertEqual(sessionActionPresentation.localOverlayActionsLabel, "pin, unpin")
         XCTAssertEqual(sessionActionPresentation.blockedActionsLabel, "send, inject, abort, create")
-        XCTAssertEqual(sessionActionPresentation.rows.first?.detailLabel, "runtime, metadata_only, bounded_scan_without_transcript_reads")
+        XCTAssertEqual(sessionActionPresentation.rows.first?.detailLabel, "runtime, metadata_only, runtime session path metadata projection, bounded_scan_without_transcript_reads")
         XCTAssertEqual(sessionActionPresentation.rows.first { $0.action == "create" }?.writeDisposition, "would write")
         XCTAssertEqual(sessionActionPresentation.rows.first { $0.action == "create" }?.requiredEvidenceCount, 4)
         XCTAssertEqual(

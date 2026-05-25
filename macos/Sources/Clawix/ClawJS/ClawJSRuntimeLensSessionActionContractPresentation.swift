@@ -10,13 +10,17 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
         let contractWriteDisposition: String
         let materializedWriteDisposition: String
         let authority: String?
+        let delegatesTo: String?
         let guardName: String?
+        let officialMethod: String?
         let requiredEvidenceCount: Int
 
         var detailLabel: String? {
             let values = [
                 authority,
+                delegatesTo,
                 guardName,
+                officialMethod,
                 requiredEvidenceCount > 0 ? "evidence \(requiredEvidenceCount)" : nil,
                 statusChanged ? "materialized" : nil
             ].compactMap { $0 }
@@ -33,7 +37,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 "contract disposition \(contractWriteDisposition)",
                 "materialized disposition \(materializedWriteDisposition)",
                 authority.map { "authority \($0)" },
+                delegatesTo.map { "delegates to \($0)" },
                 guardName.map { "guard \($0)" },
+                officialMethod.map { "official method \($0)" },
                 "required evidence \(requiredEvidenceCount)"
             ]
             .compactMap { $0 }
@@ -102,7 +108,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 contractWriteDisposition: writeDisposition(for: contract),
                 materializedWriteDisposition: writeDisposition(for: materialized),
                 authority: materialized?.authority ?? contract?.authority,
+                delegatesTo: materialized?.delegatesTo ?? contract?.delegatesTo,
                 guardName: materialized?.guardName ?? contract?.guardName,
+                officialMethod: materialized?.officialMethod ?? contract?.officialMethod,
                 requiredEvidenceCount: materialized?.requiredEvidence?.count ?? contract?.requiredEvidence?.count ?? 0
             )
         }
