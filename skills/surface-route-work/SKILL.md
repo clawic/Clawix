@@ -13,18 +13,21 @@ permissions, grants, approvals, audit, or agent chat routes.
 ## Procedure
 
 1. Run `claw search <topic> --json` first. If `claw` is not on PATH, use the
-   local repo binary (`node packages/clawjs/bin/claw.mjs`) and note the fallback.
+   ClawJS checkout binary from the ClawJS repo root (`node
+   packages/clawjs/bin/claw.mjs`) or a configured sibling checkout such as
+   `../clawjs/packages/clawjs/bin/claw.mjs`, and note the fallback.
 2. Resolve the working node or route with:
    - `claw inspect show <surface> --json`
    - `claw inspect neighbors <surface> --json`
    - `claw inspect routes --json`
    - `claw inspect route <route-id> --json`
 3. Read the ADRs, docs, tests, and source files named by the inspection output.
-   For the route graph contract itself, start from
+   For the route graph contract itself, start from sibling ClawJS canon
    `docs/adr/0049-surface-route-graph.md`. For remote, Relay, Gateway,
    Coordinator, Connector, Sync, Iroh, node trust, or sync-resource route work,
-   also read `docs/adr/0022-remote-gateway-sync-redesign.md`. The Clawix
-   projection uses `docs/adr/0011-surface-route-graph.md`.
+   also read sibling ClawJS canon
+   `docs/adr/0022-remote-gateway-sync-redesign.md`. The local Clawix mirror is
+   `docs/adr/0011-surface-route-graph.md`.
 4. Choose the work mode explicitly:
    - surface-first: start at one node and inspect adjacent ingress/egress;
    - route-first: follow every explicit step in the registered route.

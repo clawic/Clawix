@@ -12,7 +12,7 @@ contracts while adding native app, update, installer, and bundled-runtime
 release surfaces.
 
 The canonical framework decision is sibling ClawJS
-`docs/adr/0042-supply-chain-security-governance.md`.
+`docs/adr/0051-supply-chain-security-governance.md`.
 
 ## Decision
 

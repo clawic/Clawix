@@ -87,7 +87,7 @@ Requirements: macOS 14+, Swift 5.9+, Xcode Command Line Tools.
 bash macos/scripts/dev.sh
 ```
 
-Compiles debug, kills the previous instance, relaunches. Window position, size and the sidebar prefs persist via `UserDefaults`. With no extra config, the build is ad-hoc-signed and bundled as `com.example.clawix.desktop` (a placeholder); macOS will re-prompt for permissions (Desktop folder, microphone, etc.) on every relaunch.
+Compiles debug, kills the previous instance, relaunches. Window position, size and the sidebar prefs persist via `UserDefaults`. With no extra config, the build is ad-hoc-signed and bundled as `com.example.clawix.desktop` (a placeholder); macOS will re-prompt for permissions (Desktop folder, microphone, etc.) on every relaunch. This source/community dev path is not valid evidence for closing visible app bugs, signed-host behavior, or native-permission work unless the configured signed-host preflight for the current build also passes.
 
 ### Stable signing (recommended for daily dev)
 
@@ -100,7 +100,7 @@ BUNDLE_ID="com.yourdomain.clawix"
 
 Both `dev.sh` and `build_app.sh` read those values when present. With a stable identity + bundle id, macOS remembers the TCC grants between rebuilds and stops re-prompting. Keep any local env file outside the public tree.
 
-List your codesign identities with `security find-identity -v -p codesigning`. Any valid macOS codesign identity works.
+List your codesign identities with `security find-identity -v -p codesigning`. Any valid macOS codesign identity works for local source/community development. Host-visible closure and signed-host validation still require the approved preflight evidence: expected bundle id, non-ad-hoc signature, authorized Team ID, canonical launcher path, and current build metadata.
 
 Environment variables also work and override the file:
 

@@ -57,8 +57,10 @@ The fix is to rerun the gate from a stable tree, not to reinterpret the result.
 
 ## Conversation Governor
 
-Private validation is allowed to create a minimal real conversation, but only
-through the central governor declared in the manifest:
+Private validation is allowed to create a minimal real conversation only after
+explicit approval for that validation session, and only through the central
+governor declared in the manifest. Without that approval, do not send a real
+prompt; report `PARTIAL` or `EXTERNAL PENDING` with the missing approval.
 
 - at most one new validation conversation per gate run;
 - at most three new validation conversations per local day;

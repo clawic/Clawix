@@ -15,8 +15,8 @@ app shell.
 ## Steps
 
 1. Build and launch the current workspace through the configured app launcher.
-2. Confirm the open app is the current `/Applications/Clawix.app` build through
-   the configured installed-app preflight.
+2. Confirm the open app is the canonical bundle returned by the configured
+   launcher/preflight, not a hard-coded installed app path.
 3. Confirm the app identity, signature state, process identity, and build
    metadata through the signed-host check. Public evidence must redact
    private bundle ids, Team IDs, signing identities, local paths, and secrets.
@@ -34,8 +34,9 @@ app shell.
 
 Host-dependent behavior is validated against the signed app identity only when
 the signing guard proves a non-ad-hoc signature, authorized Team ID, expected
-bundle id, and canonical launcher/preflight path. Missing guard, identity, Team
-ID, expected bundle id, or canonical launcher evidence is not a pass. If the
+bundle id, current-workspace build metadata, and canonical launcher/preflight
+path. Missing guard, identity, Team ID, expected bundle id, current build
+metadata, or canonical launcher evidence is not a pass. If the
 required physical permission, device, external account, or private launcher
 evidence is unavailable, the scenario is recorded as `EXTERNAL PENDING` with
 the missing prerequisite.

@@ -10,7 +10,11 @@ Grow the canonical data catalog without degrading schema quality.
 
 ## Procedure
 
-1. Read `docs/canonical-data-catalog.md`, the catalog ADR, `docs/governance/rfc-process.md`, data-storage boundary, and naming guide.
+1. Treat ClawJS as canonical for catalog/RFC work. Read sibling ClawJS
+   `docs/canonical-data-catalog.md`, `docs/adr/0005-canonical-data-catalog.md`,
+   `docs/governance/rfc-process.md`, data-storage boundary, and naming guide.
+   In Clawix, read only the local mirror/routing docs named by
+   `docs/decision-map.md`; do not invent a parallel catalog.
 2. Use `claw collections list`, `claw collections <collection> schema`, and `claw db <collection> list|query` when available.
 3. Decide whether the entity is built-in canonical or belongs in a custom database.
 4. For promotion to canonical type or canonical user-profile attribute, require the RFC process record, public review link, and maintainer sign-off before treating the shape as accepted canon.

@@ -1324,11 +1324,12 @@
       ],
       "discoveryTerms": [
         "canonical-catalog-expansion",
-        "Add or improve canonical data catalog collections, fields, aliases, relations, evidence tags, docs, and tests."
+        "Add or improve canonical data catalog collections, fields, aliases, relations, evidence tags, docs, and tests.",
+        "ClawJS canonical data catalog projection"
       ],
       "searchQueries": [
         {
-          "query": "canonical-catalog-expansion",
+          "query": "Clawix canonical catalog skill",
           "expectPath": "skills/canonical-catalog-expansion/SKILL.md"
         }
       ],
@@ -1877,11 +1878,13 @@
       ],
       "discoveryTerms": [
         "surface-route-work",
-        "Work from a registered surface or transverse route by inspecting nodes, neighbors, edges, contracts, owners, tests, and gaps before editing."
+        "Work from a registered surface or transverse route by inspecting nodes, neighbors, edges, contracts, owners, tests, and gaps before editing.",
+        "Clawix surface route skill",
+        "ClawJS surface route graph mirror"
       ],
       "searchQueries": [
         {
-          "query": "surface-route-work",
+          "query": "Clawix surface route skill",
           "expectPath": "skills/surface-route-work/SKILL.md"
         }
       ],

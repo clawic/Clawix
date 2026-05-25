@@ -3,7 +3,13 @@
 ## Ground rules
 
 - Treat the published surface (UI, scripts, hygiene gate) as product surface.
-- Do not merge changes that leave `swift build`, `bash macos/scripts/public_hygiene_check.sh`, or `bash macos/scripts/e2e_validate.sh` failing.
+- Do not merge changes that leave the relevant canonical lane failing. Use
+  `bash scripts/test.sh changed` as the normal focused gate; use
+  `bash scripts/test.sh e2e`, `bash scripts/test.sh host`, or
+  `bash scripts/test.sh core-ux` when the touched surface requires fixture E2E,
+  signed-host, or real-app P0 closure evidence. Run focused Swift checks as
+  package-scoped commands such as `swift test --package-path macos` when a
+  specific macOS package is the affected surface.
 - Prefer additive, well-scoped changes. If a change alters public behavior, update docs in the same patch.
 - For architecture, storage, naming, host, validation, release, or privacy
   decisions, start from [docs/decision-map.md](docs/decision-map.md). It points
@@ -47,7 +53,9 @@ The hygiene gate (`macos/scripts/public_hygiene_check.sh`) blocks publishing whe
   [DCO](DCO). This certifies contribution provenance without adding a broad
   Contributor License Agreement.
 - Update docs and the changelog if the change is user-facing.
-- Run `bash macos/scripts/public_hygiene_check.sh` before pushing.
+- Run `bash scripts/test.sh changed` and the focused lane named by the decision
+  map before pushing. Publication or broad review still requires the public
+  hygiene gate.
 - Keep PR scope narrow. Two unrelated changes are two pull requests.
 
 ## Localization

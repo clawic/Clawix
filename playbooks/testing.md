@@ -20,6 +20,9 @@ bash scripts/test.sh changed
 - `e2e`: local app/bridge fixture E2E checks that do not require private
   signing values.
 - `host`: signed-host validation. Uses private hooks only when configured.
+- `core-ux`: macOS real-app P0 closure gate for launch, navigation, minimal
+  chat, crash/hang, and latency-sensitive critical flows; visible P0 bugs and
+  strict release/closure fail closed when approved evidence is missing.
 - `device`: Android/iOS device or simulator checks.
 - `live`: opt-in external checks. Requires `CLAWIX_TEST_LIVE=1`.
 - `release`: hygiene plus every non-live lane required before publishing.

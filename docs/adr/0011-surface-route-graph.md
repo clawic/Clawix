@@ -77,13 +77,16 @@ audit, or route behavior must start with `claw search`, then inspect the node or
 route with `claw inspect show|neighbors|routes|route`. When `claw` is not on
 PATH, use the sibling ClawJS local binary as the fallback.
 
-Clawix route manifest entries must keep explicit steps, owner, transport,
-contract, validation, tests, and gaps when applicable. Host-real validation is
-still required for signed-host or native-permission behavior; hermetic route
-fixtures are partial for those paths.
-The generated route registry manifest lives in
+Clawix graph manifest entries in `docs/persistent-surface-clawix.manifest.json`
+must keep explicit steps, `surfaceSteward`, transport, `contractId`,
+validation, tests, and gaps when applicable. Sibling ClawJS graph entries use
+`steward`; projected Clawix step entries use `surfaceSteward`. Host-real
+validation is still required for signed-host or native-permission behavior;
+hermetic route fixtures are partial for those paths.
+The generated SidebarRoute metadata registry lives in
 `docs/surface-route-registry.manifest.json` and is checked by
-`node scripts/generate-surface-route-registry.mjs --check`.
+`node scripts/generate-surface-route-registry.mjs --check`; that registry drives
+Swift route metadata and is not the graph edge/route source of truth.
 New Clawix manifest nodes, routes, UI/interface surfaces, permissions, storage
 keys, and feature flags must also carry `surfaceNarrative`: the concept they
 implement, the decision authorizing them, the human/programmatic surface that
