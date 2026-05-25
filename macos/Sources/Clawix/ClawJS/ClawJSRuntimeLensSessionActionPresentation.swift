@@ -20,7 +20,12 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
         let writeDisposition: String
 
         var detailLabel: String? {
-            let values = [
+            let transportValues = [
+                transportPolicyId.map { "transport policy \($0)" },
+                productionTransportStatus.map { "production transport \($0)" },
+                lifecycleStatus.map { "lifecycle \($0)" }
+            ].compactMap { $0 }
+            let actionValues = [
                 authority,
                 persistence,
                 delegatesTo,
@@ -28,11 +33,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 officialProtocol,
                 officialMethod,
                 officialContractSource,
-                transportPolicyId.map { "transport policy \($0)" },
-                productionTransportStatus.map { "production transport \($0)" },
-                lifecycleStatus.map { "lifecycle \($0)" },
                 requiredEvidenceLabel
             ].compactMap { $0 }
+            let values = transportValues + actionValues
             guard !values.isEmpty else { return nil }
             return values.joined(separator: ", ")
         }
