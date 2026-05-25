@@ -86,17 +86,25 @@ final class AssistantMarkdownRenderModel: ObservableObject {
         _ parsed: MarkdownParseCache.Result,
         request: AssistantMarkdownRenderRequest
     ) {
+        let summary = AssistantMarkdownRenderDocumentSummary(blocks: parsed.blocks)
         RenderProbe.markPassive(
             "AssistantMarkdownRenderReady",
             fields: [
                 "annotateMs": String(format: "%.2f", parsed.annotateMs),
                 "blocks": "\(parsed.blocks.count)",
                 "cacheHit": "\(parsed.cacheHit)",
+                "codeBlocks": "\(summary.codeBlocks)",
+                "flowAtoms": "\(summary.flowAtoms)",
+                "flowLines": "\(summary.flowLines)",
+                "headingBlocks": "\(summary.headingBlocks)",
+                "listBlocks": "\(summary.listBlocks)",
                 "parseMs": String(format: "%.2f", parsed.parseMs),
+                "paragraphBlocks": "\(summary.paragraphBlocks)",
                 "phase": request.phase.renderProbeName,
                 "renderKey": request.renderKey?.renderProbeName ?? "none",
                 "reparsedChars": "\(parsed.reparsedCharacterCount)",
                 "reusedBlocks": "\(parsed.reusedBlockCount)",
+                "tableBlocks": "\(summary.tableBlocks)",
                 "textChars": "\(request.text.count)"
             ]
         )
@@ -131,6 +139,67 @@ final class AssistantMarkdownRenderModel: ObservableObject {
             // hot-path-ok maxBytes: 2097152 reason:=parse-runs-off-body-through-bounded-cache
             MarkdownParseCache.parse(text, renderKey: renderKey, phase: phase)
         }.value
+    }
+}
+
+private struct AssistantMarkdownRenderDocumentSummary {
+    var paragraphBlocks = 0
+    var headingBlocks = 0
+    var listBlocks = 0
+    var codeBlocks = 0
+    var tableBlocks = 0
+    var flowLines = 0
+    var flowAtoms = 0
+
+    init(blocks: [IndexedAnnotatedBlock]) {
+        for item in blocks {
+            switch item.block {
+            case .paragraph(let paragraph):
+                paragraphBlocks += 1
+                add(paragraph)
+            case .heading(_, let line):
+                headingBlocks += 1
+                add(line)
+            case .bulletList(let items), .numberedList(let items):
+                listBlocks += 1
+                addListItems(items)
+            case .codeBlock:
+                codeBlocks += 1
+            case .table(let headers, let rows):
+                tableBlocks += 1
+                for line in headers {
+                    add(line)
+                }
+                for row in rows {
+                    for line in row {
+                        add(line)
+                    }
+                }
+            }
+        }
+    }
+
+    private mutating func add(_ paragraph: AnnotatedParagraph) {
+        for line in paragraph.lines {
+            add(line)
+        }
+    }
+
+    private mutating func add(_ line: AnnotatedLine) {
+        flowLines += 1
+        flowAtoms += line.atoms.count
+    }
+
+    private mutating func addListItems(_ items: [AnnotatedListItem]) {
+        for item in items {
+            add(item.paragraph)
+            for child in item.children {
+                switch child {
+                case .bullet(let items), .numbered(let items):
+                    addListItems(items)
+                }
+            }
+        }
     }
 }
 
