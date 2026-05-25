@@ -8,6 +8,7 @@ struct ClawJSRuntimeLensSection: View {
     @State var runtimeLensError: String?
     @State var runtimeLensActionError: String?
     @State var runtimeLensActionResult: String?
+    @State var runtimeLensActionResultDetails: [String] = []
     @State var runtimeLensActionSessionId = ""
     @State var runtimeLensActionMessage = ""
     @State var runtimeLensActionTitle = ""
@@ -60,6 +61,7 @@ struct ClawJSRuntimeLensSection: View {
         .onChange(of: runtimeLensSelection) { _, selectedRuntime in
             runtimeLensPages.removeAll()
             runtimeLensActionResult = nil
+            runtimeLensActionResultDetails = []
             runtimeLensActionError = nil
             runtimeLensPendingConfirmedAction = nil
             Task { await refreshRuntimeLens(selectedRuntime) }
@@ -134,6 +136,7 @@ struct ClawJSRuntimeLensSection: View {
 
         runtimeLensActionError = nil
         runtimeLensActionResult = nil
+        runtimeLensActionResultDetails = []
         runtimeLensSessionActionsInFlight.insert(presentation.actionKey)
         defer { runtimeLensSessionActionsInFlight.remove(presentation.actionKey) }
 
@@ -148,6 +151,7 @@ struct ClawJSRuntimeLensSection: View {
                 confirmRuntimeWrite: confirmRuntimeWrite
             )
             runtimeLensActionResult = runtimeLensSessionActionResultLabel(result)
+            runtimeLensActionResultDetails = runtimeLensSessionActionResultDetails(result)
             if result.writesRuntime == true {
                 await refreshRuntimeLens(runtimeLensSelection)
             }
@@ -171,6 +175,76 @@ struct ClawJSRuntimeLensSection: View {
         ]
         .compactMap { $0 }
         .joined(separator: " ")
+    }
+
+    func runtimeLensSessionActionResultDetails(_ result: ClawJSRuntimeLensClient.SessionNativeActionResult) -> [String] {
+        var details: [String] = []
+
+        if let gatewayReceipt = result.result?.gatewayReceipt {
+            let gatewayFields = [
+                gatewayReceipt.method,
+                gatewayReceipt.transport.map { "via \($0)" },
+                gatewayReceipt.requestId.map { "request \($0)" },
+                gatewayReceipt.endpoint
+            ].compactMap { $0 }
+            if !gatewayFields.isEmpty {
+                details.append("gateway " + gatewayFields.joined(separator: ", "))
+            }
+        }
+
+        if let titleGatewayReceipt = result.result?.titleGatewayReceipt {
+            let gatewayFields = [
+                titleGatewayReceipt.method,
+                titleGatewayReceipt.transport.map { "via \($0)" },
+                titleGatewayReceipt.requestId.map { "request \($0)" },
+                titleGatewayReceipt.endpoint
+            ].compactMap { $0 }
+            if !gatewayFields.isEmpty {
+                details.append("title gateway " + gatewayFields.joined(separator: ", "))
+            }
+        }
+
+        if let verification = result.result?.roundTripVerification {
+            let verificationFields = [
+                verification.status.map { "status \($0)" },
+                verification.action.map { "action \($0)" },
+                verification.matchedBy.map { "matched by \($0)" },
+                verification.id.map { "id \($0)" },
+                verification.title.map { "title \($0)" },
+                verification.endedAt.map { "ended at \($0)" },
+                verification.endReason.map { "end reason \($0)" },
+                verification.messageRole.map { "message role \($0)" },
+                verification.messageIndex.map { "message index \($0)" },
+                verification.totalAvailableInStore.map { "store total \($0)" },
+                verification.writesRuntime.map { "writes runtime \($0)" }
+            ].compactMap { $0 }
+            if !verificationFields.isEmpty {
+                details.append("round-trip " + verificationFields.joined(separator: ", "))
+            }
+
+            let checkedLabel: String?
+            if let checked = verification.checked, !checked.isEmpty {
+                checkedLabel = "checked \(checked.joined(separator: ", "))"
+            } else {
+                checkedLabel = nil
+            }
+            let provenanceFields = [
+                verification.provenance?.source,
+                verification.provenance?.runtimeId.map { "runtime \($0)" },
+                verification.provenance?.table.map { "table \($0)" },
+                checkedLabel,
+                verification.safeDefault.map { "safe default \($0)" }
+            ].compactMap { $0 }
+            if !provenanceFields.isEmpty {
+                details.append("provenance " + provenanceFields.joined(separator: ", "))
+            }
+        }
+
+        if let contractSource = result.officialContractSource {
+            details.append("contract \(contractSource)")
+        }
+
+        return details
     }
 
 }

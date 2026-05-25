@@ -496,6 +496,7 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(result.result?.roundTripVerification?.checked, ["sessionId"])
     }
 
+    @MainActor
     func testRuntimeLensClientDecodesHermesAbortRoundTripVerification() async throws {
         let client = ClawJSRuntimeLensClient(runner: .init { _ in
             .init(
@@ -564,5 +565,14 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(result.result?.roundTripVerification?.writesRuntime, false)
         XCTAssertEqual(result.result?.roundTripVerification?.provenance?.table, "sessions")
         XCTAssertEqual(result.result?.roundTripVerification?.checked, ["sqlite_sessions_control_state"])
+
+        let section = ClawJSRuntimeLensSection()
+        XCTAssertEqual(section.runtimeLensSessionActionResultLabel(result), "abort ok session.interrupt abort-roundtrip-session round-trip verified")
+        XCTAssertTrue(section.runtimeLensSessionActionResultDetails(result).contains(
+            "round-trip status verified, action abort, matched by sessionId, id abort-roundtrip-session, ended at 2026-05-25T21:56:40.000Z, end reason interrupted, writes runtime false"
+        ))
+        XCTAssertTrue(section.runtimeLensSessionActionResultDetails(result).contains(
+            "provenance runtime-session-sqlite, runtime hermes, table sessions, checked sqlite_sessions_control_state"
+        ))
     }
 }

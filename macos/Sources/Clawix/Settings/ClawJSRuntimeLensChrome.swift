@@ -191,6 +191,14 @@ extension ClawJSRuntimeLensSection {
                     .truncationMode(.middle)
                     .accessibilityIdentifier("runtime-lens-session-action-result")
             }
+            ForEach(runtimeLensActionResultDetails, id: \.self) { detail in
+                Text(detail)
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+                    .accessibilityIdentifier("runtime-lens-session-action-result-detail")
+            }
         }
         .accessibilityIdentifier("runtime-lens-session-action-controls")
     }
