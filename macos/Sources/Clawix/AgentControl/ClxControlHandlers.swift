@@ -21,7 +21,7 @@ enum ClxControlHandlers {
         self.appState = appState
     }
 
-    static func handle(verb: String, args: [String: Any]) -> ClxControlResult {
+    static func handle(verb: String, args: [String: Any]) async -> ClxControlResult {
         switch verb {
         case "ping":      return ok(["ok": true, "instanceId": ClxAgentInstance.instanceId])
         case "diagnostics": return diagnostics()
@@ -33,8 +33,24 @@ enum ClxControlHandlers {
         case "click":     return click(args)
         case "mark":      return mark(args)
         case "scroll":    return scroll(args)
+        case "scroll-state": return scrollState(args)
         case "type":      return typeText(args)
         case "state":     return state(args)
+        case "state-with-frame": return state(args)
+        case "wait-visible": return await wait(args, condition: .visible)
+        case "wait-gone": return await wait(args, condition: .gone)
+        case "wait-enabled": return await wait(args, condition: .enabled)
+        case "wait-text": return await wait(args, condition: .text)
+        case "wait-count": return await wait(args, condition: .count)
+        case "wait-route": return await wait(args, condition: .route)
+        case "wait-frame-stable": return await wait(args, condition: .frameStable)
+        case "wait-scroll-stable": return await wait(args, condition: .scrollStable)
+        case "wait-bottom-anchored": return await wait(args, condition: .bottomAnchored)
+        case "wait-chat-final-window": return await wait(args, condition: .chatFinalWindow)
+        case "wait-stream-delta": return await wait(args, condition: .streamDelta)
+        case "wait-idle": return await wait(args, condition: .idle)
+        case "measure-action": return await measureAction(args)
+        case "flow": return await flow(args)
         case "capture":   return capture(args)
         case "close":     return closeWindow(args)
         case "quit":      return quitApp()
@@ -45,6 +61,21 @@ enum ClxControlHandlers {
     private static func ok(_ json: [String: Any]) -> ClxControlResult { ClxControlResult(status: 200, json: json) }
     private static func badRequest(_ message: String) -> ClxControlResult {
         ClxControlResult(status: 400, json: ["error": message])
+    }
+
+    private enum WaitCondition: String {
+        case visible
+        case gone
+        case enabled
+        case text
+        case count
+        case route
+        case frameStable
+        case scrollStable
+        case bottomAnchored
+        case chatFinalWindow
+        case streamDelta
+        case idle
     }
 
     static func diagnostics() -> ClxControlResult {
@@ -547,9 +578,7 @@ enum ClxControlHandlers {
             if let description = ClxAX.string(element, kAXDescriptionAttribute) { item["description"] = description }
             if let value = ClxAX.string(element, kAXValueAttribute) { item["value"] = value }
             if let enabled = ClxAX.bool(element, kAXEnabledAttribute) { item["enabled"] = enabled }
-            if let frame = ClxAX.frame(element) {
-                item["frame"] = ["x": frame.origin.x, "y": frame.origin.y, "w": frame.size.width, "h": frame.size.height]
-            }
+            if let frame = ClxAX.frame(element) { item["frame"] = framePayload(frame) }
             controls.append(item)
         }
         let known = Set(controls.compactMap { $0["id"] as? String })
@@ -691,16 +720,337 @@ enum ClxControlHandlers {
 
     static func state(_ args: [String: Any]) -> ClxControlResult {
         guard let id = args["id"] as? String else { return badRequest("missing id") }
-        guard let element = ClxAX.find(identifier: id) else {
-            if ClxControlRegistry.shared.get(id) != nil { return ok(["id": id, "source": "registry"]) }
+        guard let out = controlStatePayload(id: id) else {
             return ClxControlResult(status: 404, json: ["error": "control not found: \(id)"])
         }
-        var out: [String: Any] = ["id": id]
-        if let role = ClxAX.string(element, kAXRoleAttribute) { out["role"] = role }
-        if let value = ClxAX.string(element, kAXValueAttribute) { out["value"] = value }
-        if let enabled = ClxAX.bool(element, kAXEnabledAttribute) { out["enabled"] = enabled }
-        if let title = ClxAX.string(element, kAXTitleAttribute) { out["title"] = title }
         return ok(out)
+    }
+
+    static func scrollState(_ args: [String: Any]) -> ClxControlResult {
+        guard let id = registeredScrollId(args) ?? (args["id"] as? String) else {
+            return badRequest("missing id or target")
+        }
+        guard let state = registeredScrollState(id: id) else {
+            return ClxControlResult(status: 404, json: ["error": "registered scroll target not found: \(id)"])
+        }
+        return ok(state)
+    }
+
+    static func measureAction(_ args: [String: Any]) async -> ClxControlResult {
+        let action = (args["action"] as? String) ?? "click"
+        let condition = waitCondition(named: (args["wait"] as? String) ?? "wait-visible")
+        let actionId = (args["actionId"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? UUID().uuidString
+        var actionArgs = args
+        actionArgs["actionId"] = actionId
+        if actionArgs["id"] == nil, let target = args["target"] as? String {
+            actionArgs["id"] = target
+        }
+
+        let started = CACurrentMediaTime()
+        RenderProbe.mark(
+            "UXTraceActionStart",
+            fields: ["actionId": actionId, "action": action]
+        )
+        let actionResult = performMeasuredAction(action, args: actionArgs)
+        guard actionResult.status == 200 else {
+            return actionResult
+        }
+
+        var waitArgs = args
+        waitArgs["actionId"] = actionId
+        if let waitTarget = args["waitTarget"] as? String {
+            waitArgs["id"] = waitTarget
+        } else if waitArgs["id"] == nil, let target = args["target"] as? String {
+            waitArgs["id"] = target
+        }
+        let waitResult = await waitPayload(waitArgs, condition: condition)
+        let elapsedMs = (CACurrentMediaTime() - started) * 1000
+        RenderProbe.mark(
+            "UXTraceActionEnd",
+            fields: [
+                "actionId": actionId,
+                "action": action,
+                "condition": condition.rawValue,
+                "ok": "\(waitResult.ok)",
+                "elapsedMs": String(format: "%.2f", elapsedMs)
+            ]
+        )
+        return ok([
+            "ok": waitResult.ok,
+            "actionId": actionId,
+            "action": action,
+            "condition": condition.rawValue,
+            "elapsedMs": elapsedMs,
+            "actionResult": actionResult.json,
+            "wait": waitResult.json,
+        ])
+    }
+
+    static func flow(_ args: [String: Any]) async -> ClxControlResult {
+        guard let rawSteps = args["steps"] as? [[String: Any]], !rawSteps.isEmpty else {
+            return badRequest("missing non-empty steps")
+        }
+        let runId = (args["runId"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? UUID().uuidString
+        let continueOnFailure = (args["continueOnFailure"] as? Bool) ?? false
+        let started = CACurrentMediaTime()
+        RenderProbe.mark("UXTraceFlowStart", fields: ["runId": runId, "steps": "\(rawSteps.count)"])
+
+        var outputs: [[String: Any]] = []
+        var allOK = true
+        for (index, rawStep) in rawSteps.enumerated() {
+            let stepId = (rawStep["id"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "step-\(index + 1)"
+            var stepArgs = args
+            stepArgs.removeValue(forKey: "steps")
+            for (key, value) in rawStep {
+                stepArgs[key] = value
+            }
+            stepArgs["runId"] = runId
+            stepArgs["stepId"] = stepId
+            if stepArgs["id"] == nil, let target = stepArgs["target"] as? String {
+                stepArgs["id"] = target
+            }
+
+            let action = (stepArgs["action"] as? String) ?? "observe"
+            let stepStarted = CACurrentMediaTime()
+            RenderProbe.mark("UXTraceFlowStepStart", fields: ["runId": runId, "stepId": stepId, "action": action])
+            let result: ClxControlResult
+            switch action {
+            case "observe", "sample", "analyze-events":
+                let condition = waitCondition(named: (stepArgs["wait"] as? String) ?? "wait-visible")
+                result = await wait(stepArgs, condition: condition)
+            default:
+                result = await measureAction(stepArgs)
+            }
+            let stepElapsedMs = (CACurrentMediaTime() - stepStarted) * 1000
+            let ok = (result.json["ok"] as? Bool) ?? (result.status == 200)
+            if !ok { allOK = false }
+            var stepOut: [String: Any] = [
+                "id": stepId,
+                "index": index,
+                "action": action,
+                "ok": ok,
+                "elapsedMs": stepElapsedMs,
+                "result": result.json,
+            ]
+            if result.status != 200 { stepOut["status"] = result.status }
+            outputs.append(stepOut)
+            RenderProbe.mark(
+                "UXTraceFlowStepEnd",
+                fields: [
+                    "runId": runId,
+                    "stepId": stepId,
+                    "ok": "\(ok)",
+                    "elapsedMs": String(format: "%.2f", stepElapsedMs)
+                ]
+            )
+            if !ok && !continueOnFailure { break }
+        }
+
+        let elapsedMs = (CACurrentMediaTime() - started) * 1000
+        RenderProbe.mark(
+            "UXTraceFlowEnd",
+            fields: [
+                "runId": runId,
+                "ok": "\(allOK)",
+                "elapsedMs": String(format: "%.2f", elapsedMs)
+            ]
+        )
+        return ok([
+            "ok": allOK,
+            "runId": runId,
+            "elapsedMs": elapsedMs,
+            "steps": outputs,
+            "completedSteps": outputs.count,
+            "requestedSteps": rawSteps.count,
+        ])
+    }
+
+    private static func wait(_ args: [String: Any], condition: WaitCondition) async -> ClxControlResult {
+        let result = await waitPayload(args, condition: condition)
+        return ok(result.json)
+    }
+
+    private struct WaitPayload {
+        let ok: Bool
+        let json: [String: Any]
+    }
+
+    private static func waitPayload(_ args: [String: Any], condition: WaitCondition) async -> WaitPayload {
+        let started = CACurrentMediaTime()
+        let timeoutMs = boundedInt(args["timeoutMs"], defaultValue: 2_000, min: 1, max: 60_000)
+        let pollMs = boundedInt(args["pollMs"], defaultValue: 50, min: 10, max: 1_000)
+        let stableDurationMs = boundedInt(args["durationMs"], defaultValue: 200, min: 25, max: timeoutMs)
+        let tolerancePx = boundedDouble(args["tolerancePx"], defaultValue: 2, min: 0, max: 1_000)
+        var samples = 0
+        var lastFrame: [String: Any]?
+        var lastOrigin: [String: Any]?
+        var stableSince: CFTimeInterval?
+        var lastObserved: [String: Any] = [:]
+
+        while true {
+            samples += 1
+            let now = CACurrentMediaTime()
+            let evaluation = evaluateCondition(
+                args,
+                condition: condition,
+                tolerancePx: tolerancePx,
+                lastFrame: &lastFrame,
+                lastOrigin: &lastOrigin,
+                stableSince: &stableSince,
+                stableDurationMs: stableDurationMs,
+                now: now
+            )
+            lastObserved = evaluation.observed
+            if evaluation.ok {
+                let elapsedMs = (now - started) * 1000
+                return WaitPayload(ok: true, json: [
+                    "ok": true,
+                    "condition": condition.rawValue,
+                    "elapsedMs": elapsedMs,
+                    "samples": samples,
+                    "observed": evaluation.observed,
+                ])
+            }
+            if (now - started) * 1000 >= Double(timeoutMs) {
+                return WaitPayload(ok: false, json: [
+                    "ok": false,
+                    "condition": condition.rawValue,
+                    "status": "timeout",
+                    "elapsedMs": (now - started) * 1000,
+                    "timeoutMs": timeoutMs,
+                    "samples": samples,
+                    "observed": lastObserved,
+                ])
+            }
+            try? await Task.sleep(nanoseconds: UInt64(pollMs) * 1_000_000)
+        }
+    }
+
+    private static func evaluateCondition(
+        _ args: [String: Any],
+        condition: WaitCondition,
+        tolerancePx: Double,
+        lastFrame: inout [String: Any]?,
+        lastOrigin: inout [String: Any]?,
+        stableSince: inout CFTimeInterval?,
+        stableDurationMs: Int,
+        now: CFTimeInterval
+    ) -> (ok: Bool, observed: [String: Any]) {
+        switch condition {
+        case .visible:
+            let observed = observedControlState(args)
+            return ((observed["visible"] as? Bool) == true, observed)
+        case .gone:
+            let observed = observedControlState(args)
+            return (observed["found"] as? Bool == false || observed["visible"] as? Bool == false, observed)
+        case .enabled:
+            let observed = observedControlState(args)
+            return ((observed["enabled"] as? Bool) == true, observed)
+        case .text:
+            let observed = observedControlState(args)
+            let needle = (args["contains"] as? String) ?? (args["text"] as? String) ?? ""
+            guard !needle.isEmpty else { return (false, observed) }
+            let haystack = [
+                observed["value"] as? String,
+                observed["title"] as? String,
+                observed["description"] as? String,
+            ].compactMap { $0 }.joined(separator: "\n")
+            return (haystack.localizedCaseInsensitiveContains(needle), observed)
+        case .count:
+            let inventoryResult = inventory().json
+            let controls = (inventoryResult["controls"] as? [[String: Any]]) ?? []
+            let query = (args["query"] as? String) ?? (args["id"] as? String) ?? ""
+            let count = query.isEmpty ? controls.count : controls.filter { item in
+                ["id", "role", "title", "description", "value"].contains { key in
+                    (item[key] as? String)?.localizedCaseInsensitiveContains(query) == true
+                }
+            }.count
+            let minCount = boundedInt(args["minCount"], defaultValue: 1, min: 0, max: 10_000)
+            return (count >= minCount, ["query": query, "count": count, "minCount": minCount])
+        case .route:
+            let route = appState.map { routeDescription($0.currentRoute) } ?? ""
+            let expected = (args["route"] as? String) ?? (args["contains"] as? String) ?? ""
+            return (!expected.isEmpty && route.localizedCaseInsensitiveContains(expected), ["route": route, "expected": expected])
+        case .frameStable:
+            let observed = observedControlState(args)
+            guard let frame = observed["frame"] as? [String: Any] else { return (false, observed) }
+            return stablePayload(
+                current: frame,
+                last: &lastFrame,
+                stableSince: &stableSince,
+                stableDurationMs: stableDurationMs,
+                tolerancePx: tolerancePx,
+                now: now,
+                observed: observed
+            )
+        case .scrollStable:
+            let observed = observedScrollState(args)
+            guard let origin = observed["origin"] as? [String: Any] else { return (false, observed) }
+            return stablePayload(
+                current: origin,
+                last: &lastOrigin,
+                stableSince: &stableSince,
+                stableDurationMs: stableDurationMs,
+                tolerancePx: tolerancePx,
+                now: now,
+                observed: observed
+            )
+        case .bottomAnchored:
+            let observed = observedScrollState(args)
+            let bottomDistance = observed["bottomDistance"] as? Double ?? .infinity
+            return (bottomDistance <= tolerancePx, observed)
+        case .chatFinalWindow:
+            let observed = observedControlState(["id": (args["id"] as? String) ?? "chat.visibleWindow.latest"])
+            if (observed["visible"] as? Bool) == true { return (true, observed) }
+            let fallback = observedControlState(["id": "chat.transcript.scroll"])
+            return ((fallback["visible"] as? Bool) == true, fallback)
+        case .streamDelta:
+            let observed = observedControlState(["id": (args["id"] as? String) ?? "chat.streaming.deltaTarget"])
+            if (observed["visible"] as? Bool) == true { return (true, observed) }
+            let assistant = observedControlState(["id": "chat.message.assistant"])
+            return ((assistant["visible"] as? Bool) == true, assistant)
+        case .idle:
+            if stableSince == nil { stableSince = now }
+            let elapsedMs = (now - (stableSince ?? now)) * 1000
+            return (elapsedMs >= Double(stableDurationMs), ["idleMs": elapsedMs, "requiredMs": stableDurationMs])
+        }
+    }
+
+    private static func stablePayload(
+        current: [String: Any],
+        last: inout [String: Any]?,
+        stableSince: inout CFTimeInterval?,
+        stableDurationMs: Int,
+        tolerancePx: Double,
+        now: CFTimeInterval,
+        observed: [String: Any]
+    ) -> (ok: Bool, observed: [String: Any]) {
+        let delta = last.map { vectorDelta(current, $0) } ?? .infinity
+        if delta <= tolerancePx {
+            if stableSince == nil { stableSince = now }
+        } else {
+            stableSince = now
+        }
+        last = current
+        let stableMs = (now - (stableSince ?? now)) * 1000
+        var out = observed
+        out["stableMs"] = stableMs
+        out["deltaPx"] = delta.isFinite ? delta : NSNull()
+        out["tolerancePx"] = tolerancePx
+        return (stableMs >= Double(stableDurationMs), out)
+    }
+
+    private static func performMeasuredAction(_ action: String, args: [String: Any]) -> ClxControlResult {
+        switch action {
+        case "click": return click(args)
+        case "type": return typeText(args)
+        case "scroll": return scroll(args)
+        case "open-chat": return openChat(args)
+        case "mock-stream": return mockStream(args)
+        case "mock-bridge-stream": return mockBridgeStream(args)
+        case "mark": return mark(args)
+        default: return badRequest("unsupported measured action: \(action)")
+        }
     }
 
     static func capture(_ args: [String: Any]) -> ClxControlResult {
@@ -909,6 +1259,144 @@ enum ClxControlHandlers {
             "max": ["x": maxX, "y": maxY],
             "documentFlipped": documentView.isFlipped,
         ])
+    }
+
+    private static func registeredScrollState(id: String) -> [String: Any]? {
+        guard let scrollView = ClxScrollRegistry.shared.get(id),
+              let documentView = scrollView.documentView else { return nil }
+        scrollView.layoutSubtreeIfNeeded()
+        documentView.layoutSubtreeIfNeeded()
+
+        let clipView = scrollView.contentView
+        let origin = clipView.bounds.origin
+        let visibleSize = clipView.bounds.size
+        let documentSize = documentView.bounds.size
+        let maxX = max(0, documentSize.width - visibleSize.width)
+        let maxY = max(0, documentSize.height - visibleSize.height)
+        let topDistance = documentView.isFlipped ? origin.y : maxY - origin.y
+        let bottomDistance = documentView.isFlipped ? maxY - origin.y : origin.y
+        var out: [String: Any] = [
+            "id": id,
+            "origin": ["x": origin.x, "y": origin.y],
+            "max": ["x": maxX, "y": maxY],
+            "viewportSize": ["width": visibleSize.width, "height": visibleSize.height],
+            "documentSize": ["width": documentSize.width, "height": documentSize.height],
+            "topDistance": max(0, topDistance),
+            "bottomDistance": max(0, bottomDistance),
+            "documentFlipped": documentView.isFlipped,
+            "verticalScrollable": maxY > 0.5,
+            "horizontalScrollable": maxX > 0.5,
+        ]
+        out["frame"] = framePayload(scrollView.convert(scrollView.bounds, to: nil))
+        return out
+    }
+
+    private static func controlStatePayload(id: String) -> [String: Any]? {
+        guard let element = ClxAX.find(identifier: id) else {
+            if let descriptor = ClxControlRegistry.shared.get(id) {
+                return [
+                    "id": id,
+                    "role": descriptor.role,
+                    "title": descriptor.label,
+                    "source": "registry",
+                    "found": true,
+                    "visible": false,
+                ]
+            }
+            return nil
+        }
+        var out: [String: Any] = ["id": id, "found": true]
+        if let role = ClxAX.string(element, kAXRoleAttribute) { out["role"] = role }
+        if let value = ClxAX.string(element, kAXValueAttribute) { out["value"] = value }
+        if let enabled = ClxAX.bool(element, kAXEnabledAttribute) { out["enabled"] = enabled }
+        if let title = ClxAX.string(element, kAXTitleAttribute) { out["title"] = title }
+        if let description = ClxAX.string(element, kAXDescriptionAttribute) { out["description"] = description }
+        if let focused = ClxAX.bool(element, kAXFocusedAttribute) { out["focused"] = focused }
+        if let selected = ClxAX.bool(element, kAXSelectedAttribute) { out["selected"] = selected }
+        if let frame = ClxAX.frame(element) {
+            out["frame"] = framePayload(frame)
+            out["visible"] = frame.width > 0 && frame.height > 0
+        } else {
+            out["visible"] = false
+        }
+        return out
+    }
+
+    private static func observedControlState(_ args: [String: Any]) -> [String: Any] {
+        guard let id = args["id"] as? String else { return ["found": false, "error": "missing id"] }
+        return controlStatePayload(id: id) ?? ["id": id, "found": false, "visible": false]
+    }
+
+    private static func observedScrollState(_ args: [String: Any]) -> [String: Any] {
+        guard let id = registeredScrollId(args) ?? (args["id"] as? String) else {
+            return ["found": false, "error": "missing id or target"]
+        }
+        return registeredScrollState(id: id) ?? ["id": id, "found": false]
+    }
+
+    private static func framePayload(_ frame: CGRect) -> [String: CGFloat] {
+        [
+            "x": frame.origin.x,
+            "y": frame.origin.y,
+            "w": frame.size.width,
+            "h": frame.size.height,
+        ]
+    }
+
+    private static func waitCondition(named raw: String) -> WaitCondition {
+        switch raw {
+        case "visible", "wait-visible": return .visible
+        case "gone", "wait-gone": return .gone
+        case "enabled", "wait-enabled": return .enabled
+        case "text", "wait-text": return .text
+        case "count", "wait-count": return .count
+        case "route", "wait-route": return .route
+        case "frame-stable", "wait-frame-stable": return .frameStable
+        case "scroll-stable", "wait-scroll-stable": return .scrollStable
+        case "bottom-anchored", "wait-bottom-anchored": return .bottomAnchored
+        case "chat-final-window", "wait-chat-final-window": return .chatFinalWindow
+        case "stream-delta", "wait-stream-delta": return .streamDelta
+        case "idle", "wait-idle": return .idle
+        default: return .visible
+        }
+    }
+
+    private static func boundedInt(_ value: Any?, defaultValue: Int, min minValue: Int, max maxValue: Int) -> Int {
+        let raw: Int
+        if let value = value as? Int { raw = value }
+        else if let value = value as? Double { raw = Int(value) }
+        else if let value = value as? String, let parsed = Int(value) { raw = parsed }
+        else { raw = defaultValue }
+        return min(max(raw, minValue), maxValue)
+    }
+
+    private static func boundedDouble(_ value: Any?, defaultValue: Double, min minValue: Double, max maxValue: Double) -> Double {
+        let raw: Double
+        if let value = value as? Double { raw = value }
+        else if let value = value as? Int { raw = Double(value) }
+        else if let value = value as? String, let parsed = Double(value) { raw = parsed }
+        else { raw = defaultValue }
+        return min(max(raw, minValue), maxValue)
+    }
+
+    private static func vectorDelta(_ lhs: [String: Any], _ rhs: [String: Any]) -> Double {
+        let keys = ["x", "y", "w", "h", "width", "height"]
+        var maxDelta = 0.0
+        var found = false
+        for key in keys {
+            guard let left = numeric(lhs[key]), let right = numeric(rhs[key]) else { continue }
+            found = true
+            maxDelta = max(maxDelta, abs(left - right))
+        }
+        return found ? maxDelta : .infinity
+    }
+
+    private static func numeric(_ value: Any?) -> Double? {
+        if let value = value as? Double { return value }
+        if let value = value as? CGFloat { return Double(value) }
+        if let value = value as? Int { return Double(value) }
+        if let value = value as? String { return Double(value) }
+        return nil
     }
 
     private static func routeDescription(_ route: SidebarRoute) -> String {

@@ -1,0 +1,8 @@
+{
+  "number": "0040",
+  "slug": "macos-ux-trace-harness",
+  "title": "macOS UX trace harness",
+  "status": "accepted",
+  "adr": "docs/adr/0040-macos-ux-trace-harness.md",
+  "canonicalName": "adr:macos-ux-trace-harness"
+}

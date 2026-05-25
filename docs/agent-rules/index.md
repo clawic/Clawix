@@ -98,8 +98,12 @@ domains are assistive only.
   and `docs/adr/TEMPLATE.md`.
 - Performance-sensitive durable decisions:
   `docs/governance/performance-governance.md`,
-  `docs/adr/0022-performance-governance-mirror.md`, and sibling ClawJS
-  `docs/adr/0036-performance-governance.md`.
+  `docs/adr/0022-performance-governance-mirror.md`,
+  `docs/adr/0040-macos-ux-trace-harness.md`, and sibling ClawJS
+  `docs/adr/0036-performance-governance.md`. For macOS P0 UI latency, use
+  `docs/ui/ux-trace-harness.registry.json` and
+  `docs/ui/ux-trace-scenarios.manifest.json`; Computer Use is witness-only,
+  not primary measurement evidence.
 
 ## Skill Routing
 

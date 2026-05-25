@@ -58,6 +58,16 @@ enforceable only after the user approves the measured baseline. Until then,
 captures are evidence for baseline approval, not permission to redesign or
 retune visible UI.
 
+macOS P0 user-perceived UI latency is also governed by the UX trace harness
+contract in `../docs/adr/0040-macos-ux-trace-harness.md`,
+`../docs/ui/ux-trace-harness.registry.json`,
+`../docs/ui/ux-trace-evidence.schema.json`, and
+`../docs/ui/ux-trace-scenarios.manifest.json`. The harness path measures from
+agent-control-bus action dispatch to visual completion, geometry and scroll
+stability, hitches, resources, fixture profile, and baseline comparison.
+Computer Use may support final witness evidence, but it is not the primary
+measurement dependency for P0 macOS UI performance closure.
+
 If the trace does not contain enough evidence to separate UI rendering,
 state publication, IPC/daemon latency, backend latency, disk IO and
 payload size, add instrumentation first and capture again. Do not fill

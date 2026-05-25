@@ -1121,6 +1121,48 @@
       "canonicalName": "adr:adr-number-reservation-governance"
     },
     {
+      "id": "adr-docs-adr-0040-macos-ux-trace-harness",
+      "kind": "adr",
+      "steward": "clawix",
+      "canonicalSource": "docs/adr/0040-macos-ux-trace-harness.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0040: macOS UX trace harness",
+        "0040-macos-ux-trace-harness",
+        "ADR 0040",
+        "adr:macos-ux-trace-harness",
+        "macOS UX trace harness",
+        "action to visual completion",
+        "agent control bus performance evidence"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0040: macOS UX trace harness",
+          "expectPath": "docs/adr/0040-macos-ux-trace-harness.md"
+        },
+        {
+          "query": "adr:macos-ux-trace-harness",
+          "expectPath": "docs/adr/0040-macos-ux-trace-harness.md"
+        },
+        {
+          "query": "action to visual completion",
+          "expectPath": "docs/ui/ux-trace-harness.registry.json"
+        }
+      ],
+      "guard": "scripts/ui_ux_trace_harness_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-26",
+      "canonicalName": "adr:macos-ux-trace-harness"
+    },
+    {
       "id": "clawix-surface-route-graph",
       "kind": "surface-route",
       "steward": "clawix",
@@ -3829,6 +3871,31 @@
         }
       ],
       "guard": "scripts/zero_accidental_work_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-ui-ux-trace-harness-check",
+      "kind": "test-harness",
+      "steward": "clawix",
+      "canonicalSource": "scripts/ui_ux_trace_harness_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ui_ux_trace_harness_check",
+        "Ui Ux Trace Harness Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "ui_ux_trace_harness_check",
+          "expectPath": "scripts/ui_ux_trace_harness_check.mjs"
+        }
+      ],
+      "guard": "scripts/ui_ux_trace_harness_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },

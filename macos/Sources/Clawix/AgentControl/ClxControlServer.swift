@@ -80,10 +80,8 @@ final class ClxControlServer {
             return
         }
         let verb = request.path.split(separator: "/").last.map(String.init) ?? ""
-        DispatchQueue.main.async {
-            let result = MainActor.assumeIsolated {
-                ClxControlHandlers.handle(verb: verb, args: body)
-            }
+        Task { @MainActor in
+            let result = await ClxControlHandlers.handle(verb: verb, args: body)
             self.respond(connection, status: result.status, json: result.json)
         }
     }

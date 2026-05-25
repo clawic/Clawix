@@ -99,6 +99,16 @@ the public repo.
   registry.
   Private performance evidence must include hash-backed `measurementSamples`
   for every required metric before a budget can be enforced.
+- `ux-trace-harness.registry.json`: macOS P0/P1/P2 UX trace contract for
+  action-to-visual-completion measurement across launch, sidebar, dense chat,
+  transcript scroll, streaming, composer, terminal-under-load, and idle
+  stability.
+- `ux-trace-evidence.schema.json`: public-safe evidence shape for per-run
+  action, visual condition, geometry, scroll, hitch, resource, fixture, and
+  baseline-correlation data.
+- `ux-trace-scenarios.manifest.json`: required macOS scenario manifests for
+  control-bus-driven UX trace runs. Computer Use is witness-only; primary
+  measurement is in-process agent control.
 - `pattern-performance.manifest.json`: critical-flow ownership mapping from
   performance budgets back to registry patterns.
 - `private-baselines.manifest.json`: public contract for private visual,
@@ -198,6 +208,10 @@ the public repo.
 28. Keep performance budget contracts current with
    `scripts/ui_performance_budget_check.mjs`; budget flow references must match
    private baseline references and stay scoped to critical flows.
+28a. Keep macOS UX trace harness contracts current with
+   `scripts/ui_ux_trace_harness_check.mjs`; P0 UI performance work must preserve
+   traceable surfaces, KPI references, scenario coverage, evidence correlation,
+   private/public boundaries, and the rule that Computer Use is witness-only.
 29. Keep pattern performance ownership current with
    `scripts/ui_pattern_performance_check.mjs`; every critical flow must map to
    registry patterns that declare the same performance contract.

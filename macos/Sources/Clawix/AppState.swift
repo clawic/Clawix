@@ -65,6 +65,7 @@ final class AppState: ObservableObject {
             clearUnreadIfChatRoute()
             if case let .chat(id) = currentRoute {
                 scheduleRouteChatRuntimeDemand(chatId: id)
+                hydrateHistoryIfNeeded(chatId: id)
             }
             persistLaunchRoute()
             // Scope only outlives the search popup itself; once the user

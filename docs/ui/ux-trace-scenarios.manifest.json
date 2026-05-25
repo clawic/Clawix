@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "program": "macos-ux-trace-harness",
+  "status": "contract-defined-pending-runner",
+  "platform": "macos",
+  "runnerContract": {
+    "primaryMeasurementSurface": "agent-control-bus",
+    "computerUseAllowedAsWitnessOnly": true,
+    "requiresIsolatedAgentInstance": true,
+    "requiresPerRunEvidenceDirectory": true,
+    "requiresPerInstanceTraceIsolation": true,
+    "forbidsRealPrompts": true,
+    "forbidsPaidServices": true,
+    "forbidsMainDatabaseTraceWrites": true
+  },
+  "requiredControlBusCapabilities": [
+    "snapshot",
+    "state-with-frame",
+    "scroll-state",
+    "wait-visible",
+    "wait-gone",
+    "wait-enabled",
+    "wait-text",
+    "wait-count",
+    "wait-route",
+    "wait-frame-stable",
+    "wait-scroll-stable",
+    "wait-bottom-anchored",
+    "wait-chat-final-window",
+    "wait-stream-delta",
+    "wait-idle",
+    "measure-action",
+    "flow"
+  ],
+  "scenarios": [
+    {
+      "id": "startup-to-usable",
+      "priority": "P0",
+      "fixtureProfiles": ["smoke", "medium", "dense-sidebar"],
+      "kpiRefs": [
+        "p0.launch.process_to_first_window_visible_ms",
+        "p0.launch.process_to_sidebar_ready_ms",
+        "p0.launch.process_to_initial_chat_ready_ms",
+        "p0.launch.first_usable_interaction_ms",
+        "p0.launch.hitches_until_usable_count",
+        "p0.launch.memory_after_usable_mb",
+        "p0.launch.no_crash_no_hang"
+      ],
+      "steps": [
+        { "id": "launch-cold", "action": "launch", "wait": "wait-visible", "target": "app.shell.firstUsableWindow" },
+        { "id": "wait-sidebar-ready", "action": "observe", "wait": "wait-visible", "target": "sidebar.container" },
+        { "id": "wait-initial-chat-ready", "action": "observe", "wait": "wait-visible", "target": "chat.route.container" },
+        { "id": "verify-no-blocking-overlay", "action": "observe", "wait": "wait-gone", "target": "app.blockingOverlay" },
+        { "id": "measure-first-interaction", "action": "measure-action", "wait": "wait-enabled", "target": "sidebar.conversationList" },
+        { "id": "sample-launch-resources", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow" }
+      ]
+    },
+    {
+      "id": "dense-sidebar-operation",
+      "priority": "P0",
+      "fixtureProfiles": ["dense-sidebar", "worst-case"],
+      "kpiRefs": [
+        "p0.sidebar.first_paint_ready_ms",
+        "p0.sidebar.scroll_frame_p95_ms",
+        "p0.sidebar.scroll_hitch_count",
+        "p0.sidebar.hover_to_highlight_ms",
+        "p0.sidebar.click_to_selection_visible_ms",
+        "p0.sidebar.click_to_chat_route_started_ms",
+        "p0.sidebar.metadata_update_invalidated_rows_count",
+        "p0.sidebar.no_full_list_rebuild_on_single_row_update",
+        "p0.sidebar.selected_row_stability_px"
+      ],
+      "steps": [
+        { "id": "wait-list", "action": "observe", "wait": "wait-visible", "target": "sidebar.conversationList" },
+        { "id": "scroll-down", "action": "scroll", "wait": "wait-scroll-stable", "target": "sidebar.conversationList" },
+        { "id": "scroll-up", "action": "scroll", "wait": "wait-scroll-stable", "target": "sidebar.conversationList" },
+        { "id": "hover-row", "action": "hover", "wait": "wait-frame-stable", "target": "sidebar.hoverTarget" },
+        { "id": "click-all-chats", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.allChats.entry" },
+        { "id": "click-pinned", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.pinned.entry" },
+        { "id": "click-projects", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.projects.entry" },
+        { "id": "click-conversation-row", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.selectedRow" },
+        { "id": "single-row-update", "action": "fixture-metadata-update", "wait": "wait-frame-stable", "target": "sidebar.selectedRow" }
+      ]
+    },
+    {
+      "id": "open-heavy-chat-latest-window",
+      "priority": "P0",
+      "fixtureProfiles": ["dense-chat", "real-equivalent-private"],
+      "kpiRefs": [
+        "p0.chat.open_click_to_route_selected_ms",
+        "p0.chat.open_click_to_transcript_visible_ms",
+        "p0.chat.open_click_to_final_visible_window_ms",
+        "p0.chat.latest_message_visible_ms",
+        "p0.chat.visible_latest_window_count",
+        "p0.chat.visible_window_no_row_by_row_buildup",
+        "p0.chat.open_hitch_count",
+        "p0.chat.open_frame_p95_ms",
+        "p0.chat.open_memory_delta_mb",
+        "p0.chat.open_database_query_count",
+        "p0.chat.open_bridge_payload_bytes"
+      ],
+      "steps": [
+        { "id": "click-heavy-chat", "action": "measure-action", "wait": "wait-route", "target": "sidebar.conversation.row" },
+        { "id": "wait-chat-container", "action": "observe", "wait": "wait-visible", "target": "chat.route.container" },
+        { "id": "wait-transcript", "action": "observe", "wait": "wait-visible", "target": "chat.transcript.scroll" },
+        { "id": "wait-final-window", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest" },
+        { "id": "verify-latest-message", "action": "observe", "wait": "wait-visible", "target": "chat.message.assistant" },
+        { "id": "verify-bottom-anchor", "action": "observe", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll" },
+        { "id": "verify-coherent-paint", "action": "analyze-events", "wait": "wait-frame-stable", "target": "chat.visibleWindow.latest" }
+      ]
+    },
+    {
+      "id": "old-history-scroll-anchor",
+      "priority": "P0",
+      "fixtureProfiles": ["dense-chat", "worst-case"],
+      "kpiRefs": [
+        "p0.chat.scroll_frame_p95_ms",
+        "p0.chat.scroll_hitch_count",
+        "p0.chat.scroll_to_bottom_ms",
+        "p0.chat.bottom_anchor_stability_px",
+        "p0.chat.old_page_load_request_to_visible_ms",
+        "p0.chat.old_page_insert_anchor_delta_px",
+        "p0.chat.old_page_insert_hitch_count",
+        "p0.chat.no_scroll_jump_during_prepend",
+        "p0.chat.no_lost_latest_message_after_scroll",
+        "p0.chat.scrollbar_position_consistency_px"
+      ],
+      "steps": [
+        { "id": "open-heavy-chat", "action": "include-scenario", "wait": "wait-chat-final-window", "target": "open-heavy-chat-latest-window" },
+        { "id": "record-anchor", "action": "snapshot", "wait": "wait-frame-stable", "target": "chat.message.row" },
+        { "id": "load-old-page-1", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll" },
+        { "id": "measure-anchor-1", "action": "measure-anchor-delta", "wait": "wait-frame-stable", "target": "chat.message.row" },
+        { "id": "load-old-page-2", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll" },
+        { "id": "measure-anchor-2", "action": "measure-anchor-delta", "wait": "wait-frame-stable", "target": "chat.message.row" },
+        { "id": "load-old-page-3", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll" },
+        { "id": "measure-anchor-3", "action": "measure-anchor-delta", "wait": "wait-frame-stable", "target": "chat.message.row" },
+        { "id": "scroll-bottom", "action": "scroll-to-bottom", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll" },
+        { "id": "verify-latest-returned", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest" }
+      ]
+    },
+    {
+      "id": "live-streaming-under-load",
+      "priority": "P0",
+      "fixtureProfiles": ["streaming-heavy", "worst-case"],
+      "kpiRefs": [
+        "p0.stream.user_message_visible_ms",
+        "p0.stream.assistant_placeholder_visible_ms",
+        "p0.stream.first_delta_received_to_visible_ms",
+        "p0.stream.delta_batch_to_visible_p95_ms",
+        "p0.stream.completion_to_final_visible_ms",
+        "p0.stream.unrelated_invalidations_count",
+        "p0.stream.scroll_bottom_follow_stability_px",
+        "p0.stream.no_freeze_under_many_active_runs"
+      ],
+      "steps": [
+        { "id": "start-mock-stream", "action": "mock-stream", "wait": "wait-visible", "target": "chat.streaming.placeholder" },
+        { "id": "wait-first-delta", "action": "observe", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget" },
+        { "id": "measure-delta-batches", "action": "measure-action", "wait": "wait-frame-stable", "target": "chat.streaming.deltaTarget" },
+        { "id": "verify-bottom-follow", "action": "observe", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll" },
+        { "id": "verify-no-forced-jump", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll" },
+        { "id": "complete-stream", "action": "mock-stream-complete", "wait": "wait-visible", "target": "chat.message.assistant" }
+      ]
+    },
+    {
+      "id": "composer-and-send",
+      "priority": "P0",
+      "fixtureProfiles": ["smoke", "streaming-heavy"],
+      "kpiRefs": [
+        "p0.composer.focus_to_caret_visible_ms",
+        "p0.composer.keystroke_to_text_visible_ms",
+        "p0.composer.send_click_to_user_message_visible_ms",
+        "p0.composer.send_click_to_input_cleared_ms",
+        "p0.composer.no_typing_hitches"
+      ],
+      "steps": [
+        { "id": "focus-composer", "action": "measure-action", "wait": "wait-enabled", "target": "composer.input" },
+        { "id": "type-text", "action": "type", "wait": "wait-text", "target": "composer.input" },
+        { "id": "send-mock", "action": "measure-action", "wait": "wait-visible", "target": "chat.message.user" },
+        { "id": "verify-input-cleared", "action": "observe", "wait": "wait-text", "target": "composer.input" },
+        { "id": "verify-placeholder", "action": "observe", "wait": "wait-visible", "target": "chat.streaming.placeholder" }
+      ]
+    },
+    {
+      "id": "terminal-under-conversation-load",
+      "priority": "P0",
+      "fixtureProfiles": ["terminal-under-load"],
+      "kpiRefs": [
+        "p0.terminal.open_under_load_ms",
+        "p0.terminal.switch_back_to_chat_ms",
+        "p0.terminal.output_scroll_frame_p95_ms",
+        "p0.terminal.no_main_chat_freeze"
+      ],
+      "steps": [
+        { "id": "open-terminal", "action": "measure-action", "wait": "wait-visible", "target": "terminal.panel" },
+        { "id": "switch-back-chat", "action": "measure-action", "wait": "wait-visible", "target": "chat.route.container" },
+        { "id": "scroll-terminal", "action": "scroll", "wait": "wait-scroll-stable", "target": "terminal.panel" },
+        { "id": "verify-chat-responsive", "action": "measure-action", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest" }
+      ]
+    },
+    {
+      "id": "idle-stability",
+      "priority": "P0",
+      "fixtureProfiles": ["medium", "dense-chat", "worst-case"],
+      "kpiRefs": [
+        "p0.idle.cpu_percent",
+        "p0.idle.memory_slope_mb_per_min",
+        "p0.idle.timer_wakeups",
+        "p0.idle.no_hang",
+        "p0.idle.no_unbounded_log_growth"
+      ],
+      "steps": [
+        { "id": "wait-initial-idle", "action": "observe", "wait": "wait-idle", "target": "app.shell.firstUsableWindow" },
+        { "id": "sample-idle-resources", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow" },
+        { "id": "verify-bounded-trace-growth", "action": "analyze-events", "wait": "wait-idle", "target": "app.shell.firstUsableWindow" }
+      ]
+    }
+  ]
+}
