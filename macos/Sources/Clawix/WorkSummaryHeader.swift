@@ -11,6 +11,8 @@ import SwiftUI
 struct WorkSummaryHeader: View {
     let summary: WorkSummary
     @Binding var expanded: Bool
+    var controlId: String? = nil
+    var onToggle: ((_ willExpand: Bool) -> Void)? = nil
     var onExpand: () -> Void = {}
     @State private var tickDate = Date()
     @State private var secondsLease: VisualClock.Lease?
@@ -26,17 +28,30 @@ struct WorkSummaryHeader: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    @ViewBuilder
     private var disclosure: some View {
-        Button {
-            let willExpand = !expanded
-            withAnimation(.easeOut(duration: 0.14)) { expanded.toggle() }
-            if willExpand { onExpand() }
-        } label: {
-            if summary.isActive {
-                label(asOf: tickDate)
-                    .onReceive(VisualClock.shared.secondsPublisher) { tickDate = $0 }
-            } else {
-                label(asOf: summary.endedAt ?? Date())
+        if let controlId {
+            button
+                .clxControl(
+                    controlId,
+                    role: "button",
+                    label: "Work summary",
+                    activate: toggleExpansion
+                )
+        } else {
+            button
+        }
+    }
+
+    private var button: some View {
+        Button(action: toggleExpansion) {
+            Group {
+                if summary.isActive {
+                    label(asOf: tickDate)
+                        .onReceive(VisualClock.shared.secondsPublisher) { tickDate = $0 }
+                } else {
+                    label(asOf: summary.endedAt ?? Date())
+                }
             }
         }
         .buttonStyle(.plain)
@@ -46,6 +61,13 @@ struct WorkSummaryHeader: View {
         .onChange(of: summary.isActive) { _, _ in
             updateSecondsLease()
         }
+    }
+
+    private func toggleExpansion() {
+        let willExpand = !expanded
+        onToggle?(willExpand)
+        withAnimation(.easeOut(duration: 0.14)) { expanded.toggle() }
+        if willExpand { onExpand() }
     }
 
     private func label(asOf date: Date) -> some View {

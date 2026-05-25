@@ -257,7 +257,11 @@ struct MessageRow: View, Equatable {
                     } else if !message.timeline.isEmpty || !summary.items.isEmpty {
                         WorkSummaryHeader(
                             summary: summary,
-                            expanded: $timelineExpanded
+                            expanded: $timelineExpanded,
+                            controlId: "chat.workSummary.\(message.id.uuidString)",
+                            onToggle: { willExpand in
+                                markWorkSummaryToggle(willExpand: willExpand)
+                            }
                         ) {
                             onTimelineExpanded?(message.id)
                         }
@@ -272,6 +276,7 @@ struct MessageRow: View, Equatable {
                 let showTimeline = isStreaming || timelineExpanded
                 if showTimeline {
                     let timelineEntries = visibleTimelineEntries(isStreaming: isStreaming)
+                    let _ = markWorkSummaryTimelineVisible(entries: timelineEntries, isStreaming: isStreaming)
                     let _ = PerfSignpost.uiChat.event("timeline.entries.visible", timelineEntries.count)
                     if !isStreaming, hiddenTimelineEntryCount > 0 {
                         Color.clear
@@ -405,17 +410,56 @@ struct MessageRow: View, Equatable {
         max(0, message.timeline.count - visibleTimelineEntryLimit)
     }
 
-    private var finalAssistantLinkPreviewURL: URL? {
+    private func markWorkSummaryToggle(willExpand: Bool) {
         RenderProbe.mark(
-            "LinkPreviewURLExtract",
+            "WorkSummaryToggleRequested",
             fields: [
+                "chat": chatId.uuidString,
+                "hidden": "\(hiddenTimelineEntryCount)",
                 "message": message.id.uuidString,
-                "bytes": "\(message.content.utf8.count)"
+                "timeline": "\(message.timeline.count)",
+                "visibleLimit": "\(visibleTimelineEntryLimit)",
+                "willExpand": "\(willExpand)"
             ]
         )
-        return AssistantMarkdown
-            .extractLinkURLs(in: message.content)
-            .last(where: { !$0.isFileURL })
+    }
+
+    private func markWorkSummaryTimelineVisible(entries: [AssistantTimelineEntry], isStreaming: Bool) {
+        guard !isStreaming else { return }
+        var messageEntries = 0
+        var reasoningEntries = 0
+        var toolEntries = 0
+        var toolItems = 0
+        for entry in entries {
+            switch entry {
+            case .message:
+                messageEntries += 1
+            case .reasoning:
+                reasoningEntries += 1
+            case .tools(_, let items, _):
+                toolEntries += 1
+                toolItems += items.count
+            }
+        }
+        RenderProbe.mark(
+            "WorkSummaryTimelineVisible",
+            fields: [
+                "chat": chatId.uuidString,
+                "hidden": "\(hiddenTimelineEntryCount)",
+                "message": message.id.uuidString,
+                "messageEntries": "\(messageEntries)",
+                "reasoningEntries": "\(reasoningEntries)",
+                "timeline": "\(message.timeline.count)",
+                "toolEntries": "\(toolEntries)",
+                "toolItems": "\(toolItems)",
+                "visible": "\(entries.count)",
+                "visibleLimit": "\(visibleTimelineEntryLimit)"
+            ]
+        )
+    }
+
+    private var finalAssistantLinkPreviewURL: URL? {
+        LinkPreviewURLCache.shared.url(for: message)
     }
 
     private func tickStreamingRowCategory() {
@@ -819,6 +863,63 @@ final class ChangedFilePathCache {
             timelineCount = message.timeline.count
             lastTimelineId = message.timeline.last?.id
             workItemCount = message.workSummary?.items.count ?? 0
+        }
+    }
+}
+
+final class LinkPreviewURLCache {
+    static let shared = LinkPreviewURLCache()
+
+    private var values: [Key: Value] = [:]
+    private var order: [Key] = []
+    private let limit = 256
+
+    private init() {}
+
+    func url(for message: ChatMessage) -> URL? {
+        let key = Key(message: message)
+        if let cached = values[key] {
+            return cached.url
+        }
+
+        RenderProbe.mark(
+            "LinkPreviewURLExtract",
+            fields: [
+                "message": message.id.uuidString,
+                "bytes": "\(message.content.utf8.count)"
+            ]
+        )
+
+        let url = AssistantMarkdown
+            .extractLinkURLs(in: message.content)
+            .last(where: { !$0.isFileURL })
+        store(Value(url: url), for: key)
+        return url
+    }
+
+    private func store(_ value: Value, for key: Key) {
+        values[key] = value
+        order.append(key)
+        if order.count > limit {
+            let removeCount = order.count - limit
+            for old in order.prefix(removeCount) {
+                values.removeValue(forKey: old)
+            }
+            order.removeFirst(removeCount)
+        }
+    }
+
+    private struct Value {
+        let url: URL?
+    }
+
+    private struct Key: Hashable {
+        let id: UUID
+        let contentHash: Int
+
+        init(message: ChatMessage) {
+            id = message.id
+            contentHash = message.content.hashValue
         }
     }
 }
