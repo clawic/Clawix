@@ -42,6 +42,19 @@ final class AssistantMarkdownRenderModel: ObservableObject {
         latestRequest = request
         parseTask?.cancel()
 
+        if let cached = MarkdownParseCache.cachedResult(
+            request.text,
+            renderKey: request.renderKey,
+            phase: request.phase
+        ) {
+            parseTask = nil
+            result = cached
+            fulfilledRequest = request
+            markRenderReady(cached, request: request)
+            logRenderTimingIfNeeded(cached, request: request)
+            return true
+        }
+
         parseTask = Task { [weak self, parser] in
             let parsed = await parser(request.text, request.renderKey, request.phase)
             guard !Task.isCancelled else { return }

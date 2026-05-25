@@ -355,6 +355,28 @@ enum MarkdownParseCache {
         _ = parse(text)
     }
 
+    static func cachedResult(
+        _ text: String,
+        renderKey: AssistantMarkdownRenderKey? = nil,
+        phase: MarkdownParseCachePhase = .settled
+    ) -> Result? {
+        guard phase == .settled,
+              text.utf8.count <= maxRenderableSourceBytes,
+              let cached = cache.get(for: text)
+        else { return nil }
+        PerfSignpost.renderMarkdown.event("parse.cache_hit.bytes", text.utf8.count)
+        RenderProbe.tick("MarkdownParse.cache_hit")
+        let hit = cached.markingCacheHit()
+        return Result(
+            document: hit,
+            cacheHit: true,
+            parseMs: 0,
+            annotateMs: 0,
+            reusedBlockCount: hit.reusedBlockCount,
+            reparsedCharacterCount: 0
+        )
+    }
+
     static func parse(
         _ text: String,
         renderKey: AssistantMarkdownRenderKey? = nil,

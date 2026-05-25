@@ -116,6 +116,30 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
         XCTAssertEqual(keyed.blocks.map(\.id), warmed.blocks.map(\.id))
     }
 
+    @MainActor
+    func testRenderModelAdoptsPrewarmedSettledCacheSynchronously() {
+        let text = """
+        # Immediate cache \(UUID().uuidString)
+
+        Cached markdown should already be renderable.
+
+        ```swift
+        let ready = true
+        ```
+        """
+        _ = MarkdownParseCache.parse(text)
+        let model = AssistantMarkdownRenderModel()
+        let request = AssistantMarkdownRenderRequest(
+            text: text,
+            renderKey: .custom(UUID().uuidString),
+            phase: .settled
+        )
+
+        XCTAssertTrue(model.request(request))
+        XCTAssertEqual(model.result?.document.text, text)
+        XCTAssertEqual(model.result?.cacheHit, true)
+    }
+
     func testAppendOnlyTextReusesStableBlockIds() {
         let key = AssistantMarkdownRenderKey.custom(UUID().uuidString)
         let first = "First paragraph.\n\nSecond paragraph."
