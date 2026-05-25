@@ -290,6 +290,7 @@ struct LinkPreviewCard: View {
     private var exposeAccessibility: Bool { NSWorkspace.shared.isVoiceOverEnabled }
 
     var body: some View {
+        let _ = RenderProbe.tick("LinkPreviewCard")
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -342,7 +343,15 @@ struct LinkPreviewCard: View {
         .contentShape(Rectangle())
         .onHover { hovered = $0 }
         .onTapGesture { appState.openLinkInBrowser(url) }
-        .onAppear { appState.linkMetadata.ensureTitle(for: url) }
+        .onAppear {
+            RenderProbe.markPassive(
+                "LinkPreviewCardAppeared",
+                fields: [
+                    "hasHost": "\(url.host?.isEmpty == false)"
+                ]
+            )
+            appState.linkMetadata.ensureTitle(for: url)
+        }
         .accessibilityElement(children: .combine)
         .accessibilityHidden(!exposeAccessibility)
         .accessibilityLabel(Text(verbatim: "\(title), Website"))

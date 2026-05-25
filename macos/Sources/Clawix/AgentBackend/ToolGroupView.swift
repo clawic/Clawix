@@ -15,6 +15,7 @@ struct ToolGroupView: View {
     }
 
     var body: some View {
+        let _ = markBodyEvaluation()
         VStack(alignment: .leading, spacing: 14) {
             // Chronological order: completed items happened first (they
             // had to finish before the next one could start in Codex's
@@ -38,6 +39,27 @@ struct ToolGroupView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: accessibilityLabel))
+        .onAppear {
+            markAppeared()
+        }
+    }
+
+    private func markBodyEvaluation() {
+        RenderProbe.tick("ToolGroupView")
+        RenderProbe.count("ToolGroupVisibleItems", by: items.count, recordsActivity: false)
+        RenderProbe.count("ToolGroupVisibleAggregateRows", by: snapshot.aggregateRows.count, recordsActivity: false)
+        RenderProbe.count("ToolGroupVisibleRunningRows", by: snapshot.runningCommands.count, recordsActivity: false)
+    }
+
+    private func markAppeared() {
+        RenderProbe.markPassive(
+            "ToolGroupAppeared",
+            fields: [
+                "aggregateRows": "\(snapshot.aggregateRows.count)",
+                "items": "\(items.count)",
+                "runningRows": "\(snapshot.runningCommands.count)"
+            ]
+        )
     }
 
     // MARK: - Live rows

@@ -33,6 +33,7 @@ struct ChangedFileCard: View {
     }
 
     var body: some View {
+        let _ = RenderProbe.tick("ChangedFileCard")
         HStack(spacing: 12) {
             Button {
                 appState.openFileInSidebar(path)
@@ -83,6 +84,14 @@ struct ChangedFileCard: View {
             appState.openFileInSidebar(path)
         }
         .onHover { hovered = $0 }
+        .onAppear {
+            RenderProbe.markPassive(
+                "ChangedFileCardAppeared",
+                fields: [
+                    "hasExtension": "\(fileURL.pathExtension.isEmpty == false)"
+                ]
+            )
+        }
         // Smoother, slightly longer easing so the highlight breathes
         // instead of snapping in/out of hover.
         .animation(.easeInOut(duration: 0.22), value: hovered)

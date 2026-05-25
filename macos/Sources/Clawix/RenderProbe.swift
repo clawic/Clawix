@@ -58,6 +58,17 @@ enum RenderProbe {
         }
     }
 
+    static func count(_ name: String, by amount: Int, recordsActivity: Bool = true) {
+        guard isEnabled, amount != 0 else { return }
+        queue.async {
+            if recordsActivity {
+                recordActivityIfNeeded(name)
+            }
+            counts[name, default: 0] += amount
+            startIfNeeded()
+        }
+    }
+
     @discardableResult
     @inline(__always)
     static func time<T>(_ name: String, _ block: () -> T) -> T {
