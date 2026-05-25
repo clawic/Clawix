@@ -1338,6 +1338,7 @@ struct ClawJSRuntimeLensClient {
             let nativeIdentifier: NativeIdentifier?
             let gatewayReceipt: GatewayReceipt?
             let titleGatewayReceipt: GatewayReceipt?
+            let roundTripVerification: RoundTripVerification?
         }
 
         struct NativeIdentifier: Decodable, Equatable {
@@ -1350,6 +1351,25 @@ struct ClawJSRuntimeLensClient {
             let method: String?
             let requestId: String?
             let endpoint: String?
+        }
+
+        struct RoundTripVerification: Decodable, Equatable {
+            let status: String?
+            let id: String?
+            let title: String?
+            let matchedBy: String?
+            let writesRuntime: Bool?
+            let nativeIdentifier: NativeIdentifier?
+            let provenance: Provenance?
+            let checked: [String]?
+            let safeDefault: String?
+
+            struct Provenance: Decodable, Equatable {
+                let source: String?
+                let runtimeId: String?
+                let path: String?
+                let table: String?
+            }
         }
     }
 

@@ -416,4 +416,83 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(result.wouldWriteRuntime, true)
         XCTAssertEqual(result.officialMethod, "session.create")
     }
+
+    func testRuntimeLensClientDecodesHermesCreateRoundTripVerification() async throws {
+        let client = ClawJSRuntimeLensClient(runner: .init { _ in
+            .init(
+                data: """
+                {
+                  "data": {
+                    "runtimeId": "hermes",
+                    "domain": "sessions",
+                    "action": "create",
+                    "status": "ok",
+                    "authority": "runtime",
+                    "writesRuntime": true,
+                    "wouldWriteRuntime": true,
+                    "writesLocalOverlay": false,
+                    "officialProtocol": "tui_gateway_json_rpc",
+                    "officialMethod": "session.create",
+                    "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+                    "result": {
+                      "id": "created-tui-session",
+                      "titleRequested": "Round Trip Fixture Session",
+                      "titleApplied": true,
+                      "nativeIdentifier": {"name": "session_id"},
+                      "gatewayReceipt": {
+                        "protocol": "tui_gateway_json_rpc",
+                        "transport": "loopback_http_json_rpc_fixture",
+                        "method": "session.create",
+                        "requestId": "fixture-create",
+                        "endpoint": "http://127.0.0.1:18789"
+                      },
+                      "titleGatewayReceipt": {
+                        "protocol": "tui_gateway_json_rpc",
+                        "transport": "loopback_http_json_rpc_fixture",
+                        "method": "session.title",
+                        "requestId": "fixture-title",
+                        "endpoint": "http://127.0.0.1:18789"
+                      },
+                      "roundTripVerification": {
+                        "status": "verified",
+                        "id": "created-tui-session",
+                        "title": "Round Trip Fixture Session",
+                        "matchedBy": "sessionId",
+                        "writesRuntime": false,
+                        "nativeIdentifier": {"name": "sessionId"},
+                        "provenance": {
+                          "source": "runtime-session-sqlite",
+                          "runtimeId": "hermes",
+                          "path": "/Users/tester/.hermes/state.db",
+                          "table": "sessions"
+                        },
+                        "checked": ["sessionId"]
+                      }
+                    }
+                  }
+                }
+                """.data(using: .utf8)!,
+                exitCode: 0
+            )
+        })
+
+        let result = try await client.runSessionAction(
+            runtime: .hermes,
+            action: "create",
+            title: "Round Trip Fixture Session",
+            gatewayURL: "http://127.0.0.1:18789",
+            confirmRuntimeWrite: true
+        )
+
+        XCTAssertEqual(result.status, "ok")
+        XCTAssertEqual(result.result?.id, "created-tui-session")
+        XCTAssertEqual(result.result?.roundTripVerification?.status, "verified")
+        XCTAssertEqual(result.result?.roundTripVerification?.id, "created-tui-session")
+        XCTAssertEqual(result.result?.roundTripVerification?.matchedBy, "sessionId")
+        XCTAssertEqual(result.result?.roundTripVerification?.writesRuntime, false)
+        XCTAssertEqual(result.result?.roundTripVerification?.nativeIdentifier?.name, "sessionId")
+        XCTAssertEqual(result.result?.roundTripVerification?.provenance?.source, "runtime-session-sqlite")
+        XCTAssertEqual(result.result?.roundTripVerification?.provenance?.table, "sessions")
+        XCTAssertEqual(result.result?.roundTripVerification?.checked, ["sessionId"])
+    }
 }

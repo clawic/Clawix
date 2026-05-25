@@ -38,6 +38,8 @@ struct ClawJSRuntimeLensSection: View {
                     runtimeLensPresentationSection(section)
                 }
 
+                runtimeLensDetailedInventory()
+
                 HStack {
                     Button("Refresh") {
                         Task { await refreshRuntimeLens(runtimeLensSelection) }
@@ -164,7 +166,8 @@ struct ClawJSRuntimeLensSection: View {
             result.action,
             result.status,
             result.officialMethod,
-            result.result?.id
+            result.result?.id,
+            result.result?.roundTripVerification?.status.map { "round-trip \($0)" }
         ]
         .compactMap { $0 }
         .joined(separator: " ")

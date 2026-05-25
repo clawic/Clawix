@@ -117,6 +117,17 @@ extension ClawJSRuntimeLensSection {
         .accessibilityLabel(Text(section.accessibilityLabel))
     }
 
+    @ViewBuilder
+    func runtimeLensDetailedInventory() -> some View {
+        if let snapshot = runtimeLensSnapshots[runtimeLensSelection] {
+            let inventory = ClawJSRuntimeLensInventoryPresentation.make(snapshot: snapshot)
+            if inventory.hasInventory {
+                Divider().background(Color.overlay(0.07))
+                runtimeLensInventory(snapshot, presentation: inventory)
+            }
+        }
+    }
+
     func runtimeLensPresentationRow(
         _ presentationRow: ClawJSRuntimeLensSettingsPresentation.Row,
         sectionId: String? = nil

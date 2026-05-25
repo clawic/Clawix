@@ -744,6 +744,8 @@ for (const snippet of [
   "supportContractSection(contracts)",
   "ClawJSRuntimeLensSupportContractPresentation.make(snapshot: snapshot)",
   "inventorySection(inventory)",
+  "runtimeLensDetailedInventory()",
+  "runtimeLensInventory(snapshot, presentation: inventory)",
   "ClawJSRuntimeLensInventoryPresentation.make(snapshot: snapshot)",
   "ClawJSRuntimeLensEvidenceRequirementPresentation.make",
   "ClawJSRuntimeLensEvidenceReentryPresentation.make",
