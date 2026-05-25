@@ -495,4 +495,74 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(result.result?.roundTripVerification?.provenance?.table, "sessions")
         XCTAssertEqual(result.result?.roundTripVerification?.checked, ["sessionId"])
     }
+
+    func testRuntimeLensClientDecodesHermesAbortRoundTripVerification() async throws {
+        let client = ClawJSRuntimeLensClient(runner: .init { _ in
+            .init(
+                data: """
+                {
+                  "data": {
+                    "runtimeId": "hermes",
+                    "domain": "sessions",
+                    "action": "abort",
+                    "status": "ok",
+                    "authority": "runtime",
+                    "writesRuntime": true,
+                    "wouldWriteRuntime": true,
+                    "writesLocalOverlay": false,
+                    "officialProtocol": "tui_gateway_json_rpc",
+                    "officialMethod": "session.interrupt",
+                    "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+                    "result": {
+                      "id": "abort-roundtrip-session",
+                      "nativeIdentifier": {"name": "session_id"},
+                      "gatewayReceipt": {
+                        "protocol": "tui_gateway_json_rpc",
+                        "transport": "loopback_http_json_rpc_fixture",
+                        "method": "session.interrupt",
+                        "requestId": "fixture-abort",
+                        "endpoint": "http://127.0.0.1:18789"
+                      },
+                      "roundTripVerification": {
+                        "status": "verified",
+                        "id": "abort-roundtrip-session",
+                        "matchedBy": "sessionId",
+                        "action": "abort",
+                        "writesRuntime": false,
+                        "endedAt": "2026-05-25T21:56:40.000Z",
+                        "endReason": "interrupted",
+                        "nativeIdentifier": {"name": "sessionId"},
+                        "provenance": {
+                          "source": "runtime-session-sqlite",
+                          "runtimeId": "hermes",
+                          "path": "/Users/tester/.hermes/state.db",
+                          "table": "sessions"
+                        },
+                        "checked": ["sqlite_sessions_control_state"]
+                      }
+                    }
+                  }
+                }
+                """.data(using: .utf8)!,
+                exitCode: 0
+            )
+        })
+
+        let result = try await client.runSessionAction(
+            runtime: .hermes,
+            action: "abort",
+            sessionId: "abort-roundtrip-session",
+            gatewayURL: "http://127.0.0.1:18789",
+            confirmRuntimeWrite: true
+        )
+
+        XCTAssertEqual(result.status, "ok")
+        XCTAssertEqual(result.result?.roundTripVerification?.status, "verified")
+        XCTAssertEqual(result.result?.roundTripVerification?.action, "abort")
+        XCTAssertEqual(result.result?.roundTripVerification?.endedAt, "2026-05-25T21:56:40.000Z")
+        XCTAssertEqual(result.result?.roundTripVerification?.endReason, "interrupted")
+        XCTAssertEqual(result.result?.roundTripVerification?.writesRuntime, false)
+        XCTAssertEqual(result.result?.roundTripVerification?.provenance?.table, "sessions")
+        XCTAssertEqual(result.result?.roundTripVerification?.checked, ["sqlite_sessions_control_state"])
+    }
 }

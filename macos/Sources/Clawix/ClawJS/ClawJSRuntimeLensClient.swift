@@ -1358,7 +1358,13 @@ struct ClawJSRuntimeLensClient {
             let id: String?
             let title: String?
             let matchedBy: String?
+            let action: String?
             let writesRuntime: Bool?
+            let endedAt: String?
+            let endReason: String?
+            let messageIndex: Int?
+            let messageRole: String?
+            let totalAvailableInStore: Int?
             let nativeIdentifier: NativeIdentifier?
             let provenance: Provenance?
             let checked: [String]?
