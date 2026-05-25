@@ -220,16 +220,26 @@ struct ChatTranscriptScrollerView: View {
                 return
             }
             lastLocalRevealAt = now
-            let anchorId = currentScrollAnchorMessageId()
-            let anchorFrameBefore = anchorId.flatMap { messageFrames[$0] }
+            guard let anchorId = currentScrollAnchorMessageId(),
+                  let anchorFrameBefore = messageFrames[anchorId] else {
+                RenderProbe.mark(
+                    "ChatOlderHistoryRevealAnchorUnavailable",
+                    fields: [
+                        "chat": chatId.uuidString,
+                        "frames": "\(messageFrames.count)",
+                        "visible": "\(visibleMessageStores.count)"
+                    ]
+                )
+                return
+            }
             bottomId = nil
             RenderProbe.mark(
                 "ChatOlderHistoryRevealStart",
                 fields: [
-                    "anchor": anchorId?.uuidString ?? "none",
+                    "anchor": anchorId.uuidString,
                     "bottomArmed": "false",
                     "chat": chatId.uuidString,
-                    "frameMinY": anchorFrameBefore.map { Self.format($0.minY) } ?? "none",
+                    "frameMinY": Self.format(anchorFrameBefore.minY),
                     "fromVisible": "\(visibleMessageLimit)",
                     "hiddenBefore": "\(hiddenLocalMessageCount)",
                     "last": visibleMessageStores.last?.id.uuidString ?? "none",
@@ -242,29 +252,29 @@ struct ChatTranscriptScrollerView: View {
             )
             let exhaustedLocalWindow = nextVisibleLimit >= transcript.messageIds.count
             visibleMessageLimit = nextVisibleLimit
-            if let anchorId {
-                DispatchQueue.main.async {
-                    RenderProbe.mark(
-                        "ChatOlderHistoryRevealAnchored",
-                        fields: [
-                            "anchor": anchorId.uuidString,
-                            "chat": chatId.uuidString,
-                            "last": visibleMessageStores.last?.id.uuidString ?? "none",
-                            "toVisible": "\(visibleMessageLimit)"
-                        ]
-                    )
+            DispatchQueue.main.async {
+                preserveScrollAnchor(anchorId: anchorId, before: anchorFrameBefore)
+                RenderProbe.mark(
+                    "ChatOlderHistoryRevealAnchored",
+                    fields: [
+                        "anchor": anchorId.uuidString,
+                        "chat": chatId.uuidString,
+                        "last": visibleMessageStores.last?.id.uuidString ?? "none",
+                        "toVisible": "\(visibleMessageLimit)"
+                    ]
+                )
+                recordAnchorShift(
+                    anchorId: anchorId,
+                    before: anchorFrameBefore,
+                    phase: "immediate"
+                )
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    preserveScrollAnchor(anchorId: anchorId, before: anchorFrameBefore)
                     recordAnchorShift(
                         anchorId: anchorId,
                         before: anchorFrameBefore,
-                        phase: "immediate"
+                        phase: "settled"
                     )
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        recordAnchorShift(
-                            anchorId: anchorId,
-                            before: anchorFrameBefore,
-                            phase: "settled"
-                        )
-                    }
                     if exhaustedLocalWindow {
                         revealAfterOlderPage = true
                         RenderProbe.mark(
@@ -309,7 +319,6 @@ struct ChatTranscriptScrollerView: View {
             return (store.id, frame.minY)
         }
         return candidates.min { abs($0.minY) < abs($1.minY) }?.id
-            ?? visibleMessageStores.first?.id
     }
 
     private func recordAnchorShift(anchorId: UUID, before: CGRect?, phase: String) {
@@ -351,6 +360,84 @@ struct ChatTranscriptScrollerView: View {
                 "status": "measured"
             ]
         )
+    }
+
+    private func preserveScrollAnchor(anchorId: UUID, before: CGRect) {
+        guard let after = messageFrames[anchorId] else {
+            RenderProbe.mark(
+                "ChatOlderHistoryScrollAnchorPreserved",
+                fields: [
+                    "anchor": anchorId.uuidString,
+                    "chat": chatId.uuidString,
+                    "status": "missing-after"
+                ]
+            )
+            return
+        }
+        let deltaY = after.minY - before.minY
+        guard abs(deltaY) > 0.5 else {
+            RenderProbe.mark(
+                "ChatOlderHistoryScrollAnchorPreserved",
+                fields: [
+                    "anchor": anchorId.uuidString,
+                    "chat": chatId.uuidString,
+                    "deltaY": Self.format(deltaY),
+                    "status": "stable"
+                ]
+            )
+            return
+        }
+        guard let scrollView = enclosingScrollView() else {
+            RenderProbe.mark(
+                "ChatOlderHistoryScrollAnchorPreserved",
+                fields: [
+                    "anchor": anchorId.uuidString,
+                    "chat": chatId.uuidString,
+                    "deltaY": Self.format(deltaY),
+                    "status": "missing-scroll-view"
+                ]
+            )
+            return
+        }
+        let clipView = scrollView.contentView
+        let beforeOrigin = clipView.bounds.origin
+        let maxY = max(0, (scrollView.documentView?.bounds.height ?? 0) - clipView.bounds.height)
+        var nextOrigin = beforeOrigin
+        nextOrigin.y = min(max(0, beforeOrigin.y + deltaY), maxY)
+        clipView.scroll(to: nextOrigin)
+        scrollView.reflectScrolledClipView(clipView)
+        scrollView.layoutSubtreeIfNeeded()
+        RenderProbe.mark(
+            "ChatOlderHistoryScrollAnchorPreserved",
+            fields: [
+                "adjustedBy": Self.format(nextOrigin.y - beforeOrigin.y),
+                "anchor": anchorId.uuidString,
+                "chat": chatId.uuidString,
+                "deltaY": Self.format(deltaY),
+                "status": "adjusted"
+            ]
+        )
+    }
+
+    private func enclosingScrollView() -> NSScrollView? {
+        NSApp.windows.lazy
+            .compactMap(\.contentView)
+            .compactMap { view -> NSScrollView? in
+                findScrollView(in: view)
+            }
+            .first { $0.identifier?.rawValue == "chat.transcript.scroll" }
+    }
+
+    private func findScrollView(in view: NSView) -> NSScrollView? {
+        if let scrollView = view as? NSScrollView {
+            return scrollView
+        }
+        for subview in view.subviews {
+            if let found = findScrollView(in: subview) {
+                return found
+            }
+        }
+        return nil
     }
 
     private static func format(_ value: CGFloat) -> String {
