@@ -404,6 +404,9 @@ struct MessageRow: View, Equatable {
             visibleTimelineEntryLimit = Self.initialTimelineEntryLimit
             lastTimelineRevealAt = .distantPast
         }
+        .clxControl("chat.message.row", role: "row", label: "Message row")
+        .clxControl(isUser ? "chat.message.user" : "chat.message.assistant", role: "text", label: isUser ? "User message" : "Assistant message")
+        .clxControl(message.streamingFinished ? "chat.message.final" : "chat.streaming.deltaTarget", role: "text", label: message.streamingFinished ? "Final message" : "Streaming message")
     }
 
     private var hiddenTimelineEntryCount: Int {

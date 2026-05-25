@@ -16,12 +16,30 @@ struct ClxControlDescriptor {
     let setValue: ((String) -> Void)?
 }
 
+struct ClxControlObservedViewState {
+    let id: String
+    let frame: CGRect
+    let visible: Bool
+}
+
 /// In-process registry of controls instrumented with `.clxControl`. Only ever
 /// populated in agent instances; inert in normal user builds.
 @MainActor
 final class ClxControlRegistry {
     static let shared = ClxControlRegistry()
+
+    private final class WeakObservedView {
+        weak var value: NSView?
+        let sequence: UInt64
+
+        init(_ value: NSView, sequence: UInt64) {
+            self.value = value
+            self.sequence = sequence
+        }
+    }
+
     private var controls: [String: [UUID: ClxControlDescriptor]] = [:]
+    private var observedViews: [String: [UUID: WeakObservedView]] = [:]
     private var nextSequence: UInt64 = 0
     private init() {}
 
@@ -45,6 +63,12 @@ final class ClxControlRegistry {
         )
     }
 
+    func upsertObservedView(id: String, token: UUID, view: NSView) {
+        guard ClxAgentInstance.isAgent else { return }
+        nextSequence += 1
+        observedViews[id, default: [:]][token] = WeakObservedView(view, sequence: nextSequence)
+    }
+
     func remove(id: String, token: UUID) {
         controls[id]?[token] = nil
         if controls[id]?.isEmpty == true {
@@ -60,6 +84,48 @@ final class ClxControlRegistry {
 
     func get(_ id: String) -> ClxControlDescriptor? {
         controls[id]?.values.max { $0.sequence < $1.sequence }
+    }
+
+    func removeObservedView(id: String, token: UUID) {
+        observedViews[id]?[token] = nil
+        if observedViews[id]?.isEmpty == true {
+            observedViews[id] = nil
+        }
+    }
+
+    func observedViewState(_ id: String) -> ClxControlObservedViewState? {
+        guard let entries = observedViews[id] else { return nil }
+        let live = entries.compactMap { token, entry -> (UUID, WeakObservedView)? in
+            entry.value == nil ? nil : (token, entry)
+        }
+        observedViews[id] = Dictionary(uniqueKeysWithValues: live)
+        guard let entry = live.map(\.1).max(by: { $0.sequence < $1.sequence }),
+              let view = entry.value,
+              let window = view.window
+        else { return nil }
+        view.layoutSubtreeIfNeeded()
+        let windowFrame = view.convert(view.bounds, to: nil)
+        let screenFrame = window.convertToScreen(windowFrame)
+        let visibleBounds = view.visibleRect.intersection(view.bounds)
+        let visible = screenFrame.width > 0
+            && screenFrame.height > 0
+            && !visibleBounds.isEmpty
+            && !visibleBounds.isNull
+            && screenFrame.intersects(window.frame)
+            && view.isEffectivelyVisible
+        return ClxControlObservedViewState(id: id, frame: screenFrame, visible: visible)
+    }
+}
+
+private extension NSView {
+    var isEffectivelyVisible: Bool {
+        if isHidden || alphaValue <= 0 { return false }
+        var parent = superview
+        while let view = parent {
+            if view.isHidden || view.alphaValue <= 0 { return false }
+            parent = view.superview
+        }
+        return window?.isVisible == true
     }
 }
 

@@ -390,5 +390,6 @@ struct ContentView: View {
         .overlay(KeyboardShortcutsReferenceOverlay(appState: appState))
         .overlay(ImagePreviewOverlay(appState: appState))
         .overlay(FeedbackOverlay(appState: appState))
+        .clxControl("app.shell.firstUsableWindow", role: "window", label: "Clawix main window")
     }
 }

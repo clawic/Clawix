@@ -80,6 +80,10 @@ final class ClxControlServer {
             return
         }
         let verb = request.path.split(separator: "/").last.map(String.init) ?? ""
+        if verb == "ping" {
+            respond(connection, status: 200, json: ["ok": true, "instanceId": ClxAgentInstance.instanceId])
+            return
+        }
         Task { @MainActor in
             let result = await ClxControlHandlers.handle(verb: verb, args: body)
             self.respond(connection, status: result.status, json: result.json)

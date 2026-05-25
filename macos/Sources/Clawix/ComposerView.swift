@@ -486,6 +486,7 @@ struct ComposerView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Stop response")
+                .clxControl("composer.stopButton", role: "button", label: "Stop response", activate: appState.interruptActiveTurn)
                 .hoverHint(L10n.t("Stop response"))
             } else {
                 Button { dispatchSend() } label: {
@@ -497,6 +498,7 @@ struct ComposerView: View {
                 .buttonStyle(.plain)
                 .disabled(!canSend)
                 .accessibilityLabel("Send message")
+                .clxControl("composer.sendButton", role: "button", label: "Send message", activate: dispatchSend)
                 .hoverHint(L10n.t("Send message"))
             }
         }
@@ -923,6 +925,7 @@ struct ComposerView: View {
                         }
                     )
                     .equatable()
+                    .clxControl("composer.input", role: "input", label: "Composer input")
                     .padding(.horizontal, 9)
                     .padding(.vertical, composerVerticalPadding)
                     .frame(height: composerFrameHeight)

@@ -418,11 +418,13 @@ struct ChatView: View {
                     )
                     }
                 }
+                .clxControl("chat.route.container", role: "panel", label: "Chat route")
             } else {
                     Text(verbatim: "Chat not found")
                     .foregroundColor(Palette.textTertiary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Palette.background)
+                    .clxControl("app.errorState", role: "error", label: "Chat not found")
         }
     }
     }

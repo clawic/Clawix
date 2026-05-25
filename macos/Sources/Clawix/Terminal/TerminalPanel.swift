@@ -19,6 +19,7 @@ struct TerminalPanel: View {
                 .background(Color.black)
         }
         .background(Color.black)
+        .clxControl("terminal.panel", role: "terminal", label: "Terminal panel")
         .onAppear {
             scheduleTerminalBootstrap(chatId: chatId)
         }

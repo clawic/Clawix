@@ -29,7 +29,7 @@ enum ClxControlHandlers {
         case "open-chat": return openChat(args)
         case "mock-stream": return mockStream(args)
         case "mock-bridge-stream": return mockBridgeStream(args)
-        case "inventory": return inventory()
+        case "inventory": return inventory(args)
         case "click":     return click(args)
         case "mark":      return mark(args)
         case "scroll":    return scroll(args)
@@ -563,7 +563,25 @@ enum ClxControlHandlers {
         "AXSegmentedControl", "AXDisclosureTriangle", "AXComboBox",
     ]
 
-    static func inventory() -> ClxControlResult {
+    static func inventory(_ args: [String: Any]) -> ClxControlResult {
+        if (args["includeAx"] as? Bool) != true {
+            let includeFrames = (args["includeFrames"] as? Bool) == true
+            let controls = ClxControlRegistry.shared.all().map { descriptor -> [String: Any] in
+                var item: [String: Any] = [
+                    "id": descriptor.id,
+                    "role": descriptor.role,
+                    "title": descriptor.label,
+                    "source": "registry",
+                ]
+                if includeFrames, let observedView = ClxControlRegistry.shared.observedViewState(descriptor.id) {
+                    item["frame"] = framePayload(observedView.frame)
+                    item["visible"] = observedView.visible
+                }
+                return item
+            }
+            return ok(["instanceId": ClxAgentInstance.instanceId, "count": controls.count, "controls": controls])
+        }
+
         var controls: [[String: Any]] = []
         ClxAX.walk(ClxAX.appElement()) { element, depth in
             let id = ClxAX.string(element, ClxAX.identifierAttribute)
@@ -957,7 +975,7 @@ enum ClxControlHandlers {
             ].compactMap { $0 }.joined(separator: "\n")
             return (haystack.localizedCaseInsensitiveContains(needle), observed)
         case .count:
-            let inventoryResult = inventory().json
+            let inventoryResult = inventory(args).json
             let controls = (inventoryResult["controls"] as? [[String: Any]]) ?? []
             let query = (args["query"] as? String) ?? (args["id"] as? String) ?? ""
             let count = query.isEmpty ? controls.count : controls.filter { item in
@@ -1154,8 +1172,11 @@ enum ClxControlHandlers {
     }
 
     private static func registeredScrollId(_ args: [String: Any]) -> String? {
-        if let id = args["id"] as? String, ClxScrollRegistry.shared.get(id) != nil {
-            return id
+        if let id = args["id"] as? String {
+            if ClxScrollRegistry.shared.get(id) != nil { return id }
+            if let alias = scrollAlias(id), ClxScrollRegistry.shared.get(alias) != nil {
+                return alias
+            }
         }
         return fallbackRegisteredScrollId(args)
     }
@@ -1164,6 +1185,13 @@ enum ClxControlHandlers {
         switch args["target"] as? String {
         case "sidebar": return "sidebar.scroll"
         case "chat", "transcript", "chat-transcript": return "chat.transcript.scroll"
+        default: return nil
+        }
+    }
+
+    private static func scrollAlias(_ id: String) -> String? {
+        switch id {
+        case "sidebar.conversationList": return "sidebar.scroll"
         default: return nil
         }
     }
@@ -1292,30 +1320,43 @@ enum ClxControlHandlers {
     }
 
     private static func controlStatePayload(id: String) -> [String: Any]? {
-        guard let element = ClxAX.find(identifier: id) else {
-            if let descriptor = ClxControlRegistry.shared.get(id) {
-                return [
-                    "id": id,
-                    "role": descriptor.role,
-                    "title": descriptor.label,
-                    "source": "registry",
-                    "found": true,
-                    "visible": false,
-                ]
+        let descriptor = ClxControlRegistry.shared.get(id)
+        let observedView = ClxControlRegistry.shared.observedViewState(id)
+        if let descriptor {
+            var out: [String: Any] = [
+                "id": id,
+                "role": descriptor.role,
+                "title": descriptor.label,
+                "source": "registry",
+                "found": true,
+                "visible": observedView?.visible ?? false,
+            ]
+            if let observedView {
+                out["frame"] = framePayload(observedView.frame)
             }
-            return nil
+            return out
         }
-        var out: [String: Any] = ["id": id, "found": true]
+        guard let element = ClxAX.find(identifier: id) else { return nil }
+        var out: [String: Any] = [
+            "id": id,
+            "found": true,
+            "source": observedView == nil ? "ax" : "ax+registry",
+        ]
         if let role = ClxAX.string(element, kAXRoleAttribute) { out["role"] = role }
+        else if let descriptor { out["role"] = descriptor.role }
         if let value = ClxAX.string(element, kAXValueAttribute) { out["value"] = value }
         if let enabled = ClxAX.bool(element, kAXEnabledAttribute) { out["enabled"] = enabled }
         if let title = ClxAX.string(element, kAXTitleAttribute) { out["title"] = title }
+        else if let descriptor { out["title"] = descriptor.label }
         if let description = ClxAX.string(element, kAXDescriptionAttribute) { out["description"] = description }
         if let focused = ClxAX.bool(element, kAXFocusedAttribute) { out["focused"] = focused }
         if let selected = ClxAX.bool(element, kAXSelectedAttribute) { out["selected"] = selected }
         if let frame = ClxAX.frame(element) {
             out["frame"] = framePayload(frame)
             out["visible"] = frame.width > 0 && frame.height > 0
+        } else if let observedView {
+            out["frame"] = framePayload(observedView.frame)
+            out["visible"] = observedView.visible
         } else {
             out["visible"] = false
         }

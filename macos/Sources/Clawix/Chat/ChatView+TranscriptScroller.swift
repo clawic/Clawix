@@ -125,6 +125,7 @@ struct ChatTranscriptScrollerView: View {
                 }
             }
             .animation(.easeOut(duration: 0.18), value: awayFromBottom)
+            .clxControl("chat.transcript.scroll", role: "scroll", label: "Chat transcript")
             .onAppear {
                 appState.ensureSelectedChat()
                 visibleMessageLimit = ChatView.initialVisibleMessageLimit

@@ -178,6 +178,7 @@ struct SidebarView: View {
                     trailingIcon: canFilterPinned ? AnyView(pinnedFilterButton) : nil,
                     trailingForceVisible: pinnedFilterMenuOpen
                 )
+                .clxControl("sidebar.pinned.entry", role: "button", label: "Pinned")
                 SidebarAccordion(
                     expanded: pinnedExpanded,
                     targetHeight: visiblePinned.isEmpty
@@ -215,6 +216,7 @@ struct SidebarView: View {
 
             if viewMode == .chronological {
                 chronoHeader
+                    .clxControl("sidebar.allChats.entry", role: "button", label: "All chats")
                     .padding(.leading, 16)
                     .padding(.trailing, 9)
                     .padding(.top, 6)
@@ -298,6 +300,7 @@ struct SidebarView: View {
                 }
 
                 projectsHeader
+                    .clxControl("sidebar.projects.entry", role: "button", label: "Projects")
                     .padding(.leading, 16)
                     .padding(.trailing, 9)
                     .padding(.top, 6)
@@ -721,6 +724,7 @@ struct SidebarView: View {
                     sidebarScrollContent(snapshot: sidebarSnapshot)
                         .background(SidebarScrollStateInstaller().allowsHitTesting(false))
                 }
+                .clxControl("sidebar.conversationList", role: "list", label: "Conversation list")
 
                 // Settings button at bottom (toggles account popover above it)
                 SettingsBottomButton(open: $settingsPopoverOpen)
@@ -936,6 +940,7 @@ struct SidebarView: View {
             .allowsHitTesting(toolsFilterMenuOpen)
             .animation(MenuStyle.openAnimation, value: toolsFilterMenuOpen)
         }
+        .clxControl("sidebar.container", role: "panel", label: "Sidebar")
     }
 
     private func sectionHeader(

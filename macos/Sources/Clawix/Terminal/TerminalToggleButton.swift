@@ -31,5 +31,6 @@ struct TerminalToggleButton: View {
         .animation(.easeOut(duration: 0.12), value: hovered)
         .help("Toggle terminal (⌃`)")
         .accessibilityLabel("Toggle terminal panel")
+        .clxControl("terminal.openControl", role: "button", label: "Toggle terminal panel")
     }
 }
