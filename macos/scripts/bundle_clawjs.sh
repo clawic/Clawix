@@ -497,17 +497,18 @@ PY
         rm -rf "$CLAWJS_DEST/node_modules/@clawjs/runtime"
         mkdir -p "$CLAWJS_DEST/node_modules/@clawjs"
         cp -R "$OVERLAY_RUNTIME" "$CLAWJS_DEST/node_modules/@clawjs/runtime"
-        /usr/bin/python3 - "$CLAWJS_DEST/node_modules/@clawjs/runtime/package.json" <<'PY'
+        /usr/bin/python3 - "$CLAWJS_DEST/node_modules/@clawjs/runtime/package.json" "$CLAWJS_DEST/node_modules/@clawjs/sessions" "$CLAWJS_DEST/node_modules/@clawjs/user-model" <<'PY'
 import json
+import os
 import sys
 
-package_json = sys.argv[1]
+package_json, sessions_dir, user_model_dir = sys.argv[1:4]
 with open(package_json, encoding="utf-8") as handle:
     data = json.load(handle)
 deps = data.setdefault("dependencies", {})
-if deps.get("@clawjs/sessions", "").startswith("file:"):
+if os.path.isdir(sessions_dir) and deps.get("@clawjs/sessions"):
     deps["@clawjs/sessions"] = "file:../sessions"
-if deps.get("@clawjs/user-model", "").startswith("file:"):
+if os.path.isdir(user_model_dir) and deps.get("@clawjs/user-model"):
     deps["@clawjs/user-model"] = "file:../user-model"
 with open(package_json, "w", encoding="utf-8") as handle:
     json.dump(data, handle, indent=2)
