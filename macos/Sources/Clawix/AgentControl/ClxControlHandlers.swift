@@ -738,7 +738,7 @@ enum ClxControlHandlers {
 
     static func state(_ args: [String: Any]) -> ClxControlResult {
         guard let id = args["id"] as? String else { return badRequest("missing id") }
-        guard let out = controlStatePayload(id: id) else {
+        guard let out = controlStatePayload(id: id, includeAx: (args["includeAx"] as? Bool) == true) else {
             return ClxControlResult(status: 404, json: ["error": "control not found: \(id)"])
         }
         return ok(out)
@@ -1319,7 +1319,7 @@ enum ClxControlHandlers {
         return out
     }
 
-    private static func controlStatePayload(id: String) -> [String: Any]? {
+    private static func controlStatePayload(id: String, includeAx: Bool = false) -> [String: Any]? {
         let descriptor = ClxControlRegistry.shared.get(id)
         let observedView = ClxControlRegistry.shared.observedViewState(id)
         if let descriptor {
@@ -1336,6 +1336,7 @@ enum ClxControlHandlers {
             }
             return out
         }
+        guard includeAx else { return nil }
         guard let element = ClxAX.find(identifier: id) else { return nil }
         var out: [String: Any] = [
             "id": id,
@@ -1365,7 +1366,8 @@ enum ClxControlHandlers {
 
     private static func observedControlState(_ args: [String: Any]) -> [String: Any] {
         guard let id = args["id"] as? String else { return ["found": false, "error": "missing id"] }
-        return controlStatePayload(id: id) ?? ["id": id, "found": false, "visible": false]
+        return controlStatePayload(id: id, includeAx: (args["includeAx"] as? Bool) == true)
+            ?? ["id": id, "found": false, "visible": false]
     }
 
     private static func observedScrollState(_ args: [String: Any]) -> [String: Any] {
