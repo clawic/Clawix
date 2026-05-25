@@ -146,12 +146,18 @@ final class SnapshotRepository: @unchecked Sendable {
         return (try? db.read { db in
             if let stableId {
                 return try SidebarSnapshotProjectRow.fetchAll(db, sql: """
-                    SELECT * FROM sidebar_snapshot_project
-                    WHERE project_id = ?
-                       OR (
+                    SELECT * FROM (
+                        SELECT * FROM sidebar_snapshot_project
+                        WHERE project_id = ?
+                          AND project_id <> ''
+
+                        UNION ALL
+
+                        SELECT * FROM sidebar_snapshot_project
+                        WHERE
                            (project_id IS NULL OR project_id = '')
                            AND project_path = ?
-                       )
+                    )
                     ORDER BY updated_at DESC
                     LIMIT ? OFFSET ?
                 """, arguments: [stableId, projectPath, limit, max(offset, 0)])

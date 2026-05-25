@@ -205,6 +205,34 @@ final class SidebarSnapshotProjectIDBackfillTests: XCTestCase {
         XCTAssertNil(rows.first { $0.threadId == "legacy-path-row" }?.projectId)
     }
 
+    func testProjectIndexedQueryPlanUsesBothIndexesWithoutTempSort() throws {
+        let queue = try migratedQueue()
+        let details = try queue.read { db in
+            try Row.fetchAll(db, sql: """
+                EXPLAIN QUERY PLAN
+                SELECT * FROM (
+                    SELECT * FROM sidebar_snapshot_project
+                    WHERE project_id = ?
+                      AND project_id <> ''
+
+                    UNION ALL
+
+                    SELECT * FROM sidebar_snapshot_project
+                    WHERE
+                        (project_id IS NULL OR project_id = '')
+                        AND project_path = ?
+                )
+                ORDER BY updated_at DESC
+                LIMIT ? OFFSET ?
+            """, arguments: ["project-id", "/tmp/project", 10, 0])
+            .map { row in row["detail"] as String }
+        }
+
+        XCTAssertTrue(details.contains { $0.contains("sidebar_snapshot_project_project_id_idx") })
+        XCTAssertTrue(details.contains { $0.contains("sidebar_snapshot_project_path_idx") })
+        XCTAssertFalse(details.contains { $0.contains("USE TEMP B-TREE") })
+    }
+
     func testSnapshotProjectResolutionFallsBackToProjectPath() {
         let project = Project(id: UUID(), name: "Fallback", path: "/tmp/clawix-project-path-fallback")
         let row = SidebarSnapshotProjectRow(
