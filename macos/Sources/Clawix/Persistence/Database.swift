@@ -32,16 +32,24 @@ final class Database {
             let url = URL(fileURLWithPath: (override as NSString).expandingTildeInPath)
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
                                                     withIntermediateDirectories: true)
-            var config = Configuration()
-            config.foreignKeysEnabled = true
+            let config = makeConfiguration()
             return try ClawixRegisteredDatabaseQueue.open(url: url, configuration: config)
         }
         let supportDir = try ClawixPersistentSurfacePaths.applicationSupportRoot()
         try FileManager.default.createDirectory(at: supportDir, withIntermediateDirectories: true)
         let url = supportDir.appendingPathComponent(ClawixPersistentSurfacePaths.components.sqlite)
+        let config = makeConfiguration()
+        return try ClawixRegisteredDatabaseQueue.open(url: url, configuration: config)
+    }
+
+    private static func makeConfiguration() -> Configuration {
         var config = Configuration()
         config.foreignKeysEnabled = true
-        return try ClawixRegisteredDatabaseQueue.open(url: url, configuration: config)
+        config.prepareDatabase { db in
+            try db.execute(sql: "PRAGMA journal_mode = WAL")
+            try db.execute(sql: "PRAGMA synchronous = NORMAL")
+        }
+        return config
     }
 
     static func makeQueueForProvider() throws -> DatabaseQueue {
