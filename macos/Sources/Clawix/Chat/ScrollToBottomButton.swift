@@ -30,6 +30,7 @@ struct ScrollToBottomButton: View {
                 .shadow(color: Color.black.opacity(0.40), radius: 18, x: 0, y: 10)
         }
         .buttonStyle(.plain)
+        .clxControl("chat.scrollToBottom", role: "button", label: "Scroll to bottom", activate: action)
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.12), value: hovering)
         .accessibilityLabel(String(localized: "Scroll to bottom", bundle: AppLocale.bundle, locale: AppLocale.current))

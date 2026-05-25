@@ -871,6 +871,20 @@ enum ClxControlHandlers {
             }
         }
         guard next != before else {
+            let atTopBoundary = direction == "up"
+                && (documentView.isFlipped ? before.y <= 0.5 : before.y >= maxY - 0.5)
+            if atTopBoundary,
+               ClxScrollBoundaryTriggerRegistry.shared.triggerTopIfAvailable(id: id) {
+                return ok([
+                    "scrolled": 0,
+                    "direction": direction,
+                    "via": "registered-scroll",
+                    "id": id,
+                    "origin": ["x": before.x, "y": before.y],
+                    "max": ["x": maxX, "y": maxY],
+                    "triggeredBoundary": true,
+                ])
+            }
             return ok([
                 "scrolled": 0,
                 "direction": direction,

@@ -103,3 +103,39 @@ final class ClxScrollRegistry {
         return Array(scrollViews.keys).sorted()
     }
 }
+
+@MainActor
+final class ClxScrollBoundaryTriggerRegistry {
+    static let shared = ClxScrollBoundaryTriggerRegistry()
+
+    private struct Entry {
+        weak var scrollView: NSScrollView?
+        let triggerTop: () -> Void
+    }
+
+    private var entries: [String: Entry] = [:]
+
+    private init() {}
+
+    func upsert(scrollView: NSScrollView, id: String, triggerTop: @escaping () -> Void) {
+        guard ClxAgentInstance.isAgent else { return }
+        entries[id] = Entry(scrollView: scrollView, triggerTop: triggerTop)
+    }
+
+    func remove(id: String, scrollView: NSScrollView) {
+        guard ClxAgentInstance.isAgent else { return }
+        if entries[id]?.scrollView === scrollView {
+            entries.removeValue(forKey: id)
+        }
+    }
+
+    func triggerTopIfAvailable(id: String) -> Bool {
+        guard let entry = entries[id] else { return false }
+        guard entry.scrollView != nil else {
+            entries.removeValue(forKey: id)
+            return false
+        }
+        entry.triggerTop()
+        return true
+    }
+}

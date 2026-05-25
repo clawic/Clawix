@@ -84,10 +84,18 @@ struct ChatTranscriptScrollerView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
                 .padding(.bottom, 12)
-                .background(ThinScrollerInstaller(
-                    style: .clawixAlwaysVisible,
-                    controlId: "chat.transcript.scroll"
-                ).allowsHitTesting(false))
+                .background {
+                    ZStack {
+                        ThinScrollerInstaller(
+                            style: .clawixAlwaysVisible,
+                            controlId: "chat.transcript.scroll"
+                        )
+                        ChatTopScrollTriggerInstaller(controlId: "chat.transcript.scroll") {
+                            handleScrollUpTrigger(proxy: proxy)
+                        }
+                    }
+                    .allowsHitTesting(false)
+                }
             }
             .coordinateSpace(name: ChatMessageFrameProbe.coordinateSpaceName)
             .onPreferenceChange(ChatMessageFramePreferenceKey.self) { frames in
@@ -284,7 +292,21 @@ struct ChatTranscriptScrollerView: View {
                         probeId: probeId,
                         insertedRows: insertedLocalRows
                     )
+                    restoreNativeAnchorIfNeeded(
+                        anchorId: anchorId,
+                        nativeBefore: nativeAnchorFrameBefore,
+                        phase: "immediate",
+                        probeId: probeId,
+                        insertedRows: insertedLocalRows
+                    )
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        restoreNativeAnchorIfNeeded(
+                            anchorId: anchorId,
+                            nativeBefore: nativeAnchorFrameBefore,
+                            phase: "settled",
+                            probeId: probeId,
+                            insertedRows: insertedLocalRows
+                        )
                         recordAnchorShift(
                             anchorId: anchorId,
                             before: anchorFrameBefore,
@@ -324,6 +346,94 @@ struct ChatTranscriptScrollerView: View {
             )
             appState.requestOlderIfNeeded(chatId: chatId)
         }
+    }
+
+    private func restoreNativeAnchorIfNeeded(
+        anchorId: UUID,
+        nativeBefore: CGRect?,
+        phase: String,
+        probeId: Int,
+        insertedRows: Int
+    ) {
+        guard let nativeBefore,
+              let scrollView = ClxScrollRegistry.shared.get("chat.transcript.scroll"),
+              let documentView = scrollView.documentView
+        else {
+            RenderProbe.mark(
+                "ChatOlderNativeAnchorRestoreSkipped",
+                fields: [
+                    "anchor": anchorId.uuidString,
+                    "chat": chatId.uuidString,
+                    "insertedRows": "\(insertedRows)",
+                    "phase": phase,
+                    "probe": "\(probeId)",
+                    "reason": nativeBefore == nil ? "missing-before" : "missing-scroll"
+                ]
+            )
+            return
+        }
+
+        scrollView.layoutSubtreeIfNeeded()
+        documentView.layoutSubtreeIfNeeded()
+        guard let nativeAfter = nativeMessageFrame(id: anchorId) else {
+            RenderProbe.mark(
+                "ChatOlderNativeAnchorRestoreSkipped",
+                fields: [
+                    "anchor": anchorId.uuidString,
+                    "chat": chatId.uuidString,
+                    "insertedRows": "\(insertedRows)",
+                    "phase": phase,
+                    "probe": "\(probeId)",
+                    "reason": "missing-after"
+                ].merging(scrollProbeFields(prefix: "restore")) { current, _ in current }
+            )
+            return
+        }
+
+        let deltaY = nativeAfter.minY - nativeBefore.minY
+        guard abs(deltaY) > 0.5 else {
+            RenderProbe.mark(
+                "ChatOlderNativeAnchorRestore",
+                fields: [
+                    "anchor": anchorId.uuidString,
+                    "chat": chatId.uuidString,
+                    "deltaPx": Self.format(deltaY),
+                    "insertedRows": "\(insertedRows)",
+                    "phase": phase,
+                    "probe": "\(probeId)",
+                    "status": "already-stable"
+                ].merging(scrollProbeFields(prefix: "restore")) { current, _ in current }
+            )
+            return
+        }
+
+        let clipView = scrollView.contentView
+        let oldOrigin = clipView.bounds.origin
+        let visibleSize = clipView.bounds.size
+        let documentSize = documentView.bounds.size
+        let maxY = max(0, documentSize.height - visibleSize.height)
+        let targetY = min(max(oldOrigin.y + deltaY, 0), maxY)
+        let targetOrigin = CGPoint(x: oldOrigin.x, y: targetY)
+        clipView.scroll(to: targetOrigin)
+        scrollView.reflectScrolledClipView(clipView)
+        scrollView.layoutSubtreeIfNeeded()
+        documentView.layoutSubtreeIfNeeded()
+        let correctedAfter = nativeMessageFrame(id: anchorId)
+        RenderProbe.mark(
+            "ChatOlderNativeAnchorRestore",
+            fields: [
+                "anchor": anchorId.uuidString,
+                "chat": chatId.uuidString,
+                "correctedDeltaPx": correctedAfter.map { Self.format($0.minY - nativeBefore.minY) } ?? "missing",
+                "deltaPx": Self.format(deltaY),
+                "insertedRows": "\(insertedRows)",
+                "oldY": Self.format(oldOrigin.y),
+                "phase": phase,
+                "probe": "\(probeId)",
+                "status": "corrected",
+                "targetY": Self.format(targetY)
+            ].merging(scrollProbeFields(prefix: "restore")) { current, _ in current }
+        )
     }
 
     private func markBottomAnchor(_ reason: String) {
@@ -555,6 +665,9 @@ private final class ChatMessageNativeFrameRegistry {
         }
         scrollView.layoutSubtreeIfNeeded()
         view.layoutSubtreeIfNeeded()
-        return view.convert(view.bounds, to: scrollView.contentView)
+        guard let documentView = scrollView.documentView else { return nil }
+        let frameInDocument = view.convert(view.bounds, to: documentView)
+        let visibleOrigin = scrollView.contentView.bounds.origin
+        return frameInDocument.offsetBy(dx: -visibleOrigin.x, dy: -visibleOrigin.y)
     }
 }
