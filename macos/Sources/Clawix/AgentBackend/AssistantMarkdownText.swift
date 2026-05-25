@@ -625,7 +625,9 @@ struct AssistantMarkdownText: View {
                 PlainStreamingTextFlow(
                     atoms: plainStreamingAtoms,
                     weight: weight,
-                    color: color
+                    color: color,
+                    checkpoints: renderCheckpoints,
+                    now: now
                 )
             } else {
                 blocksView(renderModel.blocks, checkpoints: renderCheckpoints, now: now)
@@ -896,6 +898,8 @@ private struct PlainStreamingTextFlow: View {
     let atoms: [AnnotatedAtom]
     let weight: Font.Weight
     let color: Color
+    let checkpoints: [StreamCheckpoint]
+    let now: Date
     var fontSize: CGFloat = 13.5
 
     var body: some View {
@@ -905,11 +909,21 @@ private struct PlainStreamingTextFlow: View {
                     text: plainText(for: annotated.atom),
                     weight: weight,
                     color: color,
-                    fontSize: fontSize
+                    fontSize: fontSize,
+                    opacity: opacity(for: annotated.offset)
                 )
             }
         }
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func opacity(for offset: Int) -> Double {
+        guard !checkpoints.isEmpty else { return 1.0 }
+        return StreamingFade.opacity(
+            offset: offset,
+            checkpoints: checkpoints,
+            now: now
+        )
     }
 
     private func plainText(for atom: AssistantMarkdown.Atom) -> String {
@@ -930,26 +944,22 @@ private struct PlainStreamingWord: View, Equatable {
     let weight: Font.Weight
     let color: Color
     let fontSize: CGFloat
-    @State private var visible = false
+    let opacity: Double
 
     static func == (lhs: PlainStreamingWord, rhs: PlainStreamingWord) -> Bool {
         lhs.text == rhs.text
             && lhs.weight == rhs.weight
             && lhs.color == rhs.color
             && lhs.fontSize == rhs.fontSize
+            && lhs.opacity == rhs.opacity
     }
 
     var body: some View {
         Text(verbatim: text)
             .font(BodyFont.system(size: fontSize, wght: assistantWght(for: weight)))
             .foregroundColor(color)
-            .opacity(visible ? 1 : 0)
-            .onAppear {
-                guard !visible else { return }
-                withAnimation(.easeOut(duration: StreamingFade.duration)) {
-                    visible = true
-                }
-            }
+            .opacity(opacity)
+            .animation(.easeOut(duration: StreamingFade.duration), value: opacity)
     }
 }
 

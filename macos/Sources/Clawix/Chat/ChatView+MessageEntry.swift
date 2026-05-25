@@ -16,12 +16,16 @@ struct ChatMessageEntryView: View {
 
     var body: some View {
         let message = messageStore.message
+        let responseStreamingForRow = responseStreaming
+            && message.role == .assistant
+            && !message.streamingFinished
+            && !message.isError
         MessageRow(
             chatId: chat.id,
             message: message,
             isLastUserMessage: message.id == lastUserMessageId,
             isLastAssistantMessage: message.id == lastAssistantMessageId,
-            responseStreaming: responseStreaming,
+            responseStreaming: responseStreamingForRow,
             codeBlockWordWrap: appState.chatCodeBlockWordWrap,
             findQuery: activeFindQuery,
             closedMetadataReady: closedMetadataReady,
