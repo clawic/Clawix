@@ -211,13 +211,6 @@ extension AppState {
                         "ms": String(format: "%.1f", convertMs)
                     ]
                 )
-                let firstPaintMessages = Array(messages.suffix(ChatView.initialVisibleMessageLimit))
-                Task.detached(priority: .utility) {
-                    await ChatMarkdownPrewarmer.prewarm(
-                        messages: firstPaintMessages,
-                        timelineEntryLimit: 0
-                    )
-                }
                 await MainActor.run { [weak self] in
                     guard let self else { return }
                     self.localRolloutHydrationTasks[chatId] = nil
