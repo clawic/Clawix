@@ -29,18 +29,24 @@ private struct ClxControlRegistration: ViewModifier {
     let label: String
     let activate: (() -> Void)?
     let setValue: ((String) -> Void)?
+    @State private var registrationToken = UUID()
 
     func body(content: Content) -> some View {
         content
             .onAppear {
                 guard ClxAgentInstance.isAgent else { return }
                 ClxControlRegistry.shared.upsert(
-                    ClxControlDescriptor(id: id, role: role, label: label, activate: activate, setValue: setValue)
+                    id: id,
+                    token: registrationToken,
+                    role: role,
+                    label: label,
+                    activate: activate,
+                    setValue: setValue
                 )
             }
             .onDisappear {
                 guard ClxAgentInstance.isAgent else { return }
-                ClxControlRegistry.shared.remove(id: id)
+                ClxControlRegistry.shared.remove(id: id, token: registrationToken)
             }
     }
 }

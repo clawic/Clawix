@@ -8,6 +8,8 @@ import Foundation
 /// path is unavailable.
 struct ClxControlDescriptor {
     let id: String
+    let token: UUID
+    let sequence: UInt64
     let role: String
     let label: String
     let activate: (() -> Void)?
@@ -19,13 +21,46 @@ struct ClxControlDescriptor {
 @MainActor
 final class ClxControlRegistry {
     static let shared = ClxControlRegistry()
-    private var controls: [String: ClxControlDescriptor] = [:]
+    private var controls: [String: [UUID: ClxControlDescriptor]] = [:]
+    private var nextSequence: UInt64 = 0
     private init() {}
 
-    func upsert(_ descriptor: ClxControlDescriptor) { controls[descriptor.id] = descriptor }
-    func remove(id: String) { controls[id] = nil }
-    func all() -> [ClxControlDescriptor] { Array(controls.values) }
-    func get(_ id: String) -> ClxControlDescriptor? { controls[id] }
+    func upsert(
+        id: String,
+        token: UUID,
+        role: String,
+        label: String,
+        activate: (() -> Void)?,
+        setValue: ((String) -> Void)?
+    ) {
+        nextSequence += 1
+        controls[id, default: [:]][token] = ClxControlDescriptor(
+            id: id,
+            token: token,
+            sequence: nextSequence,
+            role: role,
+            label: label,
+            activate: activate,
+            setValue: setValue
+        )
+    }
+
+    func remove(id: String, token: UUID) {
+        controls[id]?[token] = nil
+        if controls[id]?.isEmpty == true {
+            controls[id] = nil
+        }
+    }
+
+    func all() -> [ClxControlDescriptor] {
+        controls.values.compactMap { descriptors in
+            descriptors.values.max { $0.sequence < $1.sequence }
+        }
+    }
+
+    func get(_ id: String) -> ClxControlDescriptor? {
+        controls[id]?.values.max { $0.sequence < $1.sequence }
+    }
 }
 
 @MainActor
