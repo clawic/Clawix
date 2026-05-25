@@ -21,6 +21,7 @@ struct ChatTranscriptScrollerView: View {
     @State private var awayFromBottom = false
     @State private var revealAfterOlderPage = false
     @State private var messageFrames: [UUID: CGRect] = [:]
+    @State private var olderAnchorProbeSequence = 0
 
     private var bottomScrollBinding: Binding<String?> {
         Binding<String?>(
@@ -134,18 +135,22 @@ struct ChatTranscriptScrollerView: View {
             .onChange(of: appState.findMatches.count) { _, _ in
                 scrollToCurrentFindMatch(proxy: proxy)
             }
-            .onChange(of: transcript.messageIds.count) { _, _ in
+            .onChange(of: transcript.messageIds.count) { oldCount, newCount in
                 guard revealAfterOlderPage, hiddenLocalMessageCount > 0 else { return }
                 revealAfterOlderPage = false
                 lastLocalRevealAt = .distantPast
                 RenderProbe.mark(
-                    "ChatOlderHistoryRevealAfterPage",
+                    "ChatOlderPageInsertionObserved",
                     fields: [
                         "chat": chatId.uuidString,
                         "hiddenBefore": "\(hiddenLocalMessageCount)",
-                        "total": "\(transcript.messageIds.count)",
+                        "inserted": "\(max(0, newCount - oldCount))",
+                        "measuredRows": "\(messageFrames.count)",
+                        "mountedRows": "\(visibleMessageStores.count)",
+                        "oldTotal": "\(oldCount)",
+                        "total": "\(newCount)",
                         "visible": "\(visibleMessageLimit)"
-                    ]
+                    ].merging(scrollProbeFields(prefix: "scroll")) { current, _ in current }
                 )
                 handleScrollUpTrigger(proxy: proxy)
             }
@@ -222,19 +227,25 @@ struct ChatTranscriptScrollerView: View {
             lastLocalRevealAt = now
             let anchorId = currentScrollAnchorMessageId()
             let anchorFrameBefore = anchorId.flatMap { messageFrames[$0] }
+            olderAnchorProbeSequence += 1
+            let probeId = olderAnchorProbeSequence
+            let oldVisibleLimit = visibleMessageLimit
             bottomId = nil
             RenderProbe.mark(
-                "ChatOlderHistoryRevealStart",
+                "ChatOlderAnchorProbeStart",
                 fields: [
                     "anchor": anchorId?.uuidString ?? "none",
                     "bottomArmed": "false",
                     "chat": chatId.uuidString,
-                    "frameMinY": anchorFrameBefore.map { Self.format($0.minY) } ?? "none",
-                    "fromVisible": "\(visibleMessageLimit)",
+                    "fromVisible": "\(oldVisibleLimit)",
                     "hiddenBefore": "\(hiddenLocalMessageCount)",
                     "last": visibleMessageStores.last?.id.uuidString ?? "none",
-                    "total": "\(transcript.messageIds.count)"
-                ]
+                    "measuredRows": "\(messageFrames.count)",
+                    "mountedRows": "\(visibleMessageStores.count)",
+                    "probe": "\(probeId)",
+                    "total": "\(transcript.messageIds.count)",
+                    "yBefore": anchorFrameBefore.map { Self.format($0.minY) } ?? "none"
+                ].merging(scrollProbeFields(prefix: "before")) { current, _ in current }
             )
             let nextVisibleLimit = min(
                 transcript.messageIds.count,
@@ -242,27 +253,36 @@ struct ChatTranscriptScrollerView: View {
             )
             let exhaustedLocalWindow = nextVisibleLimit >= transcript.messageIds.count
             visibleMessageLimit = nextVisibleLimit
+            let insertedLocalRows = max(0, nextVisibleLimit - oldVisibleLimit)
             if let anchorId {
                 DispatchQueue.main.async {
                     RenderProbe.mark(
-                        "ChatOlderHistoryRevealAnchored",
+                        "ChatOlderAnchorProbeInserted",
                         fields: [
                             "anchor": anchorId.uuidString,
                             "chat": chatId.uuidString,
+                            "insertedLocalRows": "\(insertedLocalRows)",
                             "last": visibleMessageStores.last?.id.uuidString ?? "none",
+                            "measuredRows": "\(messageFrames.count)",
+                            "mountedRows": "\(visibleMessageStores.count)",
+                            "probe": "\(probeId)",
                             "toVisible": "\(visibleMessageLimit)"
-                        ]
+                        ].merging(scrollProbeFields(prefix: "afterInsert")) { current, _ in current }
                     )
                     recordAnchorShift(
                         anchorId: anchorId,
                         before: anchorFrameBefore,
-                        phase: "immediate"
+                        phase: "immediate",
+                        probeId: probeId,
+                        insertedRows: insertedLocalRows
                     )
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                         recordAnchorShift(
                             anchorId: anchorId,
                             before: anchorFrameBefore,
-                            phase: "settled"
+                            phase: "settled",
+                            probeId: probeId,
+                            insertedRows: insertedLocalRows
                         )
                     }
                     if exhaustedLocalWindow {
@@ -272,14 +292,27 @@ struct ChatTranscriptScrollerView: View {
                             fields: [
                                 "anchor": anchorId.uuidString,
                                 "chat": chatId.uuidString,
+                                "measuredRows": "\(messageFrames.count)",
+                                "mountedRows": "\(visibleMessageStores.count)",
+                                "probe": "\(probeId)",
                                 "visible": "\(nextVisibleLimit)"
-                            ]
+                            ].merging(scrollProbeFields(prefix: "request")) { current, _ in current }
                         )
                         appState.requestOlderIfNeeded(chatId: chatId)
                     }
                 }
             }
         } else {
+            RenderProbe.mark(
+                "ChatOlderAnchorProbeRequestOnly",
+                fields: [
+                    "chat": chatId.uuidString,
+                    "measuredRows": "\(messageFrames.count)",
+                    "mountedRows": "\(visibleMessageStores.count)",
+                    "total": "\(transcript.messageIds.count)",
+                    "visible": "\(visibleMessageLimit)"
+                ].merging(scrollProbeFields(prefix: "request")) { current, _ in current }
+            )
             appState.requestOlderIfNeeded(chatId: chatId)
         }
     }
@@ -312,45 +345,62 @@ struct ChatTranscriptScrollerView: View {
             ?? visibleMessageStores.first?.id
     }
 
-    private func recordAnchorShift(anchorId: UUID, before: CGRect?, phase: String) {
+    private func recordAnchorShift(
+        anchorId: UUID,
+        before: CGRect?,
+        phase: String,
+        probeId: Int,
+        insertedRows: Int
+    ) {
+        var fields = [
+            "anchor": anchorId.uuidString,
+            "chat": chatId.uuidString,
+            "hitch100": "\(RenderProbe.snapshotCounts()["hitch>100ms"] ?? 0)",
+            "hitch250": "\(RenderProbe.snapshotCounts()["hitch>250ms"] ?? 0)",
+            "hitch33": "\(RenderProbe.snapshotCounts()["hitch>33ms"] ?? 0)",
+            "insertedRows": "\(insertedRows)",
+            "measuredRows": "\(messageFrames.count)",
+            "mountedRows": "\(visibleMessageStores.count)",
+            "phase": phase,
+            "probe": "\(probeId)"
+        ].merging(scrollProbeFields(prefix: "after")) { current, _ in current }
         guard let before else {
-            RenderProbe.mark(
-                "ChatOlderHistoryAnchorShift",
-                fields: [
-                    "anchor": anchorId.uuidString,
-                    "chat": chatId.uuidString,
-                    "phase": phase,
-                    "status": "missing-before"
-                ]
-            )
+            fields["status"] = "missing-before"
+            RenderProbe.mark("ChatOlderAnchorProbeDelta", fields: fields)
             return
         }
         guard let after = messageFrames[anchorId] else {
-            RenderProbe.mark(
-                "ChatOlderHistoryAnchorShift",
-                fields: [
-                    "anchor": anchorId.uuidString,
-                    "beforeMinY": Self.format(before.minY),
-                    "chat": chatId.uuidString,
-                    "phase": phase,
-                    "status": "missing-after"
-                ]
-            )
+            fields["status"] = "missing-after"
+            fields["yBefore"] = Self.format(before.minY)
+            RenderProbe.mark("ChatOlderAnchorProbeDelta", fields: fields)
             return
         }
         let deltaY = after.minY - before.minY
-        RenderProbe.mark(
-            "ChatOlderHistoryAnchorShift",
-            fields: [
-                "afterMinY": Self.format(after.minY),
-                "anchor": anchorId.uuidString,
-                "beforeMinY": Self.format(before.minY),
-                "chat": chatId.uuidString,
-                "deltaY": Self.format(deltaY),
-                "phase": phase,
-                "status": "measured"
-            ]
-        )
+        fields["deltaPx"] = Self.format(deltaY)
+        fields["status"] = "measured"
+        fields["yAfter"] = Self.format(after.minY)
+        fields["yBefore"] = Self.format(before.minY)
+        RenderProbe.mark("ChatOlderAnchorProbeDelta", fields: fields)
+    }
+
+    private func scrollProbeFields(prefix: String) -> [String: String] {
+        guard let scrollView = ClxScrollRegistry.shared.get("chat.transcript.scroll"),
+              let documentView = scrollView.documentView
+        else { return ["\(prefix)Scroll": "unavailable"] }
+        scrollView.layoutSubtreeIfNeeded()
+        documentView.layoutSubtreeIfNeeded()
+        let clipView = scrollView.contentView
+        let origin = clipView.bounds.origin
+        let documentSize = documentView.bounds.size
+        let visibleSize = clipView.bounds.size
+        let maxY = max(0, documentSize.height - visibleSize.height)
+        return [
+            "\(prefix)DocH": Self.format(documentSize.height),
+            "\(prefix)Flipped": "\(documentView.isFlipped)",
+            "\(prefix)MaxY": Self.format(maxY),
+            "\(prefix)VisibleH": Self.format(visibleSize.height),
+            "\(prefix)Y": Self.format(origin.y)
+        ]
     }
 
     private static func format(_ value: CGFloat) -> String {

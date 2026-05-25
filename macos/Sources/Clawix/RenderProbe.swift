@@ -102,6 +102,11 @@ enum RenderProbe {
         }
     }
 
+    static func snapshotCounts() -> [String: Int] {
+        guard isEnabled else { return [:] }
+        return queue.sync { counts }
+    }
+
     private static func recordActivityIfNeeded(_ name: String) {
         guard !name.hasPrefix("hitch>") else { return }
         lastActivityAt = CFAbsoluteTimeGetCurrent()
