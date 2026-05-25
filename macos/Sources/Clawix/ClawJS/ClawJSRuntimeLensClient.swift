@@ -1268,12 +1268,54 @@ struct ClawJSRuntimeLensClient {
         }
     }
 
+    struct SessionNativeActionResult: Decodable, Equatable {
+        let runtimeId: String
+        let domain: String
+        let action: String
+        let status: String
+        let authority: String?
+        let writesRuntime: Bool
+        let wouldWriteRuntime: Bool?
+        let writesLocalOverlay: Bool?
+        let requiredFlag: String?
+        let officialProtocol: String?
+        let officialMethod: String?
+        let officialContractSource: String?
+        let result: Result?
+
+        struct Result: Decodable, Equatable {
+            let id: String?
+            let messagePreview: String?
+            let titleRequested: String?
+            let titleApplied: Bool?
+            let nativeIdentifier: NativeIdentifier?
+            let gatewayReceipt: GatewayReceipt?
+            let titleGatewayReceipt: GatewayReceipt?
+        }
+
+        struct NativeIdentifier: Decodable, Equatable {
+            let name: String?
+        }
+
+        struct GatewayReceipt: Decodable, Equatable {
+            let `protocol`: String?
+            let transport: String?
+            let method: String?
+            let requestId: String?
+            let endpoint: String?
+        }
+    }
+
     private struct Envelope: Decodable {
         let data: ClawJSRuntimeLensSnapshot
     }
 
     private struct SessionOverlayEnvelope: Decodable {
         let data: SessionOverlayActionResult
+    }
+
+    private struct SessionNativeActionEnvelope: Decodable {
+        let data: SessionNativeActionResult
     }
 
     private static let maxRuntimeLensEnvelopeBytes = 1_048_576
@@ -1330,6 +1372,54 @@ struct ClawJSRuntimeLensClient {
         }
         // hot-path-ok maxBytes=1048576 reason=session overlay command returns one bounded envelope
         return try JSONDecoder().decode(SessionOverlayEnvelope.self, from: result.data).data
+    }
+
+    func runSessionAction(
+        runtime: ClawJSRuntimeLensID,
+        action: String,
+        sessionId: String? = nil,
+        message: String? = nil,
+        title: String? = nil,
+        gatewayURL: String? = nil,
+        confirmRuntimeWrite: Bool = false
+    ) async throws -> SessionNativeActionResult {
+        var args = [
+            "runtime",
+            runtime.rawValue,
+            "sessions",
+            action
+        ]
+        if let sessionId, !sessionId.isEmpty {
+            args.append(contentsOf: ["--session-key", sessionId])
+        }
+        if let message, !message.isEmpty {
+            args.append(contentsOf: ["--message", message])
+        }
+        if let title, !title.isEmpty {
+            args.append(contentsOf: ["--title", title])
+        }
+        if let gatewayURL, !gatewayURL.isEmpty {
+            args.append(contentsOf: ["--gateway-url", gatewayURL])
+        }
+        if confirmRuntimeWrite {
+            args.append("--confirm-runtime-write")
+        }
+        args.append("--json")
+
+        let result = try await runner.run(args)
+        guard result.exitCode == 0 || result.exitCode == 2 else {
+            let message = String(data: result.data, encoding: .utf8) ?? "runtime session action failed"
+            throw NSError(domain: "ClawJSRuntimeLensClient", code: Int(result.exitCode), userInfo: [
+                NSLocalizedDescriptionKey: message.trimmingCharacters(in: .whitespacesAndNewlines)
+            ])
+        }
+        guard result.data.count <= Self.maxRuntimeLensEnvelopeBytes else {
+            throw NSError(domain: "ClawJSRuntimeLensClient", code: 413, userInfo: [
+                NSLocalizedDescriptionKey: "runtime session action envelope exceeded the bounded decode budget"
+            ])
+        }
+        // hot-path-ok maxBytes=1048576 reason=session action command returns one bounded envelope
+        return try JSONDecoder().decode(SessionNativeActionEnvelope.self, from: result.data).data
     }
 
     private static func runClawJS(args: [String]) async throws -> CommandResult {

@@ -284,4 +284,126 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(result.result.overlayThreadId, "runtime:hermes:sessions:2026%2F05%2F21%2Fruntime-session")
         XCTAssertEqual(result.result.receipt?.hostId, "runtime-portal")
     }
+
+    func testRuntimeLensClientRunsHermesGatewaySessionActionsWithExplicitConfirmation() async throws {
+        var requested: [[String]] = []
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            requested.append(args)
+            return .init(
+                data: """
+                {
+                  "data": {
+                    "runtimeId": "hermes",
+                    "domain": "sessions",
+                    "action": "send",
+                    "status": "ok",
+                    "authority": "runtime",
+                    "writesRuntime": true,
+                    "wouldWriteRuntime": true,
+                    "writesLocalOverlay": false,
+                    "officialProtocol": "tui_gateway_json_rpc",
+                    "officialMethod": "prompt.submit",
+                    "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+                    "result": {
+                      "id": "2026/05/21/runtime-session",
+                      "messagePreview": "fixture hello",
+                      "nativeIdentifier": {"name": "session_id"},
+                      "gatewayReceipt": {
+                        "protocol": "tui_gateway_json_rpc",
+                        "transport": "loopback_http_json_rpc_fixture",
+                        "method": "prompt.submit",
+                        "requestId": "fixture-rpc",
+                        "endpoint": "http://127.0.0.1:18789"
+                      }
+                    }
+                  }
+                }
+                """.data(using: .utf8)!,
+                exitCode: 0
+            )
+        })
+
+        let result = try await client.runSessionAction(
+            runtime: .hermes,
+            action: "send",
+            sessionId: "2026/05/21/runtime-session",
+            message: "fixture hello",
+            gatewayURL: "http://127.0.0.1:18789",
+            confirmRuntimeWrite: true
+        )
+
+        XCTAssertEqual(requested, [[
+            "runtime",
+            "hermes",
+            "sessions",
+            "send",
+            "--session-key",
+            "2026/05/21/runtime-session",
+            "--message",
+            "fixture hello",
+            "--gateway-url",
+            "http://127.0.0.1:18789",
+            "--confirm-runtime-write",
+            "--json"
+        ]])
+        XCTAssertEqual(result.status, "ok")
+        XCTAssertEqual(result.writesRuntime, true)
+        XCTAssertEqual(result.officialProtocol, "tui_gateway_json_rpc")
+        XCTAssertEqual(result.officialMethod, "prompt.submit")
+        XCTAssertEqual(result.result?.nativeIdentifier?.name, "session_id")
+        XCTAssertEqual(result.result?.gatewayReceipt?.method, "prompt.submit")
+        XCTAssertEqual(result.result?.gatewayReceipt?.transport, "loopback_http_json_rpc_fixture")
+    }
+
+    func testRuntimeLensClientSurfacesHermesConfirmationRequiredWithoutGatewayContact() async throws {
+        var requested: [[String]] = []
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            requested.append(args)
+            return .init(
+                data: """
+                {
+                  "data": {
+                    "runtimeId": "hermes",
+                    "domain": "sessions",
+                    "action": "create",
+                    "status": "confirmation_required",
+                    "authority": "runtime",
+                    "writesRuntime": false,
+                    "wouldWriteRuntime": true,
+                    "writesLocalOverlay": false,
+                    "requiredFlag": "--confirm-runtime-write",
+                    "officialProtocol": "tui_gateway_json_rpc",
+                    "officialMethod": "session.create",
+                    "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration"
+                  }
+                }
+                """.data(using: .utf8)!,
+                exitCode: 2
+            )
+        })
+
+        let result = try await client.runSessionAction(
+            runtime: .hermes,
+            action: "create",
+            title: "Draft Session",
+            gatewayURL: "http://127.0.0.1:18789"
+        )
+
+        XCTAssertEqual(requested, [[
+            "runtime",
+            "hermes",
+            "sessions",
+            "create",
+            "--title",
+            "Draft Session",
+            "--gateway-url",
+            "http://127.0.0.1:18789",
+            "--json"
+        ]])
+        XCTAssertEqual(result.status, "confirmation_required")
+        XCTAssertEqual(result.requiredFlag, "--confirm-runtime-write")
+        XCTAssertEqual(result.writesRuntime, false)
+        XCTAssertEqual(result.wouldWriteRuntime, true)
+        XCTAssertEqual(result.officialMethod, "session.create")
+    }
 }
