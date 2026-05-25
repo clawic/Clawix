@@ -20,6 +20,7 @@ struct ChatTranscriptScrollerView: View {
     /// an overflowing transcript; gates the scroll-to-bottom button.
     @State private var awayFromBottom = false
     @State private var revealAfterOlderPage = false
+    @State private var messageFrames: [UUID: CGRect] = [:]
 
     private var bottomScrollBinding: Binding<String?> {
         Binding<String?>(
@@ -66,6 +67,7 @@ struct ChatTranscriptScrollerView: View {
                             publishingReady: publishingReady,
                             proxy: proxy
                         )
+                        .background(ChatMessageFrameProbe(id: messageStore.id))
                     }
                     Color.clear
                         .frame(height: 1)
@@ -80,6 +82,12 @@ struct ChatTranscriptScrollerView: View {
                     style: .clawixAlwaysVisible,
                     controlId: "chat.transcript.scroll"
                 ).allowsHitTesting(false))
+            }
+            .coordinateSpace(name: ChatMessageFrameProbe.coordinateSpaceName)
+            .onPreferenceChange(ChatMessageFramePreferenceKey.self) { frames in
+                if messageFrames != frames {
+                    messageFrames = frames
+                }
             }
             .scrollPosition(id: bottomScrollBinding, anchor: .bottom)
             .modifier(ChatScrollDeclarativeAnchors())
@@ -212,7 +220,8 @@ struct ChatTranscriptScrollerView: View {
                 return
             }
             lastLocalRevealAt = now
-            let anchorId = visibleMessageStores.first?.id
+            let anchorId = currentScrollAnchorMessageId()
+            let anchorFrameBefore = anchorId.flatMap { messageFrames[$0] }
             bottomId = nil
             RenderProbe.mark(
                 "ChatOlderHistoryRevealStart",
@@ -220,6 +229,7 @@ struct ChatTranscriptScrollerView: View {
                     "anchor": anchorId?.uuidString ?? "none",
                     "bottomArmed": "false",
                     "chat": chatId.uuidString,
+                    "frameMinY": anchorFrameBefore.map { Self.format($0.minY) } ?? "none",
                     "fromVisible": "\(visibleMessageLimit)",
                     "hiddenBefore": "\(hiddenLocalMessageCount)",
                     "last": visibleMessageStores.last?.id.uuidString ?? "none",
@@ -234,11 +244,6 @@ struct ChatTranscriptScrollerView: View {
             visibleMessageLimit = nextVisibleLimit
             if let anchorId {
                 DispatchQueue.main.async {
-                    var transaction = Transaction()
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) {
-                        proxy.scrollTo(anchorId, anchor: .top)
-                    }
                     RenderProbe.mark(
                         "ChatOlderHistoryRevealAnchored",
                         fields: [
@@ -248,6 +253,18 @@ struct ChatTranscriptScrollerView: View {
                             "toVisible": "\(visibleMessageLimit)"
                         ]
                     )
+                    recordAnchorShift(
+                        anchorId: anchorId,
+                        before: anchorFrameBefore,
+                        phase: "immediate"
+                    )
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        recordAnchorShift(
+                            anchorId: anchorId,
+                            before: anchorFrameBefore,
+                            phase: "settled"
+                        )
+                    }
                     if exhaustedLocalWindow {
                         revealAfterOlderPage = true
                         RenderProbe.mark(
@@ -284,5 +301,86 @@ struct ChatTranscriptScrollerView: View {
             return !lastAssistant.streamingFinished
         }
         return chat.hasActiveTurn
+    }
+
+    private func currentScrollAnchorMessageId() -> UUID? {
+        let candidates = visibleMessageStores.compactMap { store -> (id: UUID, minY: CGFloat)? in
+            guard let frame = messageFrames[store.id] else { return nil }
+            return (store.id, frame.minY)
+        }
+        return candidates.min { abs($0.minY) < abs($1.minY) }?.id
+            ?? visibleMessageStores.first?.id
+    }
+
+    private func recordAnchorShift(anchorId: UUID, before: CGRect?, phase: String) {
+        guard let before else {
+            RenderProbe.mark(
+                "ChatOlderHistoryAnchorShift",
+                fields: [
+                    "anchor": anchorId.uuidString,
+                    "chat": chatId.uuidString,
+                    "phase": phase,
+                    "status": "missing-before"
+                ]
+            )
+            return
+        }
+        guard let after = messageFrames[anchorId] else {
+            RenderProbe.mark(
+                "ChatOlderHistoryAnchorShift",
+                fields: [
+                    "anchor": anchorId.uuidString,
+                    "beforeMinY": Self.format(before.minY),
+                    "chat": chatId.uuidString,
+                    "phase": phase,
+                    "status": "missing-after"
+                ]
+            )
+            return
+        }
+        let deltaY = after.minY - before.minY
+        RenderProbe.mark(
+            "ChatOlderHistoryAnchorShift",
+            fields: [
+                "afterMinY": Self.format(after.minY),
+                "anchor": anchorId.uuidString,
+                "beforeMinY": Self.format(before.minY),
+                "chat": chatId.uuidString,
+                "deltaY": Self.format(deltaY),
+                "phase": phase,
+                "status": "measured"
+            ]
+        )
+    }
+
+    private static func format(_ value: CGFloat) -> String {
+        String(format: "%.2f", Double(value))
+    }
+}
+
+private struct ChatMessageFrameProbe: View {
+    static let coordinateSpaceName = "ChatTranscriptViewport"
+
+    let id: UUID
+
+    var body: some View {
+        if RenderProbe.isEnabled, ClxAgentInstance.isAgent {
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: ChatMessageFramePreferenceKey.self,
+                    value: [id: proxy.frame(in: .named(Self.coordinateSpaceName))]
+                )
+            }
+        } else {
+            EmptyView()
+        }
+    }
+}
+
+private struct ChatMessageFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [UUID: CGRect] = [:]
+
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, next in next })
     }
 }
