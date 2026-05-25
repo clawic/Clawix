@@ -2929,6 +2929,28 @@
       },
       "gateway": {
         "gatewayAvailable": false,
+        "resources": [
+          {
+            "id": "gateway-status",
+            "label": "Gateway status",
+            "status": "degraded",
+            "kind": "cli",
+            "enabled": true,
+            "summary": "Gateway endpoint unavailable or not configured.",
+            "limitations": [],
+            "attributes": [
+              "runtime: hermes",
+              "primary transport: gateway",
+              "fallback transport: cli",
+              "streaming mode: hybrid",
+              "supports gateway: true"
+            ],
+            "provenance": {
+              "source": "runtime-session-descriptor",
+              "runtimeId": "hermes"
+            }
+          }
+        ],
         "capability": {
           "supported": true,
           "status": "degraded",
@@ -3008,6 +3030,28 @@
             "authStorePath": "/Users/tester/.hermes/auth.json"
           }
         },
+        "resources": [
+          {
+            "id": "doctor-status",
+            "label": "Doctor status",
+            "status": "degraded",
+            "kind": "native",
+            "enabled": true,
+            "summary": "hermes CLI not found",
+            "limitations": [],
+            "attributes": [
+              "runtime: hermes",
+              "cli available: false",
+              "installed: false",
+              "version available: false",
+              "secret policy: redacted_summary"
+            ],
+            "provenance": {
+              "source": "runtime-status",
+              "runtimeId": "hermes"
+            }
+          }
+        ],
         "capability": {
           "supported": true,
           "status": "ready",
@@ -3055,6 +3099,30 @@
         }
       },
       "sandboxPermissions": {
+        "permissionMode": "read-only",
+        "resources": [
+          {
+            "id": "sandbox-policy",
+            "label": "Sandbox policy",
+            "status": "degraded",
+            "kind": "hosted",
+            "enabled": true,
+            "summary": "No runtime or host permission is changed by the runtime lens.",
+            "limitations": [
+              "Sandboxing depends on the configured terminal backend."
+            ],
+            "attributes": [
+              "runtime: hermes",
+              "permission mode: read-only",
+              "write policy: explicit_approval_only",
+              "conflict policy: no_silent_permission_change"
+            ],
+            "provenance": {
+              "source": "runtime-options",
+              "runtimeId": "hermes"
+            }
+          }
+        ],
         "capability": {
           "supported": true,
           "status": "degraded",
@@ -3114,6 +3182,13 @@
             "authStorePath": "/Users/tester/.hermes/auth.json"
           }
         },
+        "runtimeLocations": {
+          "homeDir": "/Users/tester/.hermes",
+          "configPath": "/Users/tester/.hermes/config.yaml",
+          "workspacePath": "/tmp/workspace",
+          "authStorePath": "/Users/tester/.hermes/auth.json"
+        },
+        "redactionPolicy": "redacted_paths_and_presence_only",
         "supportContract": {
           "claim": "inventoried",
           "nativeAuthority": "runtime",

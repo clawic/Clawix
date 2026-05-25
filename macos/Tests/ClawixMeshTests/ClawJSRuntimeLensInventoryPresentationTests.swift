@@ -309,6 +309,27 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(pluginInventory.totalResourceCount, 3)
         XCTAssertTrue(pluginInventory.rows.contains { $0.id == "plugin-status" })
 
+        let gatewayInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "gateway" })
+        XCTAssertEqual(gatewayInventory.totalResourceCount, 1)
+        XCTAssertEqual(gatewayInventory.rows.first?.id, "gateway-status")
+        XCTAssertEqual(gatewayInventory.rows.first?.summaryLabel, "Gateway endpoint unavailable or not configured.")
+        XCTAssertEqual(gatewayInventory.rows.first?.attributeCount, 5)
+        XCTAssertTrue(gatewayInventory.rows.first?.attributesLabel?.contains("primary transport: gateway") == true)
+        XCTAssertTrue(gatewayInventory.rows.first?.attributesLabel?.contains("streaming mode: hybrid") == true)
+
+        let doctorInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "doctorCompat" })
+        XCTAssertEqual(doctorInventory.totalResourceCount, 1)
+        XCTAssertEqual(doctorInventory.rows.first?.id, "doctor-status")
+        XCTAssertEqual(doctorInventory.rows.first?.summaryLabel, "hermes CLI not found")
+        XCTAssertEqual(doctorInventory.rows.first?.attributeCount, 5)
+        XCTAssertTrue(doctorInventory.rows.first?.attributesLabel?.contains("version available: false") == true)
+
+        let sandboxInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "sandboxPermissions" })
+        XCTAssertEqual(sandboxInventory.totalResourceCount, 1)
+        XCTAssertEqual(sandboxInventory.rows.first?.id, "sandbox-policy")
+        XCTAssertEqual(sandboxInventory.rows.first?.summaryLabel, "No runtime or host permission is changed by the runtime lens.")
+        XCTAssertTrue(sandboxInventory.rows.first?.attributesLabel?.contains("write policy: explicit_approval_only") == true)
+
         let configurationInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "configuration" })
         XCTAssertEqual(configurationInventory.totalResourceCount, 6)
         XCTAssertGreaterThanOrEqual(configurationInventory.pathCount, 5)

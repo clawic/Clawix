@@ -507,6 +507,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let gatewayAvailable: Bool?
             let runtimeVersion: String?
             let diagnostics: Status.Diagnostics?
+            let resources: [RuntimeResource]?
+            let permissionMode: String?
             let capability: RuntimeCapability?
             let supportContract: SupportContract?
         }
@@ -738,6 +740,9 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         bucket: DomainData.OperationalBucket?
     ) -> [RuntimeResource] {
         guard let bucket else { return [] }
+        if let resources = bucket.resources, !resources.isEmpty {
+            return resourcesWithCommonAttributes(resources)
+        }
         let capability = bucket.capability
         let label = Self.displayLabel(for: domain)
         let status: String? = {
