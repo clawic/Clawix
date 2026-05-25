@@ -330,6 +330,46 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let channels: [RuntimeResource]?
     }
 
+    struct TransportPolicy: Decodable, Equatable {
+        let id: String?
+        let protocolName: String?
+        let fixtureTransport: String?
+        let productionTransportStatus: String?
+        let lifecycleStatus: String?
+        let lifecycleOwner: String?
+        let configuredEndpointClass: String?
+        let endpointConfigured: Bool?
+        let loopbackConfigured: Bool?
+        let confirmationPolicy: String?
+        let startupPolicy: String?
+        let mutationPolicy: String?
+        let credentialPolicy: String?
+        let safeDefault: String?
+        let supportClaimEffect: String?
+        let requiredEvidence: [String]?
+        let reentryCondition: String?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case protocolName = "protocol"
+            case fixtureTransport
+            case productionTransportStatus
+            case lifecycleStatus
+            case lifecycleOwner
+            case configuredEndpointClass
+            case endpointConfigured
+            case loopbackConfigured
+            case confirmationPolicy
+            case startupPolicy
+            case mutationPolicy
+            case credentialPolicy
+            case safeDefault
+            case supportClaimEffect
+            case requiredEvidence
+            case reentryCondition
+        }
+    }
+
     struct Domain: Decodable, Equatable, Identifiable {
         struct Provenance: Decodable, Equatable {
             let source: String?
@@ -510,6 +550,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let resources: [RuntimeResource]?
             let permissionMode: String?
             let capability: RuntimeCapability?
+            let tuiGatewayTransportPolicy: TransportPolicy?
             let supportContract: SupportContract?
         }
 
@@ -636,6 +677,9 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let officialMethod: String?
         let officialContractSource: String?
         let requiredEvidence: [String]?
+        let transportPolicy: TransportPolicy?
+        let productionTransportStatus: String?
+        let lifecycleStatus: String?
 
         enum CodingKeys: String, CodingKey {
             case action
@@ -649,6 +693,9 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             case officialMethod
             case officialContractSource
             case requiredEvidence
+            case transportPolicy
+            case productionTransportStatus
+            case lifecycleStatus
             case guardName = "guard"
         }
     }

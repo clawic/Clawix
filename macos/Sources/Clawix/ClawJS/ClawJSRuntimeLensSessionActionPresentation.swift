@@ -12,6 +12,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
         let officialProtocol: String?
         let officialMethod: String?
         let officialContractSource: String?
+        let transportPolicyId: String?
+        let productionTransportStatus: String?
+        let lifecycleStatus: String?
         let requiredEvidenceCount: Int
         let requiredEvidenceLabel: String?
         let writeDisposition: String
@@ -25,6 +28,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 officialProtocol,
                 officialMethod,
                 officialContractSource,
+                transportPolicyId.map { "transport policy \($0)" },
+                productionTransportStatus.map { "production transport \($0)" },
+                lifecycleStatus.map { "lifecycle \($0)" },
                 requiredEvidenceLabel
             ].compactMap { $0 }
             guard !values.isEmpty else { return nil }
@@ -43,6 +49,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 officialProtocol.map { "official protocol \($0)" },
                 officialMethod.map { "official method \($0)" },
                 officialContractSource.map { "official contract source \($0)" },
+                transportPolicyId.map { "transport policy \($0)" },
+                productionTransportStatus.map { "production transport \($0)" },
+                lifecycleStatus.map { "lifecycle \($0)" },
                 "required evidence count \(requiredEvidenceCount)",
                 requiredEvidenceLabel.map { "required evidence \($0)" }
             ]
@@ -96,6 +105,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 officialProtocol: action.officialProtocol,
                 officialMethod: action.officialMethod,
                 officialContractSource: action.officialContractSource,
+                transportPolicyId: action.transportPolicy?.id,
+                productionTransportStatus: action.productionTransportStatus ?? action.transportPolicy?.productionTransportStatus,
+                lifecycleStatus: action.lifecycleStatus ?? action.transportPolicy?.lifecycleStatus,
                 requiredEvidenceCount: action.requiredEvidence?.count ?? 0,
                 requiredEvidenceLabel: listLabel(action.requiredEvidence ?? [], limit: 5),
                 writeDisposition: writeDisposition(for: action)

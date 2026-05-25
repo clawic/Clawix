@@ -54,11 +54,15 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.delegatesTo, "tui_gateway.prompt.submit")
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.officialProtocol, "tui_gateway_json_rpc")
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.officialMethod, "prompt.submit")
+        XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.transportPolicyId, "hermes.tui_gateway.transport_lifecycle_policy")
+        XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.productionTransportStatus, "blocked_until_production_transport_lifecycle_policy")
+        XCTAssertEqual(actionPresentation.rows.first { $0.action == "send" }?.lifecycleStatus, "external_user_managed_not_started_by_claw")
         XCTAssertEqual(
             actionPresentation.rows.first { $0.action == "send" }?.officialContractSource,
             "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration"
         )
         XCTAssertTrue(actionPresentation.rows.first { $0.action == "send" }?.accessibilityLabel.contains("official protocol tui_gateway_json_rpc") == true)
+        XCTAssertTrue(actionPresentation.rows.first { $0.action == "send" }?.accessibilityLabel.contains("transport policy hermes.tui_gateway.transport_lifecycle_policy") == true)
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "create" }?.writeDisposition, "would write")
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "pin" }?.authority, "clawix_local_overlay")
         XCTAssertTrue(actionPresentation.accessibilityLabel.contains("blocked actions send, inject, abort, create"))
@@ -79,6 +83,9 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "create" }?.delegatesTo, "tui_gateway.session.create")
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "create" }?.officialProtocol, "tui_gateway_json_rpc")
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "create" }?.officialMethod, "session.create")
+        XCTAssertNil(contractPresentation.rows.first { $0.action == "create" }?.transportPolicyId)
+        XCTAssertEqual(contractPresentation.rows.first { $0.action == "send" }?.transportPolicyId, "hermes.tui_gateway.transport_lifecycle_policy")
+        XCTAssertEqual(contractPresentation.rows.first { $0.action == "send" }?.productionTransportStatus, "blocked_until_production_transport_lifecycle_policy")
         XCTAssertEqual(
             contractPresentation.rows.first { $0.action == "create" }?.officialContractSource,
             "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration"

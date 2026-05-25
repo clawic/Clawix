@@ -15,6 +15,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
         let officialProtocol: String?
         let officialMethod: String?
         let officialContractSource: String?
+        let transportPolicyId: String?
+        let productionTransportStatus: String?
+        let lifecycleStatus: String?
         let requiredEvidenceCount: Int
 
         var detailLabel: String? {
@@ -25,6 +28,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 officialProtocol,
                 officialMethod,
                 officialContractSource,
+                transportPolicyId.map { "transport policy \($0)" },
+                productionTransportStatus.map { "production transport \($0)" },
+                lifecycleStatus.map { "lifecycle \($0)" },
                 requiredEvidenceCount > 0 ? "evidence \(requiredEvidenceCount)" : nil,
                 statusChanged ? "materialized" : nil
             ].compactMap { $0 }
@@ -46,6 +52,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 officialProtocol.map { "official protocol \($0)" },
                 officialMethod.map { "official method \($0)" },
                 officialContractSource.map { "official contract source \($0)" },
+                transportPolicyId.map { "transport policy \($0)" },
+                productionTransportStatus.map { "production transport \($0)" },
+                lifecycleStatus.map { "lifecycle \($0)" },
                 "required evidence \(requiredEvidenceCount)"
             ]
             .compactMap { $0 }
@@ -119,6 +128,15 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 officialProtocol: materialized?.officialProtocol ?? contract?.officialProtocol,
                 officialMethod: materialized?.officialMethod ?? contract?.officialMethod,
                 officialContractSource: materialized?.officialContractSource ?? contract?.officialContractSource,
+                transportPolicyId: materialized?.transportPolicy?.id ?? contract?.transportPolicy?.id,
+                productionTransportStatus: materialized?.productionTransportStatus
+                    ?? materialized?.transportPolicy?.productionTransportStatus
+                    ?? contract?.productionTransportStatus
+                    ?? contract?.transportPolicy?.productionTransportStatus,
+                lifecycleStatus: materialized?.lifecycleStatus
+                    ?? materialized?.transportPolicy?.lifecycleStatus
+                    ?? contract?.lifecycleStatus
+                    ?? contract?.transportPolicy?.lifecycleStatus,
                 requiredEvidenceCount: materialized?.requiredEvidence?.count ?? contract?.requiredEvidence?.count ?? 0
             )
         }
