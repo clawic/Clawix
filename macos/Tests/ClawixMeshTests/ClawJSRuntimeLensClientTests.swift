@@ -25,6 +25,51 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.resources(for: "sessions").first?.id, "2026/05/21/runtime-session")
     }
 
+    func testRuntimeLensDecodesHermesRuntimePortalEnvelope() async throws {
+        let snapshot = try await ClawJSRuntimeLensTestFixtures.hermesRuntimePortalSnapshot()
+
+        XCTAssertEqual(snapshot.runtimeId, "hermes")
+        XCTAssertEqual(snapshot.domains.map(\.domain), ClawJSRuntimeLensSnapshot.canonicalDomains)
+        XCTAssertEqual(snapshot.commands?.resourceDomains, ClawJSRuntimeLensSnapshot.canonicalDomains)
+        XCTAssertEqual(snapshot.support?.ecosystem?.supportStage, "dev_only")
+        XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.effectiveSupportStage, "dev_only")
+        XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.recommended, false)
+        XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.production, false)
+        XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.map(\.action), [
+            "list",
+            "preview",
+            "resolve",
+            "history",
+            "send",
+            "inject",
+            "abort",
+            "create",
+            "pin",
+            "unpin",
+            "conflicts"
+        ])
+        XCTAssertEqual(snapshot.domainData?.sessions?.actionPolicy?.first { $0.action == "resolve" }?.status, "implemented")
+        XCTAssertEqual(snapshot.domainData?.sessions?.actionPolicy?.first { $0.action == "history" }?.status, "implemented")
+        XCTAssertEqual(snapshot.domainData?.sessions?.actionPolicy?.first { $0.action == "send" }?.status, "blocked")
+        XCTAssertEqual(snapshot.domainData?.sessions?.actionPolicy?.first { $0.action == "pin" }?.authority, "clawix_local_overlay")
+        XCTAssertEqual(snapshot.domainData?.sessions?.overlayState?.writesRuntime, false)
+        XCTAssertEqual(snapshot.resources(for: "sessions").first?.id, "2026/05/21/runtime-session")
+        XCTAssertEqual(snapshot.resources(for: "plugins").map(\.id).sorted(), ["mcp-github", "memory-provider", "plugin-status"])
+        let scalarAuthResource = try XCTUnwrap(snapshot.resources(for: "auth").first { $0.id == "tencent-tokenhub" })
+        XCTAssertEqual(scalarAuthResource.status, "redacted")
+        XCTAssertEqual(scalarAuthResource.kind, "redacted_auth_state")
+        XCTAssertNil(scalarAuthResource.summary)
+        XCTAssertEqual(scalarAuthResource.attributes?.contains("auth scalar: redacted_value"), true)
+
+        let sessionActionPresentation = ClawJSRuntimeLensSessionActionPresentation.make(
+            actions: try XCTUnwrap(snapshot.domainData?.sessions?.actionPolicy)
+        )
+        XCTAssertEqual(sessionActionPresentation.statusLabel, "blocked 4, implemented 5, local_overlay_only 2")
+        XCTAssertEqual(sessionActionPresentation.localOverlayActionsLabel, "pin, unpin")
+        XCTAssertEqual(sessionActionPresentation.blockedActionsLabel, "send, inject, abort, create")
+        XCTAssertTrue(sessionActionPresentation.accessibilityLabel.contains("Runtime session actions"))
+    }
+
     func testRuntimeLensPresentationsExposeParityEvidenceAndClosureState() async throws {
         let snapshot = try await ClawJSRuntimeLensTestFixtures.degradedRuntimePortalSnapshot()
         let audit = try XCTUnwrap(snapshot.supportAudit)

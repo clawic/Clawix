@@ -423,6 +423,66 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
                 let hasEnvKey: Bool?
                 let authType: String?
                 let maskedCredential: String?
+                let scalarDisposition: String?
+
+                enum CodingKeys: String, CodingKey {
+                    case provider
+                    case hasAuth
+                    case hasSubscription
+                    case hasApiKey
+                    case hasProfileApiKey
+                    case hasEnvKey
+                    case authType
+                    case maskedCredential
+                }
+
+                init(from decoder: Decoder) throws {
+                    if let container = try? decoder.container(keyedBy: CodingKeys.self) {
+                        provider = try container.decodeIfPresent(String.self, forKey: .provider)
+                        hasAuth = try container.decodeIfPresent(Bool.self, forKey: .hasAuth)
+                        hasSubscription = try container.decodeIfPresent(Bool.self, forKey: .hasSubscription)
+                        hasApiKey = try container.decodeIfPresent(Bool.self, forKey: .hasApiKey)
+                        hasProfileApiKey = try container.decodeIfPresent(Bool.self, forKey: .hasProfileApiKey)
+                        hasEnvKey = try container.decodeIfPresent(Bool.self, forKey: .hasEnvKey)
+                        authType = try container.decodeIfPresent(String.self, forKey: .authType)
+                        maskedCredential = try container.decodeIfPresent(String.self, forKey: .maskedCredential)
+                        scalarDisposition = nil
+                        return
+                    }
+
+                    let container = try decoder.singleValueContainer()
+                    provider = nil
+                    hasAuth = nil
+                    hasSubscription = nil
+                    hasApiKey = nil
+                    hasProfileApiKey = nil
+                    hasEnvKey = nil
+                    authType = nil
+                    maskedCredential = nil
+
+                    if container.decodeNil() {
+                        scalarDisposition = "null_value"
+                    } else if let value = try? container.decode(Bool.self) {
+                        scalarDisposition = "boolean_\(value)"
+                    } else if let value = try? container.decode(String.self) {
+                        scalarDisposition = Self.safeScalarDisposition(for: value)
+                    } else if (try? container.decode(Int.self)) != nil || (try? container.decode(Double.self)) != nil {
+                        scalarDisposition = "numeric_value_redacted_by_client"
+                    } else {
+                        scalarDisposition = "unsupported_scalar_redacted_by_client"
+                    }
+                }
+
+                private static func safeScalarDisposition(for value: String) -> String {
+                    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if trimmed.isEmpty {
+                        return "empty_string"
+                    }
+                    if trimmed == "[REDACTED]" || trimmed.allSatisfy({ $0 == "*" }) {
+                        return "redacted_value"
+                    }
+                    return "scalar_value_redacted_by_client"
+                }
             }
         }
 
@@ -633,8 +693,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
                 return RuntimeResource(
                     id: provider,
                     label: state.provider ?? provider,
-                    status: state.hasAuth == true ? "configured" : "missing",
-                    kind: state.authType ?? "auth",
+                    status: state.hasAuth == true ? "configured" : (state.scalarDisposition == nil ? "missing" : "redacted"),
+                    kind: state.authType ?? (state.scalarDisposition == nil ? "auth" : "redacted_auth_state"),
                     path: nil,
                     enabled: state.hasAuth,
                     summary: state.maskedCredential,
@@ -667,7 +727,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             state.hasSubscription.map { "subscription: \($0)" },
             state.hasApiKey.map { "api key: \($0)" },
             state.hasProfileApiKey.map { "profile key: \($0)" },
-            state.hasEnvKey.map { "env key: \($0)" }
+            state.hasEnvKey.map { "env key: \($0)" },
+            state.scalarDisposition.map { "auth scalar: \($0)" }
         ]
         .compactMap { $0 }
     }

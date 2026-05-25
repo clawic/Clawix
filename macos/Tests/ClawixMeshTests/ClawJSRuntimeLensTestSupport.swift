@@ -37,6 +37,20 @@ enum ClawJSRuntimeLensTestFixtures {
         return try await client.load(runtime: .hermes)
     }
 
+    static func hermesRuntimePortalSnapshot(
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async throws -> ClawJSRuntimeLensSnapshot {
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            XCTAssertEqual(args, ["runtime", "hermes", "domains", "--json"], file: file, line: line)
+            return .init(
+                data: try data(named: "hermes-runtime-portal-envelope", file: file, line: line),
+                exitCode: 2
+            )
+        })
+        return try await client.load(runtime: .hermes)
+    }
+
     static func decodedRuntimePortalSnapshot(
         file: StaticString = #filePath,
         line: UInt = #line
