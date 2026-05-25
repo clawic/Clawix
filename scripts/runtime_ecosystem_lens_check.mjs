@@ -28,6 +28,42 @@ function requireSnippet(file, snippet, label = snippet) {
   }
 }
 
+function requireSnippetInFiles(files, snippet, label = snippet) {
+  const existingFiles = files.filter((file) => exists(file));
+  for (const file of files) {
+    if (!exists(file)) errors.push(`missing ${file}`);
+  }
+  if (existingFiles.length === 0) return;
+  if (!existingFiles.some((file) => read(file).includes(snippet))) {
+    errors.push(`${existingFiles.join(", ")} missing ${label}`);
+  }
+}
+
+const runtimeLensModelFiles = [
+  "macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensClient.swift",
+  "macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensRuntimeResource.swift"
+];
+
+const runtimeLensSettingsFiles = [
+  "macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensSettingsPresentation.swift",
+  "macos/Sources/Clawix/Settings/ClawJSSettingsPage.swift",
+  "macos/Sources/Clawix/Settings/ClawJSRuntimeLensSection.swift",
+  "macos/Sources/Clawix/Settings/ClawJSRuntimeLensChrome.swift",
+  "macos/Sources/Clawix/Settings/ClawJSRuntimeLensSummaryViews.swift",
+  "macos/Sources/Clawix/Settings/ClawJSRuntimeLensSupportOverviewViews.swift",
+  "macos/Sources/Clawix/Settings/ClawJSRuntimeLensSupportAuditViews.swift",
+  "macos/Sources/Clawix/Settings/ClawJSRuntimeLensSupportClosureViews.swift",
+  "macos/Sources/Clawix/Settings/ClawJSRuntimeLensSessionViews.swift",
+  "macos/Sources/Clawix/Settings/ClawJSRuntimeLensDomainViews.swift",
+  "macos/Sources/Clawix/Settings/ClawJSRuntimeLensInventoryViews.swift"
+];
+
+const runtimeLensTestFiles = [
+  "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensClientTests.swift",
+  "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensClientBoundaryTests.swift",
+  "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensSessionActionTests.swift"
+];
+
 for (const file of [
   "docs/runtime-ecosystem-lens.md",
   "docs/adr/0033-runtime-ecosystem-integration-standard-mirror.md",
@@ -247,7 +283,7 @@ for (const snippet of [
   "runtimeResources?.auth",
   "runtimeResources?.defaultModel"
 ]) {
-  requireSnippet("macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensClient.swift", snippet);
+  requireSnippetInFiles(runtimeLensModelFiles, snippet);
 }
 
 for (const snippet of [
@@ -663,100 +699,56 @@ for (const snippet of [
   ".onChange(of: runtimeLensSelection)",
   "refreshRuntimeLens(runtimeLensSelection)",
   "ClawJSRuntimeLensRefreshPlan.scoped(to: runtime)",
-  "runtimeLensViewStatePresentation",
+  "ClawJSRuntimeLensSettingsPresentation.make",
+  "validationAccessibilityLabel",
+  "runtimeLensPresentation",
+  "runtimeLensPresentationSection(section)",
+  "runtimeLensPresentationRow(presentationRow)",
+  "runtime-lens-section-",
+  "runtime-lens-presentation-row-",
+  "viewStateSection(viewState)",
   "ClawJSRuntimeLensViewStatePresentation.make",
-  "runtimeLensViewState(viewState)",
-  "runtime-lens-view-state-",
-  "runtimeLensSessionInventory(sessions)",
-  "ClawJSRuntimeLensSessionInventoryPresentation.make(bucket: sessions)",
-  "runtime-lens-session-inventory",
+  "runtimeSummaryBySectionId",
+  "domainPresentationBySectionId",
+  "runtimeSection(runtimeSummary)",
   "ClawJSRuntimeLensRuntimeSummaryPresentation.make(snapshot: snapshot)",
-  "runtime-lens-runtime-summary",
-  "runtime-lens-runtime-location-",
-  "runtime-lens-runtime-capability-",
-  "enabled \\(presentation.rawCapabilityEnabledCount)/\\(presentation.rawCapabilityCount)",
-  "snapshot.domainData?.sessions?.session ?? snapshot.session",
-  "Workspace files",
-  "Runtime resources",
-  "groups \\(presentation.runtimeResourceAggregateDomainCount)",
-  "workspaceCanonicalPathCount",
-  "ClawJSRuntimeLensSupportOverviewPresentation.make(support: support)",
-  "runtime-lens-support-overview",
-  "Source: \\(source)",
-  "runtimeLensSession(session)",
+  "supportSection(ClawJSRuntimeLensSupportOverviewPresentation.make(support: support))",
+  "supportAuditSection(ClawJSRuntimeLensSupportAuditPresentation.make(audit: audit))",
+  "syncSummarySection(ClawJSRuntimeLensSupportSummaryPresentation.make(sync: sync))",
+  "projectionSummarySection(ClawJSRuntimeLensSupportSummaryPresentation.make(projection: projection))",
+  "evidenceReadinessSummarySection(ClawJSRuntimeLensSupportSummaryPresentation.make(evidenceReadiness: readiness))",
+  "closureSection(ClawJSRuntimeLensClosureChecklistPresentation.make(checklist: checklist, summary: audit.closureChecklistSummary))",
+  "promotionReviewSection(ClawJSRuntimeLensSupportDecisionPresentation.make(review: review))",
+  "finalDecisionSection(ClawJSRuntimeLensSupportDecisionPresentation.make(decision: decision))",
+  "reentrySection(ClawJSRuntimeLensEvidenceReentryPresentation.make(packets: packets))",
+  "sessionInventorySection(ClawJSRuntimeLensSessionInventoryPresentation.make(bucket: sessions))",
+  "sessions.session ?? snapshot.session",
+  "ClawJSRuntimeLensSessionInventoryPresentation.make(bucket: sessions)",
   "ClawJSRuntimeLensSessionDescriptorPresentation.make(session: session)",
-  "runtime-lens-session-descriptor",
-  "runtimeLensSessionActions(actions)",
   "ClawJSRuntimeLensSessionActionPresentation.make(actions: actions)",
   "evidence \\(action.requiredEvidenceCount)",
-  "Evidence: \\(evidence)",
-  "runtime-lens-session-actions",
-  "runtimeLensSessionActionContracts(",
   "ClawJSRuntimeLensSessionActionContractPresentation.make",
-  "runtime-lens-session-action-contracts",
-  "runtime-lens-session-action-contract-",
-  "runtimeLensCommands(commands)",
   "ClawJSRuntimeLensCommandMatrixPresentation.make(commands: commands)",
   "args \\(command.argumentCount)",
-  "Args: \\(args)",
-  "runtime-lens-command-matrix",
-  "runtimeLensSupportAudit(supportAudit)",
-  "ClawJSRuntimeLensSupportAuditPresentation.make(audit: audit)",
-  "runtime-lens-support-audit",
-  "Audit source: \\(provenance)",
-  "runtimeLensFinalPromotionReview(review)",
-  "runtimeLensFinalSupportClaimDecision(decision)",
-  "ClawJSRuntimeLensSupportDecisionPresentation.make(review: review)",
-  "ClawJSRuntimeLensSupportDecisionPresentation.make(decision: decision)",
-  "runtime-lens-final-promotion-review",
-  "runtime-lens-final-support-claim-decision",
-  "runtimeLensSyncPolicySummary(syncSummary)",
-  "runtime-lens-sync-policy-summary",
-  "ClawJSRuntimeLensSupportSummaryPresentation.make(sync: summary)",
-  "runtimeLensProjectionSummary(projectionSummary)",
-  "ClawJSRuntimeLensSupportSummaryPresentation.make(projection: summary)",
-  "runtime-lens-projection-summary",
-  "runtimeLensEvidenceReadinessSummary(readinessSummary)",
-  "ClawJSRuntimeLensSupportSummaryPresentation.make(evidenceReadiness: summary)",
-  "runtime-lens-evidence-readiness-summary",
-  "runtimeLensClosureChecklist(checklist",
-  "runtimeLensEvidenceReentryPackets(packets)",
-  "ClawJSRuntimeLensEvidenceReentryPresentation.make",
-  "runtime-lens-evidence-reentry-packets",
-  "runtime-lens-evidence-reentry-row-",
-  "row.expectedEvidenceLabel",
-  "row.supportResolution",
-  "row.productDecision",
-  "row.userVisibleContract",
-  "runtimeLensSessionOverlayState(overlayState)",
-  "ClawJSRuntimeLensSessionOverlayPresentation.make(state: state)",
-  "runtime-lens-session-overlays",
-  "runtimeLensMissingDomains(snapshot)",
-  "ClawJSRuntimeLensMissingDomainPresentation.make(domains: snapshot.domains)",
-  "runtime-lens-missing-domains",
-  "runtime-lens-missing-domain-",
-  "runtimeLensDomains(snapshot)",
+  "commandSection(ClawJSRuntimeLensCommandMatrixPresentation.make(commands: commands))",
+  "missingDomainSection(missing)",
+  "ClawJSRuntimeLensMissingDomainPresentation.make(domains: domains)",
+  "domainSection(domains)",
   "ClawJSRuntimeLensDomainPresentation.make(domains: snapshot.domains)",
-  "Limitations: \\(limitations)",
-  "runtime-lens-domains",
-  "runtime-lens-domain-",
-  "runtimeLensSupportContracts(snapshot)",
+  "supportContractSection(contracts)",
   "ClawJSRuntimeLensSupportContractPresentation.make(snapshot: snapshot)",
-  "runtime-lens-support-contracts",
-  "runtime-lens-support-contract-",
-  "runtimeLensDomainCommands(domain: domain.domain, commands: domain.officialCommands)",
-  "ClawJSRuntimeLensDomainCommandPresentation.make",
-  "runtime-lens-domain-commands-",
-  "runtime-lens-domain-command-",
-  "runtimeLensEvidenceRequirements",
-  "ClawJSRuntimeLensEvidenceRequirementPresentation.make",
-  "runtime-lens-evidence-requirements",
-  "runtime-lens-evidence-requirement-",
-  "ClawJSRuntimeLensClosureChecklistPresentation.make",
-  "ClawJSRuntimeLensValidationSummary.make",
-  "runtime-lens-section-",
-  "runtimeLensInventory(snapshot)",
+  "inventorySection(inventory)",
   "ClawJSRuntimeLensInventoryPresentation.make(snapshot: snapshot)",
+  "ClawJSRuntimeLensEvidenceRequirementPresentation.make",
+  "ClawJSRuntimeLensEvidenceReentryPresentation.make",
+  "$0.expectedEvidenceLabel",
+  "$0.supportResolution",
+  "$0.productDecision",
+  "$0.userVisibleContract",
+  "ClawJSRuntimeLensSessionOverlayPresentation.make(state: state)",
+  "sessionOverlaySection(ClawJSRuntimeLensSessionOverlayPresentation.make(state: overlay))",
+  "ClawJSRuntimeLensDomainCommandPresentation.make",
+  "ClawJSRuntimeLensValidationSummary.make",
   "runtime-lens-inventory",
   "runtime-lens-inventory-domain-",
   "runtime-lens-inventory-resource-",
@@ -764,7 +756,6 @@ for (const snippet of [
   "runtimeSessionOverlayButton(snapshot: snapshot, resource: row.resource)",
   "ClawJSRuntimeLensSessionOverlayActionPresentation.make",
   "runtimeLensColor(ClawJSRuntimeLensStatusTone.",
-  "runtime-lens-closure-checklist",
   "readProjectionStatus",
   "projectionDisposition",
   "blocked write",
@@ -776,7 +767,7 @@ for (const snippet of [
   "safeDefault",
   "External evidence required before this claim can be promoted."
 ]) {
-  requireSnippet("macos/Sources/Clawix/Settings/ClawJSSettingsPage.swift", snippet);
+  requireSnippetInFiles(runtimeLensSettingsFiles, snippet);
 }
 
 for (const snippet of [
@@ -915,7 +906,7 @@ for (const snippet of [
   "snapshot.resources(for: \"configuration\")",
   "setSessionPinned"
 ]) {
-  requireSnippet("macos/Tests/ClawixMeshTests/ClawJSRuntimeLensClientTests.swift", snippet);
+  requireSnippetInFiles(runtimeLensTestFiles, snippet);
 }
 
 if (errors.length > 0) {
