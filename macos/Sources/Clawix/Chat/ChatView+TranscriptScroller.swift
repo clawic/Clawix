@@ -21,7 +21,6 @@ struct ChatTranscriptScrollerView: View {
     @State private var awayFromBottom = false
     @State private var revealAfterOlderPage = false
     @State private var messageFrames: [UUID: CGRect] = [:]
-    @StateObject private var scrollViewBox = ChatScrollViewBox()
 
     private var bottomScrollBinding: Binding<String?> {
         Binding<String?>(
@@ -79,16 +78,10 @@ struct ChatTranscriptScrollerView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
                 .padding(.bottom, 12)
-                .background {
-                    ZStack {
-                        ThinScrollerInstaller(
-                            style: .clawixAlwaysVisible,
-                            controlId: "chat.transcript.scroll"
-                        )
-                        ChatScrollViewLocator(box: scrollViewBox)
-                    }
-                    .allowsHitTesting(false)
-                }
+                .background(ThinScrollerInstaller(
+                    style: .clawixAlwaysVisible,
+                    controlId: "chat.transcript.scroll"
+                ).allowsHitTesting(false))
             }
             .coordinateSpace(name: ChatMessageFrameProbe.coordinateSpaceName)
             .onPreferenceChange(ChatMessageFramePreferenceKey.self) { frames in
@@ -227,30 +220,16 @@ struct ChatTranscriptScrollerView: View {
                 return
             }
             lastLocalRevealAt = now
-            guard let anchorId = currentScrollAnchorMessageId(),
-                  let anchorFrameBefore = messageFrames[anchorId] else {
-                RenderProbe.mark(
-                    "ChatOlderHistoryRevealAnchorUnavailable",
-                    fields: [
-                        "chat": chatId.uuidString,
-                        "frames": "\(messageFrames.count)",
-                        "visible": "\(visibleMessageStores.count)"
-                    ]
-                )
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    lastLocalRevealAt = .distantPast
-                    handleScrollUpTrigger(proxy: proxy)
-                }
-                return
-            }
+            let anchorId = currentScrollAnchorMessageId()
+            let anchorFrameBefore = anchorId.flatMap { messageFrames[$0] }
             bottomId = nil
             RenderProbe.mark(
                 "ChatOlderHistoryRevealStart",
                 fields: [
-                    "anchor": anchorId.uuidString,
+                    "anchor": anchorId?.uuidString ?? "none",
                     "bottomArmed": "false",
                     "chat": chatId.uuidString,
-                    "frameMinY": Self.format(anchorFrameBefore.minY),
+                    "frameMinY": anchorFrameBefore.map { Self.format($0.minY) } ?? "none",
                     "fromVisible": "\(visibleMessageLimit)",
                     "hiddenBefore": "\(hiddenLocalMessageCount)",
                     "last": visibleMessageStores.last?.id.uuidString ?? "none",
@@ -263,29 +242,29 @@ struct ChatTranscriptScrollerView: View {
             )
             let exhaustedLocalWindow = nextVisibleLimit >= transcript.messageIds.count
             visibleMessageLimit = nextVisibleLimit
-            DispatchQueue.main.async {
-                restoreScrollAnchor(anchorId: anchorId, before: anchorFrameBefore)
-                RenderProbe.mark(
-                    "ChatOlderHistoryRevealAnchored",
-                    fields: [
-                        "anchor": anchorId.uuidString,
-                        "chat": chatId.uuidString,
-                        "last": visibleMessageStores.last?.id.uuidString ?? "none",
-                        "toVisible": "\(visibleMessageLimit)"
-                    ]
-                )
-                recordAnchorShift(
-                    anchorId: anchorId,
-                    before: anchorFrameBefore,
-                    phase: "immediate"
-                )
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    restoreScrollAnchor(anchorId: anchorId, before: anchorFrameBefore)
+            if let anchorId {
+                DispatchQueue.main.async {
+                    RenderProbe.mark(
+                        "ChatOlderHistoryRevealAnchored",
+                        fields: [
+                            "anchor": anchorId.uuidString,
+                            "chat": chatId.uuidString,
+                            "last": visibleMessageStores.last?.id.uuidString ?? "none",
+                            "toVisible": "\(visibleMessageLimit)"
+                        ]
+                    )
                     recordAnchorShift(
                         anchorId: anchorId,
                         before: anchorFrameBefore,
-                        phase: "settled"
+                        phase: "immediate"
                     )
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        recordAnchorShift(
+                            anchorId: anchorId,
+                            before: anchorFrameBefore,
+                            phase: "settled"
+                        )
+                    }
                     if exhaustedLocalWindow {
                         revealAfterOlderPage = true
                         RenderProbe.mark(
@@ -297,19 +276,6 @@ struct ChatTranscriptScrollerView: View {
                             ]
                         )
                         appState.requestOlderIfNeeded(chatId: chatId)
-                    } else if isNearTopOfTranscript() {
-                        RenderProbe.mark(
-                            "ChatOlderHistoryRevealContinuedAtTop",
-                            fields: [
-                                "chat": chatId.uuidString,
-                                "hidden": "\(hiddenLocalMessageCount)",
-                                "visible": "\(visibleMessageLimit)"
-                            ]
-                        )
-                        DispatchQueue.main.asyncAfter(deadline: .now() + ChatView.localRevealThrottle) {
-                            lastLocalRevealAt = .distantPast
-                            handleScrollUpTrigger(proxy: proxy)
-                        }
                     }
                 }
             }
@@ -337,17 +303,13 @@ struct ChatTranscriptScrollerView: View {
         return chat.hasActiveTurn
     }
 
-    private func isNearTopOfTranscript() -> Bool {
-        guard let scrollView = scrollViewBox.scrollView else { return false }
-        return scrollView.contentView.bounds.origin.y <= ChatView.loadOlderThreshold + 1
-    }
-
     private func currentScrollAnchorMessageId() -> UUID? {
         let candidates = visibleMessageStores.compactMap { store -> (id: UUID, minY: CGFloat)? in
             guard let frame = messageFrames[store.id] else { return nil }
             return (store.id, frame.minY)
         }
         return candidates.min { abs($0.minY) < abs($1.minY) }?.id
+            ?? visibleMessageStores.first?.id
     }
 
     private func recordAnchorShift(anchorId: UUID, before: CGRect?, phase: String) {
@@ -391,73 +353,7 @@ struct ChatTranscriptScrollerView: View {
         )
     }
 
-    private func restoreScrollAnchor(anchorId: UUID, before: CGRect?) {
-        guard let before else {
-            RenderProbe.mark(
-                "ChatOlderHistoryScrollAnchorPreserved",
-                fields: [
-                    "anchor": anchorId.uuidString,
-                    "chat": chatId.uuidString,
-                    "status": "missing-before"
-                ]
-            )
-            return
-        }
-        guard let scrollView = scrollViewBox.scrollView,
-              let documentView = scrollView.documentView else {
-            RenderProbe.mark(
-                "ChatOlderHistoryScrollAnchorPreserved",
-                fields: [
-                    "anchor": anchorId.uuidString,
-                    "chat": chatId.uuidString,
-                    "status": "missing-scroll-view"
-                ]
-            )
-            return
-        }
-        guard let after = messageFrames[anchorId] else {
-            RenderProbe.mark(
-                "ChatOlderHistoryScrollAnchorPreserved",
-                fields: [
-                    "anchor": anchorId.uuidString,
-                    "chat": chatId.uuidString,
-                    "status": "missing-after"
-                ]
-            )
-            return
-        }
-
-        let deltaY = after.minY - before.minY
-        scrollView.layoutSubtreeIfNeeded()
-        documentView.layoutSubtreeIfNeeded()
-        let beforeOrigin = scrollView.contentView.bounds.origin
-        let visibleHeight = scrollView.contentView.bounds.height
-        let maxY = max(0, documentView.bounds.height - visibleHeight)
-        var nextOrigin = beforeOrigin
-        nextOrigin.y += deltaY
-        nextOrigin.y = min(max(0, nextOrigin.y), maxY)
-        if abs(nextOrigin.y - beforeOrigin.y) > 0.5 {
-            scrollView.contentView.scroll(to: nextOrigin)
-            scrollView.reflectScrolledClipView(scrollView.contentView)
-            scrollView.layoutSubtreeIfNeeded()
-        }
-
-        RenderProbe.mark(
-            "ChatOlderHistoryScrollAnchorPreserved",
-            fields: [
-                "adjustedBy": Self.format(nextOrigin.y - beforeOrigin.y),
-                "anchor": anchorId.uuidString,
-                "beforeOriginY": Self.format(beforeOrigin.y),
-                "chat": chatId.uuidString,
-                "deltaY": Self.format(deltaY),
-                "documentFlipped": "\(documentView.isFlipped)",
-                "maxY": Self.format(maxY),
-                "status": "preserved"
-            ]
-        )
-    }
-
-    fileprivate static func format(_ value: CGFloat) -> String {
+    private static func format(_ value: CGFloat) -> String {
         String(format: "%.2f", Double(value))
     }
 }
@@ -468,11 +364,15 @@ private struct ChatMessageFrameProbe: View {
     let id: UUID
 
     var body: some View {
-        GeometryReader { proxy in
-            Color.clear.preference(
-                key: ChatMessageFramePreferenceKey.self,
-                value: [id: proxy.frame(in: .named(Self.coordinateSpaceName))]
-            )
+        if RenderProbe.isEnabled, ClxAgentInstance.isAgent {
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: ChatMessageFramePreferenceKey.self,
+                    value: [id: proxy.frame(in: .named(Self.coordinateSpaceName))]
+                )
+            }
+        } else {
+            EmptyView()
         }
     }
 }
@@ -482,53 +382,5 @@ private struct ChatMessageFramePreferenceKey: PreferenceKey {
 
     static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, next in next })
-    }
-}
-
-private final class ChatScrollViewBox: ObservableObject {
-    weak var scrollView: NSScrollView?
-}
-
-private struct ChatScrollViewLocator: NSViewRepresentable {
-    @ObservedObject var box: ChatScrollViewBox
-
-    func makeNSView(context: Context) -> ChatScrollViewLocatorView {
-        ChatScrollViewLocatorView(box: box)
-    }
-
-    func updateNSView(_ nsView: ChatScrollViewLocatorView, context: Context) {
-        nsView.box = box
-        nsView.locateIfNeeded()
-    }
-}
-
-private final class ChatScrollViewLocatorView: NSView {
-    weak var box: ChatScrollViewBox?
-
-    init(box: ChatScrollViewBox) {
-        self.box = box
-        super.init(frame: .zero)
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) is not supported")
-    }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        DispatchQueue.main.async { [weak self] in
-            self?.locateIfNeeded()
-        }
-    }
-
-    func locateIfNeeded() {
-        var current: NSView? = superview
-        while let view = current {
-            if let scrollView = view as? NSScrollView {
-                box?.scrollView = scrollView
-                return
-            }
-            current = view.superview
-        }
     }
 }

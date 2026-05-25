@@ -21,17 +21,12 @@ struct ChatScrollUpSentinel: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(macOS 15, *) {
-            content.onScrollGeometryChange(for: ChatScrollUpGeometryState.self) { geom in
+            content.onScrollGeometryChange(for: Bool.self) { geom in
                 let realOverflow = geom.contentSize.height
                     > geom.containerSize.height - geom.contentInsets.top - geom.contentInsets.bottom + 1
-                let isNearTop = geom.contentOffset.y < threshold && realOverflow
-                return ChatScrollUpGeometryState(
-                    isNearTop: isNearTop,
-                    contentHeight: isNearTop ? Int(geom.contentSize.height.rounded()) : 0
-                )
-            } action: { oldState, newState in
-                if newState.isNearTop,
-                   !oldState.isNearTop || oldState.contentHeight != newState.contentHeight {
+                return geom.contentOffset.y < threshold && realOverflow
+            } action: { wasNearTop, isNearTop in
+                if isNearTop && !wasNearTop {
                     onTrigger()
                 }
             }
@@ -39,11 +34,6 @@ struct ChatScrollUpSentinel: ViewModifier {
             content
         }
     }
-}
-
-private struct ChatScrollUpGeometryState: Equatable {
-    let isNearTop: Bool
-    let contentHeight: Int
 }
 
 /// Reports whether the reader has scrolled meaningfully away from the
