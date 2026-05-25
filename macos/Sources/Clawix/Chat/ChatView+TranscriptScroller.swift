@@ -19,6 +19,7 @@ struct ChatTranscriptScrollerView: View {
     /// True once the reader has scrolled meaningfully above the tail of
     /// an overflowing transcript; gates the scroll-to-bottom button.
     @State private var awayFromBottom = false
+    @State private var revealAfterOlderPage = false
 
     private var bottomScrollBinding: Binding<String?> {
         Binding<String?>(
@@ -125,6 +126,21 @@ struct ChatTranscriptScrollerView: View {
             .onChange(of: appState.findMatches.count) { _, _ in
                 scrollToCurrentFindMatch(proxy: proxy)
             }
+            .onChange(of: transcript.messageIds.count) { _, _ in
+                guard revealAfterOlderPage, hiddenLocalMessageCount > 0 else { return }
+                revealAfterOlderPage = false
+                lastLocalRevealAt = .distantPast
+                RenderProbe.mark(
+                    "ChatOlderHistoryRevealAfterPage",
+                    fields: [
+                        "chat": chatId.uuidString,
+                        "hiddenBefore": "\(hiddenLocalMessageCount)",
+                        "total": "\(transcript.messageIds.count)",
+                        "visible": "\(visibleMessageLimit)"
+                    ]
+                )
+                handleScrollUpTrigger(proxy: proxy)
+            }
             .task(id: prewarmKey) {
                 if visibleMessageStores.last?.message.streamingFinished == false {
                     RenderProbe.mark(
@@ -198,10 +214,12 @@ struct ChatTranscriptScrollerView: View {
                     "total": "\(transcript.messageIds.count)"
                 ]
             )
-            visibleMessageLimit = min(
+            let nextVisibleLimit = min(
                 transcript.messageIds.count,
                 visibleMessageLimit + ChatView.visibleMessagePageSize
             )
+            let exhaustedLocalWindow = nextVisibleLimit >= transcript.messageIds.count
+            visibleMessageLimit = nextVisibleLimit
             if let anchorId {
                 DispatchQueue.main.async {
                     var transaction = Transaction()
@@ -218,6 +236,18 @@ struct ChatTranscriptScrollerView: View {
                             "toVisible": "\(visibleMessageLimit)"
                         ]
                     )
+                    if exhaustedLocalWindow {
+                        revealAfterOlderPage = true
+                        RenderProbe.mark(
+                            "ChatOlderHistoryRequestAfterLocalReveal",
+                            fields: [
+                                "anchor": anchorId.uuidString,
+                                "chat": chatId.uuidString,
+                                "visible": "\(nextVisibleLimit)"
+                            ]
+                        )
+                        appState.requestOlderIfNeeded(chatId: chatId)
+                    }
                 }
             }
         } else {

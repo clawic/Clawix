@@ -42,6 +42,7 @@ private enum ChatVisibleWindowRenderLog {
     nonisolated(unsafe) private static var lastEvidence: ChatVisibleWindowEvidence?
     nonisolated(unsafe) private static var lastLoggedAt: CFAbsoluteTime = 0
     private static let duplicateWindow: TimeInterval = 0.25
+    private static let detailedMessageLimit = 12
 
     static func record(_ evidence: ChatVisibleWindowEvidence, reason: String) {
         guard evidence.visibleCount > 0 else { return }
@@ -95,6 +96,7 @@ private enum ChatVisibleWindowRenderLog {
         let roleSequence = evidence.messages
             .map { $0.role == "assistant" ? "a" : "u" }
             .joined()
+        let shouldRecordMessageDetails = evidence.visibleCount <= detailedMessageLimit
         RenderProbe.mark(
             "ChatFinalWindow",
             fields: [
@@ -105,6 +107,7 @@ private enum ChatVisibleWindowRenderLog {
                 "hidden": "\(evidence.hiddenCount)",
                 "incompleteRows": "\(incompleteRows)",
                 "last": evidence.lastMessageId?.uuidString ?? "none",
+                "messageDetailLogged": "\(shouldRecordMessageDetails)",
                 "reason": reason,
                 "roleSequence": roleSequence.isEmpty ? "none" : roleSequence,
                 "assistantReady": "\(assistantReadyRows)",
@@ -115,6 +118,7 @@ private enum ChatVisibleWindowRenderLog {
                 "windowComplete": "\(incompleteRows == 0 && evidence.bottomArmed)"
             ]
         )
+        guard shouldRecordMessageDetails else { return }
         for (index, message) in evidence.messages.enumerated() {
             RenderProbe.mark(
                 "ChatFinalWindowMessage",

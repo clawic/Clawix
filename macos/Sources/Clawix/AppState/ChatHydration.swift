@@ -222,6 +222,14 @@ extension AppState {
                         ]
                     )
                     let applyStarted = CFAbsoluteTimeGetCurrent()
+                    self.messagesPaginationByChat[chatId] = ChatPagination(
+                        oldestKnownId: result.entries.first?.id.uuidString,
+                        hasMore: result.hasMoreBefore,
+                        loadingOlder: false
+                    )
+                    if let plan = result.latestPlan {
+                        self.planByChat[chatId] = plan
+                    }
                     self.applyRolloutMessages(
                         messages,
                         lastTurnInterrupted: result.lastTurnInterrupted,
@@ -801,6 +809,7 @@ extension AppState {
     /// can fire again. Mirrors `BridgeStore.applyMessagesPage`.
     func applyDaemonMessagesPage(chatId: String, messages: [WireMessage], hasMore: Bool) {
         guard let id = UUID(uuidString: chatId) else { return }
+        let beforeCount = chatStore.transcript(for: id)?.messageIds.count ?? 0
         var pag = messagesPaginationByChat[id] ?? ChatPagination(oldestKnownId: nil, hasMore: hasMore, loadingOlder: false)
         pag.loadingOlder = false
         pag.hasMore = hasMore
@@ -819,6 +828,18 @@ extension AppState {
         transcript.prepend(toInsert)
         syncLegacyChatFromStore(chatId: id)
         messagesPaginationByChat[id]?.oldestKnownId = cachedWireMessagesByChat[chatId]?.first?.id
+        RenderProbe.mark(
+            "ChatOlderPageApplied",
+            fields: [
+                "before": "\(beforeCount)",
+                "chat": chatId,
+                "hasMore": "\(hasMore)",
+                "inserted": "\(toInsert.count)",
+                "oldest": messagesPaginationByChat[id]?.oldestKnownId ?? "",
+                "received": "\(messages.count)",
+                "total": "\(transcript.messageIds.count)"
+            ]
+        )
     }
 
     /// Ask the daemon for the next page of older messages if we have a
@@ -832,12 +853,34 @@ extension AppState {
               !pag.loadingOlder,
               let cursor = pag.oldestKnownId else { return }
         messagesPaginationByChat[chatId]?.loadingOlder = true
+        RenderProbe.mark(
+            "ChatOlderPageRequest",
+            fields: [
+                "chat": chatId.uuidString,
+                "cursor": cursor,
+                "loaded": "\(chatStore.transcript(for: chatId)?.messageIds.count ?? 0)"
+            ]
+        )
         if Self.prefersLocalRolloutHydration, let path = chat(byId: chatId)?.rolloutPath {
             Task { @MainActor [weak self] in
+                let started = CFAbsoluteTimeGetCurrent()
                 let result = await Task.detached(priority: .userInitiated) {
                     RolloutReader.readWindowBefore(path: path, beforeMessageId: cursor)
                 }.value
                 let messages = rolloutChatMessages(from: result).map { $0.toWire() }
+                RenderProbe.mark(
+                    "ChatOlderPageLoaded",
+                    fields: [
+                        "chat": chatId.uuidString,
+                        "cursor": cursor,
+                        "hasMore": "\(result.hasMoreBefore)",
+                        "ms": String(format: "%.1f", (CFAbsoluteTimeGetCurrent() - started) * 1000),
+                        "parsedRecords": "\(result.parsedRecordCount)",
+                        "readBytes": "\(result.readBytes)",
+                        "readEntireFile": "\(result.readEntireFile)",
+                        "received": "\(messages.count)"
+                    ]
+                )
                 self?.applyDaemonMessagesPage(
                     chatId: chatId.uuidString,
                     messages: messages,
