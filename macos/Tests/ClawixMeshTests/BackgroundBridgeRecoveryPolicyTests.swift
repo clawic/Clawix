@@ -34,4 +34,24 @@ final class BackgroundBridgeRecoveryPolicyTests: XCTestCase {
         XCTAssertFalse(BackgroundBridgeService.shouldBackOffRecovery(isEnabled: true, daemonReachable: true))
         XCTAssertFalse(BackgroundBridgeService.shouldBackOffRecovery(isEnabled: false, daemonReachable: false))
     }
+
+    func testCriticalUIActivityDefersBackgroundWorkOnlyInsideGraceWindow() {
+        let now = Date(timeIntervalSince1970: 1_000)
+
+        XCTAssertFalse(CriticalUIActivity.shouldDeferBackgroundWork(
+            now: now,
+            lastMarkedAt: nil,
+            graceSeconds: 2
+        ))
+        XCTAssertTrue(CriticalUIActivity.shouldDeferBackgroundWork(
+            now: now,
+            lastMarkedAt: now.addingTimeInterval(-1),
+            graceSeconds: 2
+        ))
+        XCTAssertFalse(CriticalUIActivity.shouldDeferBackgroundWork(
+            now: now,
+            lastMarkedAt: now.addingTimeInterval(-3),
+            graceSeconds: 2
+        ))
+    }
 }

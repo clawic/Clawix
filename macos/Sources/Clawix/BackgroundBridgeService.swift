@@ -30,6 +30,9 @@ final class BackgroundBridgeService: ObservableObject {
     private var recoveryInFlight = false
     private var recoveryFailureCount = 0
     private var nextRecoveryBootstrapAt: Date = .distantPast
+    private static let recoveryBootstrapStartDelayNanoseconds: UInt64 = 1_000_000_000
+    private static let criticalInteractionRecoveryGraceSeconds: TimeInterval = 2
+    private static let criticalInteractionRecoveryDeferSeconds: TimeInterval = 5
 
     private init() {
         self.agent = SMAppService.agent(plistName: plistName)
@@ -173,37 +176,65 @@ final class BackgroundBridgeService: ObservableObject {
         let now = Date()
         guard now >= nextRecoveryBootstrapAt else { return }
         recoveryInFlight = true
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: Self.recoveryBootstrapStartDelayNanoseconds)
+            guard self.recoveryInFlight else { return }
+            guard self.isEnabled else {
+                self.recoveryInFlight = false
+                self.updateRecoveryTimer()
+                return
+            }
+            if CriticalUIActivity.shouldDeferBackgroundWork(
+                graceSeconds: Self.criticalInteractionRecoveryGraceSeconds
+            ) {
+                self.recoveryInFlight = false
+                self.nextRecoveryBootstrapAt = Date().addingTimeInterval(Self.criticalInteractionRecoveryDeferSeconds)
+                RenderProbe.mark(
+                    "BackgroundBridgeRecoveryBootstrapDeferred",
+                    fields: ["reason": "critical-ui"]
+                )
+                self.updateRecoveryTimer()
+                return
+            }
+            self.runRecoveryBootstrap()
+        }
+    }
+
+    private func runRecoveryBootstrap() {
         RenderProbe.mark("BackgroundBridgeRecoveryBootstrapStart")
         Task.detached(priority: .utility) {
             let recovered = BridgeAgentControl.bootstrapBridgeAgentIfInstalled()
-            await MainActor.run {
-                self.recoveryInFlight = false
-                self.status = self.agent.status
-                self.daemonReachable = self.isDaemonReachable
-                if Self.shouldBackOffRecovery(isEnabled: self.isEnabled, daemonReachable: self.daemonReachable) {
-                    self.lastError = UserFacingFailure.displayMessage(
-                        for: "background bridge registered but not loaded",
-                        surface: "backgroundBridge.recover"
-                    )
-                    self.recoveryFailureCount += 1
-                    self.nextRecoveryBootstrapAt = Date().addingTimeInterval(
-                        Self.recoveryRetryDelaySeconds(afterConsecutiveFailures: self.recoveryFailureCount)
-                    )
-                } else {
-                    self.lastError = nil
-                    self.recoveryFailureCount = 0
-                    self.nextRecoveryBootstrapAt = .distantPast
-                }
-                self.updateRecoveryTimer()
-                RenderProbe.mark(
-                    "BackgroundBridgeRecoveryBootstrapEnd",
-                    fields: [
-                        "recovered": recovered ? "true" : "false",
-                        "reachable": self.daemonReachable ? "true" : "false"
-                    ]
-                )
-            }
+            await self.finishRecoveryBootstrap(recovered: recovered)
         }
+    }
+
+    private func finishRecoveryBootstrap(recovered: Bool) {
+        recoveryInFlight = false
+        status = agent.status
+        daemonReachable = isDaemonReachable
+        if Self.shouldBackOffRecovery(isEnabled: isEnabled, daemonReachable: daemonReachable) {
+            lastError = UserFacingFailure.displayMessage(
+                for: "background bridge registered but not loaded",
+                surface: "backgroundBridge.recover"
+            )
+            recoveryFailureCount += 1
+            nextRecoveryBootstrapAt = Date().addingTimeInterval(
+                Self.recoveryRetryDelaySeconds(afterConsecutiveFailures: recoveryFailureCount)
+            )
+        } else {
+            lastError = nil
+            recoveryFailureCount = 0
+            nextRecoveryBootstrapAt = .distantPast
+        }
+        updateRecoveryTimer()
+        RenderProbe.mark(
+            "BackgroundBridgeRecoveryBootstrapEnd",
+            fields: [
+                "recovered": recovered ? "true" : "false",
+                "reachable": daemonReachable ? "true" : "false"
+            ]
+        )
     }
 
     nonisolated static func recoveryRetryDelaySeconds(afterConsecutiveFailures failures: Int) -> TimeInterval {

@@ -65,6 +65,7 @@ struct WorkSummaryHeader: View {
 
     private func toggleExpansion() {
         let willExpand = !expanded
+        CriticalUIActivity.mark("workSummary.toggle")
         onToggle?(willExpand)
         withAnimation(.easeOut(duration: 0.14)) { expanded.toggle() }
         if willExpand { onExpand() }
