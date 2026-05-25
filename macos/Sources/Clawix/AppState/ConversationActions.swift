@@ -722,9 +722,7 @@ extension AppState {
                 )
             }
             let projectByPath = Dictionary(uniqueKeysWithValues: projects.map { ($0.path, $0) })
-            let oldByThread = Dictionary(uniqueKeysWithValues: archivedChats.compactMap { chat in
-                chat.clawixThreadId.map { ($0, chat) }
-            })
+            let oldByThread = chatByThreadId(archivedChats)
             archivedChats = threads
                 .sorted { $0.updatedAt > $1.updatedAt }
                 .map { thread in

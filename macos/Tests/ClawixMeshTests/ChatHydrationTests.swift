@@ -87,6 +87,46 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
+    func testApplyDaemonChatsDeduplicatesThreadIdsWithoutCrashing() {
+        let state = AppState()
+        let existingId = UUID()
+        let olderDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let newerDate = Date(timeIntervalSince1970: 1_710_000_060)
+        state.chats = [
+            Chat(
+                id: existingId,
+                title: "Existing",
+                messages: [],
+                createdAt: olderDate,
+                clawixThreadId: "thread-dup",
+                historyHydrated: true
+            )
+        ]
+
+        state.applyDaemonChats([
+            WireSession(
+                id: UUID().uuidString,
+                title: "Older duplicate",
+                createdAt: olderDate,
+                lastMessageAt: olderDate,
+                threadId: "thread-dup"
+            ),
+            WireSession(
+                id: UUID().uuidString,
+                title: "Newer duplicate",
+                createdAt: newerDate,
+                lastMessageAt: newerDate,
+                threadId: "thread-dup"
+            )
+        ])
+
+        XCTAssertEqual(state.cachedWireSessions.count, 1)
+        XCTAssertEqual(state.chats.count, 1)
+        XCTAssertEqual(state.chats.first?.id, existingId)
+        XCTAssertEqual(state.chats.first?.title, "Newer duplicate")
+        XCTAssertEqual(state.chats.first?.clawixThreadId, "thread-dup")
+    }
+
     func testEmptyClawJSSessionHistoryFallsBackToCodexRollout() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [SessionsHistoryURLProtocol.self]

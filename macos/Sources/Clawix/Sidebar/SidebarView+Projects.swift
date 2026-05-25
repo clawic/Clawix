@@ -66,8 +66,15 @@ struct ProjectAccordion: View, Equatable {
             && lhs.expanded == rhs.expanded
             && lhs.showingExtended == rhs.showingExtended
             && lhs.menuOpen == rhs.menuOpen
-            && lhs.selectedChatId == rhs.selectedChatId
+            && lhs.visibleSelectionKey == rhs.visibleSelectionKey
             && Self.chatsEqual(lhs.chats, rhs.chats)
+    }
+
+    private var visibleSelectionKey: UUID? {
+        guard expanded, let selectedChatId else { return nil }
+        return visibleChats.contains(where: { $0.id == selectedChatId })
+            ? selectedChatId
+            : nil
     }
 
     /// Compare only the `Chat` fields the inner row actually renders

@@ -52,9 +52,7 @@ extension AppState {
                 var merged = results
                 var mergedRoutes = routes
                 var mergedSeen = seen
-                let chatByThreadId = Dictionary(uniqueKeysWithValues: searchableSummaries.compactMap { summary in
-                    summary.clawixThreadId.map { ($0, summary.id) }
-                })
+                let chatByThreadId = self.chatSummaryIdByThreadId(searchableSummaries)
                 for hit in hits where merged.count < 50 {
                     guard let chatId = chatByThreadId[hit.session.id] else { continue }
                     let role = hit.message.role == "user" ? "User" : "Assistant"

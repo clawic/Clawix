@@ -144,9 +144,7 @@ extension AppState {
         guard changed else { return }
         updated.sort { $0.createdAt > $1.createdAt }
         chats = updated
-        let threadToChat = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat.id) }
-        })
+        let threadToChat = chatIdByThreadId(chats)
         pinnedOrder = pinIds.compactMap { threadToChat[$0] }
         PerfSignpost.uiSidebar.event("project_snapshot.rows", rows.count)
     }

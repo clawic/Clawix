@@ -108,6 +108,26 @@ enum AgentThreadStore {
         }
     }
 
+    private struct CodexTimestampParser {
+        private let fractional: ISO8601DateFormatter
+        private let standard: ISO8601DateFormatter
+
+        init() {
+            fractional = ISO8601DateFormatter()
+            fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            standard = ISO8601DateFormatter()
+            standard.formatOptions = [.withInternetDateTime]
+        }
+
+        func parse(_ value: String?) -> Int64? {
+            guard let value, !value.isEmpty else { return nil }
+            if let date = fractional.date(from: value) {
+                return Int64(date.timeIntervalSince1970)
+            }
+            return standard.date(from: value).map { Int64($0.timeIntervalSince1970) }
+        }
+    }
+
     static func fixtureThreads() -> [AgentThreadSummary]? {
         guard
             let raw = ClawixEnv.value(ClawixEnv.threadFixture),
@@ -129,12 +149,15 @@ enum AgentThreadStore {
         else { return [] }
 
         let decoder = JSONDecoder()
+        let timestampParser = CodexTimestampParser()
         let records = raw.split(whereSeparator: \.isNewline).compactMap { line -> AgentThreadSummary? in
             guard let data = String(line).data(using: .utf8),
                   let record = try? decoder.decode(CodexSessionIndexRecord.self, from: data),
                   !record.id.isEmpty
             else { return nil }
-            let updatedAt = parseCodexTimestamp(record.updatedAt) ?? parseCodexTimestamp(record.createdAt) ?? 0
+            let updatedAt = timestampParser.parse(record.updatedAt)
+                ?? timestampParser.parse(record.createdAt)
+                ?? 0
             return AgentThreadSummary(
                 id: record.id,
                 cwd: record.cwd,
@@ -168,6 +191,21 @@ enum AgentThreadStore {
         return selected
     }
 
+    static func codexSessionIndexThreadsAsync(
+        indexURL: URL = ClawixAgentBackendRoutes.codexDirectory()
+            .appendingPathComponent("session_index.jsonl", isDirectory: false),
+        limit: Int,
+        includeThreadIds: [String] = []
+    ) async -> [AgentThreadSummary] {
+        await Task.detached(priority: .utility) {
+            codexSessionIndexThreads(
+                indexURL: indexURL,
+                limit: limit,
+                includeThreadIds: includeThreadIds
+            )
+        }.value
+    }
+
     static func codexPinnedThreadIds(
         globalStateURL: URL = ClawixAgentBackendRoutes.codexDirectory()
             .appendingPathComponent(".codex-global-state.json", isDirectory: false)
@@ -181,15 +219,4 @@ enum AgentThreadStore {
         return ids.filter { !$0.isEmpty && seen.insert($0).inserted }
     }
 
-    private static func parseCodexTimestamp(_ value: String?) -> Int64? {
-        guard let value, !value.isEmpty else { return nil }
-        let fractional = ISO8601DateFormatter()
-        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = fractional.date(from: value) {
-            return Int64(date.timeIntervalSince1970)
-        }
-        let standard = ISO8601DateFormatter()
-        standard.formatOptions = [.withInternetDateTime]
-        return standard.date(from: value).map { Int64($0.timeIntervalSince1970) }
-    }
 }

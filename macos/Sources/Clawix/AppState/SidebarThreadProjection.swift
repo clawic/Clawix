@@ -109,9 +109,7 @@ extension AppState {
         restored.sort { $0.createdAt > $1.createdAt }
         chats = restored
 
-        let threadToChat = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat.id) }
-        })
+        let threadToChat = chatIdByThreadId(chats)
         pinnedOrder = pinIds.compactMap { threadToChat[$0] }
     }
 
@@ -213,12 +211,8 @@ extension AppState {
 
         reconcileArchivesFromRuntime(threads)
 
-        let oldByThread = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat) }
-        })
-        let oldArchivedByThread = Dictionary(uniqueKeysWithValues: archivedChats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat) }
-        })
+        let oldByThread = chatByThreadId(chats)
+        let oldArchivedByThread = chatByThreadId(archivedChats)
 
         let sorted = threads.sorted { $0.updatedAt > $1.updatedAt }
         let selectedSnapshotChat: Chat?
@@ -265,9 +259,7 @@ extension AppState {
             archivedLoaded = true
         }
 
-        let threadToChat = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat.id) }
-        })
+        let threadToChat = chatIdByThreadId(chats)
         pinnedOrder = orderedPinIds.compactMap { threadToChat[$0] }
         openFirstE2EChatIfRequested()
         writeE2EStateReportIfRequested()
@@ -309,9 +301,7 @@ extension AppState {
         }
         chats = updated
 
-        let threadToChat = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat.id) }
-        })
+        let threadToChat = chatIdByThreadId(chats)
         pinnedOrder = pinIds.compactMap { threadToChat[$0] }
         writeE2EStateReportIfRequested()
         persistSidebarSnapshot()

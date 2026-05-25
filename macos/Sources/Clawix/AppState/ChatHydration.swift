@@ -473,10 +473,11 @@ extension AppState {
     }
 
     func applyDaemonChats(_ wireChats: [WireSession]) {
-        if wireChats.isEmpty, shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() {
+        let uniqueWireChats = deduplicatedWireSessions(wireChats)
+        if uniqueWireChats.isEmpty, shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() {
             return
         }
-        cachedWireSessions = wireChats
+        cachedWireSessions = uniqueWireChats
         // Refresh `projects` from the latest backendState before
         // resolving each wire chat's project: the daemon may have
         // delivered a snapshot that references workspace roots Codex
@@ -490,12 +491,8 @@ extension AppState {
         // every persisted chat. Add a thread-id index so we recover
         // any per-chat metadata (messages, hasGitRepo, branch, etc.)
         // the GUI had cached against the previous daemon UUID.
-        let oldByThreadId = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat) }
-        })
-        let oldArchivedByThreadId = Dictionary(uniqueKeysWithValues: archivedChats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat) }
-        })
+        let oldByThreadId = chatByThreadId(chats)
+        let oldArchivedByThreadId = chatByThreadId(archivedChats)
         func resolveOld(for wire: WireSession) -> Chat? {
             if let id = UUID(uuidString: wire.id) {
                 if let hit = oldById[id] ?? oldArchivedById[id] { return hit }
@@ -505,18 +502,18 @@ extension AppState {
             }
             return nil
         }
-        var nextChats: [Chat] = wireChats.compactMap { wire in
+        var nextChats: [Chat] = uniqueWireChats.compactMap { wire in
             guard !wire.isArchived else { return nil }
             return chat(from: wire, old: resolveOld(for: wire))
         }
-        var nextArchived: [Chat] = wireChats.compactMap { wire in
+        var nextArchived: [Chat] = uniqueWireChats.compactMap { wire in
             guard wire.isArchived else { return nil }
             return chat(from: wire, old: resolveOld(for: wire))
         }
         if case let .chat(id) = currentRoute,
            let selected = chat(byId: id),
            let threadId = selected.clawixThreadId,
-           !wireChats.contains(where: { $0.threadId?.caseInsensitiveCompare(threadId) == .orderedSame }) {
+           !uniqueWireChats.contains(where: { $0.threadId?.caseInsensitiveCompare(threadId) == .orderedSame }) {
             if selected.isArchived {
                 if !nextArchived.contains(where: { $0.id == selected.id || $0.clawixThreadId == selected.clawixThreadId }) {
                     nextArchived.insert(selected, at: 0)
@@ -558,13 +555,11 @@ extension AppState {
         }
         // Recompute `pinnedOrder` against the freshly applied chats:
         // either honour the user's local pin order (if they've taken
-        // control) or fall back to Codex's global state. Without
+        // control) or fall back to the external session state. Without
         // this the Pinned section would render unsorted because the
         // daemon's wire chats have brand-new UUIDs every reconnect.
         let pinIds = pinsRepo.orderedThreadIds()
-        let threadToChat = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat.id) }
-        })
+        let threadToChat = chatIdByThreadId(chats)
         pinnedOrder = pinIds.compactMap { threadToChat[$0] }
     }
 

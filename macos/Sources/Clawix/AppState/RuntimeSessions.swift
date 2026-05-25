@@ -36,7 +36,7 @@ extension AppState {
         if runtimeThreadPageLoader == nil,
            ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
             let pinnedThreadIds = AgentThreadStore.codexPinnedThreadIds()
-            let indexThreads = AgentThreadStore.codexSessionIndexThreads(
+            let indexThreads = await AgentThreadStore.codexSessionIndexThreadsAsync(
                 limit: Self.sidebarBootstrapRecentLimit,
                 includeThreadIds: pinnedThreadIds
             )
@@ -331,9 +331,7 @@ extension AppState {
 
     private func applyCodexPinnedThreadIds(_ threadIds: [String]) {
         let pinnedSet = Set(threadIds)
-        let threadToChat = Dictionary(uniqueKeysWithValues: chats.compactMap { chat in
-            chat.clawixThreadId.map { ($0, chat.id) }
-        })
+        let threadToChat = chatIdByThreadId(chats)
         var nextChats = chats
         for index in nextChats.indices {
             guard let threadId = nextChats[index].clawixThreadId else { continue }
