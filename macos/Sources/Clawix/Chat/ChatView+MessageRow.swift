@@ -332,7 +332,7 @@ struct MessageRow: View, Equatable {
                 // attachment cards. Order matches first-touch, deduped.
                 // Only surfaces once the turn fully ends so the cards
                 // don't pop in beside the still-streaming reasoning.
-                if closedMetadataReady, message.streamingFinished {
+                if closedMetadataReady, !responseStreaming, message.streamingFinished {
                     let changedFiles = ChangedFilePathCache.shared.paths(for: message)
                     if !changedFiles.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
@@ -354,6 +354,7 @@ struct MessageRow: View, Equatable {
                 // trailing card.
                 if isLastAssistantMessage,
                    closedMetadataReady,
+                   !responseStreaming,
                    message.streamingFinished,
                    !message.isError,
                    !PlanSegmenter.containsPlan(message.content),
