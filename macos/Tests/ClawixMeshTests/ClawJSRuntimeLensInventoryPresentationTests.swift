@@ -331,7 +331,15 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertTrue(sandboxInventory.rows.first?.attributesLabel?.contains("write policy: explicit_approval_only") == true)
 
         let configurationInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "configuration" })
-        XCTAssertEqual(configurationInventory.totalResourceCount, 6)
+        XCTAssertEqual(configurationInventory.totalResourceCount, 7)
         XCTAssertGreaterThanOrEqual(configurationInventory.pathCount, 5)
+        XCTAssertEqual(configurationInventory.statusLabel, "degraded 1, projected 5, ready 1")
+        XCTAssertEqual(configurationInventory.rows.last?.id, "configuration-capability")
+        XCTAssertEqual(configurationInventory.rows.last?.kindLabel, "kind: config")
+        XCTAssertEqual(configurationInventory.rows.last?.attributeCount, 5)
+        XCTAssertEqual(
+            configurationInventory.rows.last?.attributesLabel,
+            "supported: true, strategy: config, diagnostic source: config, probe: config"
+        )
     }
 }

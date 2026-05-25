@@ -517,6 +517,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let canonicalPaths: [String: String]?
             let managedFiles: [String]?
             let diagnostics: Status.Diagnostics?
+            let capability: RuntimeCapability?
             let supportContract: SupportContract?
         }
     }
@@ -1065,7 +1066,41 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
                 )
             ]
         }()
-        return pathResources + managedFileResources + diagnosticsResources
+        let capabilityResources: [RuntimeResource] = {
+            guard let capability = domainData?.configuration?.capability else { return [] }
+            return [
+                RuntimeResource(
+                    id: "configuration-capability",
+                    label: "Configuration capability",
+                    status: capability.status,
+                    kind: capability.strategy,
+                    path: nil,
+                    enabled: capability.supported,
+                    summary: nil,
+                    updatedAt: nil,
+                    sizeBytes: nil,
+                    pinned: nil,
+                    nativeIdentifier: nil,
+                    provenance: nil,
+                    limitations: capability.limitations,
+                    attributes: Self.pluginStatusAttributes(capability) + Self.capabilityDiagnosticsAttributes(capability.diagnostics),
+                    modelId: nil,
+                    provider: nil,
+                    available: nil,
+                    source: nil,
+                    isDefault: nil,
+                    scope: nil,
+                    providerAuth: nil,
+                    envVars: nil,
+                    lastError: nil,
+                    metadata: nil,
+                    pinAuthority: nil,
+                    divergence: nil,
+                    localOverlay: nil
+                )
+            ]
+        }()
+        return pathResources + managedFileResources + diagnosticsResources + capabilityResources
     }
 }
 

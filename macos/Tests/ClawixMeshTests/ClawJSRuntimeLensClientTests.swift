@@ -35,6 +35,9 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.effectiveSupportStage, "dev_only")
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.recommended, false)
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.production, false)
+        XCTAssertEqual(snapshot.status.capabilityMap?["configuration"]?.status, "ready")
+        XCTAssertEqual(snapshot.domainData?.configuration?.capability?.strategy, "config")
+        XCTAssertEqual(snapshot.resources(for: "configuration").last?.id, "configuration-capability")
         XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.map(\.action), [
             "list",
             "preview",

@@ -464,6 +464,16 @@
             "probeMethod": "none",
             "inventoryFreshness": "static"
           }
+        },
+        "configuration": {
+          "supported": true,
+          "status": "ready",
+          "strategy": "config",
+          "diagnostics": {
+            "source": "config",
+            "probeMethod": "config",
+            "inventoryFreshness": "live"
+          }
         }
       },
       "diagnostics": {
@@ -3189,6 +3199,16 @@
           "authStorePath": "/Users/tester/.hermes/auth.json"
         },
         "redactionPolicy": "redacted_paths_and_presence_only",
+        "capability": {
+          "supported": true,
+          "status": "ready",
+          "strategy": "config",
+          "diagnostics": {
+            "source": "config",
+            "probeMethod": "config",
+            "inventoryFreshness": "live"
+          }
+        },
         "supportContract": {
           "claim": "inventoried",
           "nativeAuthority": "runtime",
