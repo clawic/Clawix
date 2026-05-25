@@ -11,53 +11,67 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(snapshot.domainData?.sessions?.actionPolicy?.first { $0.action == "pin" }?.writesRuntime, false)
         XCTAssertEqual(snapshot.domainData?.sessions?.actionPolicy?.first { $0.action == "create" }?.wouldWriteRuntime, true)
         XCTAssertEqual(snapshot.domainData?.sessions?.actionPolicy?.first { $0.action == "create" }?.requiredEvidence?.first, "official_create_command_or_api")
-        XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.map(\.action), ["list", "pin", "create"])
+        XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.map(\.action), [
+            "list",
+            "preview",
+            "resolve",
+            "history",
+            "send",
+            "inject",
+            "abort",
+            "create",
+            "pin",
+            "unpin",
+            "conflicts"
+        ])
         XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.first { $0.action == "list" }?.status, "degraded")
-        XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.first { $0.action == "create" }?.requiredEvidence?.count, 3)
+        XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.first { $0.action == "create" }?.requiredEvidence?.count, 4)
         let sessionActionContractPresentation = ClawJSRuntimeLensSessionActionContractPresentation.make(
             contracts: try XCTUnwrap(snapshot.domainData?.sessions?.actionContracts),
             materializedPolicy: try XCTUnwrap(snapshot.domainData?.sessions?.actionPolicy)
         )
-        XCTAssertEqual(sessionActionContractPresentation.contractCount, 3)
-        XCTAssertEqual(sessionActionContractPresentation.materializedCount, 3)
-        XCTAssertEqual(sessionActionContractPresentation.statusChangedCount, 1)
+        XCTAssertEqual(sessionActionContractPresentation.contractCount, 11)
+        XCTAssertEqual(sessionActionContractPresentation.materializedCount, 11)
+        XCTAssertEqual(sessionActionContractPresentation.statusChangedCount, 4)
         XCTAssertEqual(sessionActionContractPresentation.contractOnlyCount, 0)
         XCTAssertEqual(sessionActionContractPresentation.materializedOnlyCount, 0)
         XCTAssertEqual(sessionActionContractPresentation.runtimeWriteContractCount, 0)
         XCTAssertEqual(sessionActionContractPresentation.wouldWriteRuntimeCount, 1)
-        XCTAssertEqual(sessionActionContractPresentation.localOverlayContractCount, 1)
-        XCTAssertEqual(sessionActionContractPresentation.requiredEvidenceCount, 3)
-        XCTAssertEqual(sessionActionContractPresentation.statusChangedActionsLabel, "list")
+        XCTAssertEqual(sessionActionContractPresentation.localOverlayContractCount, 2)
+        XCTAssertEqual(sessionActionContractPresentation.requiredEvidenceCount, 4)
+        XCTAssertEqual(sessionActionContractPresentation.statusChangedActionsLabel, "history, list, preview, resolve")
         XCTAssertEqual(sessionActionContractPresentation.rows.first { $0.action == "list" }?.contractStatus, "degraded")
         XCTAssertEqual(sessionActionContractPresentation.rows.first { $0.action == "list" }?.materializedStatus, "implemented")
         XCTAssertTrue(sessionActionContractPresentation.rows.first { $0.action == "list" }?.statusChanged == true)
+        XCTAssertEqual(sessionActionContractPresentation.rows.first { $0.action == "history" }?.materializedStatus, "implemented")
+        XCTAssertEqual(sessionActionContractPresentation.rows.first { $0.action == "unpin" }?.authority, "clawix_local_overlay")
         XCTAssertEqual(sessionActionContractPresentation.rows.first { $0.action == "create" }?.contractWriteDisposition, "would write")
         XCTAssertTrue(sessionActionContractPresentation.accessibilityLabel.contains("Runtime session action contracts"))
-        XCTAssertTrue(sessionActionContractPresentation.accessibilityLabel.contains("changed actions list"))
+        XCTAssertTrue(sessionActionContractPresentation.accessibilityLabel.contains("changed actions history, list, preview, resolve"))
         let sessionActionPresentation = ClawJSRuntimeLensSessionActionPresentation.make(
             actions: try XCTUnwrap(snapshot.domainData?.sessions?.actionPolicy)
         )
-        XCTAssertEqual(sessionActionPresentation.actionCount, 3)
-        XCTAssertEqual(sessionActionPresentation.implementedCount, 1)
-        XCTAssertEqual(sessionActionPresentation.blockedCount, 1)
-        XCTAssertEqual(sessionActionPresentation.localOverlayCount, 1)
-        XCTAssertEqual(sessionActionPresentation.noWriteCount, 3)
+        XCTAssertEqual(sessionActionPresentation.actionCount, 11)
+        XCTAssertEqual(sessionActionPresentation.implementedCount, 5)
+        XCTAssertEqual(sessionActionPresentation.blockedCount, 4)
+        XCTAssertEqual(sessionActionPresentation.localOverlayCount, 2)
+        XCTAssertEqual(sessionActionPresentation.noWriteCount, 11)
         XCTAssertEqual(sessionActionPresentation.wouldWriteRuntimeCount, 1)
-        XCTAssertEqual(sessionActionPresentation.requiredEvidenceCount, 2)
-        XCTAssertEqual(sessionActionPresentation.statusLabel, "blocked 1, implemented 1, local_overlay_only 1")
-        XCTAssertEqual(sessionActionPresentation.localOverlayActionsLabel, "pin")
-        XCTAssertEqual(sessionActionPresentation.blockedActionsLabel, "create")
+        XCTAssertEqual(sessionActionPresentation.requiredEvidenceCount, 4)
+        XCTAssertEqual(sessionActionPresentation.statusLabel, "blocked 4, implemented 5, local_overlay_only 2")
+        XCTAssertEqual(sessionActionPresentation.localOverlayActionsLabel, "pin, unpin")
+        XCTAssertEqual(sessionActionPresentation.blockedActionsLabel, "send, inject, abort, create")
         XCTAssertEqual(sessionActionPresentation.rows.first?.detailLabel, "runtime, metadata_only, bounded_scan_without_transcript_reads")
         XCTAssertEqual(sessionActionPresentation.rows.first { $0.action == "create" }?.writeDisposition, "would write")
-        XCTAssertEqual(sessionActionPresentation.rows.first { $0.action == "create" }?.requiredEvidenceCount, 2)
+        XCTAssertEqual(sessionActionPresentation.rows.first { $0.action == "create" }?.requiredEvidenceCount, 4)
         XCTAssertEqual(
             sessionActionPresentation.rows.first { $0.action == "create" }?.requiredEvidenceLabel,
-            "official_create_command_or_api, non_destructive_fixture"
+            "official_create_command_or_api, non_destructive_fixture, confirmation_or_dry_run_policy, round_trip_native_list_evidence"
         )
-        XCTAssertTrue(sessionActionPresentation.rows.first { $0.action == "create" }?.accessibilityLabel.contains("required evidence count 2") == true)
-        XCTAssertTrue(sessionActionPresentation.rows.first { $0.action == "create" }?.accessibilityLabel.contains("required evidence official_create_command_or_api, non_destructive_fixture") == true)
+        XCTAssertTrue(sessionActionPresentation.rows.first { $0.action == "create" }?.accessibilityLabel.contains("required evidence count 4") == true)
+        XCTAssertTrue(sessionActionPresentation.rows.first { $0.action == "create" }?.accessibilityLabel.contains("round_trip_native_list_evidence") == true)
         XCTAssertTrue(sessionActionPresentation.accessibilityLabel.contains("Runtime session actions"))
-        XCTAssertTrue(sessionActionPresentation.accessibilityLabel.contains("local overlay actions pin"))
+        XCTAssertTrue(sessionActionPresentation.accessibilityLabel.contains("local overlay actions pin, unpin"))
         XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.validation, "fixture_required")
         XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.authority, "runtime_adapter")
         XCTAssertEqual(snapshot.domainData?.sessions?.supportContract?.provenance?.source, "runtime-ecosystem-manifest")

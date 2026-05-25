@@ -175,13 +175,13 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.sessionActionStatus("blocked"), .warning)
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.resourceStatus("ready"), .success)
 
-        XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.count, 3)
+        XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.count, 11)
         let sessionActionContractPresentation = ClawJSRuntimeLensSessionActionContractPresentation.make(
             contracts: try XCTUnwrap(snapshot.domainData?.sessions?.actionContracts),
             materializedPolicy: try XCTUnwrap(snapshot.domainData?.sessions?.actionPolicy)
         )
         XCTAssertTrue(sessionActionContractPresentation.accessibilityLabel.contains("Runtime session action contracts"))
-        XCTAssertEqual(snapshot.domainData?.sessions?.actionPolicy?.count, 3)
+        XCTAssertEqual(snapshot.domainData?.sessions?.actionPolicy?.count, 11)
         let sessionActionPresentation = ClawJSRuntimeLensSessionActionPresentation.make(
             actions: try XCTUnwrap(snapshot.domainData?.sessions?.actionPolicy)
         )
