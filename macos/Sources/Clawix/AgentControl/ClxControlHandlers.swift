@@ -1481,18 +1481,32 @@ enum ClxControlHandlers {
     }
 
     private static func diagnosticSamplePayload() -> [String: Any] {
-        let resource = ResourceSampler.sampleNow()
+        let diagnostic = ResourceSampler.diagnosticSampleNow()
+        let resource = diagnostic.sample
         let renderCounts = RenderProbe.snapshotCounts()
         let hitchCounts = renderCounts.filter { key, _ in key.hasPrefix("hitch>") }
+        var resourcePayload: [String: Any] = [
+            "residentBytes": Int64(resource.residentBytes),
+            "residentMB": Double(resource.residentBytes) / 1024.0 / 1024.0,
+            "footprintBytes": Int64(resource.footprintBytes),
+            "footprintMB": Double(resource.footprintBytes) / 1024.0 / 1024.0,
+            "processCpuPercent": resource.processCpuPercent,
+            "timestamp": resource.timestamp,
+        ]
+        if let memorySlope = diagnostic.memorySlopeMBPerMin {
+            resourcePayload["memorySlopeMBPerMin"] = memorySlope
+        }
+        if let timerWakeups = diagnostic.timerWakeups {
+            resourcePayload["timerWakeups"] = Int64(timerWakeups)
+        }
+        if let timerWakeupsCumulative = diagnostic.timerWakeupsCumulative {
+            resourcePayload["timerWakeupsCumulative"] = Int64(timerWakeupsCumulative)
+        }
+        if let interruptWakeups = diagnostic.interruptWakeups {
+            resourcePayload["interruptWakeupsCumulative"] = Int64(interruptWakeups)
+        }
         return [
-            "resource": [
-                "residentBytes": Int64(resource.residentBytes),
-                "residentMB": Double(resource.residentBytes) / 1024.0 / 1024.0,
-                "footprintBytes": Int64(resource.footprintBytes),
-                "footprintMB": Double(resource.footprintBytes) / 1024.0 / 1024.0,
-                "processCpuPercent": resource.processCpuPercent,
-                "timestamp": resource.timestamp,
-            ],
+            "resource": resourcePayload,
             "hitches": [
                 "total": hitchCounts.values.reduce(0, +),
                 "buckets": hitchCounts,

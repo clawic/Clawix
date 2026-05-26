@@ -1169,6 +1169,10 @@ if (clxControlHandlersSource) {
     "let minVisibleMessages = boundedInt(args[\"minVisibleMessages\"]",
     "finalUIStatePayload(actionArgs: actionArgs, waitArgs: waitArgs)",
     "out[\"failureReason\"] = \"visual_condition_failed\"",
+    "ResourceSampler.diagnosticSampleNow()",
+    "memorySlopeMBPerMin",
+    "timerWakeups",
+    "timerWakeupsCumulative",
     "\"maxControls\": 200",
   ]) {
     requireSnippet(clxControlHandlersSource, clxControlHandlersPath, snippet);

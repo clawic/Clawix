@@ -16,6 +16,23 @@ final class ResourceSamplerActivationPolicyTests: XCTestCase {
     func testDebugBuildDoesNotStartPeriodicSamplerWithoutOptIn() {
         XCTAssertFalse(ResourceSampler.shouldStartPeriodicSampler(environment: [:]))
     }
+
+    func testExplicitDiagnosticSampleIncludesDerivedResourceMetrics() {
+        let first = ResourceSampler.diagnosticSampleNow()
+        Thread.sleep(forTimeInterval: 0.06)
+        let second = ResourceSampler.diagnosticSampleNow()
+
+        XCTAssertGreaterThan(second.sample.timestamp, first.sample.timestamp)
+        XCTAssertGreaterThanOrEqual(second.sample.residentBytes, UInt64(0))
+        XCTAssertGreaterThanOrEqual(second.sample.footprintBytes, UInt64(0))
+        XCTAssertTrue(second.sample.processCpuPercent.isFinite)
+        if let memorySlope = second.memorySlopeMBPerMin {
+            XCTAssertTrue(memorySlope.isFinite)
+        }
+        if let timerWakeups = second.timerWakeups {
+            XCTAssertGreaterThanOrEqual(timerWakeups, UInt64(0))
+        }
+    }
 }
 
 final class HangDetectorActivationPolicyTests: XCTestCase {

@@ -36,8 +36,18 @@ enum ResourceSampler {
         /// Process CPU usage, normalised so 100 = one fully busy core.
         /// On a hex-core machine the realistic max is therefore ~600.
         let processCpuPercent: Double
+        let packageIdleWakeups: UInt64?
+        let interruptWakeups: UInt64?
         let appVersion: String?
         let buildNumber: String?
+    }
+
+    struct DiagnosticSample {
+        let sample: Sample
+        let memorySlopeMBPerMin: Double?
+        let timerWakeups: UInt64?
+        let timerWakeupsCumulative: UInt64?
+        let interruptWakeups: UInt64?
     }
 
     static func shouldStartPeriodicSampler(
@@ -90,6 +100,44 @@ enum ResourceSampler {
                 samples.removeFirst(samples.count - sampleLimit)
             }
             return sample
+        }
+    }
+
+    /// Captures one in-memory sample plus bounded derived values used by
+    /// explicit UX trace diagnostics. No timer is started and nothing is
+    /// persisted to the main app database or diagnostics files.
+    static func diagnosticSampleNow(windowSeconds: TimeInterval = 60) -> DiagnosticSample {
+        queue.sync {
+            let previousSamples = samples
+            let sample = captureSample()
+            lastSample = sample
+            samples.append(sample)
+            if samples.count > sampleLimit {
+                samples.removeFirst(samples.count - sampleLimit)
+            }
+
+            let minTimestamp = sample.timestamp - max(0.1, windowSeconds)
+            let slopeBase = previousSamples.first { $0.timestamp >= minTimestamp } ?? previousSamples.first
+            let memorySlope = slopeBase.flatMap { base -> Double? in
+                let elapsedSeconds = sample.timestamp - base.timestamp
+                guard elapsedSeconds > 0.05 else { return nil }
+                let deltaMB = (Double(sample.footprintBytes) - Double(base.footprintBytes)) / 1024.0 / 1024.0
+                return deltaMB / elapsedSeconds * 60.0
+            }
+
+            let previousWakeups = previousSamples.last?.packageIdleWakeups
+            let timerWakeups = zipOptional(sample.packageIdleWakeups, previousWakeups).flatMap { current, previous -> UInt64? in
+                guard current >= previous else { return nil }
+                return current - previous
+            }
+
+            return DiagnosticSample(
+                sample: sample,
+                memorySlopeMBPerMin: memorySlope,
+                timerWakeups: timerWakeups,
+                timerWakeupsCumulative: sample.packageIdleWakeups,
+                interruptWakeups: sample.interruptWakeups
+            )
         }
     }
 
@@ -184,14 +232,22 @@ enum ResourceSampler {
 
     private static func captureSample() -> Sample {
         let info = Bundle.main.infoDictionary
+        let wakeups = wakeupCounts()
         return Sample(
             timestamp: Date().timeIntervalSince1970,
             residentBytes: residentSize(),
             footprintBytes: footprint(),
             processCpuPercent: processCpuPercent(),
+            packageIdleWakeups: wakeups?.packageIdleWakeups,
+            interruptWakeups: wakeups?.interruptWakeups,
             appVersion: info?["CFBundleShortVersionString"] as? String,
             buildNumber: info?["CFBundleVersion"] as? String
         )
+    }
+
+    private static func zipOptional<A, B>(_ a: A?, _ b: B?) -> (A, B)? {
+        guard let a, let b else { return nil }
+        return (a, b)
     }
 
     private static func persistLastSampleOnQueue() {
@@ -286,5 +342,15 @@ enum ResourceSampler {
             }
         }
         return total
+    }
+
+    private static func wakeupCounts() -> (packageIdleWakeups: UInt64, interruptWakeups: UInt64)? {
+        var info = rusage_info_current()
+        let result = withUnsafeMutablePointer(to: &info) { pointer -> Int32 in
+            let raw = UnsafeMutableRawPointer(pointer).assumingMemoryBound(to: rusage_info_t?.self)
+            return proc_pid_rusage(getpid(), RUSAGE_INFO_CURRENT, raw)
+        }
+        guard result == 0 else { return nil }
+        return (info.ri_pkg_idle_wkups, info.ri_interrupt_wkups)
     }
 }

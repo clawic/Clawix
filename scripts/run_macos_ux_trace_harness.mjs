@@ -739,6 +739,10 @@ function emitPayloadSamples(events, context, payload) {
         "footprintBytes",
         "footprintMB",
         "processCpuPercent",
+        "memorySlopeMBPerMin",
+        "timerWakeups",
+        "timerWakeupsCumulative",
+        "interruptWakeupsCumulative",
         "timestamp",
       ]),
     });
