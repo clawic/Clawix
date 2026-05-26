@@ -634,12 +634,15 @@ if (evidenceSchema) {
   }
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedReferenceKinds, `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`), `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`, ["relative-to-run", "external-hash-only"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineArtifactRequiredFields, `${evidenceSchemaPath}.baselineArtifactRequiredFields`), `${evidenceSchemaPath}.baselineArtifactRequiredFields`, ["baselineVersion", "sourceEvidence", "approval", "promotionPolicy", "evidenceSources", "privateBoundary", "metrics"]);
-  requireFields(evidenceSchema.baselineArtifactContract, `${evidenceSchemaPath}.baselineArtifactContract`, ["defaultApprovalStatus", "versioned", "privateEvidenceRemainsExternal", "p0Protection"]);
+  requireFields(evidenceSchema.baselineArtifactContract, `${evidenceSchemaPath}.baselineArtifactContract`, ["defaultApprovalStatus", "versioned", "privateEvidenceRemainsExternal", "verifierTarget", "p0Protection"]);
   if (evidenceSchema.baselineArtifactContract?.defaultApprovalStatus !== "pending-user-approval") {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.defaultApprovalStatus must be pending-user-approval`);
   }
   if (evidenceSchema.baselineArtifactContract?.versioned !== true) {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.versioned must be true`);
+  }
+  if (!String(evidenceSchema.baselineArtifactContract?.verifierTarget ?? "").includes("baseline JSON files")) {
+    fail(`${evidenceSchemaPath}.baselineArtifactContract.verifierTarget must require baseline JSON verification`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
   requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "requiredSourceIds"]);
@@ -921,6 +924,7 @@ if (runnerSource) {
     "function exitPolicyForRun(",
     "function baselineReferenceForRun(",
     "baselineReference: baselineReferenceForRun(runDir, args.baseline)",
+    "verifyEvidencePath(baselinePath)",
     "approval: {",
     "status: \"pending-user-approval\"",
     "lowerPriorityOptimizationMayUpdateP0: false",
@@ -962,6 +966,8 @@ if (evidenceVerifierSource) {
     "validateEvidenceSources(",
     "validateExitPolicy(",
     "validateBaselineComparison(",
+    "validateBaselineArtifact(",
+    "is not a UX trace run, suite, or baseline artifact",
     "baseline-comparison.json must not include raw baselinePath",
     "exitPolicy.computedExitCode must be",
     "contentHash does not match current source content",

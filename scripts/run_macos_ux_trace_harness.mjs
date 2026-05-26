@@ -1706,6 +1706,7 @@ async function selfTest() {
   if (baseline.promotionPolicy?.lowerPriorityOptimizationMayUpdateP0 !== false) {
     throw new Error("self-test baseline must protect P0 promotion policy");
   }
+  verifyEvidencePath(baselinePath);
   return result;
 }
 

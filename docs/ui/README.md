@@ -314,6 +314,8 @@ primary timing source.
   External baseline paths are written to evidence only as hash references.
 - Evidence validation:
   `node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>`.
+  The same verifier also accepts a generated baseline JSON file and validates
+  approval, promotion, source, metric, and private-boundary metadata.
 
 Evidence is written under the chosen output directory as `suite.json`,
 `suite-metrics.json`, `suite-failures.json`, plus per-run `run.json`,

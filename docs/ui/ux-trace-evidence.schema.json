@@ -171,6 +171,7 @@
     "defaultApprovalStatus": "pending-user-approval",
     "versioned": true,
     "privateEvidenceRemainsExternal": true,
+    "verifierTarget": "scripts/verify_macos_ux_trace_evidence.mjs must accept generated baseline JSON files in addition to run and suite directories.",
     "p0Protection": "Generated baselines must not allow lower-priority optimizations to update P0 baselines without approved evidence."
   },
   "eventRequiredFields": [

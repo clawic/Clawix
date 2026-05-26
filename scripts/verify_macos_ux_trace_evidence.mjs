@@ -8,7 +8,7 @@ const schemaPath = path.join(rootDir, "docs/ui/ux-trace-evidence.schema.json");
 
 function usage() {
   return `Usage:
-  node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir> [--json]
+  node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir-or-baseline-json> [--json]
 `;
 }
 
@@ -532,12 +532,80 @@ function validateSuite(suiteDir, schema) {
   };
 }
 
+function validateBaselineArtifact(file, schema) {
+  const failures = [];
+  const baseline = readJson(file);
+  requireFields(failures, baseline, "baseline", schema.baselineArtifactRequiredFields || [
+    "schemaVersion",
+    "program",
+    "baselineVersion",
+    "generatedAt",
+    "platform",
+    "sourceEvidence",
+    "approval",
+    "promotionPolicy",
+    "evidenceSources",
+    "privateBoundary",
+    "metrics",
+  ]);
+  if (baseline.program !== "macos-ux-trace-harness-baseline") {
+    fail(failures, "baseline.program must be macos-ux-trace-harness-baseline");
+  }
+  if (baseline.baselineVersion !== 1) fail(failures, "baseline.baselineVersion must be 1");
+  if (baseline.platform !== "macos") fail(failures, "baseline.platform must be macos");
+  validatePrivateBoundary(failures, baseline.privateBoundary, "baseline");
+  validateEvidenceSources(failures, baseline.evidenceSources, "baseline", schema);
+  requireFields(failures, baseline.sourceEvidence, "baseline.sourceEvidence", ["status", "artifactKind"]);
+  if (!["run", "suite"].includes(baseline.sourceEvidence?.artifactKind)) {
+    fail(failures, "baseline.sourceEvidence.artifactKind must be run or suite");
+  }
+  requireFields(failures, baseline.approval, "baseline.approval", ["status", "approvedByUserAt", "approvedScope"]);
+  if (baseline.approval?.status !== schema.baselineArtifactContract?.defaultApprovalStatus) {
+    fail(failures, `baseline.approval.status must be ${schema.baselineArtifactContract?.defaultApprovalStatus}`);
+  }
+  requireFields(failures, baseline.promotionPolicy, "baseline.promotionPolicy", [
+    "lowerPriorityOptimizationMayUpdateP0",
+    "requiresApprovedEvidence",
+    "privateEvidenceRemainsExternal",
+  ]);
+  if (baseline.promotionPolicy?.lowerPriorityOptimizationMayUpdateP0 !== false) {
+    fail(failures, "baseline.promotionPolicy.lowerPriorityOptimizationMayUpdateP0 must be false");
+  }
+  if (baseline.promotionPolicy?.requiresApprovedEvidence !== true) {
+    fail(failures, "baseline.promotionPolicy.requiresApprovedEvidence must be true");
+  }
+  if (baseline.promotionPolicy?.privateEvidenceRemainsExternal !== true) {
+    fail(failures, "baseline.promotionPolicy.privateEvidenceRemainsExternal must be true");
+  }
+  if (!Array.isArray(baseline.metrics) || baseline.metrics.length === 0) {
+    fail(failures, "baseline.metrics must be a non-empty array");
+  }
+  for (const [index, metric] of (baseline.metrics || []).entries()) {
+    requireFields(failures, metric, `baseline.metrics[${index}]`, ["kpiId", "priority", "surface", "unit", "p95", "sampleCount", "status"]);
+    if (typeof metric.kpiId !== "string" || metric.kpiId.length === 0) {
+      fail(failures, `baseline.metrics[${index}].kpiId must be a non-empty string`);
+    }
+  }
+  return {
+    ok: failures.length === 0,
+    kind: "baseline",
+    path: file,
+    scenarioId: baseline.scenarioId ?? null,
+    suiteId: baseline.suiteId ?? null,
+    fixtureProfile: baseline.fixtureProfile ?? null,
+    metrics: Array.isArray(baseline.metrics) ? baseline.metrics.length : 0,
+    approvalStatus: baseline.approval?.status ?? null,
+    validationFailures: failures,
+  };
+}
+
 function validatePath(targetPath) {
   const resolved = path.resolve(targetPath);
   const schema = readJson(schemaPath);
+  if (fs.existsSync(resolved) && fs.statSync(resolved).isFile()) return validateBaselineArtifact(resolved, schema);
   if (fs.existsSync(path.join(resolved, "suite.json"))) return validateSuite(resolved, schema);
   if (fs.existsSync(path.join(resolved, "run.json"))) return validateRun(resolved, schema);
-  throw new Error(`${resolved} is not a UX trace run or suite directory`);
+  throw new Error(`${resolved} is not a UX trace run, suite, or baseline artifact`);
 }
 
 function main() {
