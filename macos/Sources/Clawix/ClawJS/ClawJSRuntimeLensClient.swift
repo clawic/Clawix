@@ -270,13 +270,27 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let status: String?
             let approvalRequired: Bool?
             let commandShape: String?
+            let exactCommand: String?
+            let preflightCommand: String?
+            let approvalScope: String?
+            let evidenceSafetyPolicy: String?
             let expectedEvidence: [String]?
+            let expectedRedactedEvidence: [String]?
             let riskControls: [String]?
             let reentryCondition: String?
             let claimEffect: String?
+            let claimBlockedUntil: String?
             let supportResolution: String?
             let productDecision: String?
             let userVisibleContract: String?
+            let officialProtocol: String?
+            let officialMethod: String?
+            let officialContractSource: String?
+            let transportPolicyId: String?
+            let productionTransportStatus: String?
+            let lifecycleStatus: String?
+            let productionTransportCommandShape: String?
+            let doNotRunWithoutApproval: Bool?
             let safeDefault: String?
         }
     }

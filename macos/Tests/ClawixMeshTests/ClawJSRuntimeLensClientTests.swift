@@ -230,7 +230,11 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         let reentryPresentation = ClawJSRuntimeLensEvidenceReentryPresentation.make(
             packets: try XCTUnwrap(snapshot.supportAudit?.evidenceReentryPackets)
         )
+        XCTAssertEqual(reentryPresentation.rows.first?.exactCommand, "claw runtime example domain channels --json")
         XCTAssertEqual(reentryPresentation.rows.first?.expectedEvidenceLabel, "redacted_json_receipt, no_plaintext_secrets")
+        XCTAssertEqual(reentryPresentation.rows.first?.expectedRedactedEvidenceLabel, "redacted_json_receipt_for_exact_command, no_plaintext_secrets_or_credentials, support_contract_matches_manifest")
+        XCTAssertEqual(reentryPresentation.rows.first?.evidenceSafetyPolicy, "redacted_values_only_in_commands_outputs_and_evidence")
+        XCTAssertEqual(reentryPresentation.rows.first?.claimBlockedUntil, "approved_redacted_live_evidence_attached")
         XCTAssertEqual(reentryPresentation.rows.first?.supportResolution, "external_pending_not_product_blocked")
         XCTAssertEqual(reentryPresentation.rows.first?.productDecision, "external_live_claim_not_supported_without_approved_redacted_evidence")
         XCTAssertEqual(reentryPresentation.rows.first?.userVisibleContract, "read_only_degraded_projection_until_live_evidence_is_approved")

@@ -33,6 +33,11 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(supportAudit.accessibilityLabel.contains("Runtime support audit"))
         XCTAssertTrue(supportAudit.rows.first?.pills.map(\.tone).contains(.warning) == true)
 
+        let reentry = try XCTUnwrap(presentation.sections.first { $0.id == "evidence-reentry" })
+        XCTAssertEqual(reentry.rows.first { $0.id == "example.channels.live_evidence" }?.value, "claw runtime example domain channels --json")
+        XCTAssertTrue(reentry.rows.first { $0.id == "example.channels.live_evidence" }?.detailLines.contains("redacted_values_only_in_commands_outputs_and_evidence") == true)
+        XCTAssertTrue(reentry.rows.first { $0.id == "example.sessions.create.action_contract" }?.detailLines.contains("blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval") == true)
+
         let sessionActions = try XCTUnwrap(presentation.sections.first { $0.id == "session-actions" })
         XCTAssertTrue(sessionActions.accessibilityLabel.contains("Runtime session actions"))
         XCTAssertTrue(sessionActions.rows.contains { $0.pills.contains { $0.label == "would write" } })

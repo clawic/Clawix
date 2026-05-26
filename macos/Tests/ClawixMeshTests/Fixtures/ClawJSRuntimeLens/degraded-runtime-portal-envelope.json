@@ -392,18 +392,29 @@
           "status": "approval_required",
           "approvalRequired": true,
           "commandShape": "runtime example domain channels --json",
+          "exactCommand": "claw runtime example domain channels --json",
+          "preflightCommand": "claw runtime example support --json",
+          "approvalScope": "read_only_redacted_live_domain_evidence_only",
+          "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
           "expectedEvidence": [
             "redacted_json_receipt",
             "no_plaintext_secrets"
+          ],
+          "expectedRedactedEvidence": [
+            "redacted_json_receipt_for_exact_command",
+            "no_plaintext_secrets_or_credentials",
+            "support_contract_matches_manifest"
           ],
           "riskControls": [
             "read_only_first"
           ],
           "reentryCondition": "approve_and_run_runtime_example_domain_channels_read_only_evidence",
           "claimEffect": "blocks_recommended_production_native_parity",
+          "claimBlockedUntil": "approved_redacted_live_evidence_attached",
           "supportResolution": "external_pending_not_product_blocked",
           "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
           "userVisibleContract": "read_only_degraded_projection_until_live_evidence_is_approved",
+          "doNotRunWithoutApproval": true,
           "safeDefault": "do_not_run_without_explicit_approval_and_redaction"
         },
         {
@@ -413,18 +424,32 @@
           "status": "blocked_until_upstream_contract",
           "approvalRequired": false,
           "commandShape": "not_executable_until_official_runtime_create_contract_exists",
+          "exactCommand": "claw runtime example sessions create --title <approved-title> --confirm-runtime-write --gateway-url <approved-loopback-fixture-url> --json",
+          "preflightCommand": "claw runtime example support --json",
+          "approvalScope": "approved_loopback_fixture_only_until_production_transport_policy",
+          "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
           "expectedEvidence": [
             "official_create_command_or_api",
             "non_destructive_fixture"
+          ],
+          "expectedRedactedEvidence": [
+            "official_create_command_or_api",
+            "non_destructive_fixture",
+            "no_plaintext_secrets_or_credentials"
           ],
           "riskControls": [
             "no_silent_runtime_write"
           ],
           "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
           "claimEffect": "blocks_recommended_production_native_parity",
+          "claimBlockedUntil": "tui_gateway_wrapper_fixture_and_round_trip_evidence_attached",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
           "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
           "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
+          "officialMethod": "session.create",
+          "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
+          "doNotRunWithoutApproval": true,
           "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
         }
       ]
