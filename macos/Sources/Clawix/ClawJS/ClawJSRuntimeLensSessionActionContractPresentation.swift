@@ -18,6 +18,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
         let transportPolicyId: String?
         let productionTransportStatus: String?
         let lifecycleStatus: String?
+        let nativeWriteBackStatus: String?
+        let nativeWriteBackSafeDefault: String?
+        let evidenceRequirementId: String?
         let requiredEvidenceCount: Int
 
         var detailLabel: String? {
@@ -31,6 +34,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 transportPolicyId.map { "transport policy \($0)" },
                 productionTransportStatus.map { "production transport \($0)" },
                 lifecycleStatus.map { "lifecycle \($0)" },
+                nativeWriteBackStatus.map { "native write-back \($0)" },
+                nativeWriteBackSafeDefault.map { "safe default \($0)" },
+                evidenceRequirementId.map { "evidence \($0)" },
                 requiredEvidenceCount > 0 ? "evidence \(requiredEvidenceCount)" : nil,
                 statusChanged ? "materialized" : nil
             ].compactMap { $0 }
@@ -55,6 +61,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 transportPolicyId.map { "transport policy \($0)" },
                 productionTransportStatus.map { "production transport \($0)" },
                 lifecycleStatus.map { "lifecycle \($0)" },
+                nativeWriteBackStatus.map { "native write-back \($0)" },
+                nativeWriteBackSafeDefault.map { "safe default \($0)" },
+                evidenceRequirementId.map { "evidence \($0)" },
                 "required evidence \(requiredEvidenceCount)"
             ]
             .compactMap { $0 }
@@ -70,6 +79,7 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
     let runtimeWriteContractCount: Int
     let wouldWriteRuntimeCount: Int
     let localOverlayContractCount: Int
+    let nativeWriteBackBlockedCount: Int
     let requiredEvidenceCount: Int
     let statusChangedActionsLabel: String?
     let contractOnlyActionsLabel: String?
@@ -91,6 +101,7 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
             "runtime write contracts \(runtimeWriteContractCount)",
             "would write runtime \(wouldWriteRuntimeCount)",
             "local overlay contracts \(localOverlayContractCount)",
+            "native write-back blocked \(nativeWriteBackBlockedCount)",
             "required evidence \(requiredEvidenceCount)",
             statusChangedActionsLabel.map { "changed actions \($0)" },
             contractOnlyActionsLabel.map { "contract only actions \($0)" },
@@ -137,6 +148,9 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                     ?? materialized?.transportPolicy?.lifecycleStatus
                     ?? contract?.lifecycleStatus
                     ?? contract?.transportPolicy?.lifecycleStatus,
+                nativeWriteBackStatus: materialized?.nativeWriteBackStatus ?? contract?.nativeWriteBackStatus,
+                nativeWriteBackSafeDefault: materialized?.nativeWriteBackSafeDefault ?? contract?.nativeWriteBackSafeDefault,
+                evidenceRequirementId: materialized?.evidenceRequirementId ?? contract?.evidenceRequirementId,
                 requiredEvidenceCount: materialized?.requiredEvidence?.count ?? contract?.requiredEvidence?.count ?? 0
             )
         }
@@ -155,6 +169,7 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
             runtimeWriteContractCount: contracts.filter { $0.writesRuntime == true }.count,
             wouldWriteRuntimeCount: contracts.filter { $0.wouldWriteRuntime == true }.count,
             localOverlayContractCount: contracts.filter { $0.status == "local_overlay_only" }.count,
+            nativeWriteBackBlockedCount: contracts.filter { $0.nativeWriteBackStatus != nil }.count,
             requiredEvidenceCount: contracts.reduce(0) { count, action in
                 count + (action.requiredEvidence?.count ?? 0)
             },

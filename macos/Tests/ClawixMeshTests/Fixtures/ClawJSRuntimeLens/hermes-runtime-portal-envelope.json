@@ -1574,7 +1574,14 @@
             "writesRuntime": false,
             "persistence": "local_pin_overlay",
             "delegatesTo": "ClawJS app-state local pin overlay",
-            "guard": "must_not_write_runtime_pin_without_official_api"
+            "guard": "must_not_write_runtime_pin_without_official_api",
+            "nativeWriteBackStatus": "blocked_until_official_runtime_write_back_contract",
+            "officialRuntimeWriteBackContractRequired": true,
+            "officialRuntimeWriteBackContractKnown": false,
+            "nativeWriteBackSafeDefault": "keep_local_overlay_and_do_not_write_runtime_pin_state",
+            "userVisibleContract": "local_overlay_only_until_official_runtime_pin_api_exists",
+            "claimEffect": "blocks_native_write_back_parity_not_local_overlay",
+            "evidenceRequirementId": "hermes.sessions.pin.native_write_back_contract"
           },
           {
             "action": "unpin",
@@ -1583,7 +1590,14 @@
             "writesRuntime": false,
             "persistence": "local_pin_overlay",
             "delegatesTo": "ClawJS app-state local pin overlay",
-            "guard": "must_not_write_runtime_pin_without_official_api"
+            "guard": "must_not_write_runtime_pin_without_official_api",
+            "nativeWriteBackStatus": "blocked_until_official_runtime_write_back_contract",
+            "officialRuntimeWriteBackContractRequired": true,
+            "officialRuntimeWriteBackContractKnown": false,
+            "nativeWriteBackSafeDefault": "keep_local_overlay_and_do_not_write_runtime_pin_state",
+            "userVisibleContract": "local_overlay_only_until_official_runtime_pin_api_exists",
+            "claimEffect": "blocks_native_write_back_parity_not_local_overlay",
+            "evidenceRequirementId": "hermes.sessions.unpin.native_write_back_contract"
           },
           {
             "action": "conflicts",
@@ -1755,7 +1769,14 @@
             "writesRuntime": false,
             "persistence": "local_pin_overlay",
             "delegatesTo": "ClawJS app-state local pin overlay",
-            "guard": "must_not_write_runtime_pin_without_official_api"
+            "guard": "must_not_write_runtime_pin_without_official_api",
+            "nativeWriteBackStatus": "blocked_until_official_runtime_write_back_contract",
+            "officialRuntimeWriteBackContractRequired": true,
+            "officialRuntimeWriteBackContractKnown": false,
+            "nativeWriteBackSafeDefault": "keep_local_overlay_and_do_not_write_runtime_pin_state",
+            "userVisibleContract": "local_overlay_only_until_official_runtime_pin_api_exists",
+            "claimEffect": "blocks_native_write_back_parity_not_local_overlay",
+            "evidenceRequirementId": "hermes.sessions.pin.native_write_back_contract"
           },
           {
             "action": "unpin",
@@ -1764,7 +1785,14 @@
             "writesRuntime": false,
             "persistence": "local_pin_overlay",
             "delegatesTo": "ClawJS app-state local pin overlay",
-            "guard": "must_not_write_runtime_pin_without_official_api"
+            "guard": "must_not_write_runtime_pin_without_official_api",
+            "nativeWriteBackStatus": "blocked_until_official_runtime_write_back_contract",
+            "officialRuntimeWriteBackContractRequired": true,
+            "officialRuntimeWriteBackContractKnown": false,
+            "nativeWriteBackSafeDefault": "keep_local_overlay_and_do_not_write_runtime_pin_state",
+            "userVisibleContract": "local_overlay_only_until_official_runtime_pin_api_exists",
+            "claimEffect": "blocks_native_write_back_parity_not_local_overlay",
+            "evidenceRequirementId": "hermes.sessions.unpin.native_write_back_contract"
           },
           {
             "action": "conflicts",

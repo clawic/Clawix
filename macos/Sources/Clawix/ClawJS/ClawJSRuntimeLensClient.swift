@@ -781,6 +781,13 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let transportPolicy: TransportPolicy?
         let productionTransportStatus: String?
         let lifecycleStatus: String?
+        let nativeWriteBackStatus: String?
+        let officialRuntimeWriteBackContractRequired: Bool?
+        let officialRuntimeWriteBackContractKnown: Bool?
+        let nativeWriteBackSafeDefault: String?
+        let userVisibleContract: String?
+        let claimEffect: String?
+        let evidenceRequirementId: String?
 
         enum CodingKeys: String, CodingKey {
             case action
@@ -797,6 +804,13 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             case transportPolicy
             case productionTransportStatus
             case lifecycleStatus
+            case nativeWriteBackStatus
+            case officialRuntimeWriteBackContractRequired
+            case officialRuntimeWriteBackContractKnown
+            case nativeWriteBackSafeDefault
+            case userVisibleContract
+            case claimEffect
+            case evidenceRequirementId
             case guardName = "guard"
         }
     }
