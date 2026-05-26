@@ -105,6 +105,22 @@ Clawix projected skill categories, including `ui-canon-review`,
 `ui-implementation`, `visual-regression`, `ui-performance-budget`, and
 `macos-ux-trace-harness`, live in `docs/agent-rules/index.md`.
 
+Before deep implementation or closure, apply the Pareto survival gate in
+`docs/agent-rules/index.md`: check the small set of launch, usability,
+resource, unbounded-data, idle-loop, and central-feature risks that can make the
+requested outcome useless. If survival fails, stop fine-grained work and handle
+the direct blocker first.
+
+Background work must be observable and controllable by default. Daemons,
+helpers, timers, pollers, indexers, cache warmers, imports, retry loops,
+migrations, and long-running jobs need an inventory/status path, resource
+evidence, and a stop/cancel path before they are complete.
+
+Use realistic health canaries before trusting narrow validation: main-window
+accessibility/control-tree latency, post-launch CPU/RAM, render-probe
+state-publication storms, visible list scale, and background activity
+inventory. Red canaries block fine-grained closure.
+
 Use focused checks during iteration:
 
 ```bash

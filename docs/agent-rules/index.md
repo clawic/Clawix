@@ -176,6 +176,21 @@ Use relevant skills instead of pasting long procedures into context:
   long-running-agent surfaces are incomplete without `resourceContract` for
   startup, idle, memory, streaming, storage, hot-path, scale, and validation
   behavior, unless they are pre-existing expiring baseline debt.
+- Background work must be observable and controllable by default. Any daemon,
+  helper process, timer, watcher, poller, indexer, cache warmer, import, retry
+  loop, bridge recovery loop, database migration, media/model job, or
+  long-running task that can consume meaningful CPU, RAM, disk, network,
+  battery, thermal, or UI invalidation budget is incomplete without a runtime
+  inventory entry covering owner/surface, trigger, expected lifetime, idle
+  behavior, resource budget, current state, last activity, last error,
+  diagnostics, and a cancellation/stop path. Start/restart controls are
+  required where the work is user- or agent-managed.
+- Uninventoried background work is a defect. Agents must not rely on docs that
+  say a job should be idle or absent; they must be able to inspect whether it is
+  running and how expensive it is. If a process, timer, indexer, poller, cache
+  job, or daemon cannot be explained by the inventory during performance or
+  visible-app work, repair observability/control first or classify validation as
+  partial.
 - Periodic work is incomplete without an Idle Quiescence Contract manifest
   entry in `docs/idle-quiescence.manifest.json` covering activation, sleep,
   visible-only UI behavior, adaptive backoff, shared timer rationale,
@@ -198,6 +213,29 @@ Use relevant skills instead of pasting long procedures into context:
 
 ## Validation Safety
 
+- Pareto survival gate: before deep implementation, detailed tests,
+  micro-optimization, documentation cleanup, or closure, identify the small set
+  of assumptions that can make the requested outcome useless. Examples include
+  the app not launching, UI not becoming interactive, CPU/RAM runaway, unbounded
+  lists/caches/state publication, idle polling loops, real data being much
+  larger than fixtures, or the central requested feature not being visible or
+  usable. Validate or bound those risks before spending effort on secondary
+  details.
+- Stop the line when survival fails. If the real app or host-equivalent path is
+  unusable, saturates resources, publishes unbounded state, or fails a basic
+  interaction, do not close adjacent goals or optimize smaller symptoms. Treat
+  the high-impact cause as the direct blocker and classify fine-grained work as
+  secondary until the survival evidence is healthy.
+- For performance or visible-app work, inspect background-work inventory and
+  process/resource state before treating a local UI symptom as isolated. Silent
+  background execution is itself a survival risk.
+- Use realistic health canaries before trusting narrow validation: main-window
+  accessibility/control-tree inspection latency, post-launch CPU/RAM/footprint,
+  render-probe state-publication storms, visible list scale, and background
+  activity inventory. Multi-second accessibility reads, CPU near a full core at
+  idle, unexplained memory growth, hundreds/thousands of state publications, or
+  huge visible/offscreen list trees are direct survival warnings. A 7s+
+  main-window inspection is serious; 15s is a survival failure.
 - Hermetic tests are useful but not sufficient for host-dependent bugs.
 - Host-dependent paths include installed apps, signed helpers, localhost,
   filesystem state under the user's home, auth, polling, native permissions,
