@@ -1812,6 +1812,7 @@ struct ClawJSRuntimeLensClient {
         runtimeWorkspace: String? = nil,
         configPath: String? = nil,
         authStore: String? = nil,
+        approvalGateFixture: String? = nil,
         gatewayURL: String? = nil
     ) async throws -> ClawJSRuntimeLensSnapshot {
         var args = ["runtime", runtime.rawValue, "domains"]
@@ -1821,6 +1822,7 @@ struct ClawJSRuntimeLensClient {
             runtimeWorkspace: runtimeWorkspace,
             configPath: configPath,
             authStore: authStore,
+            approvalGateFixture: approvalGateFixture,
             gatewayURL: gatewayURL
         )
         args.append("--json")
@@ -1880,6 +1882,7 @@ struct ClawJSRuntimeLensClient {
         runtimeWorkspace: String? = nil,
         configPath: String? = nil,
         authStore: String? = nil,
+        approvalGateFixture: String? = nil,
         confirmRuntimeWrite: Bool = false
     ) async throws -> SessionNativeActionResult {
         var args = [
@@ -1903,6 +1906,7 @@ struct ClawJSRuntimeLensClient {
             runtimeWorkspace: runtimeWorkspace,
             configPath: configPath,
             authStore: authStore,
+            approvalGateFixture: approvalGateFixture,
             gatewayURL: gatewayURL
         )
         if confirmRuntimeWrite {
@@ -1932,6 +1936,7 @@ struct ClawJSRuntimeLensClient {
         runtimeWorkspace: String?,
         configPath: String?,
         authStore: String?,
+        approvalGateFixture: String?,
         gatewayURL: String?
     ) {
         if let homeDir, !homeDir.isEmpty {
@@ -1945,6 +1950,9 @@ struct ClawJSRuntimeLensClient {
         }
         if let authStore, !authStore.isEmpty {
             args.append(contentsOf: ["--auth-store", authStore])
+        }
+        if let approvalGateFixture, !approvalGateFixture.isEmpty {
+            args.append(contentsOf: ["--approval-gate-fixture", approvalGateFixture])
         }
         if let gatewayURL, !gatewayURL.isEmpty {
             args.append(contentsOf: ["--gateway-url", gatewayURL])

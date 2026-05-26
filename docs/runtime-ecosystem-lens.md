@@ -107,6 +107,10 @@ ecosystem manifest:
   Gateway readiness must keep wrapper-blocked, fixture-backed, and production
   transport blockers as separate visible counts so a configured loopback
   gateway fixture is not mistaken for production native transport support.
+- Runtime Lens scope controls include runtime home, runtime workspace, config
+  path, auth store, approval-gate fixture path, and loopback gateway URL. These
+  controls are forwarded to ClawJS portal refreshes so approval-gate receipts
+  and gateway fixture state can be validated inside an isolated runtime scope.
 - individual `evidenceRequirements` are rendered through a tested presentation
   model wherever they appear so blocker class, approval requirement, command
   shape, current behavior, product decision, support resolution, and promotion

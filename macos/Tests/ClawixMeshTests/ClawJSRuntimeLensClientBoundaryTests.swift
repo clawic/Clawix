@@ -83,6 +83,8 @@ final class ClawJSRuntimeLensClientBoundaryTests: XCTestCase {
                 "/tmp/hermes-config.yaml",
                 "--auth-store",
                 "/tmp/hermes-auth.json",
+                "--approval-gate-fixture",
+                "/tmp/hermes-approval-gate.json",
                 "--gateway-url",
                 "http://127.0.0.1:18789",
                 "--json"
@@ -99,6 +101,7 @@ final class ClawJSRuntimeLensClientBoundaryTests: XCTestCase {
             runtimeWorkspace: "/tmp/hermes-workspace",
             configPath: "/tmp/hermes-config.yaml",
             authStore: "/tmp/hermes-auth.json",
+            approvalGateFixture: "/tmp/hermes-approval-gate.json",
             gatewayURL: "http://127.0.0.1:18789"
         )
 

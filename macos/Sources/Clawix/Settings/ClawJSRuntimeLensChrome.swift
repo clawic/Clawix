@@ -101,6 +101,12 @@ extension ClawJSRuntimeLensSection {
                 .clxControl("runtime-lens-auth-store", role: "input", label: "Runtime lens auth store") { value in
                     runtimeLensAuthStore = value
                 }
+            TextField("Approval gate fixture path", text: $runtimeLensApprovalGateFixture)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .clxControl("runtime-lens-approval-gate-fixture", role: "input", label: "Runtime lens approval gate fixture") { value in
+                    runtimeLensApprovalGateFixture = value
+                }
             TextField("Loopback gateway URL", text: $runtimeLensActionGatewayURL)
                 .textFieldStyle(.roundedBorder)
                 .font(BodyFont.system(size: 11.5))

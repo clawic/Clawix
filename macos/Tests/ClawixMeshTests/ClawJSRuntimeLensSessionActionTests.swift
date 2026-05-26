@@ -802,7 +802,8 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
             homeDir: "/tmp/hermes-home",
             runtimeWorkspace: "/tmp/hermes-workspace",
             configPath: "/tmp/hermes-config.yaml",
-            authStore: "/tmp/hermes-auth.json"
+            authStore: "/tmp/hermes-auth.json",
+            approvalGateFixture: "/tmp/hermes-approval-gate.json"
         )
 
         XCTAssertEqual(requested, [[
@@ -820,6 +821,8 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
             "/tmp/hermes-config.yaml",
             "--auth-store",
             "/tmp/hermes-auth.json",
+            "--approval-gate-fixture",
+            "/tmp/hermes-approval-gate.json",
             "--json"
         ]])
         XCTAssertEqual(result.status, "ok")
