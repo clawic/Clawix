@@ -26,6 +26,7 @@ The contract is defined by:
 - `docs/ui/ux-trace-harness.registry.json`
 - `docs/ui/ux-trace-evidence.schema.json`
 - `docs/ui/ux-trace-scenarios.manifest.json`
+- `docs/ui/ux-trace-calibration.manifest.json`
 - `scripts/ui_ux_trace_harness_check.mjs`
 
 The harness contract is macOS-only for its first implementation. It requires P0

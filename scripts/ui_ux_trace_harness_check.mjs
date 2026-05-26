@@ -6,6 +6,7 @@ const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const registryPath = "docs/ui/ux-trace-harness.registry.json";
 const evidenceSchemaPath = "docs/ui/ux-trace-evidence.schema.json";
 const scenariosPath = "docs/ui/ux-trace-scenarios.manifest.json";
+const calibrationPath = "docs/ui/ux-trace-calibration.manifest.json";
 const runnerPath = "scripts/run_macos_ux_trace_harness.mjs";
 const fixtureGeneratorPath = "scripts/generate_macos_ux_trace_fixtures.mjs";
 const fixtureVerificationPath = "scripts/scale_lab_fixture_check.mjs";
@@ -341,11 +342,13 @@ const expectedEventTypes = [
 const registry = readJson(registryPath);
 const evidenceSchema = readJson(evidenceSchemaPath);
 const scenarios = readJson(scenariosPath);
+const calibration = readJson(calibrationPath);
 
 for (const [relativePath, value] of [
   [registryPath, registry],
   [evidenceSchemaPath, evidenceSchema],
   [scenariosPath, scenarios],
+  [calibrationPath, calibration],
 ]) {
   if (value) rejectPrivateText(relativePath, value);
 }
@@ -379,6 +382,7 @@ if (registry) {
   }
   if (registry.requiredArtifacts?.evidenceSchema !== evidenceSchemaPath) fail(`${registryPath}.requiredArtifacts.evidenceSchema must point to ${evidenceSchemaPath}`);
   if (registry.requiredArtifacts?.scenarioManifest !== scenariosPath) fail(`${registryPath}.requiredArtifacts.scenarioManifest must point to ${scenariosPath}`);
+  if (registry.requiredArtifacts?.calibrationManifest !== calibrationPath) fail(`${registryPath}.requiredArtifacts.calibrationManifest must point to ${calibrationPath}`);
   if (registry.requiredArtifacts?.runnerCommand !== `node ${runnerPath}`) fail(`${registryPath}.requiredArtifacts.runnerCommand must be node ${runnerPath}`);
   if (registry.requiredArtifacts?.runnerSelfTestCommand !== `node ${runnerPath} --self-test`) fail(`${registryPath}.requiredArtifacts.runnerSelfTestCommand must be node ${runnerPath} --self-test`);
   if (registry.requiredArtifacts?.suiteRunnerCommand !== `node ${runnerPath} --suite p0`) fail(`${registryPath}.requiredArtifacts.suiteRunnerCommand must be node ${runnerPath} --suite p0`);
@@ -451,6 +455,45 @@ if (evidenceSchema) {
   if (evidenceSchema.correlationRequirements?.dispatchSuccessIsNotVisualSuccess !== true) {
     fail(`${evidenceSchemaPath}.correlationRequirements.dispatchSuccessIsNotVisualSuccess must be true`);
   }
+}
+
+if (calibration) {
+  requireFields(calibration, calibrationPath, [
+    "schemaVersion",
+    "program",
+    "status",
+    "platform",
+    "policy",
+    "privateAggregatePolicy",
+    "syntheticProfiles",
+    "externalPending",
+    "verification",
+  ]);
+  if (calibration.schemaVersion !== 1) fail(`${calibrationPath}.schemaVersion must be 1`);
+  if (calibration.program !== "macos-ux-trace-harness") fail(`${calibrationPath}.program must be macos-ux-trace-harness`);
+  if (calibration.platform !== "macos") fail(`${calibrationPath}.platform must be macos`);
+  if (calibration.privateAggregatePolicy?.contentExportAllowed !== false) fail(`${calibrationPath}.privateAggregatePolicy.contentExportAllowed must be false`);
+  if (calibration.privateAggregatePolicy?.aggregateMetricsOnly !== true) fail(`${calibrationPath}.privateAggregatePolicy.aggregateMetricsOnly must be true`);
+  if (calibration.privateAggregatePolicy?.approvalRequiredBeforeStrictCalibration !== true) fail(`${calibrationPath}.privateAggregatePolicy.approvalRequiredBeforeStrictCalibration must be true`);
+  const calibrationProfiles = requireArray(calibration.syntheticProfiles, `${calibrationPath}.syntheticProfiles`, expectedFixtureProfiles.length);
+  const calibrationProfileIds = requireRecordIds(calibrationProfiles, `${calibrationPath}.syntheticProfiles`, expectedFixtureProfiles);
+  for (const profile of calibrationProfiles) {
+    requireFields(profile, `${calibrationPath}.syntheticProfiles.${profile.id ?? "unknown"}`, ["id", "status", "calibrationRole", "baselineAlias", "approvalStatus"]);
+    if (typeof profile.baselineAlias !== "string" || !profile.baselineAlias.startsWith("external-ui-baselines:")) {
+      fail(`${calibrationPath}.syntheticProfiles.${profile.id}.baselineAlias must use external-ui-baselines alias`);
+    }
+  }
+  const externalPending = requireArray(calibration.externalPending, `${calibrationPath}.externalPending`, 1);
+  if (!externalPending.some((entry) => entry.status === "EXTERNAL PENDING" && entry.id === "private-real-mode-aggregate-comparison")) {
+    fail(`${calibrationPath}.externalPending must record private-real-mode-aggregate-comparison as EXTERNAL PENDING`);
+  }
+  if (calibration.verification?.publicContractCheck !== "node scripts/ui_ux_trace_harness_check.mjs") {
+    fail(`${calibrationPath}.verification.publicContractCheck must be node scripts/ui_ux_trace_harness_check.mjs`);
+  }
+  if (calibration.verification?.privateApprovalRequiredForCompletion !== true) {
+    fail(`${calibrationPath}.verification.privateApprovalRequiredForCompletion must be true`);
+  }
+  if (!calibrationProfileIds.has("real-equivalent-private")) fail(`${calibrationPath}.syntheticProfiles must include real-equivalent-private`);
 }
 
 if (scenarios) {

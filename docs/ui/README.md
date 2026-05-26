@@ -124,6 +124,10 @@ the public repo.
   and real-equivalent-private profiles. Generated packs export
   `threads.json` for `CLAWIX_THREAD_FIXTURE` and `pinned-thread-ids.json` for
   `CLAWIX_THREAD_PIN_FIXTURE`; they must not contain private conversation text.
+- `ux-trace-calibration.manifest.json`: public-safe calibration state for UX
+  trace fixture profiles. It records which synthetic profiles have live
+  baselines, which remain approval-pending, and why private real-mode aggregate
+  comparison is `EXTERNAL PENDING` until approved aggregate evidence exists.
 - `pattern-performance.manifest.json`: critical-flow ownership mapping from
   performance budgets back to registry patterns.
 - `private-baselines.manifest.json`: public contract for private visual,

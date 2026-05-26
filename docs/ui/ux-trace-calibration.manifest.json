@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "program": "macos-ux-trace-harness",
+  "status": "synthetic-profiles-validated-private-aggregate-external-pending",
+  "platform": "macos",
+  "policy": "Synthetic UX trace profiles must be at least as stressful as approved private aggregate real-mode metrics when those aggregates are available. Public artifacts may record only redacted status, aggregate metric names, hashes, aliases, and commands; private conversation text, readable screenshots, local paths, credentials, and service payloads stay outside the public repo.",
+  "privateAggregatePolicy": {
+    "contentExportAllowed": false,
+    "aggregateMetricsOnly": true,
+    "publicSafeFields": [
+      "profile",
+      "scenario",
+      "kpi",
+      "sampleCount",
+      "p50",
+      "p95",
+      "p99",
+      "max",
+      "hash",
+      "approvalStatus"
+    ],
+    "externalAggregateAlias": "external-ui-baselines:macos/ux-trace-real-aggregate",
+    "approvalRequiredBeforeStrictCalibration": true
+  },
+  "syntheticProfiles": [
+    {
+      "id": "smoke",
+      "status": "live-baseline-captured",
+      "calibrationRole": "fast sanity baseline",
+      "baselineAlias": "external-ui-baselines:macos/ux-trace/smoke",
+      "approvalStatus": "pending-user-approval"
+    },
+    {
+      "id": "medium",
+      "status": "live-baseline-captured",
+      "calibrationRole": "idle and representative daily workload baseline",
+      "baselineAlias": "external-ui-baselines:macos/ux-trace/medium",
+      "approvalStatus": "pending-user-approval"
+    },
+    {
+      "id": "dense-sidebar",
+      "status": "live-baseline-captured",
+      "calibrationRole": "many conversations and metadata churn",
+      "baselineAlias": "external-ui-baselines:macos/ux-trace/dense-sidebar",
+      "approvalStatus": "pending-user-approval"
+    },
+    {
+      "id": "dense-chat",
+      "status": "live-baseline-captured",
+      "calibrationRole": "heavy transcript and scroll behavior",
+      "baselineAlias": "external-ui-baselines:macos/ux-trace/dense-chat",
+      "approvalStatus": "pending-user-approval"
+    },
+    {
+      "id": "streaming-heavy",
+      "status": "live-baseline-captured",
+      "calibrationRole": "streaming deltas and unrelated invalidation pressure",
+      "baselineAlias": "external-ui-baselines:macos/ux-trace/streaming-heavy",
+      "approvalStatus": "pending-user-approval"
+    },
+    {
+      "id": "terminal-under-load",
+      "status": "live-baseline-captured",
+      "calibrationRole": "terminal open, switch, and scroll under conversation load",
+      "baselineAlias": "external-ui-baselines:macos/ux-trace/terminal-under-load",
+      "approvalStatus": "pending-user-approval"
+    },
+    {
+      "id": "real-equivalent-private",
+      "status": "synthetic-stress-baseline-captured",
+      "calibrationRole": "public-safe synthetic profile intended to exceed normal dense chat scale",
+      "baselineAlias": "external-ui-baselines:macos/ux-trace/real-equivalent-private",
+      "approvalStatus": "pending-user-approval"
+    },
+    {
+      "id": "worst-case",
+      "status": "defined-not-baselined",
+      "calibrationRole": "opt-in nonlinear bottleneck discovery profile",
+      "baselineAlias": "external-ui-baselines:macos/ux-trace/worst-case",
+      "approvalStatus": "not-required-for-p0-baseline-approval"
+    }
+  ],
+  "externalPending": [
+    {
+      "id": "private-real-mode-aggregate-comparison",
+      "status": "EXTERNAL PENDING",
+      "reason": "Strict proof that synthetic profiles match or exceed the maintainer private real-mode corpus requires aggregate real-mode metrics and explicit user approval. The public repo must not read or store private conversation content.",
+      "requiredEvidence": [
+        "approved aggregate P50/P95/P99 metrics for P0 UX trace KPIs",
+        "hash-bound private aggregate evidence record",
+        "explicit user approval scope",
+        "comparison showing synthetic P95 meets or exceeds approved real aggregate P95 where applicable"
+      ],
+      "reentryCondition": "Provide an approved private aggregate evidence root and run the private verifier for this manifest with require-approved mode."
+    }
+  ],
+  "verification": {
+    "publicContractCheck": "node scripts/ui_ux_trace_harness_check.mjs",
+    "runnerSelfTest": "node scripts/run_macos_ux_trace_harness.mjs --self-test",
+    "fixtureCheck": "node scripts/scale_lab_fixture_check.mjs",
+    "privateApprovalRequiredForCompletion": true
+  }
+}
