@@ -340,7 +340,8 @@ closure. When a gate is active, gated-priority `baseline_missing` and
 rows, so a gate failure is visible both in the comparison artifact and in
 `failures.json`. Every failure row must also carry the same step/action/surface
 identity as a `step.failed` timeline event, keeping `failures.json` correlated
-with `events.jsonl`. `run.json` and `suite.json` include `evidenceSources`
+with `events.jsonl`; every `step.failed` event must likewise include a failure
+object and a matching `failures.json` row. `run.json` and `suite.json` include `evidenceSources`
 with repo-relative registry, scenario manifest, schema, generator, and verifier
 paths plus content hashes, so a bundle is tied to the exact public contract that
 produced it. They also include a `traceIsolation` block proving
