@@ -1190,6 +1190,7 @@ function validateBaselineArtifact(file, schema) {
     "privateBoundary",
     "metrics",
   ]);
+  if (baseline.schemaVersion !== 1) fail(failures, "baseline.schemaVersion must be 1");
   if (baseline.program !== "macos-ux-trace-harness-baseline") {
     fail(failures, "baseline.program must be macos-ux-trace-harness-baseline");
   }

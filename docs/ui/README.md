@@ -322,10 +322,13 @@ primary timing source.
 - Evidence validation:
   `node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>`.
   The same verifier also accepts a generated baseline JSON file and validates
-  approval, promotion, source, metric, and private-boundary metadata. Baseline
-  `sourceEvidence` must identify exactly one run or suite source; run baselines
-  require `runId`, `scenarioId`, and `fixtureProfile`, while suite baselines
-  require a matching `suiteId` and `fixtureProfile`.
+  identity, approval, promotion, source, metric, and private-boundary metadata.
+  Baseline artifacts must declare `schemaVersion: 1`,
+  `program: macos-ux-trace-harness-baseline`, `baselineVersion: 1`, and
+  `platform: macos`. Baseline `sourceEvidence` must identify exactly one run
+  or suite source; run baselines require `runId`, `scenarioId`, and
+  `fixtureProfile`, while suite baselines require a matching `suiteId` and
+  `fixtureProfile`.
 
 Evidence is written under the chosen output directory as `suite.json`,
 `suite-metrics.json`, `suite-failures.json`, `suite-baseline-comparison.json`,

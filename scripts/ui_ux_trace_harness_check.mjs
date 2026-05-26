@@ -724,7 +724,7 @@ if (evidenceSchema) {
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedRowStatuses, `${evidenceSchemaPath}.baselineComparisonContract.allowedRowStatuses`), `${evidenceSchemaPath}.baselineComparisonContract.allowedRowStatuses`, ["baseline_missing", "baseline_regression", "compared"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedReferenceKinds, `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`), `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`, ["relative-to-run", "external-hash-only"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineArtifactRequiredFields, `${evidenceSchemaPath}.baselineArtifactRequiredFields`), `${evidenceSchemaPath}.baselineArtifactRequiredFields`, ["baselineVersion", "sourceEvidence", "approval", "promotionPolicy", "evidenceSources", "privateBoundary", "metrics"]);
-  requireFields(evidenceSchema.baselineArtifactContract, `${evidenceSchemaPath}.baselineArtifactContract`, ["defaultApprovalStatus", "versioned", "privateEvidenceRemainsExternal", "verifierTarget", "p0Protection", "sourceEvidencePolicy"]);
+  requireFields(evidenceSchema.baselineArtifactContract, `${evidenceSchemaPath}.baselineArtifactContract`, ["defaultApprovalStatus", "versioned", "privateEvidenceRemainsExternal", "verifierTarget", "p0Protection", "identityPolicy", "sourceEvidencePolicy"]);
   if (evidenceSchema.baselineArtifactContract?.defaultApprovalStatus !== "pending-user-approval") {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.defaultApprovalStatus must be pending-user-approval`);
   }
@@ -733,6 +733,13 @@ if (evidenceSchema) {
   }
   if (!String(evidenceSchema.baselineArtifactContract?.verifierTarget ?? "").includes("baseline JSON files")) {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.verifierTarget must require baseline JSON verification`);
+  }
+  if (
+    !String(evidenceSchema.baselineArtifactContract?.identityPolicy ?? "").includes("schemaVersion 1")
+    || !String(evidenceSchema.baselineArtifactContract?.identityPolicy ?? "").includes("macos-ux-trace-harness-baseline")
+    || !String(evidenceSchema.baselineArtifactContract?.identityPolicy ?? "").includes("platform macos")
+  ) {
+    fail(`${evidenceSchemaPath}.baselineArtifactContract.identityPolicy must bind generated baseline identity`);
   }
   if (
     !String(evidenceSchema.baselineArtifactContract?.sourceEvidencePolicy ?? "").includes("Run baselines require a runId")
@@ -1251,6 +1258,7 @@ if (evidenceVerifierSource) {
     "suite.json.status must be ${expectedStatus} for child run statuses",
     "gate.maxRegressionPercent must be numeric",
     "validateBaselineArtifact(",
+    "baseline.schemaVersion must be 1",
     "suite-baseline-comparison.json",
     "suiteBaselineComparison",
     "baselineComparisonPath",
