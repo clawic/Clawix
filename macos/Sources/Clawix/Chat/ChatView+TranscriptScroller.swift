@@ -40,47 +40,48 @@ struct ChatTranscriptScrollerView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 44) {
-                    if appState.messagesPaginationByChat[chatId]?.loadingOlder == true {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                                .controlSize(.small)
-                            Spacer()
+                VStack(spacing: 0) {
+                    LazyVStack(alignment: .leading, spacing: 44) {
+                        if appState.messagesPaginationByChat[chatId]?.loadingOlder == true {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .controlSize(.small)
+                                Spacer()
+                            }
+                            .frame(height: 28)
+                            .transition(.opacity)
                         }
-                        .frame(height: 28)
-                        .transition(.opacity)
-                    }
-                    let lastUserMessageId = transcript.lastMessageId { $0.role == .user }
-                    let lastAssistantMessageId = transcript.lastMessageId {
-                        $0.role == .assistant && $0.streamingFinished && !$0.isError
-                    }
-                    let responseStreaming = isResponseStreaming(chat)
-                    let activeFindQuery = appState.isFindBarOpen ? appState.findQuery : ""
-                    ForEach(visibleMessageStores) { messageStore in
-                        ChatMessageEntryView(
-                            appState: appState,
-                            chat: chat,
-                            messageStore: messageStore,
-                            lastUserMessageId: lastUserMessageId,
-                            lastAssistantMessageId: lastAssistantMessageId,
-                            responseStreaming: responseStreaming,
-                            activeFindQuery: activeFindQuery,
-                            closedMetadataReady: closedMetadataReady,
-                            publishingReady: publishingReady,
-                            proxy: proxy
-                        )
-                        .background {
-                            ZStack {
-                                ChatMessageFrameProbe(id: messageStore.id)
-                                ChatMessageNativeFrameProbe(id: messageStore.id)
+                        let lastUserMessageId = transcript.lastMessageId { $0.role == .user }
+                        let lastAssistantMessageId = transcript.lastMessageId {
+                            $0.role == .assistant && $0.streamingFinished && !$0.isError
+                        }
+                        let responseStreaming = isResponseStreaming(chat)
+                        let activeFindQuery = appState.isFindBarOpen ? appState.findQuery : ""
+                        ForEach(visibleMessageStores) { messageStore in
+                            ChatMessageEntryView(
+                                appState: appState,
+                                chat: chat,
+                                messageStore: messageStore,
+                                lastUserMessageId: lastUserMessageId,
+                                lastAssistantMessageId: lastAssistantMessageId,
+                                responseStreaming: responseStreaming,
+                                activeFindQuery: activeFindQuery,
+                                closedMetadataReady: closedMetadataReady,
+                                publishingReady: publishingReady,
+                                proxy: proxy
+                            )
+                            .background {
+                                ZStack {
+                                    ChatMessageFrameProbe(id: messageStore.id)
+                                    ChatMessageNativeFrameProbe(id: messageStore.id)
+                                }
                             }
                         }
                     }
-                    if newerLocalMessageCount > 0 {
-                        Color.clear
-                            .frame(height: CGFloat(newerLocalMessageCount) * ChatView.virtualizedTranscriptRowEstimate)
-                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Color.clear
+                        .frame(height: CGFloat(newerLocalMessageCount) * ChatView.virtualizedTranscriptRowEstimate)
                     Color.clear
                         .frame(height: 1)
                         .id(chatTailId)
