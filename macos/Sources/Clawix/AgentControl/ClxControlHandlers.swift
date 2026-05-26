@@ -1109,7 +1109,29 @@ enum ClxControlHandlers {
         )
         let actionResult = performMeasuredAction(action, args: actionArgs)
         guard actionResult.status == 200 else {
-            return actionResult
+            let elapsedMs = (CACurrentMediaTime() - started) * 1000
+            let finalState = finalUIStatePayload(actionArgs: actionArgs, waitArgs: actionArgs)
+            RenderProbe.mark(
+                "UXTraceActionEnd",
+                fields: [
+                    "actionId": actionId,
+                    "action": action,
+                    "condition": condition.rawValue,
+                    "ok": "false",
+                    "failure": "action",
+                    "elapsedMs": String(format: "%.2f", elapsedMs)
+                ]
+            )
+            return ok([
+                "ok": false,
+                "actionId": actionId,
+                "action": action,
+                "condition": condition.rawValue,
+                "elapsedMs": elapsedMs,
+                "actionResult": actionResult.json,
+                "failureReason": "action_failed",
+                "finalUIState": finalState,
+            ])
         }
 
         var waitArgs = args
@@ -1166,7 +1188,7 @@ enum ClxControlHandlers {
                 "elapsedMs": String(format: "%.2f", elapsedMs)
             ]
         )
-        return ok([
+        var out: [String: Any] = [
             "ok": waitResult.ok,
             "actionId": actionId,
             "action": action,
@@ -1174,7 +1196,32 @@ enum ClxControlHandlers {
             "elapsedMs": elapsedMs,
             "actionResult": actionResult.json,
             "wait": waitResult.json,
-        ])
+        ]
+        if !waitResult.ok {
+            out["failureReason"] = "visual_condition_failed"
+            out["finalUIState"] = finalUIStatePayload(actionArgs: actionArgs, waitArgs: waitArgs)
+        }
+        return ok(out)
+    }
+
+    private static func finalUIStatePayload(actionArgs: [String: Any], waitArgs: [String: Any]) -> [String: Any] {
+        var out: [String: Any] = [:]
+        if let actionTarget = (actionArgs["id"] as? String) ?? (actionArgs["target"] as? String) {
+            out["actionTarget"] = observedControlState(["id": actionTarget, "includeAx": true])
+        }
+        if let waitTarget = (waitArgs["id"] as? String) ?? (waitArgs["target"] as? String) {
+            out["waitTarget"] = observedControlState(["id": waitTarget, "includeAx": true])
+        }
+        if let scrollId = registeredScrollId(waitArgs) ?? registeredScrollId(actionArgs),
+           let scrollState = registeredScrollState(id: scrollId) {
+            out["scrollState"] = scrollState
+        }
+        out["snapshot"] = snapshot([
+            "includeAx": true,
+            "maxControls": 200,
+        ]).json
+        out["diagnostics"] = diagnosticSamplePayload()
+        return out
     }
 
     static func flow(_ args: [String: Any]) async -> ClxControlResult {

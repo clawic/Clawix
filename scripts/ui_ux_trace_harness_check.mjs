@@ -781,6 +781,9 @@ if (clxControlHandlersSource) {
     "if let selected = ClxAX.bool(element, kAXSelectedAttribute) { out[\"selected\"] = selected }",
     "ChatVisibleWindowRenderLog.latestPayload(",
     "let minVisibleMessages = boundedInt(args[\"minVisibleMessages\"]",
+    "finalUIStatePayload(actionArgs: actionArgs, waitArgs: waitArgs)",
+    "out[\"failureReason\"] = \"visual_condition_failed\"",
+    "\"maxControls\": 200",
   ]) {
     requireSnippet(clxControlHandlersSource, clxControlHandlersPath, snippet);
   }
