@@ -341,6 +341,7 @@ function emptyCaptureStatusCounts() {
     missingFile: 0,
     invalidJson: 0,
     placeholder: 0,
+    awaitingApproval: 0,
     invalidCandidate: 0,
     candidate: 0,
   };
@@ -387,6 +388,14 @@ function candidateFieldErrors(evidence, requiredFields) {
   return fieldErrors;
 }
 
+function isApprovalOnlyFieldErrors(fieldErrors) {
+  return fieldErrors.length > 0 && fieldErrors.every((field) => (
+    field === "approvedByUserAt" ||
+    field === "approvedScope" ||
+    field.startsWith("approvedScope.")
+  ));
+}
+
 function captureStatusForFile(rootPath, relativeEvidencePath, requiredFields = []) {
   const counts = emptyCaptureStatusCounts();
   const evidencePath = path.join(rootPath, relativeEvidencePath.split("/").join(path.sep));
@@ -407,6 +416,10 @@ function captureStatusForFile(rootPath, relativeEvidencePath, requiredFields = [
   }
   const fieldErrors = candidateFieldErrors(evidence, requiredFields);
   if (fieldErrors.length > 0) {
+    if (isApprovalOnlyFieldErrors(fieldErrors)) {
+      counts.awaitingApproval += 1;
+      return { state: "awaiting-approval", counts, fieldErrors };
+    }
     counts.invalidCandidate += 1;
     return { state: "invalid-candidate", counts, fieldErrors };
   }
@@ -495,6 +508,7 @@ function captureStatusFromEvidencePlan() {
         else if (state === "missing-file") counts.missingFile += 1;
         else if (state === "invalid-json") counts.invalidJson += 1;
         else if (state === "placeholder") counts.placeholder += 1;
+        else if (state === "awaiting-approval") counts.awaitingApproval += 1;
         else if (state === "invalid-candidate") counts.invalidCandidate += 1;
         else if (state === "candidate") counts.candidate += 1;
       }
@@ -560,6 +574,7 @@ function capturePackagesFromEvidencePlan() {
       else if (state === "missing-file") pkg.counts.missingFile += 1;
       else if (state === "invalid-json") pkg.counts.invalidJson += 1;
       else if (state === "placeholder") pkg.counts.placeholder += 1;
+      else if (state === "awaiting-approval") pkg.counts.awaitingApproval += 1;
       else if (state === "invalid-candidate") pkg.counts.invalidCandidate += 1;
       else if (state === "candidate") pkg.counts.candidate += 1;
       pkg.records.push({

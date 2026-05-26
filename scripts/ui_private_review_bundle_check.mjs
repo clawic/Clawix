@@ -125,10 +125,11 @@ const bundles = (decisionsReport?.decisions || []).map((decision) => {
     missingRoots: counts["missing-root"] || 0,
     missingFiles: counts["missing-file"] || 0,
     invalidJson: counts["invalid-json"] || 0,
+    awaitingApproval: counts["awaiting-approval"] || 0,
     invalidCandidates: counts["invalid-candidate"] || 0,
     candidates: counts.candidate || 0,
     packages: (decision.packages || []).map((pkg) => pkg.evidenceType),
-    approvalReadiness: recordCount > 0 && records.every((record) => record.state === "candidate")
+    approvalReadiness: recordCount > 0 && records.every((record) => record.state === "candidate" || record.state === "awaiting-approval")
       ? "ready-for-human-review-and-approved-verifiers"
       : "capture-required-before-human-review",
     records,
