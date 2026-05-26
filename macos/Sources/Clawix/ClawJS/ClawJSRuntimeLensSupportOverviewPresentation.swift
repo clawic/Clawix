@@ -13,6 +13,11 @@ struct ClawJSRuntimeLensSupportOverviewPresentation: Equatable {
     let provenanceSource: String?
     let provenanceRuntimeId: String?
     let sourceLabel: String?
+    let officialSnapshotCapturedAt: String?
+    let officialSnapshotSourceSnapshotDate: String?
+    let officialSnapshotSourceCount: Int
+    let officialSnapshotLabel: String?
+    let officialSnapshotDriftPolicy: String?
     let blockingReasonCount: Int
     let blockingReasonsLabel: String?
     let evidenceRequirementCount: Int
@@ -30,6 +35,9 @@ struct ClawJSRuntimeLensSupportOverviewPresentation: Equatable {
             claimSource.map { "claim source \($0)" },
             provenanceSource.map { "provenance source \($0)" },
             provenanceRuntimeId.map { "provenance runtime \($0)" },
+            officialSnapshotCapturedAt.map { "official snapshot \($0)" },
+            officialSnapshotSourceSnapshotDate.map { "source snapshot \($0)" },
+            "official sources \(officialSnapshotSourceCount)",
             "blockers \(blockingReasonCount)",
             "evidence \(evidenceRequirementCount)",
             "summary \(hasSummary)"
@@ -54,6 +62,11 @@ struct ClawJSRuntimeLensSupportOverviewPresentation: Equatable {
         let claimSource = normalized(ecosystem?.claimSource)
         let provenanceSource = normalized(ecosystem?.provenance?.source)
         let provenanceRuntimeId = normalized(ecosystem?.provenance?.runtimeId)
+        let officialSnapshot = ecosystem?.officialSnapshot
+        let officialSnapshotCapturedAt = normalized(officialSnapshot?.capturedAt)
+        let officialSnapshotSourceSnapshotDate = normalized(officialSnapshot?.sourceSnapshotDate)
+        let officialSnapshotSources = officialSnapshot?.sources ?? []
+        let officialSnapshotDriftPolicy = normalized(officialSnapshot?.driftPolicy)
 
         return ClawJSRuntimeLensSupportOverviewPresentation(
             adapterSupportLevel: adapterSupportLevel,
@@ -72,6 +85,15 @@ struct ClawJSRuntimeLensSupportOverviewPresentation: Equatable {
                 provenanceSource: provenanceSource,
                 provenanceRuntimeId: provenanceRuntimeId
             ),
+            officialSnapshotCapturedAt: officialSnapshotCapturedAt,
+            officialSnapshotSourceSnapshotDate: officialSnapshotSourceSnapshotDate,
+            officialSnapshotSourceCount: officialSnapshotSources.count,
+            officialSnapshotLabel: officialSnapshotLabel(
+                capturedAt: officialSnapshotCapturedAt,
+                sourceSnapshotDate: officialSnapshotSourceSnapshotDate,
+                sourceCount: officialSnapshotSources.count
+            ),
+            officialSnapshotDriftPolicy: officialSnapshotDriftPolicy,
             blockingReasonCount: blockingReasons.count,
             blockingReasonsLabel: blockingReasons.isEmpty
                 ? nil
@@ -94,6 +116,19 @@ struct ClawJSRuntimeLensSupportOverviewPresentation: Equatable {
             claimSource.flatMap { claimSource in
                 claimSource == source ? nil : "claim \(claimSource)"
             }
+        ].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    }
+
+    private static func officialSnapshotLabel(
+        capturedAt: String?,
+        sourceSnapshotDate: String?,
+        sourceCount: Int
+    ) -> String? {
+        let parts = [
+            capturedAt.map { "captured \($0)" },
+            sourceSnapshotDate.map { "source snapshot \($0)" },
+            sourceCount > 0 ? "sources \(sourceCount)" : nil
         ].compactMap { $0 }
         return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }

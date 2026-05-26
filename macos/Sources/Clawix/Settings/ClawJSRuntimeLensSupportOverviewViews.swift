@@ -39,6 +39,20 @@ extension ClawJSRuntimeLensSection {
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
+            if let snapshot = presentation.officialSnapshotLabel {
+                Text("Official snapshot: \(snapshot)")
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            if let drift = presentation.officialSnapshotDriftPolicy {
+                Text("Drift policy: \(drift)")
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
             if let evidence = support.ecosystem?.evidenceRequirements, !evidence.isEmpty {
                 runtimeLensEvidenceRequirements(evidence, limit: 3)
             }

@@ -33,6 +33,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
 
     let runtimeId: String
     let runtimeName: String
+    let officialSnapshot: OfficialSnapshot?
     let support: Support?
     let status: Status
     let session: SessionDescriptor?
@@ -46,6 +47,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
     enum CodingKeys: String, CodingKey {
         case runtimeId
         case runtimeName
+        case officialSnapshot
         case support
         case status
         case session
@@ -60,6 +62,15 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
     var missingCanonicalDomains: [String] {
         let present = Set(domains.map(\.domain))
         return Self.canonicalDomains.filter { !present.contains($0) }
+    }
+
+    struct OfficialSnapshot: Decodable, Equatable {
+        let capturedAt: String?
+        let sourceSnapshotDate: String?
+        let sourceType: String?
+        let sources: [String]?
+        let driftPolicy: String?
+        let manifestSource: String?
     }
 
     struct Support: Decodable, Equatable {
@@ -90,6 +101,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let uiParityClaim: String?
             let summary: String?
             let blockingReasons: [String]?
+            let officialSnapshot: OfficialSnapshot?
             let blockedWriteBackDomains: [String]?
             let externalPendingDomains: [String]?
             let evidenceRequirements: [EvidenceRequirement]?
@@ -102,6 +114,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         struct Provenance: Decodable, Equatable {
             let source: String?
             let runtimeId: String?
+            let officialSnapshotSource: String?
+            let sourceSnapshotDate: String?
         }
 
         let scope: String?
@@ -112,6 +126,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let recommended: Bool?
         let production: Bool?
         let uiParityClaim: String?
+        let officialSnapshot: OfficialSnapshot?
         let summary: String?
         let blockingReasons: [String]?
         let blockerSummary: BlockerSummary?

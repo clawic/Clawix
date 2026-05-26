@@ -754,6 +754,23 @@
         "provenance": {
           "source": "runtime-ecosystem-manifest",
           "runtimeId": "hermes"
+        },
+        "officialSnapshot": {
+          "capturedAt": "2026-05-25",
+          "sourceType": "official_docs",
+          "sources": [
+            "https://hermes-agent.nousresearch.com/docs/user-guide/cli/",
+            "https://hermes-agent.nousresearch.com/docs/user-guide/sessions",
+            "https://github.com/NousResearch/hermes-agent/blob/main/website/docs/developer-guide/session-storage.md",
+            "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+            "https://hermes-agent.nousresearch.com/docs/ko/reference/cli-commands",
+            "https://hermes-agent.nousresearch.com/docs/user-guide/configuration",
+            "https://hermes-agent.nousresearch.com/docs/user-guide/security",
+            "https://github.com/NousResearch/hermes-agent"
+          ],
+          "driftPolicy": "hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete",
+          "sourceSnapshotDate": "2026-05-25",
+          "manifestSource": "docs/runtime-ecosystem-integration.manifest.json"
         }
       }
     },
@@ -8609,8 +8626,44 @@
       ],
       "provenance": {
         "source": "runtime-portal-support-audit",
-        "runtimeId": "hermes"
+        "runtimeId": "hermes",
+        "officialSnapshotSource": "docs/runtime-ecosystem-integration.manifest.json",
+        "sourceSnapshotDate": "2026-05-25"
+      },
+      "officialSnapshot": {
+        "capturedAt": "2026-05-25",
+        "sourceType": "official_docs",
+        "sources": [
+          "https://hermes-agent.nousresearch.com/docs/user-guide/cli/",
+          "https://hermes-agent.nousresearch.com/docs/user-guide/sessions",
+          "https://github.com/NousResearch/hermes-agent/blob/main/website/docs/developer-guide/session-storage.md",
+          "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+          "https://hermes-agent.nousresearch.com/docs/ko/reference/cli-commands",
+          "https://hermes-agent.nousresearch.com/docs/user-guide/configuration",
+          "https://hermes-agent.nousresearch.com/docs/user-guide/security",
+          "https://github.com/NousResearch/hermes-agent"
+        ],
+        "driftPolicy": "hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete",
+        "sourceSnapshotDate": "2026-05-25",
+        "manifestSource": "docs/runtime-ecosystem-integration.manifest.json"
       }
+    },
+    "officialSnapshot": {
+      "capturedAt": "2026-05-25",
+      "sourceType": "official_docs",
+      "sources": [
+        "https://hermes-agent.nousresearch.com/docs/user-guide/cli/",
+        "https://hermes-agent.nousresearch.com/docs/user-guide/sessions",
+        "https://github.com/NousResearch/hermes-agent/blob/main/website/docs/developer-guide/session-storage.md",
+        "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+        "https://hermes-agent.nousresearch.com/docs/ko/reference/cli-commands",
+        "https://hermes-agent.nousresearch.com/docs/user-guide/configuration",
+        "https://hermes-agent.nousresearch.com/docs/user-guide/security",
+        "https://github.com/NousResearch/hermes-agent"
+      ],
+      "driftPolicy": "hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete",
+      "sourceSnapshotDate": "2026-05-25",
+      "manifestSource": "docs/runtime-ecosystem-integration.manifest.json"
     }
   },
   "meta": {

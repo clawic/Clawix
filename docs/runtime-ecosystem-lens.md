@@ -41,9 +41,10 @@ ecosystem manifest:
   into a single home-dir signal.
 - the support overview is rendered through a tested presentation model so
   adapter support level, ecosystem support stage, recommendation/production
-  promotion state, claim source, provenance source/runtime, blocker count,
-  evidence count, and summary presence have one stable validation contract
-  before deeper audit rows are shown.
+  promotion state, claim source, provenance source/runtime, official snapshot
+  captured date, source snapshot date, source count, drift policy, blocker
+  count, evidence count, and summary presence have one stable validation
+  contract before deeper audit rows are shown.
 - `supportAudit` is rendered through a tested presentation model when present
   so closure state, domain coverage, evidence requirement count, blocker class
   distribution, direct/external/product-blocked counts, blocked write-back

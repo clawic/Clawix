@@ -98,7 +98,7 @@ for (const file of [
 
 if (exists("docs/runtime-ecosystem-lens.md")) {
   const text = read("docs/runtime-ecosystem-lens.md");
-  for (const snippet of ["runtime lens", "semantic native parity", "local overlays", "product-blocked", "status-tone contract", "finalPromotionReview", "finalSupportClaimDecision", "closureChecklist", "evidenceReentryPackets", "supportContract", "EXTERNAL PENDING", "resources <domain>", "stable `ok:false` JSON error envelopes", "claw commands resolve runtime resources --json", "model and plugin inventory", "capability diagnostics", "common runtime resource metadata", "claim source", "audit provenance source/runtime", "capability-map status counts", "top-level session descriptors", "top-level workspace canonical/managed file counts", "top-level resource aggregates"]) {
+  for (const snippet of ["runtime lens", "semantic native parity", "local overlays", "product-blocked", "status-tone contract", "finalPromotionReview", "finalSupportClaimDecision", "closureChecklist", "evidenceReentryPackets", "supportContract", "EXTERNAL PENDING", "resources <domain>", "stable `ok:false` JSON error envelopes", "claw commands resolve runtime resources --json", "model and plugin inventory", "capability diagnostics", "common runtime resource metadata", "claim source", "official snapshot", "source snapshot date", "source count", "drift policy", "audit provenance source/runtime", "capability-map status counts", "top-level session descriptors", "top-level workspace canonical/managed file counts", "top-level resource aggregates"]) {
     if (!text.includes(snippet)) errors.push(`runtime lens doc missing ${snippet}`);
   }
 }
@@ -154,6 +154,7 @@ if (!exists(hermesFixturePath)) {
   const fixture = readJson(hermesFixturePath);
   const supportAudit = fixture?.data?.supportAudit;
   const support = fixture?.data?.support;
+  const officialSnapshot = fixture?.data?.officialSnapshot;
   const readiness = supportAudit?.evidenceReadinessSummary;
   const domains = supportAudit?.domains;
   const hermesWriteBackPolicy = "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence";
@@ -161,6 +162,18 @@ if (!exists(hermesFixturePath)) {
     requireEqual(support?.ecosystem?.summary?.includes(summaryFragment), true, `Hermes fixture support summary includes ${summaryFragment}`);
     requireEqual(supportAudit?.summary?.includes(summaryFragment), true, `Hermes fixture support audit summary includes ${summaryFragment}`);
   }
+  requireEqual(officialSnapshot?.capturedAt, "2026-05-25", "Hermes fixture official snapshot captured date");
+  requireEqual(officialSnapshot?.sourceSnapshotDate, "2026-05-25", "Hermes fixture official snapshot source snapshot date");
+  requireEqual(officialSnapshot?.sourceType, "official_docs", "Hermes fixture official snapshot source type");
+  requireEqual(officialSnapshot?.manifestSource, "docs/runtime-ecosystem-integration.manifest.json", "Hermes fixture official snapshot manifest source");
+  requireEqual(officialSnapshot?.driftPolicy, "hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete", "Hermes fixture official snapshot drift policy");
+  requireEqual(officialSnapshot?.sources?.length, 8, "Hermes fixture official snapshot source count");
+  requireEqual(officialSnapshot?.sources?.includes("https://hermes-agent.nousresearch.com/docs/user-guide/cli/"), true, "Hermes fixture official snapshot CLI source");
+  requireEqual(officialSnapshot?.sources?.includes("https://github.com/NousResearch/hermes-agent"), true, "Hermes fixture official snapshot repo source");
+  requireEqual(support?.ecosystem?.officialSnapshot?.capturedAt, "2026-05-25", "Hermes fixture support ecosystem official snapshot");
+  requireEqual(supportAudit?.officialSnapshot?.capturedAt, "2026-05-25", "Hermes fixture support audit official snapshot");
+  requireEqual(supportAudit?.provenance?.officialSnapshotSource, "docs/runtime-ecosystem-integration.manifest.json", "Hermes fixture support audit snapshot provenance");
+  requireEqual(supportAudit?.provenance?.sourceSnapshotDate, "2026-05-25", "Hermes fixture support audit source snapshot date");
   for (const reason of [
     "native_write_back_pending",
     "approval_gate_fixture_pending",
@@ -333,6 +346,10 @@ for (const snippet of [
   "session: SessionDescriptor?",
   "workspace: Workspace?",
   "runtimeResources: RuntimeResources?",
+  "officialSnapshot: OfficialSnapshot?",
+  "struct OfficialSnapshot",
+  "sourceSnapshotDate: String?",
+  "manifestSource: String?",
   "struct Workspace",
   "struct RuntimeResources",
   "struct SupportAudit",
@@ -488,6 +505,9 @@ for (const snippet of [
   "Runtime support overview",
   "adapterSupportLevel",
   "ecosystemSupportStage",
+  "officialSnapshotLabel",
+  "officialSnapshotSourceCount",
+  "officialSnapshotDriftPolicy",
   "claimSource",
   "provenanceSource",
   "sourceLabel",
@@ -970,7 +990,9 @@ for (const snippet of [
   "product-blocked",
   "Promotion needs",
   "safeDefault",
-  "External evidence required before this claim can be promoted."
+  "External evidence required before this claim can be promoted.",
+  "Official snapshot:",
+  "Drift policy:"
 ]) {
   requireSnippetInFiles(runtimeLensSettingsFiles, snippet);
 }
