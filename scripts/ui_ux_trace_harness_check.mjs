@@ -598,6 +598,7 @@ if (evidenceSchema) {
     "metricRequiredFields",
     "failureTypes",
     "failureStateSidecar",
+    "normalizedSampleEvents",
     "privacyRequirements",
     "correlationRequirements",
   ]);
@@ -625,6 +626,21 @@ if (evidenceSchema) {
   }
   if (!String(evidenceSchema.failureStateSidecar?.contentPolicy ?? "").includes("hashes/lengths")) {
     fail(`${evidenceSchemaPath}.failureStateSidecar.contentPolicy must require hashes/lengths for readable strings`);
+  }
+  requireUniqueStringArray(requireArray(evidenceSchema.normalizedSampleEvents?.eventTypes, `${evidenceSchemaPath}.normalizedSampleEvents.eventTypes`), `${evidenceSchemaPath}.normalizedSampleEvents.eventTypes`, [
+    "geometry.sample",
+    "scroll.sample",
+    "render.window",
+    "hitch.sample",
+    "resource.sample",
+    "database.sample",
+    "bridge.sample",
+  ]);
+  if (!String(evidenceSchema.normalizedSampleEvents?.purpose ?? "").includes("opaque payload hashes")) {
+    fail(`${evidenceSchemaPath}.normalizedSampleEvents.purpose must explain why samples cannot stay only in payload hashes`);
+  }
+  if (!String(evidenceSchema.normalizedSampleEvents?.publicSafety ?? "").includes("numeric dimensions")) {
+    fail(`${evidenceSchemaPath}.normalizedSampleEvents.publicSafety must keep samples public-safe`);
   }
   if (evidenceSchema.correlationRequirements?.dispatchSuccessIsNotVisualSuccess !== true) {
     fail(`${evidenceSchemaPath}.correlationRequirements.dispatchSuccessIsNotVisualSuccess must be true`);
@@ -833,6 +849,14 @@ if (runnerSource) {
     "artifactKind: \"redacted-final-ui-state\"",
     "finalUIStateHash: finalUIStateRef?.hash ?? null",
     "finalUIStateRef: finalUIStateRef?.ref ?? null",
+    "function emitPayloadSamples(",
+    "eventType: \"geometry.sample\"",
+    "eventType: \"scroll.sample\"",
+    "eventType: \"render.window\"",
+    "eventType: \"hitch.sample\"",
+    "eventType: \"resource.sample\"",
+    "eventType: \"database.sample\"",
+    "eventType: \"bridge.sample\"",
     "verifyEvidencePath(result.runDir)",
     "verifyEvidencePath(suiteResult.suiteDir)",
   ]) {
@@ -852,6 +876,11 @@ if (evidenceVerifierSource) {
     "logs/failure-ui-states.jsonl",
     "finalUIStateRef points to missing sidecar row",
     "capture.written",
+    "sampleCounts",
+    "geometry.sample",
+    "resource.sample",
+    "database.sample",
+    "bridge.sample",
     "privateBoundary.publicSafe must be true",
   ]) {
     requireSnippet(evidenceVerifierSource, evidenceVerifierPath, snippet);

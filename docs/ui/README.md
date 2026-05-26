@@ -316,9 +316,13 @@ Evidence is written under the chosen output directory as `suite.json`,
 `events.jsonl`, `metrics.json`, `failures.json`, `fixture-manifest.json`, and
 `baseline-comparison.json`. Failed visual conditions with final UI state also
 write redacted `logs/failure-ui-states.jsonl` rows that are referenced from
-`failures.json` and `capture.written` events. Private baselines, raw captures,
-readable screenshots, local private paths, and aggregate real-mode evidence
-stay outside the public repo. In the normal app, `.clxControl` must remain an
+`failures.json` and `capture.written` events. The runner also normalizes
+available diagnostics into `geometry.sample`, `scroll.sample`,
+`render.window`, `hitch.sample`, `resource.sample`, `database.sample`, and
+`bridge.sample` events so agents can query performance facts without opening
+opaque payload hashes. Private baselines, raw captures, readable screenshots,
+local private paths, and aggregate real-mode evidence stay outside the public
+repo. In the normal app, `.clxControl` must remain an
 `accessibilityIdentifier`-only marker; frame probes, registry writes, fixture
 mutation, screenshots, the loopback server, and trace-event JSONL are allowed
 only in isolated agent instances or explicit diagnostic probes.

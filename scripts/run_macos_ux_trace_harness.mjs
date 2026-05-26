@@ -507,6 +507,155 @@ function sampleValueForKpi(kpiId, payload, fallbackMs) {
   return elapsedFromPayload(payload, fallbackMs);
 }
 
+function candidateObjects(root) {
+  const out = [];
+  const seen = new Set();
+  const visit = (value, depth = 0) => {
+    if (!value || typeof value !== "object" || depth > 5 || seen.has(value)) return;
+    seen.add(value);
+    out.push(value);
+    if (Array.isArray(value)) {
+      for (const item of value.slice(0, 20)) visit(item, depth + 1);
+      return;
+    }
+    for (const child of Object.values(value).slice(0, 40)) visit(child, depth + 1);
+  };
+  visit(root);
+  return out;
+}
+
+function numericObject(value, keys) {
+  if (!value || typeof value !== "object") return null;
+  const out = {};
+  for (const key of keys) {
+    const number = Number(value[key]);
+    if (Number.isFinite(number)) out[key] = number;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+function frameSample(value) {
+  const frame = numericObject(value?.frame ?? value, ["x", "y", "width", "height"]);
+  if (!frame || !Number.isFinite(frame.width) || !Number.isFinite(frame.height)) return null;
+  return frame;
+}
+
+function scrollSample(value) {
+  const source = value?.scrollState && typeof value.scrollState === "object" ? value.scrollState : value;
+  const sample = numericObject(source, [
+    "topDistance",
+    "bottomDistance",
+    "scrollPosition",
+    "visibleMinY",
+    "visibleMaxY",
+  ]);
+  if (!sample) return null;
+  const viewportSize = numericObject(source?.viewportSize, ["width", "height"]);
+  const documentSize = numericObject(source?.documentSize, ["width", "height"]);
+  if (viewportSize) sample.viewportSize = viewportSize;
+  if (documentSize) sample.documentSize = documentSize;
+  if (typeof source.verticalScrollable === "boolean") sample.verticalScrollable = source.verticalScrollable;
+  if (typeof source.horizontalScrollable === "boolean") sample.horizontalScrollable = source.horizontalScrollable;
+  return sample;
+}
+
+function chatWindowSample(value) {
+  const source = value?.chatFinalWindow && typeof value.chatFinalWindow === "object" ? value.chatFinalWindow : value;
+  const visibleCount = Number(source?.visibleCount);
+  const totalCount = Number(source?.totalCount);
+  if (!Number.isFinite(visibleCount) && !Number.isFinite(totalCount)) return null;
+  return {
+    visibleCount: Number.isFinite(visibleCount) ? visibleCount : null,
+    totalCount: Number.isFinite(totalCount) ? totalCount : null,
+    hiddenCount: Number.isFinite(Number(source.hiddenCount)) ? Number(source.hiddenCount) : null,
+    incompleteRows: Number.isFinite(Number(source.incompleteRows)) ? Number(source.incompleteRows) : null,
+    bottomArmed: typeof source.bottomArmed === "boolean" ? source.bottomArmed : null,
+    windowComplete: typeof source.windowComplete === "boolean" ? source.windowComplete : null,
+  };
+}
+
+function emitPayloadSamples(events, context, payload) {
+  const { indexes, ...eventContext } = context;
+  const objects = candidateObjects(payload);
+  const diagnostics = objects.find((item) => item?.resource || item?.hitches) ?? null;
+  if (diagnostics?.resource) {
+    events.write({
+      ...eventContext,
+      eventType: "resource.sample",
+      sample: numericObject(diagnostics.resource, [
+        "residentBytes",
+        "residentMB",
+        "footprintBytes",
+        "footprintMB",
+        "processCpuPercent",
+        "timestamp",
+      ]),
+    });
+  }
+  if (diagnostics?.hitches) {
+    events.write({
+      ...eventContext,
+      eventType: "hitch.sample",
+      total: Number.isFinite(Number(diagnostics.hitches.total)) ? Number(diagnostics.hitches.total) : null,
+      bucketsHash: diagnostics.hitches.buckets ? stableHash(diagnostics.hitches.buckets) : null,
+    });
+  }
+
+  const geometrySamples = [];
+  const scrollSamples = [];
+  const renderWindowSamples = [];
+  for (const item of objects) {
+    const frame = frameSample(item);
+    if (frame) geometrySamples.push({ id: publicSafeIdentifier(item.id ?? item.resolvedId ?? context.controlId, indexes), frame });
+    const scroll = scrollSample(item);
+    if (scroll) scrollSamples.push({ id: publicSafeIdentifier(item.id ?? item.resolvedId ?? context.controlId, indexes), scroll });
+    const renderWindow = chatWindowSample(item);
+    if (renderWindow) renderWindowSamples.push(renderWindow);
+  }
+  for (const sample of geometrySamples.slice(0, 8)) {
+    events.write({
+      ...eventContext,
+      eventType: "geometry.sample",
+      sample,
+    });
+  }
+  for (const sample of scrollSamples.slice(0, 8)) {
+    events.write({
+      ...eventContext,
+      eventType: "scroll.sample",
+      sample,
+    });
+  }
+  for (const sample of renderWindowSamples.slice(0, 4)) {
+    events.write({
+      ...eventContext,
+      eventType: "render.window",
+      sample,
+    });
+  }
+}
+
+function emitFixtureScaleSamples(events, context, fixturePack) {
+  const dimensions = fixturePack?.manifest?.scalingDimensions;
+  if (!dimensions) return;
+  if (Number.isFinite(Number(dimensions.databaseRowCount))) {
+    events.write({
+      ...context,
+      eventType: "database.sample",
+      rows: Number(dimensions.databaseRowCount),
+      source: "fixture-scaling-dimensions",
+    });
+  }
+  if (Number.isFinite(Number(dimensions.bridgePayloadBytes))) {
+    events.write({
+      ...context,
+      eventType: "bridge.sample",
+      bytes: Number(dimensions.bridgePayloadBytes),
+      source: "fixture-scaling-dimensions",
+    });
+  }
+}
+
 function makeMetric(kpi, samples, eventRefs, baselineEntry) {
   const sorted = [...samples].sort((a, b) => a - b);
   const percentile = (p) => {
@@ -780,6 +929,13 @@ async function runScenario(args) {
       fixtureManifestHash: fixturePack?.manifest?.manifestHash ?? null,
       fixtureCounts: fixturePack?.manifest?.counts ?? null,
     });
+    emitFixtureScaleSamples(events, {
+      stepId: "fixture",
+      actionId: fixtureProfile,
+      surfaceId: "app.shell.firstUsableWindow",
+      controlId: "app.shell.firstUsableWindow",
+      kpiId: "none",
+    }, fixturePack);
     events.write({ eventType: "scenario.started", stepId: scenarioId, actionId: scenarioId });
   }
 
@@ -846,6 +1002,14 @@ async function runScenario(args) {
       const sampleValue = sampleValueForKpi(kpiId, payload, fallbackMs);
       if (!kpiSamples.has(kpiId)) kpiSamples.set(kpiId, []);
       if (kpiId !== "none") kpiSamples.get(kpiId).push(sampleValue);
+      emitPayloadSamples(events, {
+        stepId: step.id,
+        actionId,
+        surfaceId,
+        controlId: step.target,
+        kpiId,
+        indexes,
+      }, payload);
       const conditionMet = payload?.ok !== false && payload?.timedOut !== true && payload?.wait?.timedOut !== true;
       events.write({
         eventType: conditionMet ? "visual.condition.met" : "visual.condition.timeout",

@@ -123,6 +123,15 @@ function validateRun(runDir, schema, options = {}) {
   const eventTypes = new Set(schema.eventTypes);
   const eventKeys = new Set();
   const eventsBySequence = new Map();
+  const sampleCounts = {
+    geometry: 0,
+    scroll: 0,
+    renderWindow: 0,
+    hitch: 0,
+    resource: 0,
+    database: 0,
+    bridge: 0,
+  };
   let previousSequence = 0;
   for (const [index, event] of events.entries()) {
     const label = `events.jsonl:${index + 1}`;
@@ -138,6 +147,51 @@ function validateRun(runDir, schema, options = {}) {
     const ref = `${event.sequence}:${event.eventType}:${event.stepId}`;
     eventKeys.add(ref);
     eventsBySequence.set(event.sequence, event);
+    if (event.eventType === "geometry.sample") {
+      sampleCounts.geometry += 1;
+      if (!Number.isFinite(Number(event.sample?.frame?.width)) || !Number.isFinite(Number(event.sample?.frame?.height))) {
+        fail(failures, `${label}.sample.frame must include numeric width and height`);
+      }
+    }
+    if (event.eventType === "scroll.sample") {
+      sampleCounts.scroll += 1;
+      if (
+        !Number.isFinite(Number(event.sample?.scroll?.topDistance))
+        && !Number.isFinite(Number(event.sample?.scroll?.bottomDistance))
+        && !Number.isFinite(Number(event.sample?.scroll?.scrollPosition))
+      ) {
+        fail(failures, `${label}.sample.scroll must include numeric scroll distance or position`);
+      }
+    }
+    if (event.eventType === "render.window") {
+      sampleCounts.renderWindow += 1;
+      if (!Number.isFinite(Number(event.sample?.visibleCount)) && !Number.isFinite(Number(event.sample?.totalCount))) {
+        fail(failures, `${label}.sample must include visibleCount or totalCount`);
+      }
+    }
+    if (event.eventType === "hitch.sample") {
+      sampleCounts.hitch += 1;
+      if (event.total !== null && !Number.isFinite(Number(event.total))) fail(failures, `${label}.total must be numeric or null`);
+    }
+    if (event.eventType === "resource.sample") {
+      sampleCounts.resource += 1;
+      if (
+        !Number.isFinite(Number(event.sample?.residentBytes))
+        && !Number.isFinite(Number(event.sample?.residentMB))
+        && !Number.isFinite(Number(event.sample?.footprintBytes))
+        && !Number.isFinite(Number(event.sample?.footprintMB))
+      ) {
+        fail(failures, `${label}.sample must include resident or footprint data`);
+      }
+    }
+    if (event.eventType === "database.sample") {
+      sampleCounts.database += 1;
+      if (!Number.isFinite(Number(event.rows))) fail(failures, `${label}.rows must be numeric`);
+    }
+    if (event.eventType === "bridge.sample") {
+      sampleCounts.bridge += 1;
+      if (!Number.isFinite(Number(event.bytes))) fail(failures, `${label}.bytes must be numeric`);
+    }
   }
   if (!events.some((event) => event.eventType === "run.started")) fail(failures, "events.jsonl must include run.started");
   if (!events.some((event) => event.eventType === "run.completed")) fail(failures, "events.jsonl must include run.completed");
@@ -223,6 +277,7 @@ function validateRun(runDir, schema, options = {}) {
     metrics: (metricsArtifact.metrics || []).length,
     failures: (failuresArtifact.failures || []).length,
     failureUIStates: failureStates.length,
+    sampleCounts,
     validationFailures: failures,
   };
 }

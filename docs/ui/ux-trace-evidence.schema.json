@@ -141,6 +141,19 @@
     "maxBytesPerRun": 16777216,
     "contentPolicy": "Public artifacts must store redacted UI state only: stable trace surface IDs, enum-like roles/sources, geometry, scroll/resource numbers, booleans, and hashes/lengths for readable strings or dynamic identifiers."
   },
+  "normalizedSampleEvents": {
+    "purpose": "The runner must convert app/control-bus payload diagnostics into queryable event rows instead of leaving resource, hitch, geometry, scroll, render-window, database, or bridge facts only inside opaque payload hashes.",
+    "eventTypes": [
+      "geometry.sample",
+      "scroll.sample",
+      "render.window",
+      "hitch.sample",
+      "resource.sample",
+      "database.sample",
+      "bridge.sample"
+    ],
+    "publicSafety": "Samples may contain stable IDs, redacted dynamic IDs, numeric dimensions, counts, bytes, and hashes only; they must not contain readable private conversation text or raw provider payloads."
+  },
   "privacyRequirements": {
     "publicEvidenceMayContain": [
       "stable IDs",
