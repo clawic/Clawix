@@ -4195,7 +4195,11 @@
           "runtimeId": "hermes",
           "domain": "sessions"
         },
-        "limitations": []
+        "limitations": [],
+        "runtimeCapabilityStatus": "error",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "cli",
+        "readProjectionStatus": "projected"
       },
       {
         "domain": "skills",
@@ -4269,7 +4273,11 @@
           "runtimeId": "hermes",
           "domain": "skills"
         },
-        "limitations": []
+        "limitations": [],
+        "runtimeCapabilityStatus": "degraded",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "native",
+        "readProjectionStatus": "degraded_projection"
       },
       {
         "domain": "memory",
@@ -4329,7 +4337,11 @@
           "runtimeId": "hermes",
           "domain": "memory"
         },
-        "limitations": []
+        "limitations": [],
+        "runtimeCapabilityStatus": "ready",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "bridge",
+        "readProjectionStatus": "projected"
       },
       {
         "domain": "channels",
@@ -4399,7 +4411,11 @@
         },
         "limitations": [
           "Channel inventory is normalized from Hermes gateway capabilities."
-        ]
+        ],
+        "runtimeCapabilityStatus": "degraded",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "native",
+        "readProjectionStatus": "degraded_projection"
       },
       {
         "domain": "providers",
@@ -4464,7 +4480,11 @@
         },
         "limitations": [
           "Hermes auth state may come from ~/.hermes/auth.json and environment-backed secrets."
-        ]
+        ],
+        "runtimeCapabilityStatus": "degraded",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "config",
+        "readProjectionStatus": "degraded_projection"
       },
       {
         "domain": "auth",
@@ -4532,7 +4552,11 @@
         },
         "limitations": [
           "Hermes auth state may come from ~/.hermes/auth.json and environment-backed secrets."
-        ]
+        ],
+        "runtimeCapabilityStatus": "degraded",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "config",
+        "readProjectionStatus": "degraded_projection"
       },
       {
         "domain": "models",
@@ -4595,7 +4619,11 @@
           "runtimeId": "hermes",
           "domain": "models"
         },
-        "limitations": []
+        "limitations": [],
+        "runtimeCapabilityStatus": "degraded",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "cli",
+        "readProjectionStatus": "degraded_projection"
       },
       {
         "domain": "scheduler",
@@ -4662,7 +4690,11 @@
           "runtimeId": "hermes",
           "domain": "scheduler"
         },
-        "limitations": []
+        "limitations": [],
+        "runtimeCapabilityStatus": "degraded",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "native",
+        "readProjectionStatus": "degraded_projection"
       },
       {
         "domain": "plugins",
@@ -4736,7 +4768,11 @@
         },
         "limitations": [
           "Hermes plugins, MCP servers, tools, hooks, and Computer Use are inventoried read-only."
-        ]
+        ],
+        "runtimeCapabilityStatus": "degraded",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "native",
+        "readProjectionStatus": "degraded_projection"
       },
       {
         "domain": "gateway",
@@ -4804,7 +4840,11 @@
           "runtimeId": "hermes",
           "domain": "gateway"
         },
-        "limitations": []
+        "limitations": [],
+        "runtimeCapabilityStatus": "degraded",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "gateway",
+        "readProjectionStatus": "degraded_projection"
       },
       {
         "domain": "doctorCompat",
@@ -4845,7 +4885,11 @@
           "runtimeId": "hermes",
           "domain": "doctorCompat"
         },
-        "limitations": []
+        "limitations": [],
+        "runtimeCapabilityStatus": "ready",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "native",
+        "readProjectionStatus": "projected"
       },
       {
         "domain": "sandboxPermissions",
@@ -4885,7 +4929,11 @@
         },
         "limitations": [
           "Sandboxing depends on the configured terminal backend."
-        ]
+        ],
+        "runtimeCapabilityStatus": "degraded",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "hosted",
+        "readProjectionStatus": "degraded_projection"
       },
       {
         "domain": "configuration",
@@ -4954,7 +5002,11 @@
           "runtimeId": "hermes",
           "domain": "configuration"
         },
-        "limitations": []
+        "limitations": [],
+        "runtimeCapabilityStatus": "ready",
+        "runtimeCapabilitySupported": true,
+        "runtimeCapabilityStrategy": "native",
+        "readProjectionStatus": "projected"
       }
     ],
     "supportAudit": {

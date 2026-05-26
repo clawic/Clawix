@@ -6,6 +6,10 @@ struct ClawJSRuntimeLensDomainPresentation: Equatable {
         let domain: String
         let displayLabel: String
         let status: String
+        let runtimeCapabilityStatus: String?
+        let runtimeCapabilitySupported: Bool?
+        let runtimeCapabilityStrategy: String?
+        let readProjectionStatus: String?
         let supported: Bool
         let strategy: String?
         let claim: String?
@@ -28,7 +32,13 @@ struct ClawJSRuntimeLensDomainPresentation: Equatable {
         let provenanceDomain: String?
 
         var detailLabel: String? {
-            let values = [strategy, authority, freshness, writeBackPolicy].compactMap { $0 }
+            let values = [
+                strategy,
+                readProjectionStatus.map { "read \($0)" },
+                authority,
+                freshness,
+                writeBackPolicy
+            ].compactMap { $0 }
             guard !values.isEmpty else { return nil }
             return values.joined(separator: ", ")
         }
@@ -83,6 +93,10 @@ struct ClawJSRuntimeLensDomainPresentation: Equatable {
                 "runtime domain \(domain)",
                 "label \(displayLabel)",
                 "status \(status)",
+                runtimeCapabilityStatus.map { "runtime capability status \($0)" },
+                runtimeCapabilitySupported.map { "runtime capability supported \($0)" },
+                runtimeCapabilityStrategy.map { "runtime capability strategy \($0)" },
+                readProjectionStatus.map { "read projection \($0)" },
                 "supported \(supported)",
                 strategy.map { "strategy \($0)" },
                 claim.map { "claim \($0)" },
@@ -165,6 +179,10 @@ struct ClawJSRuntimeLensDomainPresentation: Equatable {
                 domain: domain.domain,
                 displayLabel: domain.displayLabel,
                 status: domain.status ?? (domain.supported == false ? "unsupported" : "unknown"),
+                runtimeCapabilityStatus: domain.runtimeCapabilityStatus,
+                runtimeCapabilitySupported: domain.runtimeCapabilitySupported,
+                runtimeCapabilityStrategy: domain.runtimeCapabilityStrategy,
+                readProjectionStatus: domain.readProjectionStatus,
                 supported: domain.supported != false,
                 strategy: domain.strategy,
                 claim: domain.claim,

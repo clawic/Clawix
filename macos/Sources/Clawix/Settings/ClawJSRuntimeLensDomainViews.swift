@@ -25,6 +25,9 @@ extension ClawJSRuntimeLensSection {
                         if let strategy = domain.strategy {
                             statusPill(text: strategy, color: Color.overlay(0.28))
                         }
+                        if let readProjectionStatus = domain.readProjectionStatus {
+                            statusPill(text: "read \(readProjectionStatus)", color: Color.blue.opacity(0.22))
+                        }
                         if let count = domain.count {
                             Text("\(count)")
                                 .font(BodyFont.system(size: 11.5, weight: .medium))

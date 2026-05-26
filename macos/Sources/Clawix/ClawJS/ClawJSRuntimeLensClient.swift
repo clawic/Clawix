@@ -407,6 +407,10 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let domain: String
         let supported: Bool?
         let status: String?
+        let runtimeCapabilityStatus: String?
+        let runtimeCapabilitySupported: Bool?
+        let runtimeCapabilityStrategy: String?
+        let readProjectionStatus: String?
         let strategy: String?
         let count: Int?
         let authority: String?
