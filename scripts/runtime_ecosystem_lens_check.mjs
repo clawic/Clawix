@@ -99,7 +99,7 @@ for (const file of [
 
 if (exists("docs/runtime-ecosystem-lens.md")) {
   const text = read("docs/runtime-ecosystem-lens.md");
-  for (const snippet of ["runtime lens", "semantic native parity", "local overlays", "product-blocked", "status-tone contract", "finalPromotionReview", "finalSupportClaimDecision", "closureChecklist", "evidenceReentryPackets", "supportContract", "EXTERNAL PENDING", "resources <domain>", "stable `ok:false` JSON error envelopes", "claw commands resolve runtime resources --json", "model and plugin inventory", "capability diagnostics", "common runtime resource metadata", "claim source", "official snapshot", "source snapshot date", "source count", "drift policy", "audit provenance source/runtime", "capability-map status counts", "top-level session descriptors", "top-level workspace canonical/managed file counts", "top-level resource aggregates", "dev-only partial runtime lens", "guarded 44-command JSON portal set", "Guarded command coverage is not", "promotion signal by itself", "SQLite session-store reads", "bounded preview/history/resolve", "local-overlay pin/unpin", "support contracts", "evidence reentry packets", "production TUI Gateway transport", "approved live channel/provider/auth/model evidence", "live evidence fixture path", "production transport fixture path", "write-back contract fixture path", "native contract fixture path", "approved redacted live-evidence receipts", "official contract receipts"]) {
+  for (const snippet of ["runtime lens", "semantic native parity", "local overlays", "product-blocked", "status-tone contract", "finalPromotionReview", "finalSupportClaimDecision", "closureChecklist", "evidenceReentryPackets", "supportContract", "EXTERNAL PENDING", "resources <domain>", "stable `ok:false` JSON error envelopes", "claw commands resolve runtime resources --json", "model and plugin inventory", "capability diagnostics", "common runtime resource metadata", "claim source", "official snapshot", "source snapshot date", "source count", "drift policy", "audit provenance source/runtime", "capability-map status counts", "top-level session descriptors", "top-level workspace canonical/managed file counts", "top-level resource aggregates", "operable non-default runtime lens", "guarded 44-command JSON portal set", "Guarded command coverage is not", "promotion signal by itself", "SQLite session-store reads", "bounded preview/history/resolve", "local-overlay pin/unpin", "support contracts", "evidence reentry packets", "recommended/production ecosystem claims still require final promotion policy", "production TUI Gateway transport", "approved live channel/provider/auth/model evidence", "live evidence fixture path", "production transport fixture path", "write-back contract fixture path", "native contract fixture path", "approved redacted live-evidence receipts", "official contract receipts"]) {
     if (!text.includes(snippet)) errors.push(`runtime lens doc missing ${snippet}`);
   }
 }
@@ -159,7 +159,7 @@ if (!exists(hermesFixturePath)) {
   const readiness = supportAudit?.evidenceReadinessSummary;
   const domains = supportAudit?.domains;
   const hermesWriteBackPolicy = "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence";
-  for (const summaryFragment of ["native write-back contracts", "approval-gate receipts", "TUI Gateway production transport policy", "channel/provider/auth/model evidence"]) {
+  for (const summaryFragment of ["operable non-default runtime lens", "adapter support is production-grade", "recommended/production ecosystem claims remain false"]) {
     requireEqual(support?.ecosystem?.summary?.includes(summaryFragment), true, `Hermes fixture support summary includes ${summaryFragment}`);
     requireEqual(supportAudit?.summary?.includes(summaryFragment), true, `Hermes fixture support audit summary includes ${summaryFragment}`);
   }
@@ -167,7 +167,7 @@ if (!exists(hermesFixturePath)) {
   requireEqual(officialSnapshot?.sourceSnapshotDate, "2026-05-26", "Hermes fixture official snapshot source snapshot date");
   requireEqual(officialSnapshot?.sourceType, "official_docs", "Hermes fixture official snapshot source type");
   requireEqual(officialSnapshot?.manifestSource, "docs/runtime-ecosystem-integration.manifest.json", "Hermes fixture official snapshot manifest source");
-  requireEqual(officialSnapshot?.driftPolicy, "hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete", "Hermes fixture official snapshot drift policy");
+  requireEqual(officialSnapshot?.driftPolicy, "hermes_operable_non_default_until_final_production_recommended_policy", "Hermes fixture official snapshot drift policy");
   requireEqual(officialSnapshot?.sources?.length, 8, "Hermes fixture official snapshot source count");
   requireEqual(officialSnapshot?.sources?.includes("https://hermes-agent.nousresearch.com/docs/user-guide/cli/"), true, "Hermes fixture official snapshot CLI source");
   requireEqual(officialSnapshot?.sources?.includes("https://github.com/NousResearch/hermes-agent"), true, "Hermes fixture official snapshot repo source");
@@ -361,7 +361,7 @@ if (!exists(hermesFixturePath)) {
     requireEqual(portalSet?.executableMatrixCommandCount, 22, "Hermes fixture executable command matrix count");
     requireEqual(portalSet?.promotionSignal, false, "Hermes fixture JSON portal promotion signal");
     requireEqual(portalSet?.supportClaim, "partial_runtime_lens", "Hermes fixture JSON portal support claim");
-    requireEqual(portalSet?.supportStage, "dev_only", "Hermes fixture JSON portal support stage");
+    requireEqual(portalSet?.supportStage, "operable", "Hermes fixture JSON portal support stage");
     requireEqual(portalSet?.safeDefault, "guarded_command_coverage_does_not_promote_support", "Hermes fixture JSON portal safe default");
     const pinCommand = commands.find((entry) => entry.command === "runtime hermes sessions pin --session-key <id>");
     const unpinCommand = commands.find((entry) => entry.command === "runtime hermes sessions unpin --session-key <id>");

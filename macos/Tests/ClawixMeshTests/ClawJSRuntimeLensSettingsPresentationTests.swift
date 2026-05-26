@@ -98,7 +98,7 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         let details = try XCTUnwrap(support.rows.first?.detailLines)
 
         XCTAssertTrue(details.contains("Official snapshot: captured 2026-05-26, source snapshot 2026-05-26, sources 8"))
-        XCTAssertTrue(details.contains("Drift policy: hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete"))
+        XCTAssertTrue(details.contains("Drift policy: hermes_operable_non_default_until_final_production_recommended_policy"))
         XCTAssertTrue(support.accessibilityLabel.contains("official snapshot 2026-05-26"))
 
         let domains = try XCTUnwrap(presentation.sections.first { $0.id == "domains" })

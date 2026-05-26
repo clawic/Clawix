@@ -274,13 +274,13 @@ and blocked write/create policy:
 
 OpenClaw and Hermes have partial signed-app runtime-lens evidence, but that
 does not promote full native parity, live validation, or native write-back.
-For Hermes specifically, the current claim is a dev-only partial runtime lens:
+For Hermes specifically, the current claim is an operable non-default runtime lens:
 Clawix renders the guarded 44-command JSON portal set, SQLite session-store reads,
 bounded preview/history/resolve, local-overlay pin/unpin, support contracts, and
 evidence reentry packets from the ClawJS portal. Guarded command coverage is not
-a promotion signal by itself: native write-back, production TUI Gateway transport,
-and approved live channel/provider/auth/model evidence remain blocked and must
-stay visible as blockers.
+a promotion signal by itself: recommended/production ecosystem claims still require final promotion policy,
+and native write-back, production TUI Gateway transport, and approved live channel/provider/auth/model evidence
+must stay visible as blockers when receipts are absent.
 
 ```bash
 node scripts/runtime_ecosystem_lens_check.mjs

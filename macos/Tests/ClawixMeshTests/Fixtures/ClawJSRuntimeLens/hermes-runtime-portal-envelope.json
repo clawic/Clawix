@@ -16,30 +16,29 @@
         "https://hermes-agent.nousresearch.com/docs/user-guide/security",
         "https://github.com/NousResearch/hermes-agent"
       ],
-      "driftPolicy": "hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete",
+      "driftPolicy": "hermes_operable_non_default_until_final_production_recommended_policy",
       "sourceSnapshotDate": "2026-05-26",
       "manifestSource": "docs/runtime-ecosystem-integration.manifest.json"
     },
     "support": {
       "scope": "runtime_adapter",
-      "stability": "dev-only",
-      "supportLevel": "dev-only",
+      "stability": "stable",
+      "supportLevel": "production",
       "recommended": false,
       "adapter": {
         "scope": "runtime_adapter",
-        "stability": "dev-only",
-        "supportLevel": "dev-only",
+        "stability": "stable",
+        "supportLevel": "production",
         "recommended": false
       },
       "ecosystem": {
         "scope": "runtime_ecosystem",
-        "supportStage": "dev_only",
+        "supportStage": "operable",
         "recommended": false,
         "production": false,
         "uiParityClaim": "partial_runtime_lens",
-        "summary": "Hermes runtime ecosystem support is a dev-only partial runtime lens until native write-back contracts, approval-gate receipts, TUI Gateway production transport policy, and approved live channel/provider/auth/model evidence exist.",
+        "summary": "Hermes runtime ecosystem support is an operable non-default runtime lens: adapter support is production-grade, but recommended/production ecosystem claims remain false until final product promotion policy changes.",
         "blockingReasons": [
-          "dev_only_runtime_ecosystem",
           "native_write_back_pending",
           "approval_gate_fixture_pending",
           "tui_gateway_round_trip_evidence_pending",
@@ -62,7 +61,7 @@
             "https://hermes-agent.nousresearch.com/docs/user-guide/security",
             "https://github.com/NousResearch/hermes-agent"
           ],
-          "driftPolicy": "hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete",
+          "driftPolicy": "hermes_operable_non_default_until_final_production_recommended_policy",
           "sourceSnapshotDate": "2026-05-26",
           "manifestSource": "docs/runtime-ecosystem-integration.manifest.json"
         },
@@ -8229,7 +8228,7 @@
         "executableMatrixCommandCount": 22,
         "promotionSignal": false,
         "supportClaim": "partial_runtime_lens",
-        "supportStage": "dev_only",
+        "supportStage": "operable",
         "safeDefault": "guarded_command_coverage_does_not_promote_support"
       }
     },
@@ -9583,7 +9582,7 @@
       "closureState": "blocked",
       "supportComplete": false,
       "allDomainsAccountedFor": true,
-      "supportStage": "dev_only",
+      "supportStage": "operable",
       "recommended": false,
       "production": false,
       "uiParityClaim": "partial_runtime_lens",
@@ -9600,13 +9599,12 @@
           "https://hermes-agent.nousresearch.com/docs/user-guide/security",
           "https://github.com/NousResearch/hermes-agent"
         ],
-        "driftPolicy": "hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete",
+        "driftPolicy": "hermes_operable_non_default_until_final_production_recommended_policy",
         "sourceSnapshotDate": "2026-05-26",
         "manifestSource": "docs/runtime-ecosystem-integration.manifest.json"
       },
-      "summary": "Hermes runtime ecosystem support is a dev-only partial runtime lens until native write-back contracts, approval-gate receipts, TUI Gateway production transport policy, and approved live channel/provider/auth/model evidence exist.",
+      "summary": "Hermes runtime ecosystem support is an operable non-default runtime lens: adapter support is production-grade, but recommended/production ecosystem claims remain false until final product promotion policy changes.",
       "blockingReasons": [
-        "dev_only_runtime_ecosystem",
         "native_write_back_pending",
         "approval_gate_fixture_pending",
         "tui_gateway_round_trip_evidence_pending",
@@ -11615,7 +11613,7 @@
         "executableMatrixCommandCount": 22,
         "promotionSignal": false,
         "supportClaim": "partial_runtime_lens",
-        "supportStage": "dev_only",
+        "supportStage": "operable",
         "supportImpact": "guarded_command_coverage_does_not_promote_support",
         "safeDefault": "guarded_command_coverage_does_not_promote_support"
       },
@@ -12347,7 +12345,7 @@
           "executableMatrixCommandCount": 22,
           "promotionSignal": false,
           "supportClaim": "partial_runtime_lens",
-          "supportStage": "dev_only",
+          "supportStage": "operable",
           "supportImpact": "guarded_command_coverage_does_not_promote_support",
           "safeDefault": "guarded_command_coverage_does_not_promote_support"
         },
@@ -12400,7 +12398,7 @@
         "status": "not_promoted",
         "decision": "keep_current_lowered_runtime_ecosystem_claim",
         "claimDisposition": "unpromoted_product_blocked_and_external_pending",
-        "effectiveSupportStage": "dev_only",
+        "effectiveSupportStage": "operable",
         "recommended": false,
         "production": false,
         "uiParityClaim": "partial_runtime_lens",
@@ -12433,7 +12431,7 @@
           "executableMatrixCommandCount": 22,
           "promotionSignal": false,
           "supportClaim": "partial_runtime_lens",
-          "supportStage": "dev_only",
+          "supportStage": "operable",
           "supportImpact": "guarded_command_coverage_does_not_promote_support",
           "safeDefault": "guarded_command_coverage_does_not_promote_support"
         },
