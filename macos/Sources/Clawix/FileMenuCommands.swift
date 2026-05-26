@@ -11,8 +11,8 @@ struct FileMenuCommands: View {
         }
         .keyboardShortcut("w", modifiers: [.command])
 
-        Button("New Window") {
-            openWindow(id: FileMenuActions.mainWindowID)
+        Button("Show Main Window") {
+            FileMenuActions.showMainWindow(openWindow: openWindow)
         }
         .keyboardShortcut("n", modifiers: [.command, .shift])
 
@@ -38,6 +38,17 @@ enum FileMenuActions {
 
     static func closeWindow() {
         NSApp.keyWindow?.performClose(nil)
+    }
+
+    @MainActor
+    static func showMainWindow(openWindow: OpenWindowAction) {
+        for window in NSApp.windows where window.identifier?.rawValue == mainWindowID {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        openWindow(id: mainWindowID)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @MainActor

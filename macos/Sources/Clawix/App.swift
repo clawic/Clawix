@@ -192,7 +192,7 @@ struct ClawixApp: App {
     }
 
     var body: some Scene {
-        WindowGroup(appDisplayName, id: FileMenuActions.mainWindowID) {
+        Window(appDisplayName, id: FileMenuActions.mainWindowID) {
             AppRootView()
                 .environmentObject(appState)
                 .environmentObject(appState.backendStatusStore)
@@ -905,6 +905,10 @@ private struct DefaultMenuTrimCommands: Commands {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var observers: [NSObjectProtocol] = []
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSWindow.allowsAutomaticWindowTabbing = false
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         ClawixHostBootstrap.runOnce()
         // Agent instances expose a loopback control server and write heartbeats.
@@ -916,8 +920,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // default is still dark, so existing installs are unchanged.
         AppAppearance.applyPersisted()
         NSApp.windows.forEach(configure)
+        closeDuplicateMainWindows()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             NSApp.windows.forEach(self.configure)
+            self.closeDuplicateMainWindows()
         }
         // Diagnostics bootstrap. MetricKit is subscribed at launch
         // because payload delivery is system-driven. Periodic local
@@ -1068,6 +1074,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func configure(_ window: NSWindow) {
         window.title = appDisplayName
+        window.identifier = NSUserInterfaceItemIdentifier(FileMenuActions.mainWindowID)
+        window.isRestorable = false
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         // Window drag is opt-in, restricted to the explicit `WindowDragArea`
@@ -1085,6 +1093,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         attachFrameObservers(to: window)
         attachTrafficLightObservers(to: window)
         layoutTrafficLights(window)
+    }
+
+    private func closeDuplicateMainWindows() {
+        guard !ClawixApp.isToolRole else { return }
+        let mainWindows = NSApp.windows.filter { window in
+            window.identifier?.rawValue == FileMenuActions.mainWindowID
+                || window.title == appDisplayName
+        }
+        guard mainWindows.count > 1 else { return }
+        let keeper = mainWindows.first(where: \.isKeyWindow)
+            ?? mainWindows.first(where: \.isMainWindow)
+            ?? mainWindows[0]
+        var closed = 0
+        for window in mainWindows where window !== keeper {
+            window.close()
+            closed += 1
+        }
+        keeper.makeKeyAndOrderFront(nil)
+        RenderProbe.mark(
+            "MainWindowDuplicatesClosed",
+            fields: [
+                "kept": keeper.identifier?.rawValue ?? keeper.title,
+                "closed": "\(closed)"
+            ]
+        )
     }
 
     private func layoutTrafficLights(_ window: NSWindow) {
