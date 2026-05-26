@@ -1193,7 +1193,9 @@ async function runScenario(args) {
       const failure = {
         type: "instrumentation_error",
         stepId: "control-ready",
+        actionId: `${runId}:control-ready`,
         surfaceId: "app.shell.firstUsableWindow",
+        controlId: "app.shell.firstUsableWindow",
         kpiId: "none",
         message: error.message,
         payloadHash: error.payload ? stableHash(error.payload) : null,
@@ -1249,7 +1251,11 @@ async function runScenario(args) {
       const failure = {
         type: "instrumentation_error",
         stepId: step.id,
+        actionId,
         action: step.action,
+        surfaceId,
+        controlId: step.target,
+        kpiId,
         message: `No control-bus verb mapping for action ${step.action}`,
       };
       failures.push(failure);
@@ -1311,15 +1317,6 @@ async function runScenario(args) {
         elapsedMs,
         payloadHash: stableHash(payload),
       });
-      events.write({
-        eventType: conditionMet ? "step.completed" : "step.failed",
-        stepId: step.id,
-        actionId,
-        surfaceId,
-        controlId: step.target,
-        kpiId,
-        elapsedMs,
-      });
       if (!conditionMet) {
         const finalUIStateRef = failureUIStates.write({
           stepId: step.id,
@@ -1342,14 +1339,37 @@ async function runScenario(args) {
             artifactHash: finalUIStateRef.hash,
           });
         }
-        failures.push({
+        const failure = {
           type: options.dryRun ? "external_pending" : "condition_timeout",
           stepId: step.id,
+          actionId,
           surfaceId,
+          controlId: step.target,
           kpiId,
           message: options.dryRun ? "dry-run evidence only" : `condition did not complete for ${step.wait}`,
           finalUIStateHash: finalUIStateRef?.hash ?? null,
           finalUIStateRef: finalUIStateRef?.ref ?? null,
+        };
+        failures.push(failure);
+        events.write({
+          eventType: "step.failed",
+          stepId: step.id,
+          actionId,
+          surfaceId,
+          controlId: step.target,
+          kpiId,
+          elapsedMs,
+          failure,
+        });
+      } else {
+        events.write({
+          eventType: "step.completed",
+          stepId: step.id,
+          actionId,
+          surfaceId,
+          controlId: step.target,
+          kpiId,
+          elapsedMs,
         });
       }
     } catch (error) {
@@ -1377,7 +1397,9 @@ async function runScenario(args) {
       const failure = {
         type: "instrumentation_error",
         stepId: step.id,
+        actionId,
         surfaceId,
+        controlId: step.target,
         kpiId,
         message: error.message,
         payloadHash: error.payload ? stableHash(error.payload) : null,
@@ -1406,13 +1428,16 @@ async function runScenario(args) {
   });
   const gateFailures = baselineGateFailures(metrics, gate);
   for (const failure of gateFailures) {
+    failure.stepId = "baseline-gate";
+    failure.actionId = `${runId}:baseline-gate`;
+    failure.controlId = failure.surfaceId || "app.shell.firstUsableWindow";
     failures.push(failure);
     events.write({
       eventType: "step.failed",
-      stepId: "baseline-gate",
-      actionId: `${runId}:baseline-gate`,
+      stepId: failure.stepId,
+      actionId: failure.actionId,
       surfaceId: failure.surfaceId || "app.shell.firstUsableWindow",
-      controlId: failure.surfaceId || "app.shell.firstUsableWindow",
+      controlId: failure.controlId,
       kpiId: failure.kpiId || "none",
       failure,
     });

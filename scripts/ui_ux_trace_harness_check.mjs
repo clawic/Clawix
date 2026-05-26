@@ -610,6 +610,7 @@ if (evidenceSchema) {
     "eventTypes",
     "metricRequiredFields",
     "failureTypes",
+    "failureCorrelationContract",
     "failureStateSidecar",
     "normalizedSampleEvents",
     "privacyRequirements",
@@ -693,6 +694,11 @@ if (evidenceSchema) {
   }
   requireUniqueStringArray(requireArray(evidenceSchema.eventRequiredFields, `${evidenceSchemaPath}.eventRequiredFields`), `${evidenceSchemaPath}.eventRequiredFields`, ["runId", "actionId", "surfaceId", "controlId", "kpiId", "timestampMonotonicNs"]);
   requireUniqueStringArray(requireArray(evidenceSchema.metricRequiredFields, `${evidenceSchemaPath}.metricRequiredFields`), `${evidenceSchemaPath}.metricRequiredFields`, ["kpiId", "p50", "p95", "p99", "baseline", "evidenceEventRefs"]);
+  requireFields(evidenceSchema.failureCorrelationContract, `${evidenceSchemaPath}.failureCorrelationContract`, ["requiredFields", "timelinePolicy"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.failureCorrelationContract?.requiredFields, `${evidenceSchemaPath}.failureCorrelationContract.requiredFields`), `${evidenceSchemaPath}.failureCorrelationContract.requiredFields`, ["type", "message", "stepId", "actionId", "surfaceId", "controlId", "kpiId"]);
+  if (!String(evidenceSchema.failureCorrelationContract?.timelinePolicy ?? "").includes("matching step.failed event")) {
+    fail(`${evidenceSchemaPath}.failureCorrelationContract.timelinePolicy must require matching step.failed events`);
+  }
   requireFields(evidenceSchema.failureStateSidecar, `${evidenceSchemaPath}.failureStateSidecar`, ["path", "requiredWhenFinalUIStateExists", "maxControlsPerState", "maxBytesPerRun", "contentPolicy"]);
   if (evidenceSchema.failureStateSidecar?.path !== "logs/failure-ui-states.jsonl") {
     fail(`${evidenceSchemaPath}.failureStateSidecar.path must be logs/failure-ui-states.jsonl`);
@@ -939,6 +945,8 @@ if (runnerSource) {
     "eventType: \"resource.sample\"",
     "eventType: \"database.sample\"",
     "eventType: \"bridge.sample\"",
+    "actionId,",
+    "controlId: step.target",
     "function traceIsolationForRun(",
     "function evidenceSourceReferences(",
     "function exitPolicyForRun(",
@@ -993,6 +1001,7 @@ if (evidenceVerifierSource) {
     "baselineComparisonRowStatuses",
     "baselineComparisonMetricKey(",
     "baselineFailureKey(",
+    "failureEventKey(",
     "comparisonValueMatchesMetric(",
     "expectedBaselineComparisonStatus(",
     "metricKeys",
@@ -1002,6 +1011,7 @@ if (evidenceVerifierSource) {
     "must match the emitted metric row",
     "comparisons must include one row per metric",
     "requires a matching failures.json row",
+    "must have a matching step.failed event",
     "baseline_regression must exceed gate.maxRegressionPercent",
     "status must be ${expectedStatus} for its comparison rows and gate",
     "gate.maxRegressionPercent must be numeric",

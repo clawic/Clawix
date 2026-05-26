@@ -257,6 +257,10 @@ function baselineFailureKey(row, type) {
   return [row?.runId || "", row?.scenarioId || "", row?.fixtureProfile || "", row?.kpiId || "", type].join("\u001f");
 }
 
+function failureEventKey(row) {
+  return [row?.stepId || "", row?.actionId || "", row?.surfaceId || "", row?.controlId || "", row?.kpiId || ""].join("\u001f");
+}
+
 function comparisonValueMatchesMetric(rowValue, metricValue) {
   if (rowValue === null || metricValue === null || rowValue === undefined || metricValue === undefined) {
     return rowValue === metricValue;
@@ -512,6 +516,10 @@ function validateRun(runDir, schema, options = {}) {
   }
   if (!events.some((event) => event.eventType === "run.started")) fail(failures, "events.jsonl must include run.started");
   if (!events.some((event) => event.eventType === "run.completed")) fail(failures, "events.jsonl must include run.completed");
+  const stepFailedEvents = new Map();
+  for (const event of events.filter((item) => item.eventType === "step.failed")) {
+    stepFailedEvents.set(failureEventKey(event), event);
+  }
 
   const kpiIds = new Set();
   const metricKeys = new Set();
@@ -560,8 +568,14 @@ function validateRun(runDir, schema, options = {}) {
 
   for (const [index, failure] of (failuresArtifact.failures || []).entries()) {
     const label = `failures.json.failures[${index}]`;
-    requireFields(failures, failure, label, ["type", "message"]);
+    requireFields(failures, failure, label, ["type", "message", "stepId", "actionId", "surfaceId", "controlId", "kpiId"]);
     if (!failureTypes.has(failure.type)) fail(failures, `${label}.type ${failure.type} is not declared`);
+    const stepFailedEvent = stepFailedEvents.get(failureEventKey(failure));
+    if (!stepFailedEvent) {
+      fail(failures, `${label} must have a matching step.failed event`);
+    } else if (stepFailedEvent.failure?.type && stepFailedEvent.failure.type !== failure.type) {
+      fail(failures, `${label}.type must match step.failed failure.type`);
+    }
     if (failure.kpiId && failure.kpiId !== "none" && !kpiIds.has(failure.kpiId)) {
       fail(failures, `${label}.kpiId ${failure.kpiId} has no metric row`);
     }

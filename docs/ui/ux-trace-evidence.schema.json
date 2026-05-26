@@ -260,6 +260,18 @@
     "external_pending",
     "preexisting_unrelated"
   ],
+  "failureCorrelationContract": {
+    "requiredFields": [
+      "type",
+      "message",
+      "stepId",
+      "actionId",
+      "surfaceId",
+      "controlId",
+      "kpiId"
+    ],
+    "timelinePolicy": "Every failures.json row must have a matching step.failed event with the same stepId, actionId, surfaceId, controlId, and kpiId so failures remain correlated to the action timeline."
+  },
   "failureStateSidecar": {
     "path": "logs/failure-ui-states.jsonl",
     "requiredWhenFinalUIStateExists": true,
