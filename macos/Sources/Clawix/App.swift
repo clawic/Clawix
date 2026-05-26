@@ -335,13 +335,26 @@ private struct AgentInstanceMenuBarLabel: View {
 
     var body: some View {
         Image(nsImage: ClawixLogoTemplateImage.make(size: 18))
+            .clxControl(
+                "agent.openMainWindow",
+                role: "button",
+                label: "Open Main Window",
+                activate: openMainWindow
+            )
             .onAppear {
                 guard ClxAgentInstance.isAgent, !requestedAgentWindow else { return }
                 requestedAgentWindow = true
                 DispatchQueue.main.async {
-                    ClawixApp.bringMainWindowToFront(openWindow: openWindow)
+                    openMainWindow()
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    openMainWindow()
                 }
             }
+    }
+
+    private func openMainWindow() {
+        ClawixApp.bringMainWindowToFront(openWindow: openWindow)
     }
 }
 
