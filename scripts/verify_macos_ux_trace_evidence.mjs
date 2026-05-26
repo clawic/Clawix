@@ -769,14 +769,40 @@ function validateSuite(suiteDir, schema) {
   for (const [index, row] of (suiteBaselineObject.childRuns || []).entries()) {
     requireFields(failures, row, `suite-baseline-comparison.json.childRuns[${index}]`, ["runId", "scenarioId", "fixtureProfile", "runDir", "baselineComparisonPath"]);
     if (!isRelativeSafe(row.runDir)) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].runDir must be relative and safe`);
+    const expectedBaselineComparisonPath = isRelativeSafe(row.runDir)
+      ? path.posix.join(row.runDir, "baseline-comparison.json")
+      : null;
     if (!isRelativeSafe(row.baselineComparisonPath)) {
       fail(failures, `suite-baseline-comparison.json.childRuns[${index}].baselineComparisonPath must be relative and safe`);
-    } else if (!fs.existsSync(path.join(suiteDir, row.baselineComparisonPath))) {
-      fail(failures, `suite-baseline-comparison.json.childRuns[${index}].baselineComparisonPath must exist`);
+    } else {
+      if (expectedBaselineComparisonPath && row.baselineComparisonPath !== expectedBaselineComparisonPath) {
+        fail(failures, `suite-baseline-comparison.json.childRuns[${index}].baselineComparisonPath must point to the child run baseline-comparison.json`);
+      }
+      const baselineComparisonFile = path.join(suiteDir, row.baselineComparisonPath);
+      if (!fs.existsSync(baselineComparisonFile)) {
+        fail(failures, `suite-baseline-comparison.json.childRuns[${index}].baselineComparisonPath must exist`);
+      } else {
+        try {
+          const childBaselineComparison = readJson(baselineComparisonFile);
+          if (childBaselineComparison.runId !== row.runId) {
+            fail(failures, `suite-baseline-comparison.json.childRuns[${index}].baselineComparisonPath runId must match child run`);
+          }
+          if (childBaselineComparison.scenarioId !== row.scenarioId) {
+            fail(failures, `suite-baseline-comparison.json.childRuns[${index}].baselineComparisonPath scenarioId must match child run`);
+          }
+          if (childBaselineComparison.fixtureProfile !== row.fixtureProfile) {
+            fail(failures, `suite-baseline-comparison.json.childRuns[${index}].baselineComparisonPath fixtureProfile must match child run`);
+          }
+        } catch (error) {
+          fail(failures, `suite-baseline-comparison.json.childRuns[${index}].baselineComparisonPath must be valid JSON: ${error.message}`);
+        }
+      }
     }
     const suiteRun = (suite.runs || [])[index];
     if (suiteRun) {
       if (row.runId !== suiteRun.runId) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].runId must match suite run`);
+      if (row.scenarioId !== suiteRun.scenarioId) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].scenarioId must match suite run`);
+      if (row.fixtureProfile !== suiteRun.fixtureProfile) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].fixtureProfile must match suite run`);
       if (row.runDir !== suiteRun.runDir) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].runDir must match suite run`);
     }
   }

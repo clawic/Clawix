@@ -87,7 +87,8 @@ explicit external-pending condition rather than an implied pass.
   redaction, exact metric-row correlation for every comparison row, aggregate
   comparison status consistency, exact child-to-suite metric/failure
   aggregation including required metric evidence fields such as `worstSample`,
-  `budget`, and `evidenceEventRefs`, gated comparison-to-failure correlation, bidirectional
+  `budget`, and `evidenceEventRefs`, child baseline-comparison path ownership,
+  gated comparison-to-failure correlation, bidirectional
   failure-to-timeline correlation, enforceable gate exit policy,
   trace-isolation metadata, and private-boundary flags before evidence can
   support closure.

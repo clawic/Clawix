@@ -341,7 +341,9 @@ rows, so a gate failure is visible both in the comparison artifact and in
 `failures.json`. Suite metric aggregation is exact across the full required
 metric evidence payload, including `worstSample`, `budget`, and
 `evidenceEventRefs`; a suite cannot rewrite those fields while preserving the
-same top-line latency values. Every failure row must also carry the same step/action/surface
+same top-line latency values. Suite child-run baseline indexes must point to
+the child's own `baseline-comparison.json` and that artifact must report the
+same run, scenario, and fixture profile. Every failure row must also carry the same step/action/surface
 identity as a `step.failed` timeline event, keeping `failures.json` correlated
 with `events.jsonl`; every `step.failed` event must likewise include a failure
 object and a matching `failures.json` row. `run.json` and `suite.json` include `evidenceSources`
