@@ -10,6 +10,9 @@ const runnerPath = "scripts/run_macos_ux_trace_harness.mjs";
 const fixtureGeneratorPath = "scripts/generate_macos_ux_trace_fixtures.mjs";
 const fixtureVerificationPath = "scripts/scale_lab_fixture_check.mjs";
 const errors = [];
+const runnerSource = fs.existsSync(path.join(rootDir, runnerPath))
+  ? fs.readFileSync(path.join(rootDir, runnerPath), "utf8")
+  : "";
 
 const privatePathPattern = /(?:\/Users\/|\.signing\.env|Team ID|signing identity|bundle id|source session|rollout-|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b)/iu;
 
@@ -259,6 +262,52 @@ const expectedControlBusCapabilities = [
   "flow",
 ];
 
+const expectedScenarioActions = [
+  "analyze-events",
+  "fixture-metadata-update",
+  "hover",
+  "include-scenario",
+  "launch",
+  "measure-action",
+  "measure-anchor-delta",
+  "mock-stream",
+  "mock-stream-complete",
+  "observe",
+  "sample",
+  "scroll",
+  "scroll-to-bottom",
+  "snapshot",
+  "type",
+];
+
+const expectedMeasuredActionDispatches = {
+  "fixture-metadata-update": "fixture-metadata-update",
+  "hover": "hover",
+  "measure-action": "click",
+  "measure-anchor-delta": "measure-anchor-delta",
+  "mock-stream": "mock-stream",
+  "mock-stream-complete": "mock-stream-complete",
+  "scroll": "scroll",
+  "scroll-to-bottom": "scroll-to-bottom",
+  "snapshot": "record-anchor",
+  "type": "type",
+};
+
+function runnerHasActionDispatch(action, dispatch) {
+  const actionBranch = runnerSource.includes(`step.action === "${action}"`);
+  if (actionBranch && dispatch === action && runnerSource.includes("return step.action")) {
+    return true;
+  }
+  if (action === dispatch) {
+    return actionBranch && runnerSource.includes(`return "${dispatch}"`);
+  }
+  return actionBranch && runnerSource.includes(`return "${dispatch}"`);
+}
+
+function runnerHasMeasuredAction(action) {
+  return runnerSource.includes(`"${action}"`) && runnerSource.includes("return \"measure-action\"");
+}
+
 const expectedEventTypes = [
   "run.started",
   "fixture.loaded",
@@ -426,6 +475,7 @@ if (scenarios) {
   const registryKpiIds = new Set((registry?.kpis ?? []).map((kpi) => kpi.id));
   const registryFixtureIds = new Set((registry?.fixtureProfiles ?? []).map((profile) => profile.id));
   const registrySurfaceIds = new Set((registry?.traceSurfaces ?? []).map((surface) => surface.id));
+  const scenarioActions = new Set();
   for (const scenario of scenarioRecords) {
     requireFields(scenario, `${scenariosPath}.scenarios.${scenario.id ?? "unknown"}`, ["id", "priority", "fixtureProfiles", "kpiRefs", "steps"]);
     for (const profile of requireArray(scenario.fixtureProfiles, `${scenariosPath}.scenarios.${scenario.id}.fixtureProfiles`)) {
@@ -438,11 +488,32 @@ if (scenarios) {
     requireRecordIds(steps, `${scenariosPath}.scenarios.${scenario.id}.steps`);
     for (const step of steps) {
       requireFields(step, `${scenariosPath}.scenarios.${scenario.id}.steps.${step.id ?? "unknown"}`, ["id", "action", "wait", "target"]);
+      scenarioActions.add(step.action);
       if (step.action !== "include-scenario" && !registrySurfaceIds.has(step.target)) {
         fail(`${scenariosPath}.scenarios.${scenario.id}.steps.${step.id}.target references unknown trace surface ${step.target}`);
       }
       if (step.action === "include-scenario" && !scenarioIds.has(step.target)) {
         fail(`${scenariosPath}.scenarios.${scenario.id}.steps.${step.id}.target references unknown scenario ${step.target}`);
+      }
+    }
+  }
+  requireUniqueStringArray([...scenarioActions].sort(), `${scenariosPath}.scenarioActions`, expectedScenarioActions);
+  for (const [action, dispatch] of Object.entries(expectedMeasuredActionDispatches)) {
+    if (!runnerHasActionDispatch(action, dispatch)) {
+      fail(`${runnerPath} must dispatch scenario action ${action} as control action ${dispatch}`);
+    }
+    if (!runnerHasMeasuredAction(action)) {
+      fail(`${runnerPath} must route scenario action ${action} through measure-action`);
+    }
+  }
+  for (const scenario of scenarioRecords) {
+    for (const step of scenario.steps || []) {
+      if (
+        step.action !== "include-scenario"
+        && !expectedMeasuredActionDispatches[step.action]
+        && !(typeof step.wait === "string" && step.wait.startsWith("wait-"))
+      ) {
+        fail(`${scenariosPath}.scenarios.${scenario.id}.steps.${step.id}.action ${step.action} has no runner verb contract`);
       }
     }
   }

@@ -15,6 +15,7 @@ struct ClxControlResult {
 @MainActor
 enum ClxControlHandlers {
     private static weak var appState: AppState?
+    private static var recordedAnchorFrames: [String: CGRect] = [:]
 
     static func bind(appState: AppState) {
         guard ClxAgentInstance.isAgent else { return }
@@ -31,8 +32,14 @@ enum ClxControlHandlers {
         case "mock-bridge-stream": return mockBridgeStream(args)
         case "inventory": return inventory(args)
         case "click":     return click(args)
+        case "hover":     return hover(args)
         case "mark":      return mark(args)
+        case "record-anchor": return recordAnchor(args)
+        case "measure-anchor-delta": return measureAnchorDelta(args)
+        case "fixture-metadata-update": return fixtureMetadataUpdate(args)
+        case "mock-stream-complete": return mockStreamComplete(args)
         case "scroll":    return scroll(args)
+        case "scroll-to-bottom": return scrollToBottom(args)
         case "scroll-state": return scrollState(args)
         case "type":      return typeText(args)
         case "state":     return state(args)
@@ -610,28 +617,41 @@ enum ClxControlHandlers {
     }
 
     static func click(_ args: [String: Any]) -> ClxControlResult {
-        if let id = args["id"] as? String {
+        if let requestedId = args["id"] as? String {
+            let id = resolvedControlId(requestedId)
             let started = CACurrentMediaTime()
-            if let descriptor = ClxControlRegistry.shared.get(id), let activate = descriptor.activate {
-                activate()
+            if requestedId == "sidebar.allChats.entry",
+               ClxControlRegistry.shared.get(id) == nil {
+                SidebarPrefs.store.set(
+                    SidebarViewMode.chronological.rawValue,
+                    forKey: ClawixPersistentSurfaceKeys.sidebarViewMode
+                )
                 return ok([
-                    "clicked": id,
-                    "via": "closure",
+                    "clicked": requestedId,
+                    "via": "logical-sidebar-mode",
+                    "resolvedId": id,
                     "elapsedMs": (CACurrentMediaTime() - started) * 1000,
                 ])
             }
-            guard (args["includeAx"] as? Bool) == true else {
-                return ClxControlResult(status: 404, json: ["error": "registered control not found or not pressable: \(id)"])
+            if let descriptor = ClxControlRegistry.shared.get(id), let activate = descriptor.activate {
+                activate()
+                return ok([
+                    "clicked": requestedId,
+                    "via": "closure",
+                    "resolvedId": id,
+                    "elapsedMs": (CACurrentMediaTime() - started) * 1000,
+                ])
             }
             if let element = ClxAX.find(identifier: id),
                AXUIElementPerformAction(element, kAXPressAction as CFString) == .success {
                 return ok([
-                    "clicked": id,
+                    "clicked": requestedId,
                     "via": "ax",
+                    "resolvedId": id,
                     "elapsedMs": (CACurrentMediaTime() - started) * 1000,
                 ])
             }
-            return ClxControlResult(status: 404, json: ["error": "control not found or not pressable: \(id)"])
+            return ClxControlResult(status: 404, json: ["error": "control not found or not pressable: \(requestedId)", "resolvedId": id])
         }
         if let title = args["title"] as? String {
             let started = CACurrentMediaTime()
@@ -654,6 +674,116 @@ enum ClxControlHandlers {
             ?? "agent-control"
         RenderProbe.mark(name)
         return ok(["marked": name])
+    }
+
+    static func hover(_ args: [String: Any]) -> ClxControlResult {
+        guard let requestedId = args["id"] as? String else { return badRequest("missing id") }
+        let id = resolvedControlId(requestedId)
+        guard let view = ClxControlRegistry.shared.observedView(id),
+              let window = view.window else {
+            return ClxControlResult(status: 404, json: ["error": "registered hover target not found: \(requestedId)", "resolvedId": id])
+        }
+        let centerInView = CGPoint(x: view.bounds.midX, y: view.bounds.midY)
+        let centerInWindow = view.convert(centerInView, to: nil)
+        let event = NSEvent.mouseEvent(
+            with: .mouseMoved,
+            location: centerInWindow,
+            modifierFlags: [],
+            timestamp: ProcessInfo.processInfo.systemUptime,
+            windowNumber: window.windowNumber,
+            context: nil,
+            eventNumber: 0,
+            clickCount: 0,
+            pressure: 0
+        )
+        if let event {
+            window.sendEvent(event)
+        }
+        RenderProbe.mark("UXTraceHover", fields: ["id": requestedId, "resolvedId": id])
+        return ok([
+            "hovered": requestedId,
+            "resolvedId": id,
+            "via": "window-event",
+            "frame": framePayload(window.convertToScreen(view.convert(view.bounds, to: nil))),
+        ])
+    }
+
+    static func recordAnchor(_ args: [String: Any]) -> ClxControlResult {
+        let requestedId = (args["id"] as? String) ?? (args["target"] as? String) ?? "chat.message.row"
+        let id = resolvedControlId(requestedId)
+        let key = (args["anchorKey"] as? String) ?? id
+        let observed = observedControlState(["id": id])
+        guard let frame = observed["frame"] as? [String: Any],
+              let rect = rectPayload(frame) else {
+            return ClxControlResult(status: 404, json: ["error": "anchor frame not found: \(requestedId)", "resolvedId": id, "observed": observed])
+        }
+        recordedAnchorFrames[key] = rect
+        RenderProbe.mark("UXTraceAnchorRecord", fields: ["id": requestedId, "resolvedId": id, "key": key, "y": Self.format(rect.minY)])
+        return ok([
+            "recorded": true,
+            "id": requestedId,
+            "resolvedId": id,
+            "anchorKey": key,
+            "frame": frame,
+        ])
+    }
+
+    static func measureAnchorDelta(_ args: [String: Any]) -> ClxControlResult {
+        let requestedId = (args["id"] as? String) ?? (args["target"] as? String) ?? "chat.message.row"
+        let id = resolvedControlId(requestedId)
+        let key = (args["anchorKey"] as? String) ?? id
+        let observed = observedControlState(["id": id])
+        guard let frame = observed["frame"] as? [String: Any],
+              let rect = rectPayload(frame) else {
+            return ClxControlResult(status: 404, json: ["error": "anchor frame not found: \(requestedId)", "resolvedId": id, "observed": observed])
+        }
+        let before = recordedAnchorFrames[key]
+        let deltaPx = before.map { abs(rect.minY - $0.minY) } ?? 0
+        recordedAnchorFrames[key] = rect
+        RenderProbe.mark(
+            "UXTraceAnchorDelta",
+            fields: ["id": requestedId, "resolvedId": id, "key": key, "deltaPx": Self.format(deltaPx)]
+        )
+        return ok([
+            "measured": true,
+            "id": requestedId,
+            "resolvedId": id,
+            "anchorKey": key,
+            "deltaPx": deltaPx,
+            "hadPrevious": before != nil,
+            "frame": frame,
+        ])
+    }
+
+    static func fixtureMetadataUpdate(_ args: [String: Any]) -> ClxControlResult {
+        guard let appState else {
+            return ClxControlResult(status: 503, json: ["error": "app state unavailable"])
+        }
+        let chatId = resolvedChatId(args, appState: appState) ?? appState.chats.first?.id
+        guard let chatId,
+              let index = appState.chats.firstIndex(where: { $0.id == chatId }) else {
+            return ClxControlResult(status: 404, json: ["error": "chat not found"])
+        }
+        appState.chats[index].hasUnreadCompletion.toggle()
+        appState.chats[index].lastMessageAt = Date()
+        RenderProbe.mark(
+            "UXTraceFixtureMetadataUpdate",
+            fields: [
+                "chat": chatId.uuidString,
+                "unread": "\(appState.chats[index].hasUnreadCompletion)"
+            ]
+        )
+        return ok([
+            "updated": true,
+            "chat": chatId.uuidString,
+            "hasUnreadCompletion": appState.chats[index].hasUnreadCompletion,
+        ])
+    }
+
+    static func mockStreamComplete(_ args: [String: Any]) -> ClxControlResult {
+        let id = (args["id"] as? String) ?? (args["target"] as? String) ?? "chat.message.assistant"
+        RenderProbe.mark("UXTraceMockStreamComplete", fields: ["id": id])
+        return ok(["completed": true, "id": id])
     }
 
     static func scroll(_ args: [String: Any]) -> ClxControlResult {
@@ -724,6 +854,16 @@ enum ClxControlHandlers {
             return result
         }
         return ok(["scrolled": completed, "direction": direction, "via": "scroll-bar"])
+    }
+
+    static func scrollToBottom(_ args: [String: Any]) -> ClxControlResult {
+        guard let id = registeredScrollId(args) ?? (args["id"] as? String) else {
+            return badRequest("missing id or target")
+        }
+        guard let result = scrollRegisteredToBottom(id: id) else {
+            return ClxControlResult(status: 404, json: ["error": "registered scroll target not found: \(id)"])
+        }
+        return result
     }
 
     static func typeText(_ args: [String: Any]) -> ClxControlResult {
@@ -1089,11 +1229,17 @@ enum ClxControlHandlers {
     private static func performMeasuredAction(_ action: String, args: [String: Any]) -> ClxControlResult {
         switch action {
         case "click": return click(args)
+        case "hover": return hover(args)
         case "type": return typeText(args)
         case "scroll": return scroll(args)
+        case "scroll-to-bottom": return scrollToBottom(args)
         case "open-chat": return openChat(args)
         case "mock-stream": return mockStream(args)
+        case "mock-stream-complete": return mockStreamComplete(args)
         case "mock-bridge-stream": return mockBridgeStream(args)
+        case "record-anchor": return recordAnchor(args)
+        case "measure-anchor-delta": return measureAnchorDelta(args)
+        case "fixture-metadata-update": return fixtureMetadataUpdate(args)
         case "mark": return mark(args)
         default: return badRequest("unsupported measured action: \(action)")
         }
@@ -1317,6 +1463,36 @@ enum ClxControlHandlers {
         ])
     }
 
+    private static func scrollRegisteredToBottom(id: String) -> ClxControlResult? {
+        guard let scrollView = ClxScrollRegistry.shared.get(id),
+              let documentView = scrollView.documentView else { return nil }
+        scrollView.layoutSubtreeIfNeeded()
+        documentView.layoutSubtreeIfNeeded()
+
+        let clipView = scrollView.contentView
+        let before = clipView.bounds.origin
+        let documentSize = documentView.bounds.size
+        let visibleSize = clipView.bounds.size
+        let maxX = max(0, documentSize.width - visibleSize.width)
+        let maxY = max(0, documentSize.height - visibleSize.height)
+        let targetY = documentView.isFlipped ? maxY : 0
+        let next = CGPoint(x: min(max(0, before.x), maxX), y: targetY)
+        clipView.scroll(to: next)
+        scrollView.reflectScrolledClipView(clipView)
+        scrollView.layoutSubtreeIfNeeded()
+        let after = clipView.bounds.origin
+        return ok([
+            "scrolled": before == after ? 0 : 1,
+            "direction": "bottom",
+            "via": "registered-scroll",
+            "id": id,
+            "from": ["x": before.x, "y": before.y],
+            "to": ["x": after.x, "y": after.y],
+            "max": ["x": maxX, "y": maxY],
+            "documentFlipped": documentView.isFlipped,
+        ])
+    }
+
     private static func registeredScrollState(id: String) -> [String: Any]? {
         guard let scrollView = ClxScrollRegistry.shared.get(id),
               let documentView = scrollView.documentView else { return nil }
@@ -1348,12 +1524,14 @@ enum ClxControlHandlers {
     }
 
     private static func controlStatePayload(id: String, includeAx: Bool = false) -> [String: Any]? {
-        let descriptor = ClxControlRegistry.shared.get(id)
+        let resolvedId = resolvedControlId(id)
+        let descriptor = ClxControlRegistry.shared.get(resolvedId)
         guard descriptor != nil || includeAx else { return nil }
-        let observedView = ClxControlRegistry.shared.observedViewState(id)
+        let observedView = ClxControlRegistry.shared.observedViewState(resolvedId)
         if let descriptor {
             var out: [String: Any] = [
                 "id": id,
+                "resolvedId": resolvedId,
                 "role": descriptor.role,
                 "title": descriptor.label,
                 "source": "registry",
@@ -1366,9 +1544,10 @@ enum ClxControlHandlers {
             return out
         }
         guard includeAx else { return nil }
-        guard let element = ClxAX.find(identifier: id) else { return nil }
+        guard let element = ClxAX.find(identifier: resolvedId) else { return nil }
         var out: [String: Any] = [
             "id": id,
+            "resolvedId": resolvedId,
             "found": true,
             "source": observedView == nil ? "ax" : "ax+registry",
         ]
@@ -1399,6 +1578,38 @@ enum ClxControlHandlers {
             ?? ["id": id, "found": false, "visible": false]
     }
 
+    private static func resolvedControlId(_ id: String) -> String {
+        switch id {
+        case "sidebar.hoverTarget", "sidebar.conversation.row", "sidebar.selectedRow":
+            return resolvedSidebarChatRowId() ?? id
+        default:
+            return id
+        }
+    }
+
+    private static func resolvedSidebarChatRowId() -> String? {
+        if let appState,
+           let currentChatId = appState.currentChatId,
+           let current = appState.chat(byId: currentChatId) {
+            let currentId = "sidebar.chat.\(current.clawixThreadId ?? current.id.uuidString)"
+            if ClxControlRegistry.shared.get(currentId) != nil {
+                return currentId
+            }
+        }
+        let candidates = ClxControlRegistry.shared.all()
+            .map(\.id)
+            .filter { $0.hasPrefix("sidebar.chat.") }
+        let visible = candidates.compactMap { id -> (String, CGFloat)? in
+            guard let state = ClxControlRegistry.shared.observedViewState(id),
+                  state.visible else { return nil }
+            return (id, state.frame.minY)
+        }
+        if let topmost = visible.max(by: { $0.1 < $1.1 }) {
+            return topmost.0
+        }
+        return candidates.sorted().first
+    }
+
     private static func observedScrollState(_ args: [String: Any]) -> [String: Any] {
         guard let id = registeredScrollId(args) ?? (args["id"] as? String) else {
             return ["found": false, "error": "missing id or target"]
@@ -1413,6 +1624,29 @@ enum ClxControlHandlers {
             "w": frame.size.width,
             "h": frame.size.height,
         ]
+    }
+
+    private static func rectPayload(_ payload: [String: Any]) -> CGRect? {
+        guard let x = numericCGFloat(payload["x"]),
+              let y = numericCGFloat(payload["y"]),
+              let width = numericCGFloat(payload["w"] ?? payload["width"]),
+              let height = numericCGFloat(payload["h"] ?? payload["height"]) else {
+            return nil
+        }
+        return CGRect(x: x, y: y, width: width, height: height)
+    }
+
+    private static func numericCGFloat(_ value: Any?) -> CGFloat? {
+        if let value = value as? CGFloat { return value }
+        if let value = value as? Double { return CGFloat(value) }
+        if let value = value as? Float { return CGFloat(value) }
+        if let value = value as? Int { return CGFloat(value) }
+        if let value = value as? NSNumber { return CGFloat(truncating: value) }
+        return nil
+    }
+
+    private static func format(_ value: CGFloat) -> String {
+        String(format: "%.2f", Double(value))
     }
 
     private static func waitCondition(named raw: String) -> WaitCondition {

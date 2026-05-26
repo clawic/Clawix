@@ -94,16 +94,9 @@ final class ClxControlRegistry {
     }
 
     func observedViewState(_ id: String) -> ClxControlObservedViewState? {
-        guard let entries = observedViews[id] else { return nil }
-        let live = entries.compactMap { token, entry -> (UUID, WeakObservedView)? in
-            entry.value == nil ? nil : (token, entry)
-        }
-        observedViews[id] = Dictionary(uniqueKeysWithValues: live)
-        guard let entry = live.map(\.1).max(by: { $0.sequence < $1.sequence }),
-              let view = entry.value,
-              let window = view.window
-        else { return nil }
+        guard let view = observedView(id) else { return nil }
         let windowFrame = view.convert(view.bounds, to: nil)
+        guard let window = view.window else { return nil }
         let screenFrame = window.convertToScreen(windowFrame)
         let visibleBounds = view.visibleRect.intersection(view.bounds)
         let visible = screenFrame.width > 0
@@ -113,6 +106,18 @@ final class ClxControlRegistry {
             && screenFrame.intersects(window.frame)
             && view.isEffectivelyVisible
         return ClxControlObservedViewState(id: id, frame: screenFrame, visible: visible)
+    }
+
+    func observedView(_ id: String) -> NSView? {
+        guard let entries = observedViews[id] else { return nil }
+        let live = entries.compactMap { token, entry -> (UUID, WeakObservedView)? in
+            entry.value == nil ? nil : (token, entry)
+        }
+        observedViews[id] = Dictionary(uniqueKeysWithValues: live)
+        guard let entry = live.map(\.1).max(by: { $0.sequence < $1.sequence }),
+              let view = entry.value
+        else { return nil }
+        return view
     }
 }
 

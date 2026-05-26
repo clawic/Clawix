@@ -236,15 +236,31 @@ function eventWriter(file, common) {
 function actionDispatchFor(step) {
   if (step.dispatch) return step.dispatch;
   if (step.action === "scroll") return "scroll";
+  if (step.action === "scroll-to-bottom") return "scroll-to-bottom";
   if (step.action === "type") return "type";
+  if (step.action === "hover") return "hover";
   if (step.action === "mock-stream" || step.action === "mock-bridge-stream") return step.action;
+  if (step.action === "mock-stream-complete") return "mock-stream-complete";
+  if (step.action === "fixture-metadata-update") return "fixture-metadata-update";
+  if (step.action === "measure-anchor-delta") return "measure-anchor-delta";
   if (step.action === "measure-action") return "click";
-  if (step.action === "snapshot") return "mark";
+  if (step.action === "snapshot") return "record-anchor";
   return null;
 }
 
 function verbForStep(step) {
-  if (step.action === "measure-action" || ["scroll", "type", "mock-stream", "mock-bridge-stream", "snapshot"].includes(step.action)) {
+  if (step.action === "measure-action" || [
+    "scroll",
+    "scroll-to-bottom",
+    "type",
+    "hover",
+    "mock-stream",
+    "mock-stream-complete",
+    "mock-bridge-stream",
+    "fixture-metadata-update",
+    "measure-anchor-delta",
+    "snapshot",
+  ].includes(step.action)) {
     return "measure-action";
   }
   if (typeof step.wait === "string" && step.wait.startsWith("wait-")) return step.wait;
