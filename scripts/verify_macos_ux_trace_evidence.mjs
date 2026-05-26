@@ -1196,6 +1196,7 @@ function validateBaselineArtifact(file, schema) {
   }
   if (baseline.baselineVersion !== 1) fail(failures, "baseline.baselineVersion must be 1");
   if (baseline.platform !== "macos") fail(failures, "baseline.platform must be macos");
+  parseIsoTimestamp(failures, baseline.generatedAt, "baseline.generatedAt");
   validatePrivateBoundary(failures, baseline.privateBoundary, "baseline");
   validateEvidenceSources(failures, baseline.evidenceSources, "baseline", schema);
   requireFields(failures, baseline.sourceEvidence, "baseline.sourceEvidence", ["status", "artifactKind"]);

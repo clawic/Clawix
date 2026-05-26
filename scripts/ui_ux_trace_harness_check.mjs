@@ -738,6 +738,7 @@ if (evidenceSchema) {
     !String(evidenceSchema.baselineArtifactContract?.identityPolicy ?? "").includes("schemaVersion 1")
     || !String(evidenceSchema.baselineArtifactContract?.identityPolicy ?? "").includes("macos-ux-trace-harness-baseline")
     || !String(evidenceSchema.baselineArtifactContract?.identityPolicy ?? "").includes("platform macos")
+    || !String(evidenceSchema.baselineArtifactContract?.identityPolicy ?? "").includes("valid ISO generatedAt timestamp")
   ) {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.identityPolicy must bind generated baseline identity`);
   }
@@ -1259,6 +1260,7 @@ if (evidenceVerifierSource) {
     "gate.maxRegressionPercent must be numeric",
     "validateBaselineArtifact(",
     "baseline.schemaVersion must be 1",
+    "parseIsoTimestamp(failures, baseline.generatedAt, \"baseline.generatedAt\")",
     "suite-baseline-comparison.json",
     "suiteBaselineComparison",
     "baselineComparisonPath",

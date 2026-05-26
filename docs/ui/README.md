@@ -325,8 +325,9 @@ primary timing source.
   identity, approval, promotion, source, metric, and private-boundary metadata.
   Baseline artifacts must declare `schemaVersion: 1`,
   `program: macos-ux-trace-harness-baseline`, `baselineVersion: 1`, and
-  `platform: macos`. Baseline `sourceEvidence` must identify exactly one run
-  or suite source; run baselines require `runId`, `scenarioId`, and
+  `platform: macos`, with a valid ISO `generatedAt` timestamp. Baseline
+  `sourceEvidence` must identify exactly one run or suite source; run baselines
+  require `runId`, `scenarioId`, and
   `fixtureProfile`, while suite baselines require a matching `suiteId` and
   `fixtureProfile`.
 
