@@ -239,6 +239,12 @@ struct ChatView: View {
     /// don't fight their position.
     @State private var bottomId: String?
 
+    init(chatId: UUID, isSideChat: Bool = false) {
+        self.chatId = chatId
+        self.isSideChat = isSideChat
+        _bottomId = State(initialValue: "chat-tail-\(chatId.uuidString)")
+    }
+
     private var chat: Chat? {
         appState.chat(byId: chatId)
     }
