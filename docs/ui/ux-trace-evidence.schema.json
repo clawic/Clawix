@@ -204,6 +204,10 @@
     "policy": "Every run metric row must include at least one evidenceEventRefs entry, every reference must point to an event in events.jsonl, and at least one referenced event must carry the same KPI id as the metric row.",
     "purpose": "Metric rows must remain auditable back to action/visual-condition timeline evidence instead of only reporting aggregate numbers."
   },
+  "eventLifecycleContract": {
+    "policy": "Each run evidence timeline must contain exactly one run.started and one run.completed event; run.completed.status must match run.json.status. If scenario.started is emitted, exactly one scenario.completed event must also be emitted.",
+    "purpose": "The JSON summary and timeline lifecycle must describe the same run outcome."
+  },
   "eventRequiredFields": [
     "schemaVersion",
     "runId",

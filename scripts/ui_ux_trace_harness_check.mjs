@@ -660,6 +660,7 @@ if (evidenceSchema) {
     "baselineArtifactRequiredFields",
     "metricRegistryContract",
     "metricEventReferenceContract",
+    "eventLifecycleContract",
     "eventRequiredFields",
     "eventTypes",
     "metricRequiredFields",
@@ -739,6 +740,13 @@ if (evidenceSchema) {
     || !String(evidenceSchema.metricEventReferenceContract?.purpose ?? "").includes("action/visual-condition timeline")
   ) {
     fail(`${evidenceSchemaPath}.metricEventReferenceContract must bind metric rows to KPI-specific timeline events`);
+  }
+  requireFields(evidenceSchema.eventLifecycleContract, `${evidenceSchemaPath}.eventLifecycleContract`, ["policy", "purpose"]);
+  if (
+    !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("exactly one run.started")
+    || !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("run.completed.status must match run.json.status")
+  ) {
+    fail(`${evidenceSchemaPath}.eventLifecycleContract must bind run lifecycle events to run status`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
   requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "requiredSourceIds"]);
@@ -1090,6 +1098,8 @@ if (evidenceVerifierSource) {
     "is not declared in ux-trace-harness.registry.json",
     "evidenceEventRefs must include at least one event ref",
     "evidenceEventRefs must include an event for the same KPI",
+    "run.completed status must match run.json.status",
+    "scenario.started requires exactly one scenario.completed",
     "metrics.json.schemaVersion must be 1",
     "failures.json.schemaVersion must be 1",
     "suite-metrics.json.schemaVersion must be 1",

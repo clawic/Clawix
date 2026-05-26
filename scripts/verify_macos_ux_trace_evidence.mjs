@@ -593,8 +593,19 @@ function validateRun(runDir, schema, options = {}) {
       if (!Number.isFinite(Number(event.bytes))) fail(failures, `${label}.bytes must be numeric`);
     }
   }
-  if (!events.some((event) => event.eventType === "run.started")) fail(failures, "events.jsonl must include run.started");
-  if (!events.some((event) => event.eventType === "run.completed")) fail(failures, "events.jsonl must include run.completed");
+  const runStartedEvents = events.filter((event) => event.eventType === "run.started");
+  const runCompletedEvents = events.filter((event) => event.eventType === "run.completed");
+  if (runStartedEvents.length !== 1) fail(failures, "events.jsonl must include exactly one run.started");
+  if (runCompletedEvents.length !== 1) {
+    fail(failures, "events.jsonl must include exactly one run.completed");
+  } else if (runCompletedEvents[0].status !== run.status) {
+    fail(failures, "events.jsonl run.completed status must match run.json.status");
+  }
+  const scenarioStartedEvents = events.filter((event) => event.eventType === "scenario.started");
+  const scenarioCompletedEvents = events.filter((event) => event.eventType === "scenario.completed");
+  if (scenarioStartedEvents.length > 0 && scenarioCompletedEvents.length !== 1) {
+    fail(failures, "events.jsonl scenario.started requires exactly one scenario.completed");
+  }
   const stepFailedEvents = new Map();
   for (const event of events.filter((item) => item.eventType === "step.failed")) {
     stepFailedEvents.set(failureEventKey(event), event);
