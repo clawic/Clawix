@@ -96,8 +96,96 @@ extension ClawJSRuntimeLensSection {
             if let readinessSummary = audit.evidenceReadinessSummary {
                 runtimeLensEvidenceReadinessSummary(readinessSummary)
             }
+            if let domains = audit.domains, !domains.isEmpty {
+                runtimeLensSupportAuditDomains(domains)
+            }
         }
         .accessibilityIdentifier("runtime-lens-support-audit")
+        .accessibilityLabel(Text(presentation.accessibilityLabel))
+    }
+
+    func runtimeLensSupportAuditDomains(
+        _ domains: [ClawJSRuntimeLensSnapshot.SupportAudit.DomainAudit]
+    ) -> some View {
+        let presentation = ClawJSRuntimeLensSupportAuditDomainPresentation.make(domains: domains)
+        let pageKey = ClawJSRuntimeLensPageKey("support-audit-domains")
+        let slice = page(presentation.rows, key: pageKey)
+
+        return VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                statusPill(text: presentation.totalLabel, color: .blue)
+                if presentation.evidenceDomainCount > 0 {
+                    statusPill(text: "evidence \(presentation.evidenceDomainCount)", color: .orange)
+                }
+                if presentation.blockerDomainCount > 0 {
+                    statusPill(text: "blockers \(presentation.blockerDomainCount)", color: .orange)
+                }
+                Spacer()
+            }
+            ForEach(slice.rows) { row in
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(row.domain)
+                            .font(BodyFont.system(size: 10.5, weight: .medium))
+                            .foregroundColor(Palette.textPrimary)
+                        if let status = row.status {
+                            statusPill(text: status, color: runtimeDomainColor(status: status, supported: true))
+                        }
+                        if row.externalPending {
+                            statusPill(text: "external", color: .orange)
+                        }
+                        statusPill(text: row.writeBackAllowed ? "write-back" : "no write-back", color: row.writeBackAllowed ? .green : .orange)
+                        Spacer()
+                    }
+                    if let projection = row.readProjectionStatus {
+                        Text("Read projection: \(projection)")
+                            .font(BodyFont.system(size: 10.5))
+                            .foregroundColor(Palette.textSecondary.opacity(0.72))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    if let policy = row.policyLabel {
+                        Text("Policy: \(policy)")
+                            .font(BodyFont.system(size: 10.5))
+                            .foregroundColor(Palette.textSecondary.opacity(0.72))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    if let dispositions = row.evidenceDispositionsLabel {
+                        Text("Evidence disposition: \(dispositions)")
+                            .font(BodyFont.system(size: 10.5))
+                            .foregroundColor(Palette.textSecondary.opacity(0.72))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    if let evidence = row.evidenceRequirementIdsLabel {
+                        Text("Evidence ids: \(evidence)")
+                            .font(BodyFont.system(size: 10.5))
+                            .foregroundColor(Palette.textSecondary.opacity(0.72))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    if let blocking = row.blockingFacetsLabel {
+                        Text("Blocking facets: \(blocking)")
+                            .font(BodyFont.system(size: 10.5))
+                            .foregroundColor(Palette.textSecondary.opacity(0.72))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    if let resolutions = row.supportResolutionsLabel {
+                        Text("Resolution: \(resolutions)")
+                            .font(BodyFont.system(size: 10.5))
+                            .foregroundColor(Palette.textSecondary.opacity(0.72))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                .accessibilityIdentifier("runtime-lens-support-audit-domain-\(row.domain)")
+                .accessibilityLabel(Text(row.accessibilityLabel))
+            }
+            pager(slice, key: pageKey)
+        }
+        .accessibilityIdentifier("runtime-lens-support-audit-domains")
         .accessibilityLabel(Text(presentation.accessibilityLabel))
     }
 

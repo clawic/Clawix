@@ -135,6 +135,9 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
         var sections = [
             supportAuditSection(ClawJSRuntimeLensSupportAuditPresentation.make(audit: audit))
         ]
+        if let domains = audit.domains, !domains.isEmpty {
+            sections.append(supportAuditDomainsSection(ClawJSRuntimeLensSupportAuditDomainPresentation.make(domains: domains)))
+        }
         if let sync = audit.syncPolicySummary {
             sections.append(syncSummarySection(ClawJSRuntimeLensSupportSummaryPresentation.make(sync: sync)))
         }
@@ -340,6 +343,46 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                     accessibilityLabel: presentation.accessibilityLabel
                 )
             ],
+            accessibilityLabel: presentation.accessibilityLabel
+        )
+    }
+
+    private static func supportAuditDomainsSection(_ presentation: ClawJSRuntimeLensSupportAuditDomainPresentation) -> Section {
+        Section(
+            id: "support-audit-domains",
+            title: "Support audit domains",
+            rows: [
+                Row(id: "summary", label: "Support audit domains", value: presentation.totalLabel, pills: [
+                    Pill(id: "domains", label: "domains \(presentation.domainCount)", tone: .info),
+                    Pill(id: "evidence", label: "evidence \(presentation.evidenceDomainCount)", tone: presentation.evidenceDomainCount > 0 ? .warning : .success),
+                    Pill(id: "blockers", label: "blockers \(presentation.blockerDomainCount)", tone: presentation.blockerDomainCount > 0 ? .warning : .muted)
+                ], detailLines: [], accessibilityLabel: presentation.accessibilityLabel)
+            ] + presentation.rows.map {
+                Row(
+                    id: $0.domain,
+                    label: $0.domain,
+                    value: $0.status,
+                    pills: optionalPills([
+                        $0.claim.map { Pill(id: "claim", label: $0, tone: ClawJSRuntimeLensStatusTone.supportClaim($0)) },
+                        Pill(id: "write", label: $0.writeBackAllowed ? "write-back" : "no write-back", tone: $0.writeBackAllowed ? .success : .warning),
+                        $0.externalPending ? Pill(id: "external", label: "external", tone: .warning) : nil
+                    ]),
+                    detailLines: optionalLines([
+                        $0.readProjectionStatus.map { "read projection \($0)" },
+                        $0.authorityLabel.map { "authority \($0)" },
+                        $0.policyLabel.map { "policy \($0)" },
+                        $0.relationshipLabel.map { "relationship \($0)" },
+                        $0.approvalGateFixtureStatus.map { "approval gate fixture \($0)" },
+                        $0.implementedFacetsLabel.map { "implemented facets \($0)" },
+                        $0.blockingFacetsLabel.map { "blocking facets \($0)" },
+                        $0.blockerClassesLabel.map { "blocker classes \($0)" },
+                        $0.evidenceDispositionsLabel.map { "evidence dispositions \($0)" },
+                        $0.evidenceRequirementIdsLabel.map { "evidence \($0)" },
+                        $0.supportResolutionsLabel.map { "support resolutions \($0)" }
+                    ]),
+                    accessibilityLabel: $0.accessibilityLabel
+                )
+            },
             accessibilityLabel: presentation.accessibilityLabel
         )
     }

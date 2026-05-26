@@ -190,6 +190,18 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "sessions" }?.evidenceRequirementIds?.contains("example.sessions.create.action_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "sessions" }?.evidenceDispositions?.contains("blocked_until_official_runtime_action_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "sessions" }?.supportResolutions?.contains("explicitly_product_blocked_not_a_silent_gap"), true)
+        let auditDomainPresentation = ClawJSRuntimeLensSupportAuditDomainPresentation.make(
+            domains: snapshot.supportAudit?.domains ?? []
+        )
+        XCTAssertEqual(auditDomainPresentation.domainCount, 2)
+        XCTAssertEqual(auditDomainPresentation.evidenceDomainCount, 2)
+        XCTAssertEqual(auditDomainPresentation.blockerDomainCount, 2)
+        XCTAssertEqual(auditDomainPresentation.rows.first?.domain, "sessions")
+        XCTAssertEqual(auditDomainPresentation.rows.first?.evidenceDispositionsLabel, "blocked_until_official_runtime_contract, blocked_until_official_runtime_action_contract")
+        XCTAssertEqual(auditDomainPresentation.rows.first?.evidenceRequirementIdsLabel, "example.sessions.write_back_contract, example.sessions.create.action_contract")
+        XCTAssertEqual(auditDomainPresentation.rows.first?.supportResolutionsLabel, "explicitly_product_blocked_not_a_silent_gap")
+        XCTAssertTrue(auditDomainPresentation.rows.first?.accessibilityLabel.contains("evidence dispositions blocked_until_official_runtime_contract") == true)
+        XCTAssertTrue(auditDomainPresentation.accessibilityLabel.contains("Runtime support audit domains"))
         XCTAssertEqual(snapshot.supportAudit?.promotionGate, "support_claim_remains_unpromoted_until_all_evidence_requirements_are_closed_or_explicitly_product_blocked")
         XCTAssertEqual(snapshot.supportAudit?.closureChecklist?.first { $0.domain == "sessions" }?.closureStatus, "product_blocked")
         XCTAssertEqual(snapshot.supportAudit?.closureChecklist?.first { $0.domain == "sessions" }?.readProjectionStatus, "projected")
