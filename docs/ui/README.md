@@ -330,6 +330,13 @@ primary timing source.
   fails if the registry collapses back to placeholder secondary coverage.
 - Baseline capture:
   add `--write-baseline <private-baseline-file>`.
+- Overhead control capture:
+  run a harness-disabled control lane with
+  `--harness-disabled-control --write-overhead-control <private-control-file>`,
+  then pass that public-safe artifact back with `--overhead-control <file>`.
+  The runner rejects overhead control artifacts unless they declare
+  `program: macos-ux-trace-overhead-control`,
+  `highCardinalityInstrumentation: false`, and `privateBoundary.publicSafe: true`.
 - Baseline comparison and P0 gate:
   add `--baseline <private-baseline-file> --gate p0`.
   External baseline paths are written to evidence only as hash references, and

@@ -44,7 +44,11 @@ terminal-under-load behavior, fixture scale labs, or UX trace evidence.
    `--baseline <file> --gate p0` for P0 gates, and use
    `--write-baseline <file>` only to produce a pending capture artifact for
    later user approval.
-10. Record missing approved baselines, missing private aggregate calibration,
+10. For overhead calibration, capture the control lane with
+    `--harness-disabled-control --write-overhead-control <file>` and pass it
+    back with `--overhead-control <file>`. The control artifact must be
+    public-safe and explicitly declare `highCardinalityInstrumentation: false`.
+11. Record missing approved baselines, missing private aggregate calibration,
     or missing live host prerequisites as `EXTERNAL PENDING`; do not imply a
     pass from generated fixtures, dispatch success, screenshots, or static
     reading.

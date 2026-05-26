@@ -45,11 +45,14 @@ any UI performance budget change.
 6. Capture evidence before optimization using the target performance playbook.
 7. Compare against the approved baseline when present. If no approved baseline
    exists, produce a baseline-capture report for user approval.
-8. Treat `docs/ui/ux-trace-calibration.manifest.json` entries marked
+8. When overhead is relevant, capture the harness-disabled lane with
+   `--harness-disabled-control --write-overhead-control <file>` and compare it
+   with `--overhead-control <file>`.
+9. Treat `docs/ui/ux-trace-calibration.manifest.json` entries marked
    `EXTERNAL PENDING` as non-closable without approved private aggregate
    evidence. Synthetic live baselines can support investigation, but they do
    not prove private real-mode equivalence by themselves.
-9. Do not retune visual timing, layout, animation, or perceived style unless
+10. Do not retune visual timing, layout, animation, or perceived style unless
    the task is visual-authorized.
 
 ## Constraints

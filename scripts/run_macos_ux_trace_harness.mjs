@@ -1903,6 +1903,31 @@ async function selfTest() {
   if (comparedOverheadResult.overheadCalibration?.status !== "compared") {
     throw new Error("self-test overhead control artifact must produce compared overhead calibration");
   }
+  const invalidOverheadControlPath = path.join(outDir, "invalid-overhead-control.json");
+  writeJson(invalidOverheadControlPath, {
+    schemaVersion: 1,
+    metrics: overheadControl.metrics,
+    highCardinalityInstrumentation: false,
+  });
+  const invalidOverheadResult = spawnSync(process.execPath, [
+    runnerPath,
+    "--dry-run",
+    "--scenario",
+    "startup-to-usable",
+    "--fixture-profile",
+    "smoke",
+    "--overhead-control",
+    invalidOverheadControlPath,
+    "--out-dir",
+    outDir,
+    "--json",
+  ], {
+    cwd: rootDir,
+    encoding: "utf8",
+  });
+  if (invalidOverheadResult.status !== 1 || !invalidOverheadResult.stderr.includes("macos-ux-trace-overhead-control")) {
+    throw new Error("self-test invalid overhead control artifact must be rejected");
+  }
   const pendingBaselineResult = spawnSync(process.execPath, [
     runnerPath,
     "--dry-run",

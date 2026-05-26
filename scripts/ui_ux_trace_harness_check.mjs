@@ -560,6 +560,7 @@ if (registry) {
   if (registry.requiredArtifacts?.runnerSelfTestCommand !== `node ${runnerPath} --self-test`) fail(`${registryPath}.requiredArtifacts.runnerSelfTestCommand must be node ${runnerPath} --self-test`);
   if (registry.requiredArtifacts?.suiteRunnerCommand !== `node ${runnerPath} --suite p0`) fail(`${registryPath}.requiredArtifacts.suiteRunnerCommand must be node ${runnerPath} --suite p0`);
   if (registry.requiredArtifacts?.baselineCaptureCommand !== `node ${runnerPath} --write-baseline <file>`) fail(`${registryPath}.requiredArtifacts.baselineCaptureCommand must be node ${runnerPath} --write-baseline <file>`);
+  if (registry.requiredArtifacts?.overheadControlCaptureCommand !== `node ${runnerPath} --harness-disabled-control --write-overhead-control <file>`) fail(`${registryPath}.requiredArtifacts.overheadControlCaptureCommand must be node ${runnerPath} --harness-disabled-control --write-overhead-control <file>`);
   if (registry.requiredArtifacts?.p0GateCommand !== `node ${runnerPath} --baseline <file> --gate p0`) fail(`${registryPath}.requiredArtifacts.p0GateCommand must be node ${runnerPath} --baseline <file> --gate p0`);
   if (registry.requiredArtifacts?.fixtureGeneratorCommand !== `node ${fixtureGeneratorPath}`) fail(`${registryPath}.requiredArtifacts.fixtureGeneratorCommand must be node ${fixtureGeneratorPath}`);
   if (registry.requiredArtifacts?.fixtureVerificationCommand !== `node ${fixtureVerificationPath}`) fail(`${registryPath}.requiredArtifacts.fixtureVerificationCommand must be node ${fixtureVerificationPath}`);
@@ -919,6 +920,9 @@ if (evidenceSchema) {
   if (!String(evidenceSchema.overheadCalibrationContract?.controlRunPrivacy ?? "").includes("must not be written")) {
     fail(`${evidenceSchemaPath}.overheadCalibrationContract.controlRunPrivacy must forbid public local control paths`);
   }
+  if (!String(evidenceSchema.overheadCalibrationContract?.controlRunPrivacy ?? "").includes("macos-ux-trace-overhead-control")) {
+    fail(`${evidenceSchemaPath}.overheadCalibrationContract.controlRunPrivacy must require the overhead control artifact program`);
+  }
   if (
     !String(evidenceSchema.overheadCalibrationContract?.statusConsistency ?? "").includes("external_pending_control_run requires controlRun.available=false")
     || !String(evidenceSchema.overheadCalibrationContract?.statusConsistency ?? "").includes("compared requires controlRun.available=true")
@@ -1221,8 +1225,13 @@ if (runnerSource) {
     "traceIsolation: traceIsolationForSuite(",
     "overheadCalibrationForRun(",
     "overheadCalibrationForSuite(",
+    "readOverheadControlArtifact(",
+    "writeOverheadControlArtifact(",
     "external_pending_control_run",
+    "--harness-disabled-control",
+    "--write-overhead-control <file>",
     "--overhead-control <file>",
+    "macos-ux-trace-overhead-control",
     "globalSharedTraceFile: false",
     "parallelSafe: true",
     "publicPathReference(runDir, fixturePack.path)",
@@ -1419,6 +1428,7 @@ for (const [relativePath, source] of [
     "docs/ui/ux-trace-calibration.manifest.json",
     "node scripts/run_macos_ux_trace_harness.mjs --self-test",
     "--suite p0",
+    "--overhead-control",
     "real-equivalent-private",
     "worst-case",
     "Computer Use",
@@ -1432,6 +1442,7 @@ if (macosUxTraceSkillSource) {
     "Computer Use can be witness evidence only",
     "node scripts/generate_macos_ux_trace_fixtures.mjs --profile <profile>",
     "node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>",
+    "--harness-disabled-control --write-overhead-control <file>",
     "Do not write trace evidence to the main app database",
   ]) {
     requireSnippet(macosUxTraceSkillSource, macosUxTraceSkillPath, snippet);
