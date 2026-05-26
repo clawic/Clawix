@@ -653,6 +653,7 @@ if (evidenceSchema) {
     "suiteRequiredFields",
     "runRequiredFields",
     "allowedRunStatuses",
+    "artifactIdentityContract",
     "traceIsolationRequiredFields",
     "overheadCalibrationRequiredFields",
     "evidenceSourcesRequiredFields",
@@ -673,6 +674,16 @@ if (evidenceSchema) {
   ]);
   if (evidenceSchema.schemaVersion !== 1) fail(`${evidenceSchemaPath}.schemaVersion must be 1`);
   if (evidenceSchema.program !== "macos-ux-trace-harness") fail(`${evidenceSchemaPath}.program must be macos-ux-trace-harness`);
+  requireFields(evidenceSchema.artifactIdentityContract, `${evidenceSchemaPath}.artifactIdentityContract`, ["policy", "appliesTo", "requiredRunBuildFields"]);
+  if (
+    !String(evidenceSchema.artifactIdentityContract?.policy ?? "").includes("schemaVersion 1")
+    || !String(evidenceSchema.artifactIdentityContract?.policy ?? "").includes("platform macos")
+    || !String(evidenceSchema.artifactIdentityContract?.policy ?? "").includes("gitSnapshot object")
+  ) {
+    fail(`${evidenceSchemaPath}.artifactIdentityContract.policy must bind run/suite identity and run build context`);
+  }
+  requireUniqueStringArray(requireArray(evidenceSchema.artifactIdentityContract?.appliesTo, `${evidenceSchemaPath}.artifactIdentityContract.appliesTo`), `${evidenceSchemaPath}.artifactIdentityContract.appliesTo`, ["run.json", "suite.json"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.artifactIdentityContract?.requiredRunBuildFields, `${evidenceSchemaPath}.artifactIdentityContract.requiredRunBuildFields`), `${evidenceSchemaPath}.artifactIdentityContract.requiredRunBuildFields`, ["harnessVersion", "appBuild", "gitSnapshot"]);
   requireUniqueStringArray(requireArray(evidenceSchema.eventTypes, `${evidenceSchemaPath}.eventTypes`, expectedEventTypes.length), `${evidenceSchemaPath}.eventTypes`, expectedEventTypes);
   requireUniqueStringArray(requireArray(evidenceSchema.suiteDirectoryShape, `${evidenceSchemaPath}.suiteDirectoryShape`), `${evidenceSchemaPath}.suiteDirectoryShape`, ["suite.json", "suite-metrics.json", "suite-failures.json", "suite-baseline-comparison.json"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceDirectoryShape, `${evidenceSchemaPath}.evidenceDirectoryShape`), `${evidenceSchemaPath}.evidenceDirectoryShape`, ["logs/failure-ui-states.jsonl"]);
@@ -1209,6 +1220,12 @@ if (evidenceVerifierSource) {
     "failures.json.schemaVersion must be 1",
     "suite-metrics.json.schemaVersion must be 1",
     "suite-failures.json.schemaVersion must be 1",
+    "validateArtifactIdentity(",
+    "${label}.schemaVersion must be 1",
+    "${label}.platform must be macos",
+    "${label}.harnessVersion must be 1",
+    "${label}.appBuild must be dry-run or control-bus",
+    "${label}.gitSnapshot must be an object",
     "failureRowsByEventKey",
     "comparisonValueMatchesMetric(",
     "expectedBaselineComparisonStatus(",

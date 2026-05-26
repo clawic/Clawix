@@ -154,6 +154,30 @@ function validateInstrumentationMode(failures, object, label) {
   }
 }
 
+function validateArtifactIdentity(failures, object, label, options = {}) {
+  if (object?.schemaVersion !== 1) fail(failures, `${label}.schemaVersion must be 1`);
+  if (object?.program !== "macos-ux-trace-harness") fail(failures, `${label}.program must be macos-ux-trace-harness`);
+  if (object?.platform !== "macos") fail(failures, `${label}.platform must be macos`);
+  if (options.requireRunBuildContext) {
+    if (object?.harnessVersion !== 1) fail(failures, `${label}.harnessVersion must be 1`);
+    if (!["dry-run", "control-bus"].includes(object?.appBuild)) {
+      fail(failures, `${label}.appBuild must be dry-run or control-bus`);
+    }
+    if (!object?.gitSnapshot || typeof object.gitSnapshot !== "object" || Array.isArray(object.gitSnapshot)) {
+      fail(failures, `${label}.gitSnapshot must be an object`);
+    } else {
+      if (!Object.hasOwn(object.gitSnapshot, "head")) fail(failures, `${label}.gitSnapshot.head is required`);
+      if (!Object.hasOwn(object.gitSnapshot, "dirty")) fail(failures, `${label}.gitSnapshot.dirty is required`);
+      if (object.gitSnapshot.head !== null && (typeof object.gitSnapshot.head !== "string" || object.gitSnapshot.head.length === 0)) {
+        fail(failures, `${label}.gitSnapshot.head must be null or a non-empty string`);
+      }
+      if (object.gitSnapshot.dirty !== null && typeof object.gitSnapshot.dirty !== "boolean") {
+        fail(failures, `${label}.gitSnapshot.dirty must be null or boolean`);
+      }
+    }
+  }
+}
+
 function validateTraceIsolation(failures, isolation, label, expectedNameField, expectedName, evidenceDir = null) {
   requireFields(failures, isolation, `${label}.traceIsolation`, [
     "mode",
@@ -629,7 +653,7 @@ function validateRun(runDir, schema, options = {}) {
   if (failuresArtifact.schemaVersion !== 1) fail(failures, "failures.json.schemaVersion must be 1");
   validateMetricsAgainstRegistry(failures, metricList, "metrics.json.metrics");
   validateMetricValueShape(failures, metricList, "metrics.json.metrics");
-  if (run.program !== "macos-ux-trace-harness") fail(failures, "run.json.program must be macos-ux-trace-harness");
+  validateArtifactIdentity(failures, run, "run.json", { requireRunBuildContext: true });
   if (!schema.allowedRunStatuses.includes(run.status)) fail(failures, `run.json.status ${run.status} is not allowed`);
   const runTimeRange = validateTimeRange(failures, run, "run.json");
   validateInstrumentationMode(failures, run, "run.json");
@@ -954,7 +978,7 @@ function validateSuite(suiteDir, schema) {
   if (suiteFailures.schemaVersion !== 1) fail(failures, "suite-failures.json.schemaVersion must be 1");
   validateMetricsAgainstRegistry(failures, suiteMetricList, "suite-metrics.json.metrics");
   validateMetricValueShape(failures, suiteMetricList, "suite-metrics.json.metrics");
-  if (suite.program !== "macos-ux-trace-harness") fail(failures, "suite.json.program must be macos-ux-trace-harness");
+  validateArtifactIdentity(failures, suite, "suite.json");
   if (!schema.allowedRunStatuses.includes(suite.status)) fail(failures, `suite.json.status ${suite.status} is not allowed`);
   const suiteTimeRange = validateTimeRange(failures, suite, "suite.json");
   validateInstrumentationMode(failures, suite, "suite.json");

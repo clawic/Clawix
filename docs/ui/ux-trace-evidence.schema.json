@@ -74,6 +74,18 @@
     "PARTIAL",
     "EXTERNAL_PENDING"
   ],
+  "artifactIdentityContract": {
+    "policy": "run.json and suite.json must declare schemaVersion 1, program macos-ux-trace-harness, and platform macos. run.json must also declare harnessVersion 1, appBuild dry-run or control-bus, and a public-safe gitSnapshot object with head and dirty keys.",
+    "appliesTo": [
+      "run.json",
+      "suite.json"
+    ],
+    "requiredRunBuildFields": [
+      "harnessVersion",
+      "appBuild",
+      "gitSnapshot"
+    ]
+  },
   "traceIsolationRequiredFields": [
     "mode",
     "evidenceRootName",

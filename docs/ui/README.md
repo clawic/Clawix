@@ -335,7 +335,11 @@ conditions with final UI state also
 write redacted `logs/failure-ui-states.jsonl` rows that are referenced from
 `failures.json` and `capture.written` events. Failure identities are unique:
 duplicate `step.failed` events or duplicate `failures.json` rows for the same
-step/action/surface/control/KPI identity invalidate the evidence. Run and suite `artifactIndex`
+step/action/surface/control/KPI identity invalidate the evidence. Run and
+suite identity is fixed to `schemaVersion: 1`,
+`program: macos-ux-trace-harness`, and `platform: macos`; run evidence also
+must declare `harnessVersion: 1`, `appBuild` as `dry-run` or `control-bus`,
+and a public-safe `gitSnapshot` object. Run and suite `artifactIndex`
 values must be arrays of public-safe paths that exist; suite indexes must also
 include every required suite artifact and every child run directory. `suite.json.runs`
 must be an array, `scenarioCount` must match its length, and invalid child
