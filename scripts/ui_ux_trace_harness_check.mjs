@@ -636,6 +636,9 @@ if (evidenceSchema) {
   if (!String(evidenceSchema.baselineComparisonContract?.suiteAggregationPolicy ?? "").includes("one comparison row per suite metric")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.suiteAggregationPolicy must require suite-level metric comparison coverage`);
   }
+  if (!String(evidenceSchema.baselineComparisonContract?.suiteAggregationPolicy ?? "").includes("exact aggregations of child run metrics/failures")) {
+    fail(`${evidenceSchemaPath}.baselineComparisonContract.suiteAggregationPolicy must require exact child aggregation`);
+  }
   if (
     !String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("reference an emitted KPI metric")
     || !String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("must match the emitted metric row")
@@ -1005,6 +1008,8 @@ if (evidenceVerifierSource) {
     "baselineComparisonMetricKey(",
     "baselineFailureKey(",
     "failureEventKey(",
+    "stableAggregateKey(",
+    "compareMultisets(",
     "failureRowsByEventKey",
     "comparisonValueMatchesMetric(",
     "expectedBaselineComparisonStatus(",
@@ -1018,6 +1023,7 @@ if (evidenceVerifierSource) {
     "must have a matching step.failed event",
     "step.failed must include a failure object",
     "step.failed must have a matching failures.json row",
+    "contains row not emitted by child runs",
     "baseline_regression must exceed gate.maxRegressionPercent",
     "status must be ${expectedStatus} for its comparison rows and gate",
     "gate.maxRegressionPercent must be numeric",

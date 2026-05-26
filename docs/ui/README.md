@@ -344,7 +344,9 @@ with `events.jsonl`; every `step.failed` event must likewise include a failure
 object and a matching `failures.json` row. `run.json` and `suite.json` include `evidenceSources`
 with repo-relative registry, scenario manifest, schema, generator, and verifier
 paths plus content hashes, so a bundle is tied to the exact public contract that
-produced it. They also include a `traceIsolation` block proving
+produced it. Suite-level metric and failure artifacts must exactly match the
+child run rows they aggregate; extra or missing aggregate rows fail evidence
+verification. They also include a `traceIsolation` block proving
 per-run/per-suite directories, no global shared trace file, no main app
 database trace writes, and relative-only artifact indexes; external fixture
 paths are represented by hashes rather than local absolute paths.

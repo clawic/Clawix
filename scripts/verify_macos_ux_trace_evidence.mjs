@@ -261,6 +261,27 @@ function failureEventKey(row) {
   return [row?.stepId || "", row?.actionId || "", row?.surfaceId || "", row?.controlId || "", row?.kpiId || ""].join("\u001f");
 }
 
+function stableAggregateKey(fields, row) {
+  return JSON.stringify(Object.fromEntries(fields.map((field) => [field, row?.[field] ?? null])));
+}
+
+function addMultisetRow(map, key) {
+  map.set(key, (map.get(key) || 0) + 1);
+}
+
+function compareMultisets(failures, label, expected, actual) {
+  for (const [key, count] of expected.entries()) {
+    if ((actual.get(key) || 0) !== count) {
+      fail(failures, `${label} is missing expected child row ${key}`);
+    }
+  }
+  for (const [key, count] of actual.entries()) {
+    if ((expected.get(key) || 0) !== count) {
+      fail(failures, `${label} contains row not emitted by child runs ${key}`);
+    }
+  }
+}
+
 function comparisonValueMatchesMetric(rowValue, metricValue) {
   if (rowValue === null || metricValue === null || rowValue === undefined || metricValue === undefined) {
     return rowValue === metricValue;
@@ -690,11 +711,33 @@ function validateSuite(suiteDir, schema) {
   }
 
   const runResults = [];
+  const expectedSuiteMetricRows = new Map();
+  const expectedSuiteFailureRows = new Map();
+  const metricAggregateFields = ["runId", "scenarioId", "fixtureProfile", "kpiId", "priority", "surface", "sampleCount", "unit", "p50", "p95", "p99", "baseline", "regressionPercent", "status"];
+  const failureAggregateFields = ["runId", "scenarioId", "fixtureProfile", "type", "message", "stepId", "actionId", "surfaceId", "controlId", "kpiId", "finalUIStateHash", "finalUIStateRef"];
   for (const [index, row] of (suite.runs || []).entries()) {
     requireFields(failures, row, `suite.json.runs[${index}]`, ["runId", "scenarioId", "fixtureProfile", "status", "runDir"]);
     if (!isRelativeSafe(row.runDir)) fail(failures, `suite.json.runs[${index}].runDir must be relative and safe`);
     const runDir = path.join(suiteDir, row.runDir);
     const runResult = validateRun(runDir, schema, { allowStatusMismatch: false });
+    const childMetrics = readJson(path.join(runDir, "metrics.json"));
+    const childFailures = readJson(path.join(runDir, "failures.json"));
+    for (const metric of childMetrics.metrics || []) {
+      addMultisetRow(expectedSuiteMetricRows, stableAggregateKey(metricAggregateFields, {
+        ...metric,
+        runId: row.runId,
+        scenarioId: row.scenarioId,
+        fixtureProfile: row.fixtureProfile,
+      }));
+    }
+    for (const failure of childFailures.failures || []) {
+      addMultisetRow(expectedSuiteFailureRows, stableAggregateKey(failureAggregateFields, {
+        ...failure,
+        runId: row.runId,
+        scenarioId: row.scenarioId,
+        fixtureProfile: row.fixtureProfile,
+      }));
+    }
     runResults.push(runResult);
     if (!runResult.ok) {
       fail(failures, `suite run ${row.runId} failed evidence validation`);
@@ -720,12 +763,16 @@ function validateSuite(suiteDir, schema) {
     }
   }
   if (suite.scenarioCount !== (suite.runs || []).length) fail(failures, "suite.json.scenarioCount must match runs.length");
-  if ((suiteMetrics.metrics || []).length < runResults.reduce((sum, result) => sum + (result.metrics || 0), 0)) {
-    fail(failures, "suite-metrics.json must include child run metrics");
+  const actualSuiteMetricRows = new Map();
+  for (const metric of suiteMetrics.metrics || []) {
+    addMultisetRow(actualSuiteMetricRows, stableAggregateKey(metricAggregateFields, metric));
   }
-  if ((suiteFailures.failures || []).length < runResults.reduce((sum, result) => sum + (result.failures || 0), 0)) {
-    fail(failures, "suite-failures.json must include child run failures");
+  const actualSuiteFailureRows = new Map();
+  for (const failure of suiteFailures.failures || []) {
+    addMultisetRow(actualSuiteFailureRows, stableAggregateKey(failureAggregateFields, failure));
   }
+  compareMultisets(failures, "suite-metrics.json", expectedSuiteMetricRows, actualSuiteMetricRows);
+  compareMultisets(failures, "suite-failures.json", expectedSuiteFailureRows, actualSuiteFailureRows);
 
   return {
     ok: failures.length === 0,
