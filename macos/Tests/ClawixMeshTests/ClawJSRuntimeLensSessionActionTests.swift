@@ -419,6 +419,7 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(result.result?.gatewayReceipt?.transport, "loopback_http_json_rpc_fixture")
     }
 
+    @MainActor
     func testRuntimeLensClientSurfacesHermesConfirmationRequiredWithoutGatewayContact() async throws {
         var requested: [[String]] = []
         let client = ClawJSRuntimeLensClient(runner: .init { args in
@@ -469,6 +470,12 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(result.writesRuntime, false)
         XCTAssertEqual(result.wouldWriteRuntime, true)
         XCTAssertEqual(result.officialMethod, "session.create")
+
+        let section = ClawJSRuntimeLensSection()
+        XCTAssertEqual(section.runtimeLensSessionActionResultLabel(result), "create confirmation_required session.create")
+        XCTAssertTrue(section.runtimeLensSessionActionResultDetails(result).contains(
+            "action contract runtime hermes, domain sessions, authority runtime, writes runtime false, would write runtime true, writes local overlay false, required flag --confirm-runtime-write, protocol tui_gateway_json_rpc, method session.create"
+        ))
     }
 
     func testRuntimeLensClientDecodesHermesCreateRoundTripVerification() async throws {
@@ -622,6 +629,9 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
 
         let section = ClawJSRuntimeLensSection()
         XCTAssertEqual(section.runtimeLensSessionActionResultLabel(result), "abort ok session.interrupt abort-roundtrip-session round-trip verified")
+        XCTAssertTrue(section.runtimeLensSessionActionResultDetails(result).contains(
+            "action contract runtime hermes, domain sessions, authority runtime, writes runtime true, would write runtime true, writes local overlay false, protocol tui_gateway_json_rpc, method session.interrupt"
+        ))
         XCTAssertTrue(section.runtimeLensSessionActionResultDetails(result).contains(
             "round-trip status verified, action abort, matched by sessionId, id abort-roundtrip-session, ended at 2026-05-25T21:56:40.000Z, end reason interrupted, writes runtime false"
         ))

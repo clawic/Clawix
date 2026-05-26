@@ -180,6 +180,21 @@ struct ClawJSRuntimeLensSection: View {
     func runtimeLensSessionActionResultDetails(_ result: ClawJSRuntimeLensClient.SessionNativeActionResult) -> [String] {
         var details: [String] = []
 
+        let contractFields = [
+            "runtime \(result.runtimeId)",
+            "domain \(result.domain)",
+            result.authority.map { "authority \($0)" },
+            "writes runtime \(result.writesRuntime)",
+            result.wouldWriteRuntime.map { "would write runtime \($0)" },
+            result.writesLocalOverlay.map { "writes local overlay \($0)" },
+            result.requiredFlag.map { "required flag \($0)" },
+            result.officialProtocol.map { "protocol \($0)" },
+            result.officialMethod.map { "method \($0)" }
+        ].compactMap { $0 }
+        if !contractFields.isEmpty {
+            details.append("action contract " + contractFields.joined(separator: ", "))
+        }
+
         if let gatewayReceipt = result.result?.gatewayReceipt {
             let gatewayFields = [
                 gatewayReceipt.method,
