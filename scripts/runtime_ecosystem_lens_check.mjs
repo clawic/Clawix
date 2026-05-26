@@ -175,6 +175,13 @@ if (!exists(hermesFixturePath)) {
   requireEqual(supportAudit?.officialSnapshot?.capturedAt, "2026-05-26", "Hermes fixture support audit official snapshot");
   requireEqual(supportAudit?.provenance?.officialSnapshotSource, "docs/runtime-ecosystem-integration.manifest.json", "Hermes fixture support audit snapshot provenance");
   requireEqual(supportAudit?.provenance?.sourceSnapshotDate, "2026-05-26", "Hermes fixture support audit source snapshot date");
+  requireEqual(fixture?.data?.status?.capabilityMap?.doctor?.status, "degraded", "Hermes fixture doctor capability degrades when CLI is unavailable");
+  requireEqual(fixture?.data?.status?.capabilityMap?.compat?.status, "degraded", "Hermes fixture compat capability degrades when CLI is unavailable");
+  requireEqual(fixture?.data?.domainData?.doctorCompat?.capability?.status, "degraded", "Hermes fixture doctorCompat domain capability degrades when CLI is unavailable");
+  requireEqual(supportAudit?.projectionSummary?.byReadProjectionStatus?.projected, 3, "Hermes fixture projected read-projection count");
+  requireEqual(supportAudit?.projectionSummary?.byReadProjectionStatus?.degraded_projection, 10, "Hermes fixture degraded read-projection count");
+  requireEqual(supportAudit?.projectionSummary?.implementedFacetCounts?.ready_runtime_projection, 2, "Hermes fixture ready runtime projection count");
+  requireEqual(supportAudit?.projectionSummary?.implementedFacetCounts?.degraded_runtime_projection, 10, "Hermes fixture degraded runtime projection count");
   for (const reason of [
     "native_write_back_pending",
     "approval_gate_fixture_pending",
@@ -1172,6 +1179,9 @@ for (const snippet of [
   "snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractBlockedCount",
   "snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds",
   "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
+  "snapshot.status.capabilityMap?[\"doctor\"]?.status, \"degraded\"",
+  "snapshot.status.capabilityMap?[\"compat\"]?.status, \"degraded\"",
+  "snapshot.domainData?.doctorCompat?.capability?.status, \"degraded\"",
   "snapshot.supportAudit?.evidenceReadinessSummary?.blockerClassCounts",
   "snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts",
   "snapshot.supportAudit?.evidenceReadinessSummary?.externalPendingRequirementIds",
