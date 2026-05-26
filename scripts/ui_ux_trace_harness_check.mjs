@@ -7,12 +7,20 @@ const registryPath = "docs/ui/ux-trace-harness.registry.json";
 const evidenceSchemaPath = "docs/ui/ux-trace-evidence.schema.json";
 const scenariosPath = "docs/ui/ux-trace-scenarios.manifest.json";
 const calibrationPath = "docs/ui/ux-trace-calibration.manifest.json";
+const uiReadmePath = "docs/ui/README.md";
+const uiPerformanceSkillPath = "skills/ui-performance-budget/SKILL.md";
 const runnerPath = "scripts/run_macos_ux_trace_harness.mjs";
 const fixtureGeneratorPath = "scripts/generate_macos_ux_trace_fixtures.mjs";
 const fixtureVerificationPath = "scripts/scale_lab_fixture_check.mjs";
 const errors = [];
 const runnerSource = fs.existsSync(path.join(rootDir, runnerPath))
   ? fs.readFileSync(path.join(rootDir, runnerPath), "utf8")
+  : "";
+const uiReadmeSource = fs.existsSync(path.join(rootDir, uiReadmePath))
+  ? fs.readFileSync(path.join(rootDir, uiReadmePath), "utf8")
+  : "";
+const uiPerformanceSkillSource = fs.existsSync(path.join(rootDir, uiPerformanceSkillPath))
+  ? fs.readFileSync(path.join(rootDir, uiPerformanceSkillPath), "utf8")
   : "";
 
 const privatePathPattern = /(?:\/Users\/|\.signing\.env|Team ID|signing identity|bundle id|source session|rollout-|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b)/iu;
@@ -96,6 +104,10 @@ function rejectPrivateText(relativePath, value) {
   if (privatePathPattern.test(serialized)) {
     fail(`${relativePath} must not contain private paths, source sessions, signing data, bundle identifiers, or UUID-like private references`);
   }
+}
+
+function requireSnippet(source, relativePath, snippet) {
+  if (!source.includes(snippet)) fail(`${relativePath} must mention ${snippet}`);
 }
 
 const expectedP0SurfaceIds = [
@@ -561,6 +573,26 @@ if (scenarios) {
         fail(`${scenariosPath}.scenarios.${scenario.id}.steps.${step.id}.action ${step.action} has no runner verb contract`);
       }
     }
+  }
+}
+
+for (const [relativePath, source] of [
+  [uiReadmePath, uiReadmeSource],
+  [uiPerformanceSkillPath, uiPerformanceSkillSource],
+]) {
+  if (!source) {
+    fail(`${relativePath} must exist`);
+    continue;
+  }
+  for (const snippet of [
+    "docs/ui/ux-trace-calibration.manifest.json",
+    "node scripts/run_macos_ux_trace_harness.mjs --self-test",
+    "--suite p0",
+    "real-equivalent-private",
+    "worst-case",
+    "Computer Use",
+  ]) {
+    requireSnippet(source, relativePath, snippet);
   }
 }
 
