@@ -299,6 +299,7 @@ struct ChatView: View {
                     }
                 )
                 let _ = PerfSignpost.uiChat.event("messages.visible", visibleMessageStores.count)
+                let _ = recordVisibleWindowIfNeeded(visibleWindowEvidence, reason: "body")
                 VStack(spacing: 0) {
                     ChatTranscriptScrollerView(
                         appState: appState,

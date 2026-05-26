@@ -249,10 +249,6 @@ struct ContentView: View {
                     ContentBodyWithTerminal(windowHeight: windowHeight) {
                         SurfaceRouterView(route: visibleRoute)
                         .id(routeRenderID)
-                        .transaction { transaction in
-                            transaction.animation = nil
-                            transaction.disablesAnimations = true
-                        }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
