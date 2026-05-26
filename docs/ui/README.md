@@ -117,8 +117,9 @@ the public repo.
   single suite directory with `suite.json`, `suite-metrics.json`, and
   `suite-failures.json`. Use `--write-baseline <file>` after an approved
   measured run, and use `--baseline <file> --gate p0` to make P0 baseline
-  regressions fail. Use `--dry-run` only to validate harness wiring; it is not
-  performance evidence.
+  regressions fail. Event JSONL is capped per run and written only to the
+  selected evidence directory, never to the main app database. Use `--dry-run`
+  only to validate harness wiring; it is not performance evidence.
 - `scripts/generate_macos_ux_trace_fixtures.mjs`: deterministic macOS fixture
   materializer for synthetic heavy conversation, sidebar, streaming, terminal,
   and real-equivalent-private profiles. Generated packs export
@@ -231,7 +232,11 @@ the public repo.
    `scripts/ui_ux_trace_harness_check.mjs`; P0 UI performance work must preserve
    traceable surfaces, KPI references, scenario coverage, evidence correlation,
    calibration status, private/public boundaries, and the rule that Computer
-   Use is witness-only.
+   Use is witness-only. The same check also verifies normal-app overhead
+   safeguards: control frame probes and high-cardinality registries are gated
+   by `CLAWIX_AGENT_INSTANCE=1`, the loopback control server starts only inside
+   isolated agent instances, and harness evidence stays outside the main app
+   database.
 28b. Keep macOS UX trace fixture generation current with
    `scripts/scale_lab_fixture_check.mjs`; required profiles must remain
    deterministic, public-safe, and materializable as macOS thread/rollout
@@ -305,7 +310,10 @@ Evidence is written under the chosen output directory as `suite.json`,
 `events.jsonl`, `metrics.json`, `failures.json`, `fixture-manifest.json`, and
 `baseline-comparison.json`. Private baselines, raw captures, readable
 screenshots, local private paths, and aggregate real-mode evidence stay outside
-the public repo.
+the public repo. In the normal app, `.clxControl` must remain an
+`accessibilityIdentifier`-only marker; frame probes, registry writes, fixture
+mutation, screenshots, the loopback server, and trace-event JSONL are allowed
+only in isolated agent instances or explicit diagnostic probes.
 41. Keep the private evidence plan current with
     `scripts/ui_private_evidence_plan_check.mjs`; it derives expected private
     evidence records without requiring private roots.

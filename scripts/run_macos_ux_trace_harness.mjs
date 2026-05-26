@@ -17,6 +17,8 @@ const defaultDurationMs = 250;
 const defaultTolerancePx = 1;
 const defaultControlReadyTimeoutMs = 10_000;
 const maxIncludeDepth = 8;
+const maxEvidenceEventsPerRun = 100_000;
+const maxEvidenceEventBytesPerRun = 32 * 1024 * 1024;
 
 function usage() {
   return `Usage:
@@ -202,9 +204,13 @@ function expandScenarioSteps(scenario, indexes, stack = []) {
 function eventWriter(file, common) {
   fs.writeFileSync(file, "");
   let sequence = 0;
+  let bytesWritten = 0;
   const eventRefs = [];
   return {
     write(fields) {
+      if (sequence >= maxEvidenceEventsPerRun) {
+        throw new Error(`UX trace event writer exceeded ${maxEvidenceEventsPerRun} events for ${common.runId}`);
+      }
       sequence += 1;
       const event = {
         schemaVersion: 1,
@@ -222,7 +228,12 @@ function eventWriter(file, common) {
         sequence,
         ...fields,
       };
-      fs.appendFileSync(file, `${JSON.stringify(event)}\n`);
+      const line = `${JSON.stringify(event)}\n`;
+      bytesWritten += Buffer.byteLength(line, "utf8");
+      if (bytesWritten > maxEvidenceEventBytesPerRun) {
+        throw new Error(`UX trace event writer exceeded ${maxEvidenceEventBytesPerRun} bytes for ${common.runId}`);
+      }
+      fs.appendFileSync(file, line);
       eventRefs.push(`${event.sequence}:${event.eventType}:${event.stepId}`);
       return event;
     },

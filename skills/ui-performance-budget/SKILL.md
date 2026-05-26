@@ -25,6 +25,10 @@ any UI performance budget change.
 3. For macOS P0 UI work, prefer the UX trace harness path: action-to-visual
    completion through the agent control bus, geometry/scroll stability,
    hitches/resources, and structured evidence. Computer Use is witness-only.
+   Normal app overhead is part of the budget: high-cardinality control
+   registries, frame probes, loopback control server, fixture mutation,
+   screenshots, and UX trace JSONL must stay gated to `CLAWIX_AGENT_INSTANCE=1`
+   or an explicit diagnostic probe.
 4. For harness wiring changes, run
    `node scripts/run_macos_ux_trace_harness.mjs --self-test`. For actual
    performance evidence, run the same runner against an isolated agent
@@ -50,6 +54,8 @@ any UI performance budget change.
 - No performance fixes from static reading alone.
 - No P0 macOS UI performance closure from click dispatch timing, screenshots,
   or Computer Use alone.
+- No acceptance of harness changes that write trace evidence to the main app
+  database or remove the normal-app overhead gates.
 - No paid prompts, real service mutations, or production data during capture
   without explicit approval.
 - Missing physical/provider prerequisites are `EXTERNAL PENDING`.

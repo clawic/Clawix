@@ -12,9 +12,21 @@ const uiPerformanceSkillPath = "skills/ui-performance-budget/SKILL.md";
 const runnerPath = "scripts/run_macos_ux_trace_harness.mjs";
 const fixtureGeneratorPath = "scripts/generate_macos_ux_trace_fixtures.mjs";
 const fixtureVerificationPath = "scripts/scale_lab_fixture_check.mjs";
+const clxControlModifierPath = "macos/Sources/Clawix/AgentControl/ClxControlModifier.swift";
+const clxControlRegistryPath = "macos/Sources/Clawix/AgentControl/ClxControlRegistry.swift";
+const clxAgentInstancePath = "macos/Sources/Clawix/AgentControl/ClxAgentInstance.swift";
 const errors = [];
 const runnerSource = fs.existsSync(path.join(rootDir, runnerPath))
   ? fs.readFileSync(path.join(rootDir, runnerPath), "utf8")
+  : "";
+const clxControlModifierSource = fs.existsSync(path.join(rootDir, clxControlModifierPath))
+  ? fs.readFileSync(path.join(rootDir, clxControlModifierPath), "utf8")
+  : "";
+const clxControlRegistrySource = fs.existsSync(path.join(rootDir, clxControlRegistryPath))
+  ? fs.readFileSync(path.join(rootDir, clxControlRegistryPath), "utf8")
+  : "";
+const clxAgentInstanceSource = fs.existsSync(path.join(rootDir, clxAgentInstancePath))
+  ? fs.readFileSync(path.join(rootDir, clxAgentInstancePath), "utf8")
   : "";
 const uiReadmeSource = fs.existsSync(path.join(rootDir, uiReadmePath))
   ? fs.readFileSync(path.join(rootDir, uiReadmePath), "utf8")
@@ -373,6 +385,7 @@ if (registry) {
     "platform",
     "policy",
     "activationPolicy",
+    "overheadContract",
     "privateBoundary",
     "requiredArtifacts",
     "traceSurfaces",
@@ -392,6 +405,43 @@ if (registry) {
   for (const field of ["parallelTraceIsolationRequired", "boundedTraceWriterRequired"]) {
     if (registry.activationPolicy?.[field] !== true) fail(`${registryPath}.activationPolicy.${field} must be true`);
   }
+  if (!String(registry.activationPolicy?.normalAppMode ?? "").includes("high-cardinality trace buffers disabled")) {
+    fail(`${registryPath}.activationPolicy.normalAppMode must explicitly disable high-cardinality trace buffers`);
+  }
+  if (!String(registry.activationPolicy?.harnessMode ?? "").includes("explicit agent instance")) {
+    fail(`${registryPath}.activationPolicy.harnessMode must require an explicit agent instance`);
+  }
+  requireFields(registry.overheadContract, `${registryPath}.overheadContract`, [
+    "normalAppHighCardinalityInstrumentation",
+    "normalAppControlRegistration",
+    "harnessEvidenceWrites",
+    "eventWriterBounds",
+    "staticVerification",
+  ]);
+  if (!String(registry.overheadContract?.normalAppHighCardinalityInstrumentation ?? "").includes("CLAWIX_AGENT_INSTANCE=1")) {
+    fail(`${registryPath}.overheadContract.normalAppHighCardinalityInstrumentation must name the agent-instance gate`);
+  }
+  if (!String(registry.overheadContract?.normalAppControlRegistration ?? "").includes("accessibilityIdentifier only")) {
+    fail(`${registryPath}.overheadContract.normalAppControlRegistration must say normal app registration is accessibilityIdentifier only`);
+  }
+  if (!String(registry.overheadContract?.normalAppControlRegistration ?? "").includes("no frame probes")) {
+    fail(`${registryPath}.overheadContract.normalAppControlRegistration must forbid normal-mode frame probes`);
+  }
+  if (!String(registry.overheadContract?.harnessEvidenceWrites ?? "").includes("outside the main app database")) {
+    fail(`${registryPath}.overheadContract.harnessEvidenceWrites must keep evidence outside the main app database`);
+  }
+  if (registry.overheadContract?.eventWriterBounds?.maxEventsPerRun !== 100000) {
+    fail(`${registryPath}.overheadContract.eventWriterBounds.maxEventsPerRun must be 100000`);
+  }
+  if (registry.overheadContract?.eventWriterBounds?.maxEventBytesPerRun !== 33554432) {
+    fail(`${registryPath}.overheadContract.eventWriterBounds.maxEventBytesPerRun must be 33554432`);
+  }
+  requireUniqueStringArray(requireArray(registry.overheadContract?.staticVerification, `${registryPath}.overheadContract.staticVerification`, 4), `${registryPath}.overheadContract.staticVerification`, [
+    "ClxControlModifier registers probes only under ClxAgentInstance.isAgent",
+    "ClxAgentInstance starts the loopback control server only when CLAWIX_AGENT_INSTANCE=1",
+    "run_macos_ux_trace_harness writes evidence only to the selected per-run directory",
+    "run_macos_ux_trace_harness records mainDatabaseTraceWrites=false in run and suite artifacts",
+  ]);
   if (registry.requiredArtifacts?.evidenceSchema !== evidenceSchemaPath) fail(`${registryPath}.requiredArtifacts.evidenceSchema must point to ${evidenceSchemaPath}`);
   if (registry.requiredArtifacts?.scenarioManifest !== scenariosPath) fail(`${registryPath}.requiredArtifacts.scenarioManifest must point to ${scenariosPath}`);
   if (registry.requiredArtifacts?.calibrationManifest !== calibrationPath) fail(`${registryPath}.requiredArtifacts.calibrationManifest must point to ${calibrationPath}`);
@@ -573,6 +623,69 @@ if (scenarios) {
         fail(`${scenariosPath}.scenarios.${scenario.id}.steps.${step.id}.action ${step.action} has no runner verb contract`);
       }
     }
+  }
+}
+
+for (const [relativePath, source] of [
+  [clxControlModifierPath, clxControlModifierSource],
+  [clxControlRegistryPath, clxControlRegistrySource],
+  [clxAgentInstancePath, clxAgentInstanceSource],
+]) {
+  if (!source) fail(`${relativePath} must exist for UX trace overhead verification`);
+}
+
+if (clxControlModifierSource) {
+  for (const snippet of [
+    "accessibilityIdentifier(id)",
+    "if ClxAgentInstance.isAgent",
+    ".background(",
+    "ClxControlFrameProbe(id: id, token: registrationToken)",
+    "} else {\n                content\n            }",
+  ]) {
+    requireSnippet(clxControlModifierSource, clxControlModifierPath, snippet);
+  }
+}
+
+if (clxControlRegistrySource) {
+  const agentGuards = (clxControlRegistrySource.match(/guard ClxAgentInstance\.isAgent else \{ return \}/g) || []).length;
+  if (agentGuards < 5) {
+    fail(`${clxControlRegistryPath} must guard high-cardinality registries with ClxAgentInstance.isAgent`);
+  }
+  for (const snippet of [
+    "Only ever\n/// populated in agent instances; inert in normal user builds.",
+    "func upsertObservedView",
+    "func observedViewState",
+    "func upsert(_ scrollView: NSScrollView, id: String)",
+    "func upsert(scrollView: NSScrollView, id: String, triggerTop: @escaping () -> Void)",
+  ]) {
+    requireSnippet(clxControlRegistrySource, clxControlRegistryPath, snippet);
+  }
+}
+
+if (clxAgentInstanceSource) {
+  for (const snippet of [
+    "ProcessInfo.processInfo.environment[\"CLAWIX_AGENT_INSTANCE\"] == \"1\"",
+    "if arg == \"--clawix-agent-instance\"",
+    "setenv(\"CLAWIX_AGENT_INSTANCE\", \"1\", 1)",
+    "guard isAgent else { return }",
+    "let server = ClxControlServer(port: port, token: token)",
+  ]) {
+    requireSnippet(clxAgentInstanceSource, clxAgentInstancePath, snippet);
+  }
+}
+
+if (runnerSource) {
+  for (const snippet of [
+    "const maxEvidenceEventsPerRun = 100_000",
+    "const maxEvidenceEventBytesPerRun = 32 * 1024 * 1024",
+    "UX trace event writer exceeded",
+    "path.join(os.tmpdir(), \"clawix-ux-trace-runs\")",
+    "mainDatabaseTraceWrites: false",
+  ]) {
+    requireSnippet(runnerSource, runnerPath, snippet);
+  }
+  if (runnerSource.includes("ClawixPersistentSurfacePaths") || runnerSource.includes("GRDB") || runnerSource.includes("sqlite")) {
+    fail(`${runnerPath} must not write UX trace evidence through the main app database path`);
   }
 }
 
