@@ -13,6 +13,19 @@ final class ClxAgentControlSettingsRouteTests: XCTestCase {
         XCTAssertTrue(source.contains("\"settingsCategory\": appState.settingsCategory.rawValue"))
     }
 
+    func testControlBusClickUsesWindowEventBeforeSelfAXPressFallback() throws {
+        let source = try readSource("AgentControl/ClxControlHandlers.swift")
+
+        XCTAssertTrue(source.contains("if let clickFrame = performWindowClick(id: id)"))
+        XCTAssertTrue(source.contains("\"via\": \"window-event\""))
+        XCTAssertTrue(source.contains("private static func performWindowClick(id: String) -> CGRect?"))
+        XCTAssertTrue(source.contains("ClxControlRegistry.shared.observedView(id)"))
+        XCTAssertTrue(source.contains("window.sendEvent(event)"))
+        let windowClickCall = try XCTUnwrap(source.range(of: "performWindowClick(id: id)")?.lowerBound)
+        let axFallbackCall = try XCTUnwrap(source.range(of: "AXUIElementPerformAction(element, kAXPressAction as CFString)")?.lowerBound)
+        XCTAssertLessThan(windowClickCall, axFallbackCall)
+    }
+
     private func readSource(_ relativePath: String) throws -> String {
         let testFile = URL(fileURLWithPath: #filePath)
         let root = testFile

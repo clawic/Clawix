@@ -828,6 +828,15 @@ enum ClxControlHandlers {
                     ])
                 }
             }
+            if let clickFrame = performWindowClick(id: id) {
+                return ok([
+                    "clicked": requestedId,
+                    "via": "window-event",
+                    "resolvedId": id,
+                    "frame": framePayload(clickFrame),
+                    "elapsedMs": (CACurrentMediaTime() - started) * 1000,
+                ])
+            }
             if let element = ClxAX.find(identifier: id),
                AXUIElementPerformAction(element, kAXPressAction as CFString) == .success {
                 return ok([
@@ -852,6 +861,31 @@ enum ClxControlHandlers {
             return ClxControlResult(status: 404, json: ["error": "no pressable control titled: \(title)"])
         }
         return badRequest("missing id or title")
+    }
+
+    private static func performWindowClick(id: String) -> CGRect? {
+        guard let view = ClxControlRegistry.shared.observedView(id),
+              let window = view.window else { return nil }
+        let centerInView = CGPoint(x: view.bounds.midX, y: view.bounds.midY)
+        let centerInWindow = view.convert(centerInView, to: nil)
+        let screenFrame = window.convertToScreen(view.convert(view.bounds, to: nil))
+        let timestamp = ProcessInfo.processInfo.systemUptime
+        for eventType in [NSEvent.EventType.leftMouseDown, NSEvent.EventType.leftMouseUp] {
+            guard let event = NSEvent.mouseEvent(
+                with: eventType,
+                location: centerInWindow,
+                modifierFlags: [],
+                timestamp: timestamp,
+                windowNumber: window.windowNumber,
+                context: nil,
+                eventNumber: 0,
+                clickCount: 1,
+                pressure: eventType == .leftMouseDown ? 1 : 0
+            ) else { return nil }
+            window.sendEvent(event)
+        }
+        RenderProbe.mark("AgentControlWindowClick", fields: ["id": id])
+        return screenFrame
     }
 
     static func mark(_ args: [String: Any]) -> ClxControlResult {
