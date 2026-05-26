@@ -267,6 +267,34 @@ if (!exists(hermesFixturePath)) {
       );
       requireEqual(packet.doNotRunWithoutApproval, true, `Hermes fixture ${packet.requirementId} approval guard`);
     }
+    const reentryPackets = supportAudit?.evidenceReentryPackets ?? [];
+    const reentryStatusCounts = reentryPackets.reduce((counts, packet) => {
+      const status = String(packet.status ?? "unknown");
+      counts[status] = (counts[status] ?? 0) + 1;
+      return counts;
+    }, {});
+    const reentryPacket = (id) => reentryPackets.find((packet) => String(packet.requirementId ?? packet.id ?? "") === id);
+    requireEqual(reentryPackets.length, 22, "Hermes fixture reentry packet count");
+    requireEqual(reentryStatusCounts.approval_required, 4, "Hermes fixture approval-required reentry packet count");
+    requireEqual(reentryStatusCounts.blocked_until_approval_gate_fixture, 2, "Hermes fixture approval-gate reentry packet count");
+    requireEqual(reentryStatusCounts.blocked_until_tui_gateway_wrapper_fixture, 4, "Hermes fixture TUI Gateway reentry packet count");
+    requireEqual(reentryStatusCounts.blocked_until_upstream_contract, 12, "Hermes fixture upstream-contract reentry packet count");
+    requireEqual(reentryPacket("hermes.channels.live_evidence")?.blockerClass, "external_pending", "Hermes fixture channels live-evidence reentry blocker");
+    requireEqual(reentryPacket("hermes.channels.live_evidence")?.approvalRequired, true, "Hermes fixture channels live-evidence approval requirement");
+    requireEqual(reentryPacket("hermes.channels.live_evidence")?.doNotRunWithoutApproval, true, "Hermes fixture channels live-evidence approval guard");
+    requireEqual(reentryPacket("hermes.channels.live_evidence")?.exactCommand, "claw runtime hermes domain channels --json", "Hermes fixture channels live-evidence exact command");
+    requireEqual(reentryPacket("hermes.channels.live_evidence")?.safeDefault, "do_not_run_without_explicit_approval_and_redaction", "Hermes fixture channels live-evidence safe default");
+    requireEqual(reentryPacket("hermes.channels.live_evidence")?.supportResolution, "external_pending_not_product_blocked", "Hermes fixture channels live-evidence support resolution");
+    requireEqual(reentryPacket("hermes.sandboxPermissions.approval_gate_evidence")?.status, "blocked_until_approval_gate_fixture", "Hermes fixture sandbox approval-gate status");
+    requireEqual(reentryPacket("hermes.sandboxPermissions.approval_gate_evidence")?.approvalRequired, true, "Hermes fixture sandbox approval-gate approval requirement");
+    requireEqual(reentryPacket("hermes.sandboxPermissions.approval_gate_evidence")?.doNotRunWithoutApproval, true, "Hermes fixture sandbox approval-gate guard");
+    requireEqual(reentryPacket("hermes.sandboxPermissions.approval_gate_evidence")?.safeDefault, "do_not_run_without_approval_gate_fixture", "Hermes fixture sandbox approval-gate safe default");
+    requireEqual(reentryPacket("hermes.sessions.create.action_contract")?.officialMethod, "session.create", "Hermes fixture create reentry official method");
+    requireEqual(reentryPacket("hermes.sessions.send.action_contract")?.officialMethod, "prompt.submit", "Hermes fixture send reentry official method");
+    requireEqual(reentryPacket("hermes.sessions.pin.native_write_back_contract")?.exactCommand, "not_executable_until_official_runtime_pin_api_exists", "Hermes fixture pin reentry exact command");
+    requireEqual(reentryPacket("hermes.sessions.pin.native_write_back_contract")?.safeDefault, "keep_local_overlay_and_do_not_write_runtime_pin_state", "Hermes fixture pin reentry safe default");
+    requireEqual(reentryPacket("hermes.sessions.unpin.native_write_back_contract")?.exactCommand, "not_executable_until_official_runtime_unpin_api_exists", "Hermes fixture unpin reentry exact command");
+    requireEqual(reentryPacket("hermes.sessions.unpin.native_write_back_contract")?.safeDefault, "keep_local_overlay_and_do_not_write_runtime_pin_state", "Hermes fixture unpin reentry safe default");
     requireArrayEquals(readiness.writeBackContractRequirementIds, [
       "hermes.sessions.write_back_contract",
       "hermes.skills.write_back_contract",
