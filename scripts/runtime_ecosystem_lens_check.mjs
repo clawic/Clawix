@@ -39,6 +39,24 @@ function requireSnippetInFiles(files, snippet, label = snippet) {
   }
 }
 
+function requireEqual(actual, expected, label) {
+  if (actual !== expected) {
+    errors.push(`${label} expected ${expected}, got ${actual}`);
+  }
+}
+
+function requireArrayEquals(actual, expected, label) {
+  if (!Array.isArray(actual)) {
+    errors.push(`${label} must be an array`);
+    return;
+  }
+  const actualText = JSON.stringify(actual);
+  const expectedText = JSON.stringify(expected);
+  if (actualText !== expectedText) {
+    errors.push(`${label} expected ${expectedText}, got ${actualText}`);
+  }
+}
+
 const runtimeLensModelFiles = [
   "macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensClient.swift",
   "macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensRuntimeResource.swift"
@@ -127,6 +145,70 @@ for (const source of [
 const coverage = readJson("docs/adr-operational-coverage.manifest.json");
 if (!(coverage.acceptedAdrCoverage ?? []).some((entry) => entry.adr === "docs/adr/0033-runtime-ecosystem-integration-standard-mirror.md")) {
   errors.push("ADR operational coverage missing runtime ecosystem mirror ADR");
+}
+
+const hermesFixturePath = "macos/Tests/ClawixMeshTests/Fixtures/ClawJSRuntimeLens/hermes-runtime-portal-envelope.json";
+if (!exists(hermesFixturePath)) {
+  errors.push(`missing ${hermesFixturePath}`);
+} else {
+  const fixture = readJson(hermesFixturePath);
+  const supportAudit = fixture?.data?.supportAudit;
+  const readiness = supportAudit?.evidenceReadinessSummary;
+  const domains = supportAudit?.domains;
+  if (!supportAudit) {
+    errors.push("Hermes runtime portal fixture missing data.supportAudit");
+  }
+  if (!readiness) {
+    errors.push("Hermes runtime portal fixture missing evidenceReadinessSummary");
+  } else {
+    requireEqual(readiness.totalRequirementCount, 22, "Hermes fixture total readiness requirement count");
+    requireEqual(readiness.approvalRequiredCount, 6, "Hermes fixture approval-required count");
+    requireEqual(readiness.externalPendingCount, 4, "Hermes fixture external-pending count");
+    requireEqual(readiness.upstreamContractBlockedCount, 16, "Hermes fixture upstream-contract blocked count");
+    requireEqual(readiness.approvalGateBlockedCount, 2, "Hermes fixture approval-gate blocked count");
+    requireEqual(readiness.tuiGatewayBlockedCount, 4, "Hermes fixture TUI Gateway blocked count");
+    requireEqual(readiness.productionTransportBlockedCount, 4, "Hermes fixture production transport blocked count");
+    requireEqual(readiness.writeBackContractBlockedCount, 12, "Hermes fixture write-back contract blocked count");
+    requireEqual(readiness.productBlockedCount, 18, "Hermes fixture product-blocked count");
+    requireArrayEquals(readiness.approvalGateRequirementIds, [
+      "hermes.doctorCompat.approval_gate_evidence",
+      "hermes.sandboxPermissions.approval_gate_evidence"
+    ], "Hermes fixture approval-gate requirement ids");
+    requireArrayEquals(readiness.tuiGatewayRequirementIds, [
+      "hermes.sessions.send.action_contract",
+      "hermes.sessions.inject.action_contract",
+      "hermes.sessions.abort.action_contract",
+      "hermes.sessions.create.action_contract"
+    ], "Hermes fixture TUI Gateway requirement ids");
+    requireArrayEquals(readiness.productionTransportRequirementIds, [
+      "hermes.sessions.send.action_contract",
+      "hermes.sessions.inject.action_contract",
+      "hermes.sessions.abort.action_contract",
+      "hermes.sessions.create.action_contract"
+    ], "Hermes fixture production transport requirement ids");
+    requireArrayEquals(readiness.writeBackContractRequirementIds, [
+      "hermes.sessions.write_back_contract",
+      "hermes.skills.write_back_contract",
+      "hermes.memory.write_back_contract",
+      "hermes.providers.write_back_contract",
+      "hermes.auth.write_back_contract",
+      "hermes.models.write_back_contract",
+      "hermes.scheduler.write_back_contract",
+      "hermes.plugins.write_back_contract",
+      "hermes.gateway.write_back_contract",
+      "hermes.configuration.write_back_contract",
+      "hermes.sessions.pin.native_write_back_contract",
+      "hermes.sessions.unpin.native_write_back_contract"
+    ], "Hermes fixture write-back contract requirement ids");
+  }
+  if (!domains || typeof domains !== "object") {
+    errors.push("Hermes runtime portal fixture missing supportAudit.domains");
+  } else {
+    requireEqual(Object.keys(domains).length, 13, "Hermes fixture support-audit domain count");
+  }
+  if (supportAudit && JSON.stringify(supportAudit).includes("/var/folders/")) {
+    errors.push("Hermes runtime portal fixture supportAudit must not contain temp source paths");
+  }
 }
 
 if (fs.existsSync(siblingClawJs)) {
