@@ -64,7 +64,9 @@ Clawix-owned UI validation.
 Normal app mode must keep high-cardinality trace buffers disabled. Harness mode
 is opt-in through isolated agent instances and must write bounded per-run
 evidence. Parallel runs must not share global trace files or contaminate each
-other. Run and suite evidence must record `overheadCalibration`; without a
+other. Run and suite evidence must prove dry-run or isolated-agent control-bus
+mode and must keep Computer Use witness capture and main database trace writes
+disabled. Run and suite evidence must record `overheadCalibration`; without a
 hash-only harness-disabled control artifact, the overhead comparison remains an
 explicit external-pending condition rather than an implied pass. Compared
 overhead evidence must prove the control artifact was available,

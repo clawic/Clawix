@@ -128,6 +128,32 @@ function isRelativeSafe(relativePath) {
   return typeof relativePath === "string" && relativePath.length > 0 && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
 }
 
+function validateInstrumentationMode(failures, object, label) {
+  if (!["dry-run", "isolated-agent-instance"].includes(object?.launchMode)) {
+    fail(failures, `${label}.launchMode must be dry-run or isolated-agent-instance`);
+  }
+  requireFields(failures, object?.instrumentationFlags, `${label}.instrumentationFlags`, [
+    "controlBus",
+    "dryRun",
+    "computerUseWitness",
+    "mainDatabaseTraceWrites",
+  ]);
+  if (object?.instrumentationFlags?.computerUseWitness !== false) {
+    fail(failures, `${label}.instrumentationFlags.computerUseWitness must be false`);
+  }
+  if (object?.instrumentationFlags?.mainDatabaseTraceWrites !== false) {
+    fail(failures, `${label}.instrumentationFlags.mainDatabaseTraceWrites must be false`);
+  }
+  if (object?.launchMode === "dry-run") {
+    if (object.instrumentationFlags?.dryRun !== true) fail(failures, `${label}.instrumentationFlags.dryRun must be true for dry-run launchMode`);
+    if (object.instrumentationFlags?.controlBus !== false) fail(failures, `${label}.instrumentationFlags.controlBus must be false for dry-run launchMode`);
+  }
+  if (object?.launchMode === "isolated-agent-instance") {
+    if (object.instrumentationFlags?.dryRun !== false) fail(failures, `${label}.instrumentationFlags.dryRun must be false for isolated-agent-instance launchMode`);
+    if (object.instrumentationFlags?.controlBus !== true) fail(failures, `${label}.instrumentationFlags.controlBus must be true for isolated-agent-instance launchMode`);
+  }
+}
+
 function validateTraceIsolation(failures, isolation, label, expectedNameField, expectedName, evidenceDir = null) {
   requireFields(failures, isolation, `${label}.traceIsolation`, [
     "mode",
@@ -606,6 +632,7 @@ function validateRun(runDir, schema, options = {}) {
   if (run.program !== "macos-ux-trace-harness") fail(failures, "run.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(run.status)) fail(failures, `run.json.status ${run.status} is not allowed`);
   const runTimeRange = validateTimeRange(failures, run, "run.json");
+  validateInstrumentationMode(failures, run, "run.json");
   validatePrivateBoundary(failures, run.privateBoundary, "run.json");
   validateExitPolicy(failures, run.exitPolicy, run.status, "run.json", schema);
   validateEvidenceSources(failures, run.evidenceSources, "run.json", schema);
@@ -930,6 +957,7 @@ function validateSuite(suiteDir, schema) {
   if (suite.program !== "macos-ux-trace-harness") fail(failures, "suite.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(suite.status)) fail(failures, `suite.json.status ${suite.status} is not allowed`);
   const suiteTimeRange = validateTimeRange(failures, suite, "suite.json");
+  validateInstrumentationMode(failures, suite, "suite.json");
   validatePrivateBoundary(failures, suite.privateBoundary, "suite.json");
   validateExitPolicy(failures, suite.exitPolicy, suite.status, "suite.json", schema);
   validateEvidenceSources(failures, suite.evidenceSources, "suite.json", schema);

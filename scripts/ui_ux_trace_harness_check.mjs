@@ -785,6 +785,16 @@ if (evidenceSchema) {
     fail(`${evidenceSchemaPath}.suiteRunsContract.policy must bind suite run shape and count safely`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.suiteRunsContract?.requiredRunFields, `${evidenceSchemaPath}.suiteRunsContract.requiredRunFields`), `${evidenceSchemaPath}.suiteRunsContract.requiredRunFields`, ["runId", "scenarioId", "fixtureProfile", "status", "runDir"]);
+  requireFields(evidenceSchema.instrumentationModeContract, `${evidenceSchemaPath}.instrumentationModeContract`, ["policy", "requiredFlags", "appliesTo"]);
+  if (
+    !String(evidenceSchema.instrumentationModeContract?.policy ?? "").includes("launchMode must be dry-run or isolated-agent-instance")
+    || !String(evidenceSchema.instrumentationModeContract?.policy ?? "").includes("computerUseWitness=false")
+    || !String(evidenceSchema.instrumentationModeContract?.policy ?? "").includes("mainDatabaseTraceWrites=false")
+  ) {
+    fail(`${evidenceSchemaPath}.instrumentationModeContract.policy must bind launchMode to control-bus/dry-run flags and forbid Computer Use/database trace writes`);
+  }
+  requireUniqueStringArray(requireArray(evidenceSchema.instrumentationModeContract?.requiredFlags, `${evidenceSchemaPath}.instrumentationModeContract.requiredFlags`), `${evidenceSchemaPath}.instrumentationModeContract.requiredFlags`, ["controlBus", "dryRun", "computerUseWitness", "mainDatabaseTraceWrites"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.instrumentationModeContract?.appliesTo, `${evidenceSchemaPath}.instrumentationModeContract.appliesTo`), `${evidenceSchemaPath}.instrumentationModeContract.appliesTo`, ["run.json", "suite.json"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
   requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "keyIdentityPolicy", "requiredSources", "requiredSourceIds"]);
   if (!String(evidenceSchema.evidenceSourcesContract?.keyIdentityPolicy ?? "").includes("not interchangeable")) {
@@ -1160,6 +1170,12 @@ if (evidenceVerifierSource) {
     "requireArrayField(failures, suite, \"suite.json\", \"runs\")",
     "suite.json.scenarioCount must be a non-negative integer",
     "suite.json.scenarioCount must match suite.json.runs.length",
+    "validateInstrumentationMode(",
+    "launchMode must be dry-run or isolated-agent-instance",
+    "instrumentationFlags.computerUseWitness must be false",
+    "instrumentationFlags.mainDatabaseTraceWrites must be false",
+    "instrumentationFlags.controlBus must be false for dry-run launchMode",
+    "instrumentationFlags.controlBus must be true for isolated-agent-instance launchMode",
     "validateTraceIsolation(",
     "validateEvidenceSources(",
     "requiredSources",

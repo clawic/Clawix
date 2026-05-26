@@ -396,7 +396,10 @@ database trace writes, and relative-only artifact indexes; `evidenceRootName`
 and `evidenceRootHash` must match the evidence parent directory being verified.
 Suite `traceIsolation.childRunDirectories` must match the declared child run
 directories, which must be relative and unique. External fixture
-paths are represented by hashes rather than local absolute paths.
+paths are represented by hashes rather than local absolute paths. `launchMode`
+and `instrumentationFlags` must agree: dry-run evidence uses no control bus,
+isolated-agent evidence uses the control bus, and all UX trace evidence keeps
+`computerUseWitness=false` and `mainDatabaseTraceWrites=false`.
 `exitPolicy` records whether a gate is enforcing the run; when `--gate p0`
 produces `FAIL` or `INVALID` evidence, the runner computes and returns exit
 code 1 so scripts can enforce P0 regression gates.

@@ -264,6 +264,19 @@
       "runDir"
     ]
   },
+  "instrumentationModeContract": {
+    "policy": "run.json and suite.json launchMode must be dry-run or isolated-agent-instance. Dry-run evidence requires instrumentationFlags.dryRun=true and controlBus=false. Isolated agent evidence requires dryRun=false and controlBus=true. All UX trace evidence must keep computerUseWitness=false and mainDatabaseTraceWrites=false.",
+    "requiredFlags": [
+      "controlBus",
+      "dryRun",
+      "computerUseWitness",
+      "mainDatabaseTraceWrites"
+    ],
+    "appliesTo": [
+      "run.json",
+      "suite.json"
+    ]
+  },
   "eventRequiredFields": [
     "schemaVersion",
     "runId",
