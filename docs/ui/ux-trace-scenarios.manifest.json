@@ -101,7 +101,7 @@
         "p0.chat.open_bridge_payload_bytes"
       ],
       "steps": [
-        { "id": "click-heavy-chat", "action": "measure-action", "wait": "wait-route", "target": "sidebar.conversation.row" },
+        { "id": "click-heavy-chat", "action": "measure-action", "wait": "wait-route", "target": "sidebar.conversation.row", "route": "chat" },
         { "id": "wait-chat-container", "action": "observe", "wait": "wait-visible", "target": "chat.route.container" },
         { "id": "wait-transcript", "action": "observe", "wait": "wait-visible", "target": "chat.transcript.scroll" },
         { "id": "wait-final-window", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest" },

@@ -47,7 +47,7 @@ struct ChatTranscriptScrollerView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
-                    LazyVStack(alignment: .leading, spacing: 44) {
+                    VStack(alignment: .leading, spacing: 44) {
                         if appState.messagesPaginationByChat[chatId]?.loadingOlder == true {
                             HStack {
                                 Spacer()
