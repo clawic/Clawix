@@ -270,15 +270,15 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         let supportContracts = ClawJSRuntimeLensSupportContractPresentation.make(snapshot: snapshot)
         XCTAssertEqual(supportContracts.contractDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
         XCTAssertEqual(supportContracts.rows.map(\.domain), ClawJSRuntimeLensSnapshot.canonicalDomains)
-        XCTAssertEqual(supportContracts.writeBackAllowedCount, 2)
+        XCTAssertEqual(supportContracts.writeBackAllowedCount, 0)
         XCTAssertEqual(supportContracts.blockedWriteBackCount, 10)
-        XCTAssertEqual(supportContracts.externalPendingCount, 1)
-        XCTAssertEqual(supportContracts.evidenceRequirementCount, 11)
+        XCTAssertEqual(supportContracts.externalPendingCount, 4)
+        XCTAssertEqual(supportContracts.evidenceRequirementCount, 16)
         XCTAssertEqual(supportContracts.nativeCommandDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
         XCTAssertEqual(supportContracts.contractAuthorityDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
         XCTAssertEqual(supportContracts.provenanceDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
         XCTAssertEqual(supportContracts.rows.first { $0.domain == "channels" }?.externalPending, true)
-        XCTAssertEqual(supportContracts.rows.first { $0.domain == "doctorCompat" }?.writeBackAllowed, true)
+        XCTAssertEqual(supportContracts.rows.first { $0.domain == "doctorCompat" }?.writeBackAllowed, false)
         XCTAssertTrue(supportContracts.rows.allSatisfy { $0.provenanceRuntimeId == "hermes" })
         XCTAssertTrue(supportContracts.accessibilityLabel.contains("Runtime support contracts"))
 
@@ -345,15 +345,26 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         let skillsInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "skills" })
         XCTAssertEqual(skillsInventory.totalResourceCount, 1)
         XCTAssertEqual(skillsInventory.rows.first?.id, "browser-helper")
+        XCTAssertEqual(skillsInventory.rows.first?.nativeIdentifierLabel, "native id: skillId")
+        XCTAssertEqual(
+            skillsInventory.rows.first?.provenanceLabel,
+            "hermes-runtime-adapter, runtime hermes, domain skills, /Users/tester/.hermes/skills/browser-helper"
+        )
+        XCTAssertEqual(skillsInventory.rows.first?.limitationsLabel, "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence, validation: snapshot_required")
         XCTAssertEqual(skillsInventory.rows.first?.attributesLabel, "scope: runtime")
 
         let memoryInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "memory" })
         XCTAssertEqual(memoryInventory.totalResourceCount, 1)
         XCTAssertEqual(memoryInventory.rows.first?.id, "hermes-memory-profile")
+        XCTAssertEqual(memoryInventory.rows.first?.nativeIdentifierLabel, "native id: memoryId")
+        XCTAssertEqual(memoryInventory.rows.first?.provenanceSource, "hermes-runtime-adapter")
+        XCTAssertEqual(memoryInventory.rows.first?.sizeLabel, "43 B")
         XCTAssertTrue(memoryInventory.rows.first?.summaryLabel?.contains("not exposed by default") == true)
 
         let modelInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "models" })
         XCTAssertEqual(modelInventory.totalResourceCount, 2)
+        XCTAssertEqual(modelInventory.rows.first { $0.id == "openai/gpt-4.1" }?.nativeIdentifierLabel, "native id: modelId")
+        XCTAssertEqual(modelInventory.rows.first { $0.id == "openai/gpt-4.1" }?.provenanceSource, "hermes-runtime-adapter")
         XCTAssertEqual(modelInventory.rows.first { $0.id == "openai/gpt-4.1" }?.attributesLabel, "provider: openai, model id: openai/gpt-4.1, source: config, available: true")
         XCTAssertEqual(modelInventory.rows.first { $0.id == "anthropic/claude-3-5-sonnet" }?.attributesLabel, "provider: anthropic, model id: anthropic/claude-3-5-sonnet, source: config, available: true")
 
@@ -361,10 +372,14 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(schedulerInventory.totalResourceCount, 1)
         XCTAssertEqual(schedulerInventory.rows.first?.id, "daily-summary")
         XCTAssertEqual(schedulerInventory.rows.first?.kindLabel, "kind: cron")
+        XCTAssertEqual(schedulerInventory.rows.first?.nativeIdentifierLabel, "native id: schedulerId")
+        XCTAssertEqual(schedulerInventory.rows.first?.provenanceSource, "hermes-runtime-adapter")
 
         let authInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "auth" })
         XCTAssertEqual(authInventory.totalResourceCount, 28)
-        XCTAssertEqual(authInventory.statusLabel, "missing 27, redacted 1")
+        XCTAssertEqual(authInventory.statusLabel, "configured 1, missing 26, redacted 1")
+        XCTAssertEqual(authInventory.rows.first { $0.id == "openai" }?.statusLabel, "configured")
+        XCTAssertEqual(authInventory.rows.first { $0.id == "openai" }?.summaryLabel, "********************7890")
         let scalarAuthRow = try XCTUnwrap(authInventory.rows.first { $0.id == "tencent-tokenhub" })
         XCTAssertEqual(scalarAuthRow.statusLabel, "redacted")
         XCTAssertNil(scalarAuthRow.summaryLabel)
@@ -372,7 +387,13 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
 
         let pluginInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "plugins" })
         XCTAssertEqual(pluginInventory.totalResourceCount, 3)
+        XCTAssertEqual(pluginInventory.rows.first { $0.id == "mcp-github" }?.nativeIdentifierLabel, "native id: pluginId")
+        XCTAssertEqual(pluginInventory.rows.first { $0.id == "mcp-github" }?.provenanceSource, "hermes-runtime-adapter")
         XCTAssertTrue(pluginInventory.rows.contains { $0.id == "plugin-status" })
+
+        let channelInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "channels" })
+        XCTAssertEqual(channelInventory.rows.first { $0.id == "slack" }?.nativeIdentifierLabel, "native id: channelId")
+        XCTAssertEqual(channelInventory.rows.first { $0.id == "slack" }?.provenanceSource, "hermes-runtime-adapter")
 
         let gatewayInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "gateway" })
         XCTAssertEqual(gatewayInventory.totalResourceCount, 2)
@@ -402,9 +423,9 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertTrue(sandboxInventory.rows.first?.attributesLabel?.contains("write policy: explicit_approval_only") == true)
 
         let configurationInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "configuration" })
-        XCTAssertEqual(configurationInventory.totalResourceCount, 11)
+        XCTAssertEqual(configurationInventory.totalResourceCount, 14)
         XCTAssertGreaterThanOrEqual(configurationInventory.pathCount, 6)
-        XCTAssertEqual(configurationInventory.statusLabel, "degraded 1, projected 7, ready 1, redacted 2")
+        XCTAssertEqual(configurationInventory.statusLabel, "degraded 1, projected 10, ready 1, redacted 2")
         let redactedSnapshotRow = try XCTUnwrap(configurationInventory.rows.first { $0.id == "configuration-redacted-snapshot" })
         XCTAssertEqual(redactedSnapshotRow.kindLabel, "kind: redacted_config_snapshot")
         XCTAssertTrue(redactedSnapshotRow.attributesLabel?.contains("value policy: keys_and_value_kinds_only_no_plaintext_values") == true)
