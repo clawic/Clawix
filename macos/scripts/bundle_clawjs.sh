@@ -609,11 +609,16 @@ fi
 
 (
     cd "$CLAWJS_DEST"
+    # Rebuilding every nested better-sqlite3 copy can otherwise fan out
+    # multiple clang/sqlite compilations at once and starve the desktop while
+    # the developer launcher is trying to install the app.
+    MAKEFLAGS="-j1" \
+    npm_config_jobs=1 \
     npm_config_nodedir="$NODE_DIR" \
     npm_config_arch=arm64 \
     npm_config_target_arch=arm64 \
     npm_config_target_platform=darwin \
-    PATH="$CLAWJS_DEST:$PATH" "$CLAWJS_DEST/node" "$NPM_CLI" rebuild better-sqlite3 --build-from-source 2>&1 | tail -3
+    PATH="$CLAWJS_DEST:$PATH" "$CLAWJS_DEST/node" "$NPM_CLI" rebuild better-sqlite3 --build-from-source --jobs=1 2>&1 | tail -3
 )
 
 # 5) Re-sign every nested native module and the Node binary. npm-installed
