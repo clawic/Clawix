@@ -861,8 +861,11 @@ function validateRun(runDir, schema, options = {}) {
 
   const failureTypes = new Set(schema.failureTypes);
   const failureStateByRef = new Map();
+  const failureStateRefs = new Set();
   for (const state of failureStates) {
     const ref = `logs/failure-ui-states.jsonl#${state.sequence}`;
+    if (failureStateRefs.has(ref)) fail(failures, `${ref} must be unique`);
+    failureStateRefs.add(ref);
     failureStateByRef.set(ref, state);
     requireFields(failures, state, ref, [
       "schemaVersion",

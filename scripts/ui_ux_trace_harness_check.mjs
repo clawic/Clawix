@@ -908,7 +908,8 @@ if (evidenceSchema) {
   }
   if (
     !String(evidenceSchema.failureStateSidecar?.contentPolicy ?? "").includes("schemaVersion 1")
-    || !String(evidenceSchema.failureStateSidecar?.contentPolicy ?? "").includes("positive sequence")
+    || !String(evidenceSchema.failureStateSidecar?.contentPolicy ?? "").includes("positive unique sequence")
+    || !String(evidenceSchema.failureStateSidecar?.contentPolicy ?? "").includes("unique sequence")
   ) {
     fail(`${evidenceSchemaPath}.failureStateSidecar.contentPolicy must require sidecar schema and sequence identity`);
   }
@@ -1262,6 +1263,7 @@ if (evidenceVerifierSource) {
     "step.failed must include a failure object",
     "step.failed must have a matching failures.json row",
     ".sequence must be a positive integer",
+    "${ref} must be unique",
     "step.failed ${key} must be unique",
     "duplicates failure identity",
     "contains row not emitted by child runs",

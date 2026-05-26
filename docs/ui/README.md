@@ -371,7 +371,7 @@ child run ranges must stay inside the suite range. Each measured
 step must also have one `step.started`, one `action.dispatched`, and exactly
 one terminal `step.completed` or `step.failed` in sequence order. Redacted
 failure UI state sidecar rows must also declare `schemaVersion: 1` and positive
-sequence numbers. The runner also normalizes
+unique sequence numbers. The runner also normalizes
 available diagnostics into `geometry.sample`, `scroll.sample`,
 `render.window`, `hitch.sample`, `resource.sample`, `database.sample`, and
 `bridge.sample` events so agents can query performance facts without opening
