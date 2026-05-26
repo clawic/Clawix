@@ -212,7 +212,8 @@
     "versioned": true,
     "privateEvidenceRemainsExternal": true,
     "verifierTarget": "scripts/verify_macos_ux_trace_evidence.mjs must accept generated baseline JSON files in addition to run and suite directories.",
-    "p0Protection": "Generated baselines must not allow lower-priority optimizations to update P0 baselines without approved evidence."
+    "p0Protection": "Generated baselines must not allow lower-priority optimizations to update P0 baselines without approved evidence.",
+    "sourceEvidencePolicy": "Baseline sourceEvidence must identify exactly one source artifact kind. Run baselines require a runId plus top-level scenarioId and fixtureProfile and must not carry a suiteId. Suite baselines require a suiteId and top-level fixtureProfile and must not carry a runId."
   },
   "metricRegistryContract": {
     "source": "docs/ui/ux-trace-harness.registry.json",

@@ -1032,6 +1032,37 @@ function validateBaselineArtifact(file, schema) {
   requireFields(failures, baseline.sourceEvidence, "baseline.sourceEvidence", ["status", "artifactKind"]);
   if (!["run", "suite"].includes(baseline.sourceEvidence?.artifactKind)) {
     fail(failures, "baseline.sourceEvidence.artifactKind must be run or suite");
+  } else if (baseline.sourceEvidence.artifactKind === "run") {
+    requireFields(failures, baseline.sourceEvidence, "baseline.sourceEvidence", ["runId"]);
+    if (typeof baseline.sourceEvidence.runId !== "string" || baseline.sourceEvidence.runId.length === 0) {
+      fail(failures, "baseline.sourceEvidence.runId must be a non-empty string for run baselines");
+    }
+    if (baseline.sourceEvidence.suiteId !== null && baseline.sourceEvidence.suiteId !== undefined) {
+      fail(failures, "baseline.sourceEvidence.suiteId must be null for run baselines");
+    }
+    if (typeof baseline.scenarioId !== "string" || baseline.scenarioId.length === 0) {
+      fail(failures, "baseline.scenarioId must be a non-empty string for run baselines");
+    }
+    if (typeof baseline.fixtureProfile !== "string" || baseline.fixtureProfile.length === 0) {
+      fail(failures, "baseline.fixtureProfile must be a non-empty string for run baselines");
+    }
+    if (baseline.suiteId !== null && baseline.suiteId !== undefined) {
+      fail(failures, "baseline.suiteId must be null for run baselines");
+    }
+  } else if (baseline.sourceEvidence.artifactKind === "suite") {
+    requireFields(failures, baseline.sourceEvidence, "baseline.sourceEvidence", ["suiteId"]);
+    if (typeof baseline.sourceEvidence.suiteId !== "string" || baseline.sourceEvidence.suiteId.length === 0) {
+      fail(failures, "baseline.sourceEvidence.suiteId must be a non-empty string for suite baselines");
+    }
+    if (baseline.sourceEvidence.runId !== null && baseline.sourceEvidence.runId !== undefined) {
+      fail(failures, "baseline.sourceEvidence.runId must be null for suite baselines");
+    }
+    if (baseline.suiteId !== baseline.sourceEvidence.suiteId) {
+      fail(failures, "baseline.suiteId must match baseline.sourceEvidence.suiteId for suite baselines");
+    }
+    if (typeof baseline.fixtureProfile !== "string" || baseline.fixtureProfile.length === 0) {
+      fail(failures, "baseline.fixtureProfile must be a non-empty string for suite baselines");
+    }
   }
   requireFields(failures, baseline.approval, "baseline.approval", ["status", "approvedByUserAt", "approvedScope"]);
   if (baseline.approval?.status !== schema.baselineArtifactContract?.defaultApprovalStatus) {

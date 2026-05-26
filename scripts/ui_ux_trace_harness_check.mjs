@@ -713,7 +713,7 @@ if (evidenceSchema) {
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedRowStatuses, `${evidenceSchemaPath}.baselineComparisonContract.allowedRowStatuses`), `${evidenceSchemaPath}.baselineComparisonContract.allowedRowStatuses`, ["baseline_missing", "baseline_regression", "compared"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedReferenceKinds, `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`), `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`, ["relative-to-run", "external-hash-only"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineArtifactRequiredFields, `${evidenceSchemaPath}.baselineArtifactRequiredFields`), `${evidenceSchemaPath}.baselineArtifactRequiredFields`, ["baselineVersion", "sourceEvidence", "approval", "promotionPolicy", "evidenceSources", "privateBoundary", "metrics"]);
-  requireFields(evidenceSchema.baselineArtifactContract, `${evidenceSchemaPath}.baselineArtifactContract`, ["defaultApprovalStatus", "versioned", "privateEvidenceRemainsExternal", "verifierTarget", "p0Protection"]);
+  requireFields(evidenceSchema.baselineArtifactContract, `${evidenceSchemaPath}.baselineArtifactContract`, ["defaultApprovalStatus", "versioned", "privateEvidenceRemainsExternal", "verifierTarget", "p0Protection", "sourceEvidencePolicy"]);
   if (evidenceSchema.baselineArtifactContract?.defaultApprovalStatus !== "pending-user-approval") {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.defaultApprovalStatus must be pending-user-approval`);
   }
@@ -722,6 +722,12 @@ if (evidenceSchema) {
   }
   if (!String(evidenceSchema.baselineArtifactContract?.verifierTarget ?? "").includes("baseline JSON files")) {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.verifierTarget must require baseline JSON verification`);
+  }
+  if (
+    !String(evidenceSchema.baselineArtifactContract?.sourceEvidencePolicy ?? "").includes("Run baselines require a runId")
+    || !String(evidenceSchema.baselineArtifactContract?.sourceEvidencePolicy ?? "").includes("Suite baselines require a suiteId")
+  ) {
+    fail(`${evidenceSchemaPath}.baselineArtifactContract.sourceEvidencePolicy must bind generated baselines to run or suite source evidence`);
   }
   requireFields(evidenceSchema.metricRegistryContract, `${evidenceSchemaPath}.metricRegistryContract`, ["source", "policy", "appliesTo"]);
   if (evidenceSchema.metricRegistryContract?.source !== registryPath) {
@@ -1171,6 +1177,9 @@ if (evidenceVerifierSource) {
     "baselineComparisonPath runId must match child run",
     "baselineComparisonPath scenarioId must match child run",
     "baselineComparisonPath fixtureProfile must match child run",
+    "sourceEvidence.runId must be a non-empty string for run baselines",
+    "sourceEvidence.suiteId must be a non-empty string for suite baselines",
+    "baseline.suiteId must match baseline.sourceEvidence.suiteId for suite baselines",
     "is not a UX trace run, suite, or baseline artifact",
     "must not include raw baselinePath",
     "exitPolicy.computedExitCode must be",
