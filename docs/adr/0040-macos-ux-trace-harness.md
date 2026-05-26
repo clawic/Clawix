@@ -85,8 +85,9 @@ explicit external-pending condition rather than an implied pass.
   sidecars, normalized diagnostic sample events, contract source hashes,
   baseline artifact metadata, run and suite baseline comparisons, baseline path
   redaction, exact metric-row correlation for every comparison row, aggregate
-  comparison status consistency, gated comparison-to-failure correlation,
-  bidirectional failure-to-timeline correlation, enforceable gate exit policy,
+  comparison status consistency, exact child-to-suite metric/failure
+  aggregation, gated comparison-to-failure correlation, bidirectional
+  failure-to-timeline correlation, enforceable gate exit policy,
   trace-isolation metadata, and private-boundary flags before evidence can
   support closure.
 - **Persistence**: public-safe JSON contracts live under `docs/ui/`; private
