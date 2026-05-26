@@ -242,7 +242,36 @@ struct ChatTranscriptScrollerView: View {
             withAnimation(.easeOut(duration: 0.25)) {
                 proxy.scrollTo(chatTailId, anchor: .bottom)
             }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.30) {
+                scrollNativeToBottom(reason: "return-to-tail-settled")
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.90) {
+                scrollNativeToBottom(reason: "return-to-tail-layout-final")
+            }
         }
+    }
+
+    private func scrollNativeToBottom(reason: String) {
+        guard let scrollView = ClxScrollRegistry.shared.get("chat.transcript.scroll"),
+              let documentView = scrollView.documentView else {
+            return
+        }
+        scrollView.layoutSubtreeIfNeeded()
+        documentView.layoutSubtreeIfNeeded()
+        let clipView = scrollView.contentView
+        let visibleSize = clipView.bounds.size
+        let documentSize = documentView.bounds.size
+        let maxY = max(0, documentSize.height - visibleSize.height)
+        clipView.scroll(to: CGPoint(x: clipView.bounds.origin.x, y: maxY))
+        scrollView.reflectScrolledClipView(clipView)
+        RenderProbe.mark(
+            "ChatNativeScrollToBottom",
+            fields: [
+                "chat": chatId.uuidString,
+                "maxY": Self.format(maxY),
+                "reason": reason
+            ].merging(scrollProbeFields(prefix: "tail")) { current, _ in current }
+        )
     }
 
     private func handleScrollUpTrigger(proxy: ScrollViewProxy) {
