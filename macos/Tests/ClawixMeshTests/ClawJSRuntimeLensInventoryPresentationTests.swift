@@ -417,6 +417,7 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(gatewayInventory.rows.first?.path, "/Users/tester/.hermes/config.yaml")
         XCTAssertEqual(gatewayInventory.rows.first?.provenancePath, "/Users/tester/.hermes/config.yaml")
         XCTAssertEqual(gatewayInventory.rows.first?.summaryLabel, "Gateway endpoint unavailable or not configured.")
+        XCTAssertEqual(gatewayInventory.rows.first?.limitationsLabel, "gateway_endpoint_unavailable_or_not_configured")
         XCTAssertEqual(gatewayInventory.rows.first?.attributeCount, 5)
         XCTAssertTrue(gatewayInventory.rows.first?.attributesLabel?.contains("primary transport: gateway") == true)
         XCTAssertTrue(gatewayInventory.rows.first?.attributesLabel?.contains("streaming mode: hybrid") == true)
@@ -437,6 +438,7 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(doctorInventory.rows.first?.path, "/Users/tester/.hermes")
         XCTAssertEqual(doctorInventory.rows.first?.provenancePath, "/Users/tester/.hermes")
         XCTAssertEqual(doctorInventory.rows.first?.summaryLabel, "hermes CLI not found")
+        XCTAssertEqual(doctorInventory.rows.first?.limitationsLabel, "runtime_cli_unavailable_or_not_configured")
         XCTAssertEqual(doctorInventory.rows.first?.attributeCount, 5)
         XCTAssertTrue(doctorInventory.rows.first?.attributesLabel?.contains("version available: false") == true)
 

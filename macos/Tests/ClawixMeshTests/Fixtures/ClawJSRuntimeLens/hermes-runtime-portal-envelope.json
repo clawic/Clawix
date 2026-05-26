@@ -7009,7 +7009,9 @@
             "path": "/Users/tester/.hermes/config.yaml",
             "enabled": true,
             "summary": "Gateway endpoint unavailable or not configured.",
-            "limitations": [],
+            "limitations": [
+              "gateway_endpoint_unavailable_or_not_configured"
+            ],
             "attributes": [
               "runtime: hermes",
               "primary transport: gateway",
@@ -7221,7 +7223,9 @@
             "path": "/Users/tester/.hermes",
             "enabled": true,
             "summary": "hermes CLI not found",
-            "limitations": [],
+            "limitations": [
+              "runtime_cli_unavailable_or_not_configured"
+            ],
             "attributes": [
               "runtime: hermes",
               "cli available: false",
