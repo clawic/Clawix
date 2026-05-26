@@ -68,4 +68,18 @@ final class ClawJSRuntimeLensClientBoundaryTests: XCTestCase {
         XCTAssertEqual(snapshot.resources(for: "configuration").first { $0.id == "SOUL" }?.path, "/tmp/workspace/SOUL.md")
         XCTAssertEqual(snapshot.resources(for: "configuration").first { $0.id == "managed-file-1" }?.path, "/tmp/workspace/AGENTS.md")
     }
+
+    func testRuntimeLensPassesHomeDirOverrideToDomainsCommand() async throws {
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            XCTAssertEqual(args, ["runtime", "hermes", "domains", "--home-dir", "/tmp/hermes-home", "--json"])
+            return .init(
+                data: try ClawJSRuntimeLensTestFixtures.data(named: "degraded-runtime-portal-envelope"),
+                exitCode: 2
+            )
+        })
+
+        let snapshot = try await client.load(runtime: .hermes, homeDir: "/tmp/hermes-home")
+
+        XCTAssertEqual(snapshot.runtimeId, "example")
+    }
 }

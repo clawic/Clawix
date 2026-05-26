@@ -768,6 +768,55 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         })
     }
 
+    func testRuntimeLensClientPassesHomeDirOverrideToSessionActions() async throws {
+        var requested: [[String]] = []
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            requested.append(args)
+            return .init(
+                data: """
+                {
+                  "data": {
+                    "runtimeId": "hermes",
+                    "domain": "sessions",
+                    "action": "history",
+                    "status": "ok",
+                    "authority": "runtime",
+                    "writesRuntime": false,
+                    "result": {
+                      "id": "2026/05/21/runtime-session",
+                      "found": true,
+                      "contentIncluded": false,
+                      "totalProjected": 0
+                    }
+                  }
+                }
+                """.data(using: .utf8)!,
+                exitCode: 0
+            )
+        })
+
+        let result = try await client.runSessionAction(
+            runtime: .hermes,
+            action: "history",
+            sessionId: "2026/05/21/runtime-session",
+            homeDir: "/tmp/hermes-home"
+        )
+
+        XCTAssertEqual(requested, [[
+            "runtime",
+            "hermes",
+            "sessions",
+            "history",
+            "--session-key",
+            "2026/05/21/runtime-session",
+            "--home-dir",
+            "/tmp/hermes-home",
+            "--json"
+        ]])
+        XCTAssertEqual(result.status, "ok")
+        XCTAssertEqual(result.writesRuntime, false)
+    }
+
     @MainActor
     func testRuntimeLensClientSurfacesHermesGatewayPartialWithoutNativeRoundTrip() async throws {
         var requested: [[String]] = []

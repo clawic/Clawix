@@ -75,6 +75,15 @@ struct ClawJSRuntimeLensPager<Row>: View {
 }
 
 extension ClawJSRuntimeLensSection {
+    func runtimeLensScopeControls() -> some View {
+        TextField("Runtime home override", text: $runtimeLensHomeDir)
+            .textFieldStyle(.roundedBorder)
+            .font(BodyFont.system(size: 11.5))
+            .clxControl("runtime-lens-home-dir", role: "input", label: "Runtime lens home directory") { value in
+                runtimeLensHomeDir = value
+            }
+    }
+
     func page<C: Collection>(_ rows: C, key: ClawJSRuntimeLensPageKey) -> ClawJSRuntimeLensPageSlice<C.Element> {
         clawJSRuntimeLensPage(rows, pageIndex: runtimeLensPages[key, default: 0], pageSize: Self.pageSize)
     }

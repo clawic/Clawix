@@ -13,6 +13,7 @@ struct ClawJSRuntimeLensSection: View {
     @State var runtimeLensActionMessage = ""
     @State var runtimeLensActionTitle = ""
     @State var runtimeLensActionGatewayURL = ""
+    @State var runtimeLensHomeDir = ""
     @State var runtimeLensPendingConfirmedAction: String?
     @State var runtimeLensSessionActionsInFlight: Set<String> = []
     @State var runtimeLensPages: [ClawJSRuntimeLensPageKey: Int] = [:]
@@ -30,6 +31,8 @@ struct ClawJSRuntimeLensSection: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+
+                runtimeLensScopeControls()
 
                 ForEach(runtimeLensPresentation.sections) { section in
                     runtimeLensPresentationSection(section)
@@ -104,7 +107,10 @@ struct ClawJSRuntimeLensSection: View {
         let plan = ClawJSRuntimeLensRefreshPlan.scoped(to: runtime)
         for target in plan.runtimes {
             do {
-                runtimeLensSnapshots[target] = try await runtimeLensClient.load(runtime: target)
+                runtimeLensSnapshots[target] = try await runtimeLensClient.load(
+                    runtime: target,
+                    homeDir: trimmedRuntimeLensInput(runtimeLensHomeDir)
+                )
             } catch {
                 if target == runtimeLensSelection {
                     runtimeLensError = SettingsUtilities.failureMessage(for: error, surface: "settings.runtimeLens.refresh")
@@ -144,6 +150,7 @@ struct ClawJSRuntimeLensSection: View {
                 message: presentation.requiresMessage ? trimmedRuntimeLensInput(runtimeLensActionMessage) : nil,
                 title: presentation.requiresTitle ? trimmedRuntimeLensInput(runtimeLensActionTitle) : nil,
                 gatewayURL: trimmedRuntimeLensInput(runtimeLensActionGatewayURL),
+                homeDir: trimmedRuntimeLensInput(runtimeLensHomeDir),
                 confirmRuntimeWrite: confirmRuntimeWrite
             )
             runtimeLensActionResult = runtimeLensSessionActionResultLabel(result)

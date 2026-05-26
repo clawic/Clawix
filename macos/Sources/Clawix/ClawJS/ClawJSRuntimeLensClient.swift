@@ -1806,8 +1806,16 @@ struct ClawJSRuntimeLensClient {
         }
     }
 
-    func load(runtime: ClawJSRuntimeLensID) async throws -> ClawJSRuntimeLensSnapshot {
-        let result = try await runner.run(["runtime", runtime.rawValue, "domains", "--json"])
+    func load(
+        runtime: ClawJSRuntimeLensID,
+        homeDir: String? = nil
+    ) async throws -> ClawJSRuntimeLensSnapshot {
+        var args = ["runtime", runtime.rawValue, "domains"]
+        if let homeDir, !homeDir.isEmpty {
+            args.append(contentsOf: ["--home-dir", homeDir])
+        }
+        args.append("--json")
+        let result = try await runner.run(args)
         guard result.exitCode == 0 || result.exitCode == 2 else {
             let message = String(data: result.data, encoding: .utf8) ?? "runtime lens failed"
             throw NSError(domain: "ClawJSRuntimeLensClient", code: Int(result.exitCode), userInfo: [
@@ -1859,6 +1867,7 @@ struct ClawJSRuntimeLensClient {
         message: String? = nil,
         title: String? = nil,
         gatewayURL: String? = nil,
+        homeDir: String? = nil,
         confirmRuntimeWrite: Bool = false
     ) async throws -> SessionNativeActionResult {
         var args = [
@@ -1875,6 +1884,9 @@ struct ClawJSRuntimeLensClient {
         }
         if let title, !title.isEmpty {
             args.append(contentsOf: ["--title", title])
+        }
+        if let homeDir, !homeDir.isEmpty {
+            args.append(contentsOf: ["--home-dir", homeDir])
         }
         if let gatewayURL, !gatewayURL.isEmpty {
             args.append(contentsOf: ["--gateway-url", gatewayURL])
