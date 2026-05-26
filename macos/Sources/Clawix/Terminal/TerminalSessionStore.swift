@@ -102,6 +102,14 @@ final class TerminalSessionStore: ObservableObject {
         sessions[leafId]
     }
 
+    func focusedSession(for chatId: UUID) -> TerminalSession? {
+        guard let tab = activeTab(for: chatId),
+              let leafId = tab.focusedLeafId ?? tab.layout.firstLeafId else {
+            return nil
+        }
+        return sessions[leafId]
+    }
+
     // MARK: - Tab CRUD
 
     /// Creates a new tab seeded with `cwd`. If `cwd` is nil, falls back

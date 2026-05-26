@@ -154,9 +154,9 @@
         "p0.stream.no_freeze_under_many_active_runs"
       ],
       "steps": [
-        { "id": "start-mock-stream", "action": "mock-stream", "wait": "wait-visible", "target": "chat.streaming.placeholder" },
+        { "id": "start-mock-stream", "action": "mock-stream", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget", "intervalMs": 80, "chunkWords": 2, "text": "Primera respuesta visible con muchas palabras para mantener el streaming activo durante la medicion de deltas y anclaje inferior.", "reasoning": "Preparando contexto local y validando batches de streaming bajo carga pesada." },
         { "id": "wait-first-delta", "action": "observe", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget" },
-        { "id": "measure-delta-batches", "action": "measure-action", "wait": "wait-frame-stable", "target": "chat.streaming.deltaTarget" },
+        { "id": "measure-delta-batches", "action": "observe", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget" },
         { "id": "verify-bottom-follow", "action": "observe", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll" },
         { "id": "verify-no-forced-jump", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll" },
         { "id": "complete-stream", "action": "mock-stream-complete", "wait": "wait-visible", "target": "chat.message.assistant" }
@@ -194,7 +194,7 @@
       "steps": [
         { "id": "open-terminal", "action": "measure-action", "wait": "wait-visible", "target": "terminal.panel" },
         { "id": "switch-back-chat", "action": "measure-action", "wait": "wait-visible", "target": "chat.route.container" },
-        { "id": "scroll-terminal", "action": "scroll", "wait": "wait-scroll-stable", "target": "terminal.panel" },
+        { "id": "scroll-terminal", "action": "scroll", "wait": "wait-scroll-stable", "target": "terminal.panel", "direction": "up" },
         { "id": "verify-chat-responsive", "action": "measure-action", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest" }
       ]
     },

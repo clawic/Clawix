@@ -205,6 +205,7 @@ enum ClxControlHandlers {
                 )
                 appendTasks.append(Task { @MainActor in
                     appState.appendReasoningDelta(chatId: chatId, delta: chunk)
+                    _ = scrollRegisteredToBottom(id: "chat.transcript.scroll")
                 })
                 await sleepMs(intervalMs)
             }
@@ -228,6 +229,7 @@ enum ClxControlHandlers {
                 )
                 appendTasks.append(Task { @MainActor in
                     appState.upsertWorkItem(chatId: chatId, messageId: messageId, item: item)
+                    _ = scrollRegisteredToBottom(id: "chat.transcript.scroll")
                 })
                 await sleepMs(intervalMs)
             }
@@ -245,6 +247,7 @@ enum ClxControlHandlers {
                 )
                 appendTasks.append(Task { @MainActor in
                     appState.appendAssistantDelta(chatId: chatId, delta: chunk)
+                    _ = scrollRegisteredToBottom(id: "chat.transcript.scroll")
                 })
                 await sleepMs(intervalMs)
             }
@@ -255,6 +258,7 @@ enum ClxControlHandlers {
             await MainActor.run {
                 appState.markAssistantFinished(chatId: chatId, messageId: messageId)
                 appState.completeWorkSummary(chatId: chatId, messageId: messageId, endedAt: Date())
+                _ = scrollRegisteredToBottom(id: "chat.transcript.scroll")
             }
             RenderProbe.mark(
                 "LiveStreamMockEnd",
@@ -931,6 +935,9 @@ enum ClxControlHandlers {
     static func scroll(_ args: [String: Any]) -> ClxControlResult {
         let direction = (args["direction"] as? String) ?? "down"
         let pages = max(1, min((args["pages"] as? Int) ?? 1, 20))
+        if isTerminalScrollTarget(args) {
+            return scrollTerminal(args, direction: direction, pages: pages)
+        }
         if let registeredId = registeredScrollId(args),
            let result = scrollRegistered(id: registeredId, direction: direction, pages: pages) {
             return result
@@ -1353,7 +1360,7 @@ enum ClxControlHandlers {
             )
         case .bottomAnchored:
             let observed = observedScrollState(args)
-            let bottomDistance = observed["bottomDistance"] as? Double ?? .infinity
+            let bottomDistance = numeric(observed["bottomDistance"]) ?? .infinity
             return (bottomDistance <= tolerancePx, observed)
         case .chatFinalWindow:
             let observed = observedControlState(["id": (args["id"] as? String) ?? "chat.visibleWindow.latest"])
@@ -1731,6 +1738,89 @@ enum ClxControlHandlers {
         return out
     }
 
+    private static func isTerminalScrollTarget(_ args: [String: Any]) -> Bool {
+        let id = (args["id"] as? String) ?? (args["target"] as? String) ?? ""
+        return id == "terminal.panel" || id == "terminal.output" || id == "terminal.scroll"
+    }
+
+    private static func terminalSession(_ args: [String: Any]) -> TerminalSession? {
+        guard let appState,
+              let chatId = resolvedChatId(args, appState: appState) ?? appState.currentChatId else {
+            return nil
+        }
+        let store = TerminalSessionStore.shared
+        store.ensureLoaded(chatId: chatId)
+        if store.tabs(for: chatId).isEmpty {
+            let cwd = appState.chat(byId: chatId)?.cwd ?? ClawixTerminalRoutes.userHomePath()
+            store.createTab(chatId: chatId, cwd: cwd)
+        }
+        return store.focusedSession(for: chatId)
+    }
+
+    private static func scrollTerminal(_ args: [String: Any], direction: String, pages: Int) -> ClxControlResult {
+        guard let session = terminalSession(args) else {
+            return ClxControlResult(status: 404, json: ["error": "terminal session not found"])
+        }
+        let terminalView = session.terminalView
+        let before = terminalView.scrollPosition
+        for _ in 0..<pages {
+            switch direction {
+            case "up":
+                terminalView.pageUp()
+            case "down":
+                terminalView.pageDown()
+            default:
+                terminalView.pageDown()
+            }
+        }
+        let after = terminalView.scrollPosition
+        RenderProbe.mark(
+            "UXTraceTerminalScroll",
+            fields: [
+                "direction": direction,
+                "from": String(format: "%.4f", before),
+                "pages": "\(pages)",
+                "to": String(format: "%.4f", after),
+            ]
+        )
+        return ok([
+            "scrolled": before == after ? 0 : pages,
+            "direction": direction,
+            "via": "terminal-view",
+            "from": before,
+            "to": after,
+            "state": terminalScrollState(args) ?? [:],
+        ])
+    }
+
+    private static func terminalScrollState(_ args: [String: Any]) -> [String: Any]? {
+        guard let session = terminalSession(args) else { return nil }
+        let terminalView = session.terminalView
+        terminalView.layoutSubtreeIfNeeded()
+        let position = terminalView.scrollPosition
+        let canScroll = terminalView.canScroll
+        let frame = terminalView.window.map {
+            framePayload($0.convertToScreen(terminalView.convert(terminalView.bounds, to: nil)))
+        } ?? framePayload(terminalView.bounds)
+        return [
+            "id": (args["id"] as? String) ?? (args["target"] as? String) ?? "terminal.panel",
+            "resolvedId": "terminal.output",
+            "found": true,
+            "visible": terminalView.window?.isVisible == true && !terminalView.bounds.isEmpty,
+            "origin": ["x": 0, "y": position],
+            "max": ["x": 0, "y": 1],
+            "viewportSize": ["width": terminalView.bounds.width, "height": terminalView.bounds.height],
+            "documentSize": ["width": terminalView.bounds.width, "height": terminalView.bounds.height],
+            "topDistance": position,
+            "bottomDistance": max(0, 1 - position),
+            "verticalScrollable": canScroll,
+            "horizontalScrollable": false,
+            "scrollPosition": position,
+            "canScroll": canScroll,
+            "frame": frame,
+        ]
+    }
+
     private static func controlStatePayload(id: String, includeAx: Bool = false) -> [String: Any]? {
         let resolvedId = resolvedControlId(id)
         let descriptor = ClxControlRegistry.shared.get(resolvedId)
@@ -1856,6 +1946,10 @@ enum ClxControlHandlers {
     }
 
     private static func observedScrollState(_ args: [String: Any]) -> [String: Any] {
+        if isTerminalScrollTarget(args),
+           let state = terminalScrollState(args) {
+            return state
+        }
         guard let id = registeredScrollId(args) ?? (args["id"] as? String) else {
             return ["found": false, "error": "missing id or target"]
         }

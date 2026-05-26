@@ -295,6 +295,7 @@ struct ChatView: View {
                         notifyFirstVisibleWindowIfNeeded(next)
                         markClosedMetadataReadyIfNeeded(next)
                     }
+                    .clxControl("chat.visibleWindow.latest", role: "group", label: "Latest visible message window")
 
                     VStack(spacing: 14) {
                         let activeRemoteJobs = flags.isVisible(.remoteMesh)

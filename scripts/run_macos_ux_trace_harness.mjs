@@ -284,6 +284,11 @@ function requestBodyForStep(step, options) {
   const dispatch = actionDispatchFor(step);
   if (dispatch) body.action = dispatch;
   if (Object.hasOwn(step, "text")) body.text = step.text;
+  if (Object.hasOwn(step, "reasoning")) body.reasoning = step.reasoning;
+  if (Object.hasOwn(step, "intervalMs")) body.intervalMs = boundedInteger(step.intervalMs, 12, 0, 5_000);
+  if (Object.hasOwn(step, "initialDelayMs")) body.initialDelayMs = boundedInteger(step.initialDelayMs, 0, 0, 5_000);
+  if (Object.hasOwn(step, "chunkWords")) body.chunkWords = boundedInteger(step.chunkWords, 1, 1, 12);
+  if (Object.hasOwn(step, "includeTool")) body.includeTool = Boolean(step.includeTool);
   if (step.direction) body.direction = step.direction;
   if (step.pages) body.pages = step.pages;
   if (step.contains) body.contains = step.contains;
