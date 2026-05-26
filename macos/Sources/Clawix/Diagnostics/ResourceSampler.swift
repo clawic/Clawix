@@ -79,6 +79,20 @@ enum ResourceSampler {
         }
     }
 
+    /// Captures one bounded in-memory sample for an explicit diagnostics
+    /// request. Does not start a timer and does not write to disk.
+    static func sampleNow() -> Sample {
+        queue.sync {
+            let sample = captureSample()
+            lastSample = sample
+            samples.append(sample)
+            if samples.count > sampleLimit {
+                samples.removeFirst(samples.count - sampleLimit)
+            }
+            return sample
+        }
+    }
+
     /// Persists the most recent sample to disk without starting the
     /// sampler. Normal app launch may never have a sample, and that is
     /// expected unless a diagnostics surface opted in.

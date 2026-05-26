@@ -103,7 +103,6 @@ final class ClxControlRegistry {
               let view = entry.value,
               let window = view.window
         else { return nil }
-        view.layoutSubtreeIfNeeded()
         let windowFrame = view.convert(view.bounds, to: nil)
         let screenFrame = window.convertToScreen(windowFrame)
         let visibleBounds = view.visibleRect.intersection(view.bounds)

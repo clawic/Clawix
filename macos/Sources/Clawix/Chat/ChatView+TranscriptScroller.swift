@@ -159,12 +159,12 @@ struct ChatTranscriptScrollerView: View {
                         "chat": chatId.uuidString,
                         "hiddenBefore": "\(hiddenLocalMessageCount)",
                         "inserted": "\(max(0, newCount - oldCount))",
-                        "measuredRows": "\(messageFrames.count)",
-                        "mountedRows": "\(visibleMessageStores.count)",
                         "oldTotal": "\(oldCount)",
                         "total": "\(newCount)",
                         "visible": "\(visibleMessageLimit)"
-                    ].merging(scrollProbeFields(prefix: "scroll")) { current, _ in current }
+                    ]
+                    .merging(rowProbeFields()) { current, _ in current }
+                    .merging(scrollProbeFields(prefix: "scroll")) { current, _ in current }
                 )
                 handleScrollUpTrigger(proxy: proxy)
             }
@@ -255,13 +255,13 @@ struct ChatTranscriptScrollerView: View {
                     "fromVisible": "\(oldVisibleLimit)",
                     "hiddenBefore": "\(hiddenLocalMessageCount)",
                     "last": visibleMessageStores.last?.id.uuidString ?? "none",
-                    "measuredRows": "\(messageFrames.count)",
-                    "mountedRows": "\(visibleMessageStores.count)",
                     "probe": "\(probeId)",
                     "total": "\(transcript.messageIds.count)",
                     "nativeYBefore": nativeAnchorFrameBefore.map { Self.format($0.minY) } ?? "none",
                     "yBefore": anchorFrameBefore.map { Self.format($0.minY) } ?? "none"
-                ].merging(scrollProbeFields(prefix: "before")) { current, _ in current }
+                ]
+                .merging(rowProbeFields()) { current, _ in current }
+                .merging(scrollProbeFields(prefix: "before")) { current, _ in current }
             )
             let nextVisibleLimit = min(
                 transcript.messageIds.count,
@@ -279,11 +279,11 @@ struct ChatTranscriptScrollerView: View {
                             "chat": chatId.uuidString,
                             "insertedLocalRows": "\(insertedLocalRows)",
                             "last": visibleMessageStores.last?.id.uuidString ?? "none",
-                            "measuredRows": "\(messageFrames.count)",
-                            "mountedRows": "\(visibleMessageStores.count)",
                             "probe": "\(probeId)",
                             "toVisible": "\(visibleMessageLimit)"
-                        ].merging(scrollProbeFields(prefix: "afterInsert")) { current, _ in current }
+                        ]
+                        .merging(rowProbeFields()) { current, _ in current }
+                        .merging(scrollProbeFields(prefix: "afterInsert")) { current, _ in current }
                     )
                     recordAnchorShift(
                         anchorId: anchorId,
@@ -324,11 +324,11 @@ struct ChatTranscriptScrollerView: View {
                             fields: [
                                 "anchor": anchorId.uuidString,
                                 "chat": chatId.uuidString,
-                                "measuredRows": "\(messageFrames.count)",
-                                "mountedRows": "\(visibleMessageStores.count)",
                                 "probe": "\(probeId)",
                                 "visible": "\(nextVisibleLimit)"
-                            ].merging(scrollProbeFields(prefix: "request")) { current, _ in current }
+                            ]
+                            .merging(rowProbeFields()) { current, _ in current }
+                            .merging(scrollProbeFields(prefix: "request")) { current, _ in current }
                         )
                         appState.requestOlderIfNeeded(chatId: chatId)
                     }
@@ -339,11 +339,11 @@ struct ChatTranscriptScrollerView: View {
                 "ChatOlderAnchorProbeRequestOnly",
                 fields: [
                     "chat": chatId.uuidString,
-                    "measuredRows": "\(messageFrames.count)",
-                    "mountedRows": "\(visibleMessageStores.count)",
                     "total": "\(transcript.messageIds.count)",
                     "visible": "\(visibleMessageLimit)"
-                ].merging(scrollProbeFields(prefix: "request")) { current, _ in current }
+                ]
+                .merging(rowProbeFields()) { current, _ in current }
+                .merging(scrollProbeFields(prefix: "request")) { current, _ in current }
             )
             appState.requestOlderIfNeeded(chatId: chatId)
         }
@@ -492,11 +492,11 @@ struct ChatTranscriptScrollerView: View {
             "hitch250": "\(RenderProbe.snapshotCounts()["hitch>250ms"] ?? 0)",
             "hitch33": "\(RenderProbe.snapshotCounts()["hitch>33ms"] ?? 0)",
             "insertedRows": "\(insertedRows)",
-            "measuredRows": "\(messageFrames.count)",
-            "mountedRows": "\(visibleMessageStores.count)",
             "phase": phase,
             "probe": "\(probeId)"
-        ].merging(scrollProbeFields(prefix: "after")) { current, _ in current }
+        ]
+        .merging(rowProbeFields()) { current, _ in current }
+        .merging(scrollProbeFields(prefix: "after")) { current, _ in current }
         if let nativeBefore {
             fields["nativeYBefore"] = Self.format(nativeBefore.minY)
             if let nativeAfter = nativeMessageFrame(id: anchorId) {
@@ -550,6 +550,14 @@ struct ChatTranscriptScrollerView: View {
             "\(prefix)MaxY": Self.format(maxY),
             "\(prefix)VisibleH": Self.format(visibleSize.height),
             "\(prefix)Y": Self.format(origin.y)
+        ]
+    }
+
+    private func rowProbeFields() -> [String: String] {
+        [
+            "measuredRows": "\(messageFrames.count)",
+            "mountedRows": "\(ChatMessageNativeFrameRegistry.shared.mountedCount)",
+            "renderWindowRows": "\(visibleMessageStores.count)"
         ]
     }
 
@@ -648,6 +656,11 @@ private final class ChatMessageNativeFrameRegistry {
     private var views: [UUID: WeakView] = [:]
 
     private init() {}
+
+    var mountedCount: Int {
+        views = views.filter { $0.value.value != nil }
+        return views.count
+    }
 
     func upsert(id: UUID, view: NSView) {
         views[id] = WeakView(view)

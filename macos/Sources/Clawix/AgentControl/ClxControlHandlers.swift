@@ -617,6 +617,9 @@ enum ClxControlHandlers {
                     "elapsedMs": (CACurrentMediaTime() - started) * 1000,
                 ])
             }
+            guard (args["includeAx"] as? Bool) == true else {
+                return ClxControlResult(status: 404, json: ["error": "registered control not found or not pressable: \(id)"])
+            }
             if let element = ClxAX.find(identifier: id),
                AXUIElementPerformAction(element, kAXPressAction as CFString) == .success {
                 return ok([
@@ -927,6 +930,7 @@ enum ClxControlHandlers {
                     "elapsedMs": elapsedMs,
                     "samples": samples,
                     "observed": evaluation.observed,
+                    "diagnostics": diagnosticSamplePayload(),
                 ])
             }
             if (now - started) * 1000 >= Double(timeoutMs) {
@@ -938,6 +942,7 @@ enum ClxControlHandlers {
                     "timeoutMs": timeoutMs,
                     "samples": samples,
                     "observed": lastObserved,
+                    "diagnostics": diagnosticSamplePayload(),
                 ])
             }
             try? await Task.sleep(nanoseconds: UInt64(pollMs) * 1_000_000)
@@ -1032,6 +1037,26 @@ enum ClxControlHandlers {
             let elapsedMs = (now - (stableSince ?? now)) * 1000
             return (elapsedMs >= Double(stableDurationMs), ["idleMs": elapsedMs, "requiredMs": stableDurationMs])
         }
+    }
+
+    private static func diagnosticSamplePayload() -> [String: Any] {
+        let resource = ResourceSampler.sampleNow()
+        let renderCounts = RenderProbe.snapshotCounts()
+        let hitchCounts = renderCounts.filter { key, _ in key.hasPrefix("hitch>") }
+        return [
+            "resource": [
+                "residentBytes": Int64(resource.residentBytes),
+                "residentMB": Double(resource.residentBytes) / 1024.0 / 1024.0,
+                "footprintBytes": Int64(resource.footprintBytes),
+                "footprintMB": Double(resource.footprintBytes) / 1024.0 / 1024.0,
+                "processCpuPercent": resource.processCpuPercent,
+                "timestamp": resource.timestamp,
+            ],
+            "hitches": [
+                "total": hitchCounts.values.reduce(0, +),
+                "buckets": hitchCounts,
+            ],
+        ]
     }
 
     private static func stablePayload(
@@ -1321,6 +1346,7 @@ enum ClxControlHandlers {
 
     private static func controlStatePayload(id: String, includeAx: Bool = false) -> [String: Any]? {
         let descriptor = ClxControlRegistry.shared.get(id)
+        guard descriptor != nil || includeAx else { return nil }
         let observedView = ClxControlRegistry.shared.observedViewState(id)
         if let descriptor {
             var out: [String: Any] = [

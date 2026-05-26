@@ -47,12 +47,13 @@
         "p0.launch.no_crash_no_hang"
       ],
       "steps": [
-        { "id": "launch-cold", "action": "launch", "wait": "wait-visible", "target": "app.shell.firstUsableWindow" },
-        { "id": "wait-sidebar-ready", "action": "observe", "wait": "wait-visible", "target": "sidebar.container" },
-        { "id": "wait-initial-chat-ready", "action": "observe", "wait": "wait-visible", "target": "chat.route.container" },
-        { "id": "verify-no-blocking-overlay", "action": "observe", "wait": "wait-gone", "target": "app.blockingOverlay" },
-        { "id": "measure-first-interaction", "action": "measure-action", "wait": "wait-enabled", "target": "sidebar.conversationList" },
-        { "id": "sample-launch-resources", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow" }
+        { "id": "launch-cold", "action": "launch", "wait": "wait-visible", "target": "app.shell.firstUsableWindow", "kpi": "p0.launch.process_to_first_window_visible_ms" },
+        { "id": "wait-sidebar-ready", "action": "observe", "wait": "wait-visible", "target": "sidebar.container", "kpi": "p0.launch.process_to_sidebar_ready_ms" },
+        { "id": "wait-primary-surface-ready", "action": "observe", "wait": "wait-visible", "target": "composer.input", "kpi": "p0.launch.process_to_initial_chat_ready_ms" },
+        { "id": "verify-no-blocking-overlay", "action": "observe", "wait": "wait-gone", "target": "app.blockingOverlay", "kpi": "p0.launch.no_crash_no_hang" },
+        { "id": "measure-first-interaction", "action": "measure-action", "wait": "wait-visible", "target": "composer.sendButton", "waitTarget": "composer.input", "kpi": "p0.launch.first_usable_interaction_ms" },
+        { "id": "sample-launch-hitches", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "durationMs": 100, "kpi": "p0.launch.hitches_until_usable_count" },
+        { "id": "sample-launch-resources", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "durationMs": 100, "kpi": "p0.launch.memory_after_usable_mb" }
       ]
     },
     {

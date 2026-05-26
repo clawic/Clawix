@@ -13,6 +13,7 @@ const defaultTimeoutMs = 5_000;
 const defaultPollMs = 50;
 const defaultDurationMs = 250;
 const defaultTolerancePx = 1;
+const defaultControlReadyTimeoutMs = 10_000;
 const maxIncludeDepth = 8;
 
 function usage() {
@@ -32,6 +33,7 @@ Options:
   --timeout-ms <n>         Default wait timeout.
   --poll-ms <n>            Default wait poll interval.
   --request-timeout-ms <n> Default HTTP request timeout.
+  --control-ready-timeout-ms <n> Time to wait for the control bus before steps.
   --dry-run                Do not contact the app; emit BLOCKED evidence for wiring validation.
   --json                   Print machine-readable result.
 `;
@@ -90,6 +92,10 @@ function boundedInteger(value, fallback, min, max) {
   const parsed = Number.parseInt(value ?? "", 10);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(min, Math.min(max, parsed));
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function requireString(value, label) {
@@ -260,6 +266,29 @@ async function postControl(options, verb, body) {
   return payload;
 }
 
+async function waitForControlReady(options) {
+  if (options.dryRun) return null;
+  const deadline = Date.now() + options.controlReadyTimeoutMs;
+  let lastError = null;
+  while (Date.now() <= deadline) {
+    try {
+      const payload = await postControl(options, "wait-visible", {
+        token: options.token,
+        id: "app.shell.firstUsableWindow",
+        target: "app.shell.firstUsableWindow",
+        timeoutMs: 250,
+        pollMs: 50,
+      });
+      if (payload?.ok !== false && payload?.timedOut !== true) return payload;
+    } catch (error) {
+      lastError = error;
+    }
+    await sleep(100);
+  }
+  const suffix = lastError ? `: ${lastError.message}` : "";
+  throw new Error(`control bus did not become ready within ${options.controlReadyTimeoutMs}ms${suffix}`);
+}
+
 function stepSurfaceId(step, indexes) {
   if (indexes.surfaceIds.has(step.target)) return step.target;
   return "app.shell.firstUsableWindow";
@@ -283,6 +312,19 @@ function elapsedFromPayload(payload, fallbackMs) {
     if (Number.isFinite(number)) return number;
   }
   return fallbackMs;
+}
+
+function sampleValueForKpi(kpiId, payload, fallbackMs) {
+  if (kpiId.includes("hitch")) {
+    const total = Number(payload?.diagnostics?.hitches?.total ?? payload?.wait?.diagnostics?.hitches?.total);
+    return Number.isFinite(total) ? total : fallbackMs;
+  }
+  if (kpiId.endsWith("_mb")) {
+    const resource = payload?.diagnostics?.resource ?? payload?.wait?.diagnostics?.resource;
+    const value = Number(resource?.footprintMB ?? resource?.residentMB);
+    return Number.isFinite(value) ? value : fallbackMs;
+  }
+  return elapsedFromPayload(payload, fallbackMs);
 }
 
 function makeMetric(kpi, samples, eventRefs, baselineEntry) {
@@ -341,6 +383,7 @@ async function runScenario(args) {
     timeoutMs: boundedInteger(args["timeout-ms"], defaultTimeoutMs, 100, 120_000),
     pollMs: boundedInteger(args["poll-ms"], defaultPollMs, 10, 5_000),
     requestTimeoutMs: boundedInteger(args["request-timeout-ms"], Math.max(boundedInteger(args["timeout-ms"], defaultTimeoutMs, 100, 120_000) + 2_000, 5_000), 500, 180_000),
+    controlReadyTimeoutMs: boundedInteger(args["control-ready-timeout-ms"], defaultControlReadyTimeoutMs, 500, 120_000),
   };
   if (!options.dryRun) {
     requireString(options.controlUrl, "--control-url");
@@ -349,6 +392,28 @@ async function runScenario(args) {
 
   const expandedSteps = expandScenarioSteps(scenario, indexes);
   events.write({ eventType: "run.started", stepId: "run", actionId: runId });
+  if (!options.dryRun) {
+    events.write({
+      eventType: "action.dispatched",
+      stepId: "control-ready",
+      actionId: `${runId}:control-ready`,
+      surfaceId: "app.shell.firstUsableWindow",
+      controlId: "app.shell.firstUsableWindow",
+      kpiId: "none",
+      controlVerb: "wait-visible",
+    });
+    const payload = await waitForControlReady(options);
+    events.write({
+      eventType: "visual.condition.met",
+      stepId: "control-ready",
+      actionId: `${runId}:control-ready`,
+      surfaceId: "app.shell.firstUsableWindow",
+      controlId: "app.shell.firstUsableWindow",
+      kpiId: "none",
+      elapsedMs: payload?.elapsedMs ?? null,
+      payloadHash: stableHash(payload),
+    });
+  }
   events.write({ eventType: "fixture.loaded", stepId: "fixture", actionId: fixtureProfile });
   events.write({ eventType: "scenario.started", stepId: scenarioId, actionId: scenarioId });
 
@@ -410,9 +475,11 @@ async function runScenario(args) {
       } else {
         payload = await postControl(options, verb, requestBodyForStep(step, options));
       }
-      const elapsedMs = elapsedFromPayload(payload, Math.round(performance.now() - started));
+      const fallbackMs = Math.round(performance.now() - started);
+      const elapsedMs = elapsedFromPayload(payload, fallbackMs);
+      const sampleValue = sampleValueForKpi(kpiId, payload, fallbackMs);
       if (!kpiSamples.has(kpiId)) kpiSamples.set(kpiId, []);
-      if (kpiId !== "none") kpiSamples.get(kpiId).push(elapsedMs);
+      if (kpiId !== "none") kpiSamples.get(kpiId).push(sampleValue);
       const conditionMet = payload?.ok !== false && payload?.timedOut !== true && payload?.wait?.timedOut !== true;
       events.write({
         eventType: conditionMet ? "visual.condition.met" : "visual.condition.timeout",
