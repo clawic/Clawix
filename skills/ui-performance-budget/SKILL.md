@@ -32,7 +32,10 @@ any UI performance budget change.
 4. For harness wiring changes, run
    `node scripts/run_macos_ux_trace_harness.mjs --self-test`. For actual
    performance evidence, run the same runner against an isolated agent
-   control URL and owner token; dry-run output is not runtime evidence.
+   control URL and owner token; dry-run output is not runtime evidence. After
+   any run or suite, validate the generated evidence directory with
+   `node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>`
+   before using it as proof.
 5. For a quick runtime smoke, provision an isolated agent instance with a
    generated `smoke` fixture and run `node scripts/run_macos_ux_trace_harness.mjs
    --suite p0 --fixture-profile smoke --control-url <url> --token <token>`.

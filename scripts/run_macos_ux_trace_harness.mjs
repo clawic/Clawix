@@ -10,6 +10,7 @@ const registryPath = path.join(rootDir, "docs/ui/ux-trace-harness.registry.json"
 const scenarioManifestPath = path.join(rootDir, "docs/ui/ux-trace-scenarios.manifest.json");
 const evidenceSchemaPath = path.join(rootDir, "docs/ui/ux-trace-evidence.schema.json");
 const fixtureGeneratorPath = path.join(rootDir, "scripts/generate_macos_ux_trace_fixtures.mjs");
+const evidenceVerifierPath = path.join(rootDir, "scripts/verify_macos_ux_trace_evidence.mjs");
 
 const defaultTimeoutMs = 5_000;
 const defaultPollMs = 50;
@@ -673,6 +674,24 @@ function generateFixturePack(args, runDir, fixtureProfile) {
   return fixtureManifestFromPack(outDir);
 }
 
+function verifyEvidencePath(targetPath) {
+  const result = spawnSync(process.execPath, [
+    evidenceVerifierPath,
+    "--path",
+    targetPath,
+    "--json",
+  ], {
+    cwd: rootDir,
+    encoding: "utf8",
+    maxBuffer: 80 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    const detail = `${result.stderr || ""}${result.stdout || ""}`.trim();
+    throw new Error(`evidence verification failed for ${targetPath}${detail ? `: ${detail}` : ""}`);
+  }
+  return result.stdout ? JSON.parse(result.stdout) : null;
+}
+
 async function runScenario(args) {
   const registry = readJson(registryPath);
   const manifest = readJson(scenarioManifestPath);
@@ -1187,7 +1206,7 @@ async function selfTest() {
     "dry-run": true,
     "out-dir": outDir,
   });
-  const required = ["run.json", "events.jsonl", "metrics.json", "failures.json", "fixture-manifest.json", "baseline-comparison.json"];
+  const required = ["run.json", "events.jsonl", "metrics.json", "failures.json", "fixture-manifest.json", "baseline-comparison.json", "logs/failure-ui-states.jsonl"];
   for (const file of required) {
     if (!fs.existsSync(path.join(result.runDir, file))) {
       throw new Error(`self-test did not create ${file}`);
@@ -1195,6 +1214,7 @@ async function selfTest() {
   }
   const run = readJson(path.join(result.runDir, "run.json"));
   if (run.status !== "BLOCKED") throw new Error("dry-run self-test must produce BLOCKED run evidence");
+  verifyEvidencePath(result.runDir);
   const suiteResult = await runSuite({
     suite: "p0",
     "fixture-profile": "smoke",
@@ -1208,6 +1228,7 @@ async function selfTest() {
   }
   const suite = readJson(path.join(suiteResult.suiteDir, "suite.json"));
   if (suite.status !== "BLOCKED") throw new Error("dry-run suite self-test must produce BLOCKED suite evidence");
+  verifyEvidencePath(suiteResult.suiteDir);
   return result;
 }
 

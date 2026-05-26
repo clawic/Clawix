@@ -10,6 +10,7 @@ const calibrationPath = "docs/ui/ux-trace-calibration.manifest.json";
 const uiReadmePath = "docs/ui/README.md";
 const uiPerformanceSkillPath = "skills/ui-performance-budget/SKILL.md";
 const runnerPath = "scripts/run_macos_ux_trace_harness.mjs";
+const evidenceVerifierPath = "scripts/verify_macos_ux_trace_evidence.mjs";
 const fixtureGeneratorPath = "scripts/generate_macos_ux_trace_fixtures.mjs";
 const fixtureVerificationPath = "scripts/scale_lab_fixture_check.mjs";
 const clxControlModifierPath = "macos/Sources/Clawix/AgentControl/ClxControlModifier.swift";
@@ -19,6 +20,9 @@ const clxControlHandlersPath = "macos/Sources/Clawix/AgentControl/ClxControlHand
 const errors = [];
 const runnerSource = fs.existsSync(path.join(rootDir, runnerPath))
   ? fs.readFileSync(path.join(rootDir, runnerPath), "utf8")
+  : "";
+const evidenceVerifierSource = fs.existsSync(path.join(rootDir, evidenceVerifierPath))
+  ? fs.readFileSync(path.join(rootDir, evidenceVerifierPath), "utf8")
   : "";
 const fixtureGeneratorSource = fs.existsSync(path.join(rootDir, fixtureGeneratorPath))
   ? fs.readFileSync(path.join(rootDir, fixtureGeneratorPath), "utf8")
@@ -495,8 +499,10 @@ if (registry) {
   if (registry.requiredArtifacts?.p0GateCommand !== `node ${runnerPath} --baseline <file> --gate p0`) fail(`${registryPath}.requiredArtifacts.p0GateCommand must be node ${runnerPath} --baseline <file> --gate p0`);
   if (registry.requiredArtifacts?.fixtureGeneratorCommand !== `node ${fixtureGeneratorPath}`) fail(`${registryPath}.requiredArtifacts.fixtureGeneratorCommand must be node ${fixtureGeneratorPath}`);
   if (registry.requiredArtifacts?.fixtureVerificationCommand !== `node ${fixtureVerificationPath}`) fail(`${registryPath}.requiredArtifacts.fixtureVerificationCommand must be node ${fixtureVerificationPath}`);
+  if (registry.requiredArtifacts?.evidenceVerificationCommand !== `node ${evidenceVerifierPath} --path <run-or-suite-dir>`) fail(`${registryPath}.requiredArtifacts.evidenceVerificationCommand must be node ${evidenceVerifierPath} --path <run-or-suite-dir>`);
   if (registry.requiredArtifacts?.verificationCommand !== "node scripts/ui_ux_trace_harness_check.mjs") fail(`${registryPath}.requiredArtifacts.verificationCommand must be node scripts/ui_ux_trace_harness_check.mjs`);
   if (!fs.existsSync(path.join(rootDir, runnerPath))) fail(`${runnerPath} must exist`);
+  if (!fs.existsSync(path.join(rootDir, evidenceVerifierPath))) fail(`${evidenceVerifierPath} must exist`);
   if (!fs.existsSync(path.join(rootDir, fixtureGeneratorPath))) fail(`${fixtureGeneratorPath} must exist`);
   if (!fs.existsSync(path.join(rootDir, fixtureVerificationPath))) fail(`${fixtureVerificationPath} must exist`);
 
@@ -827,11 +833,28 @@ if (runnerSource) {
     "artifactKind: \"redacted-final-ui-state\"",
     "finalUIStateHash: finalUIStateRef?.hash ?? null",
     "finalUIStateRef: finalUIStateRef?.ref ?? null",
+    "verifyEvidencePath(result.runDir)",
+    "verifyEvidencePath(suiteResult.suiteDir)",
   ]) {
     requireSnippet(runnerSource, runnerPath, snippet);
   }
   if (runnerSource.includes("ClawixPersistentSurfacePaths") || runnerSource.includes("GRDB") || runnerSource.includes("sqlite")) {
     fail(`${runnerPath} must not write UX trace evidence through the main app database path`);
+  }
+}
+
+if (evidenceVerifierSource) {
+  for (const snippet of [
+    "schema.runRequiredFields",
+    "schema.suiteRequiredFields",
+    "schema.eventRequiredFields",
+    "schema.metricRequiredFields",
+    "logs/failure-ui-states.jsonl",
+    "finalUIStateRef points to missing sidecar row",
+    "capture.written",
+    "privateBoundary.publicSafe must be true",
+  ]) {
+    requireSnippet(evidenceVerifierSource, evidenceVerifierPath, snippet);
   }
 }
 

@@ -45,6 +45,7 @@
     "p0GateCommand": "node scripts/run_macos_ux_trace_harness.mjs --baseline <file> --gate p0",
     "fixtureGeneratorCommand": "node scripts/generate_macos_ux_trace_fixtures.mjs",
     "fixtureVerificationCommand": "node scripts/scale_lab_fixture_check.mjs",
+    "evidenceVerificationCommand": "node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>",
     "verificationCommand": "node scripts/ui_ux_trace_harness_check.mjs"
   },
   "traceSurfaces": [

@@ -120,6 +120,10 @@ the public repo.
   regressions fail. Event JSONL is capped per run and written only to the
   selected evidence directory, never to the main app database. Use `--dry-run`
   only to validate harness wiring; it is not performance evidence.
+- `scripts/verify_macos_ux_trace_evidence.mjs`: public-safe run/suite evidence
+  verifier. It validates schema-required fields, event correlation, metric
+  event references, failure types, redacted final UI state sidecar references,
+  and private-boundary flags for any generated UX trace evidence directory.
 - `scripts/generate_macos_ux_trace_fixtures.mjs`: deterministic macOS fixture
   materializer for synthetic heavy conversation, sidebar, streaming, terminal,
   and real-equivalent-private profiles. Generated packs export
@@ -304,13 +308,17 @@ primary timing source.
   add `--write-baseline <private-baseline-file>`.
 - Baseline comparison and P0 gate:
   add `--baseline <private-baseline-file> --gate p0`.
+- Evidence validation:
+  `node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>`.
 
 Evidence is written under the chosen output directory as `suite.json`,
 `suite-metrics.json`, `suite-failures.json`, plus per-run `run.json`,
 `events.jsonl`, `metrics.json`, `failures.json`, `fixture-manifest.json`, and
-`baseline-comparison.json`. Private baselines, raw captures, readable
-screenshots, local private paths, and aggregate real-mode evidence stay outside
-the public repo. In the normal app, `.clxControl` must remain an
+`baseline-comparison.json`. Failed visual conditions with final UI state also
+write redacted `logs/failure-ui-states.jsonl` rows that are referenced from
+`failures.json` and `capture.written` events. Private baselines, raw captures,
+readable screenshots, local private paths, and aggregate real-mode evidence
+stay outside the public repo. In the normal app, `.clxControl` must remain an
 `accessibilityIdentifier`-only marker; frame probes, registry writes, fixture
 mutation, screenshots, the loopback server, and trace-event JSONL are allowed
 only in isolated agent instances or explicit diagnostic probes.
