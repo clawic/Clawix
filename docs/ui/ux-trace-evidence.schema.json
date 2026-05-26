@@ -245,6 +245,15 @@
     "policy": "Each run evidence timeline must contain exactly one run.started and one run.completed event; run.completed.status must match run.json.status. If scenario.started is emitted, exactly one scenario.completed event must also be emitted. Each measured step must have exactly one step.started, exactly one action.dispatched, and exactly one terminal step.completed or step.failed event in sequence order.",
     "purpose": "The JSON summary and timeline lifecycle must describe the same run outcome."
   },
+  "timeRangeContract": {
+    "policy": "Run and suite startedAt/finishedAt fields must be valid ISO timestamps and finishedAt must be greater than or equal to startedAt. Run event timestampWallClock values must stay within the run range. Suite child run ranges must stay within the suite range.",
+    "appliesTo": [
+      "run.json",
+      "suite.json",
+      "events.jsonl",
+      "suite child runs"
+    ]
+  },
   "eventRequiredFields": [
     "schemaVersion",
     "runId",

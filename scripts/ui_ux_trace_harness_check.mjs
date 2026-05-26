@@ -767,6 +767,15 @@ if (evidenceSchema) {
   ) {
     fail(`${evidenceSchemaPath}.eventLifecycleContract must bind run lifecycle events to run status`);
   }
+  requireFields(evidenceSchema.timeRangeContract, `${evidenceSchemaPath}.timeRangeContract`, ["policy", "appliesTo"]);
+  if (
+    !String(evidenceSchema.timeRangeContract?.policy ?? "").includes("valid ISO timestamps")
+    || !String(evidenceSchema.timeRangeContract?.policy ?? "").includes("timestampWallClock values must stay within the run range")
+    || !String(evidenceSchema.timeRangeContract?.policy ?? "").includes("Suite child run ranges must stay within the suite range")
+  ) {
+    fail(`${evidenceSchemaPath}.timeRangeContract.policy must bind run, suite, event, and child-run timestamps`);
+  }
+  requireUniqueStringArray(requireArray(evidenceSchema.timeRangeContract?.appliesTo, `${evidenceSchemaPath}.timeRangeContract.appliesTo`), `${evidenceSchemaPath}.timeRangeContract.appliesTo`, ["run.json", "suite.json", "events.jsonl", "suite child runs"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
   requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "keyIdentityPolicy", "requiredSources", "requiredSourceIds"]);
   if (!String(evidenceSchema.evidenceSourcesContract?.keyIdentityPolicy ?? "").includes("not interchangeable")) {
@@ -1134,6 +1143,11 @@ if (evidenceVerifierSource) {
     "finalUIStateRef points to missing sidecar row",
     "capture.written",
     "sampleCounts",
+    "validateTimeRange(",
+    "timestampWallClock must not be before run.json.startedAt",
+    "timestampWallClock must not be after run.json.finishedAt",
+    "child startedAt must not be before suite.json.startedAt",
+    "child finishedAt must not be after suite.json.finishedAt",
     "validateTraceIsolation(",
     "validateEvidenceSources(",
     "requiredSources",

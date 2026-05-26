@@ -85,6 +85,28 @@ function requireArrayField(failures, object, label, field) {
   return object[field];
 }
 
+function parseIsoTimestamp(failures, value, label) {
+  if (typeof value !== "string" || value.length === 0) {
+    fail(failures, `${label} must be an ISO timestamp string`);
+    return null;
+  }
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) {
+    fail(failures, `${label} must be a valid ISO timestamp`);
+    return null;
+  }
+  return timestamp;
+}
+
+function validateTimeRange(failures, object, label) {
+  const startedAtMs = parseIsoTimestamp(failures, object?.startedAt, `${label}.startedAt`);
+  const finishedAtMs = parseIsoTimestamp(failures, object?.finishedAt, `${label}.finishedAt`);
+  if (Number.isFinite(startedAtMs) && Number.isFinite(finishedAtMs) && finishedAtMs < startedAtMs) {
+    fail(failures, `${label}.finishedAt must be greater than or equal to startedAt`);
+  }
+  return { startedAtMs, finishedAtMs };
+}
+
 function requireFile(failures, dir, relativePath) {
   const file = path.join(dir, relativePath);
   if (!fs.existsSync(file)) fail(failures, `${relativePath} is missing`);
@@ -583,6 +605,7 @@ function validateRun(runDir, schema, options = {}) {
   validateMetricValueShape(failures, metricList, "metrics.json.metrics");
   if (run.program !== "macos-ux-trace-harness") fail(failures, "run.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(run.status)) fail(failures, `run.json.status ${run.status} is not allowed`);
+  const runTimeRange = validateTimeRange(failures, run, "run.json");
   validatePrivateBoundary(failures, run.privateBoundary, "run.json");
   validateExitPolicy(failures, run.exitPolicy, run.status, "run.json", schema);
   validateEvidenceSources(failures, run.evidenceSources, "run.json", schema);
@@ -628,6 +651,13 @@ function validateRun(runDir, schema, options = {}) {
     if (event.runId !== run.runId) fail(failures, `${label}.runId must match run.json`);
     if (event.scenarioId !== run.scenarioId) fail(failures, `${label}.scenarioId must match run.json`);
     if (event.fixtureProfile !== run.fixtureProfile) fail(failures, `${label}.fixtureProfile must match run.json`);
+    const eventWallClockMs = parseIsoTimestamp(failures, event.timestampWallClock, `${label}.timestampWallClock`);
+    if (Number.isFinite(eventWallClockMs) && Number.isFinite(runTimeRange.startedAtMs) && eventWallClockMs < runTimeRange.startedAtMs) {
+      fail(failures, `${label}.timestampWallClock must not be before run.json.startedAt`);
+    }
+    if (Number.isFinite(eventWallClockMs) && Number.isFinite(runTimeRange.finishedAtMs) && eventWallClockMs > runTimeRange.finishedAtMs) {
+      fail(failures, `${label}.timestampWallClock must not be after run.json.finishedAt`);
+    }
     if (!eventTypes.has(event.eventType)) fail(failures, `${label}.eventType ${event.eventType} is not declared`);
     if (!Number.isInteger(event.sequence) || event.sequence <= previousSequence) {
       fail(failures, `${label}.sequence must be strictly increasing`);
@@ -868,6 +898,8 @@ function validateRun(runDir, schema, options = {}) {
     failures: failureList.length,
     failureUIStates: failureStates.length,
     sampleCounts,
+    startedAtMs: runTimeRange.startedAtMs,
+    finishedAtMs: runTimeRange.finishedAtMs,
     validationFailures: failures,
   };
 }
@@ -897,6 +929,7 @@ function validateSuite(suiteDir, schema) {
   validateMetricValueShape(failures, suiteMetricList, "suite-metrics.json.metrics");
   if (suite.program !== "macos-ux-trace-harness") fail(failures, "suite.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(suite.status)) fail(failures, `suite.json.status ${suite.status} is not allowed`);
+  const suiteTimeRange = validateTimeRange(failures, suite, "suite.json");
   validatePrivateBoundary(failures, suite.privateBoundary, "suite.json");
   validateExitPolicy(failures, suite.exitPolicy, suite.status, "suite.json", schema);
   validateEvidenceSources(failures, suite.evidenceSources, "suite.json", schema);
@@ -962,6 +995,12 @@ function validateSuite(suiteDir, schema) {
     if (!suiteArtifactIndex.includes(row.runDir)) fail(failures, `suite.json.artifactIndex is missing child run directory ${row.runDir}`);
     const runDir = path.join(suiteDir, row.runDir);
     const runResult = validateRun(runDir, schema, { allowStatusMismatch: false });
+    if (Number.isFinite(runResult.startedAtMs) && Number.isFinite(suiteTimeRange.startedAtMs) && runResult.startedAtMs < suiteTimeRange.startedAtMs) {
+      fail(failures, `suite.json.runs[${index}] child startedAt must not be before suite.json.startedAt`);
+    }
+    if (Number.isFinite(runResult.finishedAtMs) && Number.isFinite(suiteTimeRange.finishedAtMs) && runResult.finishedAtMs > suiteTimeRange.finishedAtMs) {
+      fail(failures, `suite.json.runs[${index}] child finishedAt must not be after suite.json.finishedAt`);
+    }
     const childMetrics = readJson(path.join(runDir, "metrics.json"));
     const childFailures = readJson(path.join(runDir, "failures.json"));
     for (const metric of childMetrics.metrics || []) {

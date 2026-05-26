@@ -100,7 +100,8 @@ hash-referenced, harness-disabled, measured, and numerically comparable.
   `budget`, and `evidenceEventRefs`, child baseline-comparison path ownership,
   artifact-index existence/completeness, metrics/failures artifact shape,
   metric-to-KPI-registry priority/surface binding, KPI-specific metric event
-  references, run/scenario/step lifecycle event consistency, suite status
+  references, run/scenario/step lifecycle event consistency, run/suite/event
+  time-range consistency, suite status
   derivation from child runs, gated comparison-to-failure correlation, bidirectional
   failure-to-timeline correlation with unique failure identities, enforceable gate exit policy,
   trace-isolation root hashes and child-run directory consistency, and private-boundary flags before evidence can
