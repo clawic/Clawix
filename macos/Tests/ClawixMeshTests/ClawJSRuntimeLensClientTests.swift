@@ -112,6 +112,29 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(sessionActionPresentation.accessibilityLabel.contains("Runtime session actions"))
     }
 
+    func testRuntimeLensDecodesApprovalGateFixtureReceipts() async throws {
+        let data = Self.hermesFixtureDataWithApprovalGateReceipt()
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            XCTAssertEqual(args, ["runtime", "hermes", "domains", "--json"])
+            return .init(data: data, exitCode: 2)
+        })
+
+        let snapshot = try await client.load(runtime: .hermes)
+        let contract = try XCTUnwrap(snapshot.domainData?.doctorCompat?.supportContract)
+        XCTAssertEqual(contract.writeBackPolicy, "approval_gated_repair")
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "doctorCompat" }?.approvalGateFixtureStatus, "attached")
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "doctorCompat" }?.approvalGateFixtureReceipt?.receiptId, "fixture-doctor-denial")
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "doctorCompat" }?.approvalGateFixtureReceipt?.redacted, true)
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "doctorCompat" }?.approvalGateFixtureReceipt?.mutationWithoutApproval, false)
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "doctorCompat" }?.approvalGateFixtureReceipt?.plaintextSecretLeak, false)
+        XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "doctorCompat" }?.approvalGateFixtureReceipt?.receiptId, "fixture-doctor-denial")
+
+        let supportContracts = ClawJSRuntimeLensSupportContractPresentation.make(snapshot: snapshot)
+        let row = try XCTUnwrap(supportContracts.rows.first { $0.domain == "doctorCompat" })
+        XCTAssertEqual(row.approvalGateFixtureLabel, "attached, receipt fixture-doctor-denial, status denied_without_approval, redacted true")
+        XCTAssertTrue(row.accessibilityLabel.contains("receipt fixture-doctor-denial"))
+    }
+
     func testRuntimeLensPresentationsExposeParityEvidenceAndClosureState() async throws {
         let snapshot = try await ClawJSRuntimeLensTestFixtures.degradedRuntimePortalSnapshot()
         let audit = try XCTUnwrap(snapshot.supportAudit)
@@ -341,5 +364,95 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.resources(for: "gateway").first?.status, "degraded")
         XCTAssertEqual(snapshot.resources(for: "doctorCompat").first?.status, "ready")
         XCTAssertEqual(snapshot.resources(for: "sandboxPermissions").first?.status, "degraded")
+    }
+}
+
+private extension ClawJSRuntimeLensClientTests {
+    static func hermesFixtureDataWithApprovalGateReceipt() -> Data {
+        Data(
+            """
+            {
+              "data": {
+                "runtimeId": "hermes",
+                "runtimeName": "Hermes Agent",
+                "status": {},
+                "domains": [
+                  {
+                    "domain": "doctorCompat",
+                    "writeBackPolicy": "approval_gated_repair",
+                    "writeBackApprovalGated": true,
+                    "approvalGateFixtureStatus": "attached",
+                    "approvalGateFixtureReceipt": {
+                      "domain": "doctorCompat",
+                      "receiptId": "fixture-doctor-denial",
+                      "receiptType": "approval_gate_fixture_receipt",
+                      "status": "denied_without_approval",
+                      "command": "hermes doctor --fix --dry-run",
+                      "approved": false,
+                      "mutationPerformed": false,
+                      "mutationWithoutApproval": false,
+                      "plaintextSecretLeak": false,
+                      "redacted": true,
+                      "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+                      "source": "approval-gate-fixture"
+                    }
+                  }
+                ],
+                "domainData": {
+                  "doctorCompat": {
+                    "supportContract": {
+                      "claim": "dev_only",
+                      "authority": "runtime_adapter",
+                      "writeBackPolicy": "approval_gated_repair",
+                      "writeBackAllowed": false,
+                      "writeBackApprovalGated": true,
+                      "approvalGateFixtureStatus": "attached",
+                      "approvalGateFixtureReceipt": {
+                        "domain": "doctorCompat",
+                        "receiptId": "fixture-doctor-denial",
+                        "receiptType": "approval_gate_fixture_receipt",
+                        "status": "denied_without_approval",
+                        "command": "hermes doctor --fix --dry-run",
+                        "approved": false,
+                        "mutationPerformed": false,
+                        "mutationWithoutApproval": false,
+                        "plaintextSecretLeak": false,
+                        "redacted": true,
+                        "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+                        "source": "approval-gate-fixture"
+                      },
+                      "validation": "fixture_required",
+                      "externalPending": false
+                    }
+                  }
+                },
+                "supportAudit": {
+                  "domains": [
+                    {
+                      "domain": "doctorCompat",
+                      "writeBackPolicy": "approval_gated_repair",
+                      "writeBackApprovalGated": true,
+                      "approvalGateFixtureStatus": "attached",
+                      "approvalGateFixtureReceipt": {
+                        "domain": "doctorCompat",
+                        "receiptId": "fixture-doctor-denial",
+                        "receiptType": "approval_gate_fixture_receipt",
+                        "status": "denied_without_approval",
+                        "command": "hermes doctor --fix --dry-run",
+                        "approved": false,
+                        "mutationPerformed": false,
+                        "mutationWithoutApproval": false,
+                        "plaintextSecretLeak": false,
+                        "redacted": true,
+                        "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+                        "source": "approval-gate-fixture"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+            """.utf8
+        )
     }
 }

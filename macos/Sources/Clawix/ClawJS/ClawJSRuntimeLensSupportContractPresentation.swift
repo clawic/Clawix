@@ -14,6 +14,7 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
         let lossPolicy: String?
         let writeBackPolicy: String?
         let writeBackAllowed: Bool
+        let approvalGateFixtureLabel: String?
         let validation: String?
         let externalPending: Bool
         let freshness: String?
@@ -78,6 +79,7 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
                 lossPolicy.map { "loss policy \($0)" },
                 writeBackPolicy.map { "write back \($0)" },
                 "write back allowed \(writeBackAllowed)",
+                approvalGateFixtureLabel.map { "approval gate receipt \($0)" },
                 validation.map { "validation \($0)" },
                 "external pending \(externalPending)",
                 freshness.map { "freshness \($0)" },
@@ -133,32 +135,33 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
     }
 
     static func make(snapshot: ClawJSRuntimeLensSnapshot) -> ClawJSRuntimeLensSupportContractPresentation {
-        let rows = ClawJSRuntimeLensSnapshot.canonicalDomains.compactMap { domain -> Row? in
-            guard let contract = snapshot.supportContract(for: domain) else { return nil }
-            return Row(
-                id: domain,
-                domain: domain,
-                displayLabel: ClawJSRuntimeLensSnapshot.displayLabel(for: domain),
-                claim: contract.claim,
-                contractAuthority: contract.authority,
-                canonicalAuthority: contract.canonicalAuthority,
-                nativeAuthority: contract.nativeAuthority,
-                persistence: contract.persistence,
-                relation: contract.relation,
-                lossPolicy: contract.lossPolicy,
-                writeBackPolicy: contract.writeBackPolicy,
-                writeBackAllowed: contract.writeBackAllowed == true,
-                validation: contract.validation,
-                externalPending: contract.externalPending == true,
-                freshness: contract.freshness,
-                officialCommands: contract.officialCommands ?? [],
-                evidenceRequirements: contract.evidenceRequirements ?? [],
-                provenanceSource: contract.provenance?.source,
-                provenanceRuntimeId: contract.provenance?.runtimeId,
-                provenanceDomain: contract.provenance?.domain
-            )
+        withUnsafePointer(to: snapshot) { snapshotPointer in
+            presentation(rows: supportContractRows(snapshot: snapshotPointer))
         }
+    }
 
+    @inline(never)
+    private static func supportContractRows(snapshot: UnsafePointer<ClawJSRuntimeLensSnapshot>) -> [Row] {
+        var rows: [Row] = []
+        rows.reserveCapacity(ClawJSRuntimeLensSnapshot.canonicalDomains.count)
+        appendRow(domain: "sessions", contract: snapshot.pointee.domainData?.sessions?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "skills", contract: snapshot.pointee.domainData?.skills?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "memory", contract: snapshot.pointee.domainData?.memory?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "channels", contract: snapshot.pointee.domainData?.channels?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "providers", contract: snapshot.pointee.domainData?.providers?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "auth", contract: snapshot.pointee.domainData?.auth?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "models", contract: snapshot.pointee.domainData?.models?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "scheduler", contract: snapshot.pointee.domainData?.scheduler?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "plugins", contract: snapshot.pointee.domainData?.plugins?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "gateway", contract: snapshot.pointee.domainData?.gateway?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "doctorCompat", contract: snapshot.pointee.domainData?.doctorCompat?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "sandboxPermissions", contract: snapshot.pointee.domainData?.sandboxPermissions?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        appendRow(domain: "configuration", contract: snapshot.pointee.domainData?.configuration?.supportContract, domains: snapshot.pointee.domains, to: &rows)
+        return rows
+    }
+
+    @inline(never)
+    private static func presentation(rows: [Row]) -> ClawJSRuntimeLensSupportContractPresentation {
         return ClawJSRuntimeLensSupportContractPresentation(
             contractDomainCount: rows.count,
             writeBackAllowedCount: rows.filter(\.writeBackAllowed).count,
@@ -179,6 +182,56 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
         )
     }
 
+    private static func appendRow(
+        domain: String,
+        contract: ClawJSRuntimeLensSnapshot.SupportContract?,
+        domains: [ClawJSRuntimeLensSnapshot.Domain],
+        to rows: inout [Row]
+    ) {
+        guard let contract else { return }
+        let metadata = approvalGateMetadata(for: domain, domains: domains)
+        rows.append(Row(
+            id: domain,
+            domain: domain,
+            displayLabel: ClawJSRuntimeLensSnapshot.displayLabel(for: domain),
+            claim: contract.claim,
+            contractAuthority: contract.authority,
+            canonicalAuthority: contract.canonicalAuthority,
+            nativeAuthority: contract.nativeAuthority,
+            persistence: contract.persistence,
+            relation: contract.relation,
+            lossPolicy: contract.lossPolicy,
+            writeBackPolicy: contract.writeBackPolicy,
+            writeBackAllowed: contract.writeBackAllowed == true,
+            approvalGateFixtureLabel: approvalGateFixtureLabel(
+                status: metadata.status,
+                receipt: metadata.receipt
+            ),
+            validation: contract.validation,
+            externalPending: contract.externalPending == true,
+            freshness: contract.freshness,
+            officialCommands: contract.officialCommands ?? [],
+            evidenceRequirements: contract.evidenceRequirements ?? [],
+            provenanceSource: contract.provenance?.source,
+            provenanceRuntimeId: contract.provenance?.runtimeId,
+            provenanceDomain: contract.provenance?.domain
+        ))
+    }
+
+    private static func approvalGateMetadata(
+        for domain: String,
+        domains: [ClawJSRuntimeLensSnapshot.Domain]
+    ) -> (writeBackApprovalGated: Bool, status: String?, receipt: ClawJSRuntimeLensSnapshot.ApprovalGateFixtureReceipt?) {
+        guard let metadata = domains.first(where: { $0.domain == domain }) else {
+            return (false, nil, nil)
+        }
+        return (
+            metadata.writeBackApprovalGated == true,
+            metadata.approvalGateFixtureStatus,
+            metadata.approvalGateFixtureReceipt
+        )
+    }
+
     private static func countLabel(_ values: [String]) -> String? {
         let counts = values.reduce(into: [String: Int]()) { result, value in
             result[value, default: 0] += 1
@@ -192,25 +245,41 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
         guard !values.isEmpty else { return nil }
         return values.prefix(limit).joined(separator: ", ")
     }
+
+    private static func approvalGateFixtureLabel(
+        status: String?,
+        receipt: ClawJSRuntimeLensSnapshot.ApprovalGateFixtureReceipt?
+    ) -> String? {
+        guard let status else { return nil }
+        let values = [
+            status,
+            receipt?.receiptId.map { "receipt \($0)" },
+            receipt?.status.map { "status \($0)" },
+            receipt?.redacted.map { "redacted \($0)" }
+        ]
+        .compactMap { $0 }
+        return values.joined(separator: ", ")
+    }
 }
 
 private extension ClawJSRuntimeLensSnapshot {
-    func supportContract(for domain: String) -> ClawJSRuntimeLensSnapshot.SupportContract? {
-        switch domain {
-        case "sessions": return domainData?.sessions?.supportContract
-        case "skills": return domainData?.skills?.supportContract
-        case "memory": return domainData?.memory?.supportContract
-        case "channels": return domainData?.channels?.supportContract
-        case "providers": return domainData?.providers?.supportContract
-        case "auth": return domainData?.auth?.supportContract
-        case "models": return domainData?.models?.supportContract
-        case "scheduler": return domainData?.scheduler?.supportContract
-        case "plugins": return domainData?.plugins?.supportContract
-        case "gateway": return domainData?.gateway?.supportContract
-        case "doctorCompat": return domainData?.doctorCompat?.supportContract
-        case "sandboxPermissions": return domainData?.sandboxPermissions?.supportContract
-        case "configuration": return domainData?.configuration?.supportContract
-        default: return nil
-        }
+    enum SupportContractDomain: String {
+        case sessions
+        case skills
+        case memory
+        case channels
+        case providers
+        case auth
+        case models
+        case scheduler
+        case plugins
+        case gateway
+        case doctorCompat
+        case sandboxPermissions
+        case configuration
+    }
+
+    func supportContract(for domain: String) -> SupportContractDomain? {
+        SupportContractDomain(rawValue: domain)
     }
 }

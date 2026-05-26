@@ -147,6 +147,9 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let nativeAuthority: String?
             let writeBackPolicy: String?
             let writeBackAllowed: Bool?
+            let writeBackApprovalGated: Bool?
+            let approvalGateFixtureStatus: String?
+            let approvalGateFixtureReceipt: ApprovalGateFixtureReceipt?
             let validation: String?
             let externalPending: Bool?
             let persistence: String?
@@ -415,6 +418,9 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let lossPolicy: String?
         let writeBackPolicy: String?
         let writeBackAllowed: Bool?
+        let writeBackApprovalGated: Bool?
+        let approvalGateFixtureStatus: String?
+        let approvalGateFixtureReceipt: ApprovalGateFixtureReceipt?
         let validation: String?
         let externalPending: Bool?
         let freshness: String?
@@ -680,12 +686,45 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let lossPolicy: String?
         let writeBackPolicy: String?
         let writeBackAllowed: Bool?
+        let writeBackApprovalGated: Bool?
+        let approvalGateFixtureStatus: String?
+        let approvalGateFixtureReceipt: ApprovalGateFixtureReceipt?
         let validation: String?
         let externalPending: Bool?
         let freshness: String?
         let officialCommands: [String]?
         let evidenceRequirements: [EvidenceRequirement]?
         let provenance: Provenance?
+    }
+
+    final class ApprovalGateFixtureReceipt: Decodable, Equatable {
+        let domain: String?
+        let receiptId: String?
+        let receiptType: String?
+        let status: String?
+        let command: String?
+        let approved: Bool?
+        let mutationPerformed: Bool?
+        let mutationWithoutApproval: Bool?
+        let plaintextSecretLeak: Bool?
+        let redacted: Bool?
+        let evidenceSafetyPolicy: String?
+        let source: String?
+
+        static func == (lhs: ApprovalGateFixtureReceipt, rhs: ApprovalGateFixtureReceipt) -> Bool {
+            lhs.domain == rhs.domain
+                && lhs.receiptId == rhs.receiptId
+                && lhs.receiptType == rhs.receiptType
+                && lhs.status == rhs.status
+                && lhs.command == rhs.command
+                && lhs.approved == rhs.approved
+                && lhs.mutationPerformed == rhs.mutationPerformed
+                && lhs.mutationWithoutApproval == rhs.mutationWithoutApproval
+                && lhs.plaintextSecretLeak == rhs.plaintextSecretLeak
+                && lhs.redacted == rhs.redacted
+                && lhs.evidenceSafetyPolicy == rhs.evidenceSafetyPolicy
+                && lhs.source == rhs.source
+        }
     }
 
     struct EvidenceRequirement: Decodable, Equatable, Identifiable {
