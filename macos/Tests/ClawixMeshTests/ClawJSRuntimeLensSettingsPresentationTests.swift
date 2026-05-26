@@ -54,6 +54,13 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         let inventory = try XCTUnwrap(presentation.sections.first { $0.id == "inventory" })
         XCTAssertTrue(inventory.accessibilityLabel.contains("Runtime inventory"))
         XCTAssertTrue(inventory.rows.contains { $0.label == "sessions" || $0.label == "Sessions" })
+        let inventorySessionResource = try XCTUnwrap(inventory.rows.first {
+            $0.label == "Sessions: runtime-session"
+        })
+        XCTAssertTrue(inventorySessionResource.detailLines.contains("path /Users/tester/.example/sessions/2026/05/21/runtime-session.jsonl"))
+        XCTAssertTrue(inventorySessionResource.detailLines.contains("native id: sessionPathId"))
+        XCTAssertTrue(inventorySessionResource.detailLines.contains("size 128 B"))
+        XCTAssertTrue(inventorySessionResource.detailLines.contains("attributes pin authority: clawix_local_overlay, divergence: local_pin_overlay, overlay authority: clawix_local_overlay, overlay writes runtime: false"))
     }
 
     func testSettingsPresentationKeepsViewStateWhenSnapshotIsMissing() {
@@ -121,5 +128,14 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(pinContract.detailLines.contains("evidence hermes.sessions.pin.native_write_back_contract"))
         XCTAssertTrue(pinContract.detailLines.contains("user visible contract local_overlay_only_until_official_runtime_pin_api_exists"))
         XCTAssertTrue(pinContract.detailLines.contains("claim effect blocks_native_write_back_parity_not_local_overlay"))
+
+        let inventory = try XCTUnwrap(presentation.sections.first { $0.id == "inventory" })
+        let sqliteSession = try XCTUnwrap(inventory.rows.first { $0.label == "Sessions: SQLite Session" })
+        XCTAssertEqual(sqliteSession.value, "projected")
+        XCTAssertTrue(sqliteSession.detailLines.contains("path /Users/tester/.hermes/state.db"))
+        XCTAssertTrue(sqliteSession.detailLines.contains("native id: sessionId"))
+        XCTAssertTrue(sqliteSession.detailLines.contains("provenance runtime-session-sqlite, runtime hermes, /Users/tester/.hermes/state.db"))
+        XCTAssertTrue(sqliteSession.detailLines.contains("limitations write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence, validation: fixture_required"))
+        XCTAssertTrue(sqliteSession.detailLines.contains("attributes pin authority: none, divergence: none, parent session: parent-session, tool calls: 0"))
     }
 }

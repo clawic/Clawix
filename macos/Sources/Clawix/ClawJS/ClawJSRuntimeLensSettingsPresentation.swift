@@ -656,16 +656,48 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
     }
 
     private static func inventorySection(_ presentation: ClawJSRuntimeLensInventoryPresentation) -> Section {
-        Section(id: "inventory", title: "Inventory", rows: [
+        let domainRows = presentation.sections.map {
+            Row(id: $0.id, label: $0.displayLabel, value: $0.statusLabel, pills: [
+                Pill(id: "resources", label: "\($0.totalResourceCount)", tone: .info)
+            ], detailLines: [], accessibilityLabel: $0.accessibilityLabel)
+        }
+        let resourceRows = presentation.sections.flatMap { section in
+            section.rows.map { row in
+                Row(
+                    id: "\(section.id)::\(row.id)",
+                    label: "\(section.displayLabel): \(row.displayLabel)",
+                    value: row.statusLabel ?? row.kind,
+                    pills: optionalPills([
+                        row.statusLabel.map {
+                            Pill(id: "status", label: $0, tone: ClawJSRuntimeLensStatusTone.runtimeDomainStatus(status: $0, supported: true))
+                        },
+                        row.kind.map { Pill(id: "kind", label: $0, tone: .muted) }
+                    ]),
+                    detailLines: inventoryResourceDetailLines(row),
+                    accessibilityLabel: row.accessibilityLabel
+                )
+            }
+        }
+
+        return Section(id: "inventory", title: "Inventory", rows: [
             Row(id: "summary", label: "Inventory", value: presentation.domainLabel, pills: [
                 Pill(id: "domains", label: "domains \(presentation.sectionCount)", tone: .info),
                 Pill(id: "resources", label: "resources \(presentation.visibleResourceCount)", tone: .info)
             ], detailLines: [], accessibilityLabel: presentation.accessibilityLabel)
-        ] + presentation.sections.map {
-            Row(id: $0.id, label: $0.displayLabel, value: $0.statusLabel, pills: [
-                Pill(id: "resources", label: "\($0.totalResourceCount)", tone: .info)
-            ], detailLines: [], accessibilityLabel: $0.accessibilityLabel)
-        }, accessibilityLabel: presentation.accessibilityLabel)
+        ] + domainRows + resourceRows, accessibilityLabel: presentation.accessibilityLabel)
+    }
+
+    private static func inventoryResourceDetailLines(_ row: ClawJSRuntimeLensInventoryPresentation.Row) -> [String] {
+        optionalLines([
+            row.path.map { "path \($0)" },
+            row.summaryLabel.map { "summary \($0)" },
+            row.enabledLabel,
+            row.sizeLabel.map { "size \($0)" },
+            row.nativeIdentifierLabel,
+            row.provenanceLabel.map { "provenance \($0)" },
+            row.limitationsLabel.map { "limitations \($0)" },
+            row.attributesLabel.map { "attributes \($0)" }
+        ])
     }
 
     private static func optionalPills(_ values: [Pill?]) -> [Pill] {
