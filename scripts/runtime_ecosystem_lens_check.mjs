@@ -322,6 +322,17 @@ if (!exists(hermesFixturePath)) {
   if (!Array.isArray(commands)) {
     errors.push("Hermes runtime portal fixture missing command matrix rows");
   } else {
+    const portalSet = fixture?.data?.commands?.jsonPortalCommandSet;
+    requireEqual(portalSet?.status, "guarded", "Hermes fixture JSON portal command-set status");
+    requireEqual(portalSet?.totalCommandCount, 44, "Hermes fixture JSON portal command count");
+    requireEqual(portalSet?.domainCommandCount, 13, "Hermes fixture JSON portal domain command count");
+    requireEqual(portalSet?.resourceCommandCount, 13, "Hermes fixture JSON portal resource command count");
+    requireEqual(portalSet?.sessionActionCommandCount, 11, "Hermes fixture JSON portal session action command count");
+    requireEqual(portalSet?.executableMatrixCommandCount, 22, "Hermes fixture executable command matrix count");
+    requireEqual(portalSet?.promotionSignal, false, "Hermes fixture JSON portal promotion signal");
+    requireEqual(portalSet?.supportClaim, "partial_runtime_lens", "Hermes fixture JSON portal support claim");
+    requireEqual(portalSet?.supportStage, "dev_only", "Hermes fixture JSON portal support stage");
+    requireEqual(portalSet?.safeDefault, "guarded_command_coverage_does_not_promote_support", "Hermes fixture JSON portal safe default");
     const pinCommand = commands.find((entry) => entry.command === "runtime hermes sessions pin --session-key <id>");
     const unpinCommand = commands.find((entry) => entry.command === "runtime hermes sessions unpin --session-key <id>");
     requireEqual(pinCommand?.writesRuntime, false, "Hermes pin command matrix writesRuntime");
@@ -828,6 +839,8 @@ for (const snippet of [
 for (const snippet of [
   "struct ClawJSRuntimeLensCommandMatrixPresentation",
   "Runtime command matrix",
+  "jsonPortalCommandSet",
+  "json portal commands \\($0)",
   "writesRuntimeCount",
   "wouldWriteRuntimeCount",
   "localOverlayCommandCount",
@@ -1049,6 +1062,9 @@ for (const snippet of [
   "ClawJSRuntimeLensSessionActionContractPresentation.make",
   "sessionActionContractDetailLines($0)",
   "ClawJSRuntimeLensCommandMatrixPresentation.make(commands: commands)",
+  "portal \\(commandCount)",
+  "no promotion",
+  "presentation.jsonPortalSafeDefault",
   "args \\(command.argumentCount)",
   "commandDetailLines($0)",
   "row.nativeWriteBackFixtureRequired.map { \"fixture required \\($0)\" }",
@@ -1345,6 +1361,9 @@ for (const snippet of [
   "required evidence tui_gateway_prompt_submit_fixture, non_destructive_fixture, confirmation_or_dry_run_policy, round_trip_native_visibility",
   "risk controls no_silent_runtime_write, no_direct_runtime_store_mutation, local_overlay_only_until_contract_exists",
   "XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 6)",
+  "XCTAssertEqual(commandPresentation.jsonPortalCommandCount, 44)",
+  "XCTAssertEqual(commandPresentation.jsonPortalPromotionSignal, false)",
+  "guarded_command_coverage_does_not_promote_support",
   "XCTAssertEqual(commandPresentation.rows.first?.blockerClass, \"direct_blocker\")",
   "XCTAssertEqual(commandPresentation.rows.first?.nativeWriteBackFixtureRequired, true)",
   "XCTAssertEqual(commandPresentation.rows.first?.userVisibleContract, \"non_executable_until_tui_gateway_wrapper_fixture_exists\")",

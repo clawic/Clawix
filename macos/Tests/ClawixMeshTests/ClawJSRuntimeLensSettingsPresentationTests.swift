@@ -108,6 +108,9 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(channelDomain.detailLines.contains("runtime-ecosystem-manifest, runtime hermes, domain channels"))
 
         let commands = try XCTUnwrap(presentation.sections.first { $0.id == "commands" })
+        XCTAssertTrue(commands.accessibilityLabel.contains("json portal commands 44"))
+        XCTAssertTrue(commands.accessibilityLabel.contains("promotion signal false"))
+        XCTAssertTrue(commands.accessibilityLabel.contains("safe default guarded_command_coverage_does_not_promote_support"))
         let sendCommand = try XCTUnwrap(commands.rows.first {
             $0.label == "runtime hermes sessions send --session-key <id> --message <text> --confirm-runtime-write"
         })

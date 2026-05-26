@@ -851,8 +851,28 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
     struct CommandMatrix: Decodable, Equatable {
         let authority: String?
         let executableByClawCli: [RuntimeCommand]?
+        let jsonPortalCommandSet: JsonPortalCommandSet?
         let resourceDomains: [String]?
         let mutationPolicy: String?
+
+        struct JsonPortalCommandSet: Decodable, Equatable {
+            let status: String?
+            let totalCommandCount: Int?
+            let topLevelCommandCount: Int?
+            let domainCommandCount: Int?
+            let resourceCommandCount: Int?
+            let scopedReadCommandCount: Int?
+            let sessionActionCommandCount: Int?
+            let manifestDomainCount: Int?
+            let sessionActions: [String]?
+            let includesAllManifestDomains: Bool?
+            let includesAllDocumentedSessionActions: Bool?
+            let executableMatrixCommandCount: Int?
+            let promotionSignal: Bool?
+            let supportClaim: String?
+            let supportStage: String?
+            let safeDefault: String?
+        }
     }
 
     struct RuntimeCommand: Decodable, Equatable, Identifiable {

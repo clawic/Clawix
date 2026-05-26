@@ -227,6 +227,12 @@ extension ClawJSRuntimeLensSection {
             row(label: "Commands") {
                 HStack(spacing: 8) {
                     statusPill(text: "\(presentation.executableCount)", color: .blue)
+                    if let commandCount = presentation.jsonPortalCommandCount {
+                        statusPill(text: "portal \(commandCount)", color: .blue)
+                    }
+                    if presentation.jsonPortalPromotionSignal == false {
+                        statusPill(text: "no promotion", color: Color.overlay(0.35))
+                    }
                     if let authority = presentation.authority {
                         statusPill(text: authority, color: Color.overlay(0.35))
                     }
@@ -235,6 +241,12 @@ extension ClawJSRuntimeLensSection {
             }
             if let mutationPolicy = presentation.mutationPolicy, !mutationPolicy.isEmpty {
                 Text(mutationPolicy)
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.82))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let safeDefault = presentation.jsonPortalSafeDefault {
+                Text(safeDefault)
                     .font(BodyFont.system(size: 10.5))
                     .foregroundColor(Palette.textSecondary.opacity(0.82))
                     .fixedSize(horizontal: false, vertical: true)

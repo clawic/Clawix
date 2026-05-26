@@ -72,12 +72,26 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
     let argumentCount: Int
     let resourceDomainCount: Int
     let resourceDomainsLabel: String?
+    let jsonPortalStatus: String?
+    let jsonPortalCommandCount: Int?
+    let jsonPortalPromotionSignal: Bool?
+    let jsonPortalSupportClaim: String?
+    let jsonPortalSupportStage: String?
+    let jsonPortalSafeDefault: String?
+    let jsonPortalSessionActionsLabel: String?
     let rows: [Row]
 
     var accessibilityLabel: String {
         [
             "Runtime command matrix",
             "commands \(executableCount)",
+            jsonPortalCommandCount.map { "json portal commands \($0)" },
+            jsonPortalStatus.map { "json portal \($0)" },
+            jsonPortalPromotionSignal.map { "promotion signal \($0)" },
+            jsonPortalSupportClaim.map { "support claim \($0)" },
+            jsonPortalSupportStage.map { "support stage \($0)" },
+            jsonPortalSafeDefault.map { "safe default \($0)" },
+            jsonPortalSessionActionsLabel.map { "session actions \($0)" },
             authority.map { "authority \($0)" },
             "writes runtime \(writesRuntimeCount)",
             "would write runtime \(wouldWriteRuntimeCount)",
@@ -145,6 +159,13 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
             },
             resourceDomainCount: commands.resourceDomains?.count ?? 0,
             resourceDomainsLabel: listLabel(commands.resourceDomains, limit: 5),
+            jsonPortalStatus: commands.jsonPortalCommandSet?.status,
+            jsonPortalCommandCount: commands.jsonPortalCommandSet?.totalCommandCount,
+            jsonPortalPromotionSignal: commands.jsonPortalCommandSet?.promotionSignal,
+            jsonPortalSupportClaim: commands.jsonPortalCommandSet?.supportClaim,
+            jsonPortalSupportStage: commands.jsonPortalCommandSet?.supportStage,
+            jsonPortalSafeDefault: commands.jsonPortalCommandSet?.safeDefault,
+            jsonPortalSessionActionsLabel: listLabel(commands.jsonPortalCommandSet?.sessionActions, limit: 11),
             rows: rows
         )
     }

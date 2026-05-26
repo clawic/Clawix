@@ -8131,7 +8131,37 @@
         "sandboxPermissions",
         "configuration"
       ],
-      "mutationPolicy": "Runtime-owned actions must delegate to the runtime adapter or be marked unsupported."
+      "mutationPolicy": "Runtime-owned actions must delegate to the runtime adapter or be marked unsupported.",
+      "jsonPortalCommandSet": {
+        "status": "guarded",
+        "totalCommandCount": 44,
+        "topLevelCommandCount": 5,
+        "domainCommandCount": 13,
+        "resourceCommandCount": 13,
+        "scopedReadCommandCount": 2,
+        "sessionActionCommandCount": 11,
+        "manifestDomainCount": 13,
+        "sessionActions": [
+          "list",
+          "preview",
+          "resolve",
+          "history",
+          "send",
+          "inject",
+          "abort",
+          "create",
+          "pin",
+          "unpin",
+          "conflicts"
+        ],
+        "includesAllManifestDomains": true,
+        "includesAllDocumentedSessionActions": true,
+        "executableMatrixCommandCount": 22,
+        "promotionSignal": false,
+        "supportClaim": "partial_runtime_lens",
+        "supportStage": "dev_only",
+        "safeDefault": "guarded_command_coverage_does_not_promote_support"
+      }
     },
     "domains": [
       {
