@@ -492,9 +492,29 @@ if (registry) {
 
   const surfaces = requireArray(registry.traceSurfaces, `${registryPath}.traceSurfaces`, expectedP0SurfaceIds.length);
   const surfaceIds = requireRecordIds(surfaces, `${registryPath}.traceSurfaces`, expectedP0SurfaceIds);
+  const allKpiIds = new Set((registry.kpis ?? []).map((kpi) => kpi.id));
   for (const surface of surfaces) {
-    requireFields(surface, `${registryPath}.traceSurfaces.${surface.id ?? "unknown"}`, ["id", "priority", "role", "surface", "visibilityContract", "geometryContract"]);
+    requireFields(surface, `${registryPath}.traceSurfaces.${surface.id ?? "unknown"}`, [
+      "id",
+      "priority",
+      "role",
+      "surface",
+      "visibilityContract",
+      "geometryContract",
+      "criticalityReason",
+      "kpiRefs",
+    ]);
     if (!["P0", "P1", "P2"].includes(surface.priority)) fail(`${registryPath}.traceSurfaces.${surface.id}.priority must be P0/P1/P2`);
+    if (typeof surface.criticalityReason !== "string" || surface.criticalityReason.length < 20) {
+      fail(`${registryPath}.traceSurfaces.${surface.id}.criticalityReason must explain product criticality`);
+    }
+    const surfaceKpiRefs = requireArray(surface.kpiRefs, `${registryPath}.traceSurfaces.${surface.id}.kpiRefs`);
+    for (const kpiRef of surfaceKpiRefs) {
+      if (!allKpiIds.has(kpiRef)) fail(`${registryPath}.traceSurfaces.${surface.id}.kpiRefs references unknown KPI ${kpiRef}`);
+    }
+    if (surface.priority === "P0" && !surfaceKpiRefs.some((kpiRef) => kpiRef.startsWith("p0."))) {
+      fail(`${registryPath}.traceSurfaces.${surface.id}.kpiRefs must include at least one P0 KPI`);
+    }
   }
 
   const controlImplementations = requireArray(
