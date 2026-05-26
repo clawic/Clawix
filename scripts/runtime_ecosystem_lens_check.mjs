@@ -230,6 +230,23 @@ if (!exists(hermesFixturePath)) {
     requireEqual(unpinCommand?.evidenceRequirementId, "hermes.sessions.unpin.native_write_back_contract", "Hermes unpin command matrix evidence id");
     requireEqual(unpinCommand?.nativeWriteBackContract?.officialContractRequired, true, "Hermes unpin command matrix official contract required");
   }
+  const sessionActionContracts = fixture?.data?.domainData?.sessions?.actionContracts;
+  const sessionActionPolicy = fixture?.data?.domainData?.sessions?.actionPolicy;
+  if (!Array.isArray(sessionActionContracts) || !Array.isArray(sessionActionPolicy)) {
+    errors.push("Hermes runtime portal fixture missing session action contracts or policy");
+  } else {
+    const pinContract = sessionActionContracts.find((entry) => entry.action === "pin");
+    const unpinPolicy = sessionActionPolicy.find((entry) => entry.action === "unpin");
+    requireEqual(pinContract?.nativeWriteBackStatus, "blocked_until_official_runtime_write_back_contract", "Hermes pin action contract native write-back status");
+    requireEqual(pinContract?.officialRuntimeWriteBackContractRequired, true, "Hermes pin action contract official write-back contract required");
+    requireEqual(pinContract?.officialRuntimeWriteBackContractKnown, false, "Hermes pin action contract official write-back contract known");
+    requireEqual(pinContract?.nativeWriteBackSafeDefault, "keep_local_overlay_and_do_not_write_runtime_pin_state", "Hermes pin action contract safe default");
+    requireEqual(pinContract?.userVisibleContract, "local_overlay_only_until_official_runtime_pin_api_exists", "Hermes pin action contract user-visible contract");
+    requireEqual(pinContract?.claimEffect, "blocks_native_write_back_parity_not_local_overlay", "Hermes pin action contract claim effect");
+    requireEqual(pinContract?.evidenceRequirementId, "hermes.sessions.pin.native_write_back_contract", "Hermes pin action contract evidence id");
+    requireEqual(unpinPolicy?.nativeWriteBackStatus, "blocked_until_official_runtime_write_back_contract", "Hermes unpin action policy native write-back status");
+    requireEqual(unpinPolicy?.evidenceRequirementId, "hermes.sessions.unpin.native_write_back_contract", "Hermes unpin action policy evidence id");
+  }
 }
 
 if (fs.existsSync(siblingClawJs)) {
@@ -1082,6 +1099,8 @@ for (const snippet of [
   "XCTAssertEqual(result.evidenceRequirementId, \"hermes.sessions.pin.native_write_back_contract\")",
   "XCTAssertEqual(result.nativeWriteBackContract?.officialContractRequired, true)",
   "XCTAssertEqual(hermesPinCommand.nativeWriteBackStatus, \"blocked_until_official_runtime_write_back_contract\")",
+  "XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.first { $0.action == \"pin\" }?.nativeWriteBackStatus, \"blocked_until_official_runtime_write_back_contract\")",
+  "XCTAssertEqual(contractPresentation.nativeWriteBackBlockedCount, 2)",
   "XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 2)",
   "channelInventory.statusLabel",
   "configurationInventory.statusLabel",
