@@ -171,6 +171,12 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(overlayPresentation.totalOverlays, 0)
         XCTAssertEqual(overlayPresentation.totalConflicts, 0)
         XCTAssertEqual(overlayPresentation.rows, [])
+        XCTAssertEqual(overlayPresentation.detailLines, [
+            "authority clawix_local_overlay",
+            "conflict policy no_silent_overwrite",
+            "write back blocked_until_official_runtime_pin_api",
+            "writes runtime false"
+        ])
         XCTAssertTrue(overlayPresentation.accessibilityLabel.contains("writes runtime false"))
         XCTAssertTrue(overlayPresentation.accessibilityLabel.contains("authority clawix_local_overlay"))
     }

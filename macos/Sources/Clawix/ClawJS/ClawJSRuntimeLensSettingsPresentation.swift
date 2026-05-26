@@ -579,9 +579,11 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
             Row(id: "summary", label: "Overlays", value: presentation.detailLabel, pills: [
                 Pill(id: "total", label: "\(presentation.totalOverlays)", tone: .info),
                 Pill(id: "write", label: presentation.writesRuntime ? "writes runtime" : "no write", tone: presentation.writesRuntime ? .warning : .muted)
-            ], detailLines: [], accessibilityLabel: presentation.accessibilityLabel)
+            ], detailLines: presentation.detailLines + optionalLines([
+                presentation.conflictStatusLabel.map { "conflict statuses \($0)" }
+            ]), accessibilityLabel: presentation.accessibilityLabel)
         ] + presentation.rows.map {
-            Row(id: $0.id, label: $0.sessionLabel, value: nil, pills: optionalPills([$0.conflictStatus.map { Pill(id: "conflict", label: $0, tone: ClawJSRuntimeLensStatusTone.overlayConflictStatus($0)) }]), detailLines: [], accessibilityLabel: $0.accessibilityLabel)
+            Row(id: $0.id, label: $0.sessionLabel, value: nil, pills: optionalPills([$0.conflictStatus.map { Pill(id: "conflict", label: $0, tone: ClawJSRuntimeLensStatusTone.overlayConflictStatus($0)) }]), detailLines: $0.detailLines, accessibilityLabel: $0.accessibilityLabel)
         }, accessibilityLabel: presentation.accessibilityLabel)
     }
 

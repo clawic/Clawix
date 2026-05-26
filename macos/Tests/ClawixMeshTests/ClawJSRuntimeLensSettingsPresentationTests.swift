@@ -42,6 +42,15 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(sessionActions.accessibilityLabel.contains("Runtime session actions"))
         XCTAssertTrue(sessionActions.rows.contains { $0.pills.contains { $0.label == "would write" } })
 
+        let overlays = try XCTUnwrap(presentation.sections.first { $0.id == "session-overlays" })
+        XCTAssertTrue(overlays.rows.first?.detailLines.contains("authority clawix_local_overlay") == true)
+        XCTAssertTrue(overlays.rows.first?.detailLines.contains("writes runtime false") == true)
+        XCTAssertTrue(overlays.rows.first?.detailLines.contains("conflict statuses local_only 1") == true)
+        let overlayRow = try XCTUnwrap(overlays.rows.first { $0.label == "2026/05/21/runtime-session" })
+        XCTAssertTrue(overlayRow.detailLines.contains("local pinned true"))
+        XCTAssertTrue(overlayRow.detailLines.contains("native found true"))
+        XCTAssertTrue(overlayRow.detailLines.contains("native pinned false"))
+
         let inventory = try XCTUnwrap(presentation.sections.first { $0.id == "inventory" })
         XCTAssertTrue(inventory.accessibilityLabel.contains("Runtime inventory"))
         XCTAssertTrue(inventory.rows.contains { $0.label == "sessions" || $0.label == "Sessions" })

@@ -98,9 +98,23 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(overlayPresentation.totalOverlays, 1)
         XCTAssertEqual(overlayPresentation.totalConflicts, 1)
         XCTAssertEqual(overlayPresentation.detailLabel, "clawix_local_overlay, no_silent_overwrite, blocked_until_official_runtime_pin_api")
+        XCTAssertEqual(overlayPresentation.detailLines, [
+            "authority clawix_local_overlay",
+            "conflict policy no_silent_overwrite",
+            "write back blocked_until_official_runtime_pin_api",
+            "writes runtime false"
+        ])
         XCTAssertEqual(overlayPresentation.conflictStatusLabel, "local_only 1")
         XCTAssertEqual(overlayPresentation.rows.first?.sessionLabel, "2026/05/21/runtime-session")
+        XCTAssertEqual(overlayPresentation.rows.first?.detailLines, [
+            "authority clawix_local_overlay",
+            "writes runtime false",
+            "local pinned true",
+            "native found true",
+            "native pinned false"
+        ])
         XCTAssertTrue(overlayPresentation.rows.first?.accessibilityLabel.contains("writes runtime false") == true)
+        XCTAssertTrue(overlayPresentation.rows.first?.accessibilityLabel.contains("native pinned false") == true)
         XCTAssertTrue(overlayPresentation.accessibilityLabel.contains("Runtime session overlays"))
         XCTAssertTrue(overlayPresentation.accessibilityLabel.contains("conflict policy no_silent_overwrite"))
         XCTAssertEqual(snapshot.resources(for: "sessions").first?.updatedAt, "2026-05-21T17:40:00.000Z")

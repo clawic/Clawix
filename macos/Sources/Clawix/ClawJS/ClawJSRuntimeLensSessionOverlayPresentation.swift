@@ -11,6 +11,18 @@ struct ClawJSRuntimeLensSessionOverlayPresentation: Equatable {
         let authority: String?
         let pinned: Bool?
         let nativeFound: Bool?
+        let nativePinned: Bool?
+
+        var detailLines: [String] {
+            [
+                authority.map { "authority \($0)" },
+                writesRuntime.map { "writes runtime \($0)" },
+                pinned.map { "local pinned \($0)" },
+                nativeFound.map { "native found \($0)" },
+                nativePinned.map { "native pinned \($0)" }
+            ]
+            .compactMap { $0 }
+        }
 
         var accessibilityLabel: String {
             [
@@ -19,7 +31,8 @@ struct ClawJSRuntimeLensSessionOverlayPresentation: Equatable {
                 writesRuntime.map { "writes runtime \($0)" },
                 authority.map { "authority \($0)" },
                 pinned.map { "pinned \($0)" },
-                nativeFound.map { "native found \($0)" }
+                nativeFound.map { "native found \($0)" },
+                nativePinned.map { "native pinned \($0)" }
             ]
             .compactMap { $0 }
             .joined(separator: ", ")
@@ -34,6 +47,7 @@ struct ClawJSRuntimeLensSessionOverlayPresentation: Equatable {
     let totalOverlays: Int
     let totalConflicts: Int
     let detailLabel: String?
+    let detailLines: [String]
     let conflictStatusLabel: String?
     let rows: [Row]
 
@@ -65,10 +79,18 @@ struct ClawJSRuntimeLensSessionOverlayPresentation: Equatable {
                 writesRuntime: overlay.writesRuntime,
                 authority: overlay.authority,
                 pinned: overlay.pinned,
-                nativeFound: overlay.nativeFound
+                nativeFound: overlay.nativeFound,
+                nativePinned: overlay.nativePinned
             )
         }
         let detailValues = [state.overlayAuthority, state.conflictPolicy, state.writeBackStatus].compactMap { $0 }
+        let detailLines = [
+            state.overlayAuthority.map { "authority \($0)" },
+            state.conflictPolicy.map { "conflict policy \($0)" },
+            state.writeBackStatus.map { "write back \($0)" },
+            state.writesRuntime.map { "writes runtime \($0)" }
+        ]
+        .compactMap { $0 }
 
         return ClawJSRuntimeLensSessionOverlayPresentation(
             runtimeId: state.runtimeId,
@@ -79,6 +101,7 @@ struct ClawJSRuntimeLensSessionOverlayPresentation: Equatable {
             totalOverlays: state.totalOverlays ?? allRows.count,
             totalConflicts: state.totalConflicts ?? allRows.filter { $0.conflictStatus != nil }.count,
             detailLabel: detailValues.isEmpty ? nil : detailValues.joined(separator: ", "),
+            detailLines: detailLines,
             conflictStatusLabel: countLabel(allRows.compactMap(\.conflictStatus)),
             rows: rows
         )
