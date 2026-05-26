@@ -389,6 +389,7 @@ const rootViewSource = read("macos/Sources/Clawix/SplashView.swift");
 const sidebarSource = read("macos/Sources/Clawix/SidebarView.swift");
 const composerSource = read("macos/Sources/Clawix/ComposerTextEditor.swift");
 const startupSource = read("macos/Sources/Clawix/ClawJS/ClawJSServiceDemandPolicy.swift");
+const runtimeDemandSource = read("macos/Sources/Clawix/AgentBackend/AgentRuntimeDemandReason.swift");
 for (const snippet of [
   'case launch = "launch"',
   'case processStart = "process_start"',
@@ -419,9 +420,12 @@ for (const snippet of [
   ".settings, .rescue",
   "return []",
   "case .chat:",
-  "return [.runtime, .sessions]",
+  "Chat owns runtime/session demand",
 ]) {
   if (!startupSource.includes(snippet)) fail(`ClawJSServiceDemandPolicy launch dependency budget must include ${snippet}`);
+}
+if (!runtimeDemandSource.includes("runtime.start.chat_opened")) {
+  fail("AgentRuntimeDemandReason must include explicit chat-opened runtime demand");
 }
 for (const forbidden of [
   "startupCoreServices: Set<ClawJSService> = [.runtime",

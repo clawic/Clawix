@@ -70,7 +70,9 @@ enum ClawJSServiceDemandPolicy {
         case .publishingHome, .publishingComposer, .publishingChannels:
             return [.publishing]
         case .chat:
-            return [.runtime, .sessions]
+            // Chat owns runtime/session demand so transcript first paint
+            // can happen before backend attach work starts.
+            return []
         case .home, .search, .plugins, .automations, .project, .app, .appsHome,
              .settings, .rescue, .calendarHome, .contactsHome, .macCare,
              .networkControl, .skills, .skillDetail, .designStylesHome,

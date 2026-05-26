@@ -914,9 +914,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             HangDetector.startIfRequestedByEnvironment()
         }
         // Start only the current role's required ClawJS services. The
-        // main app keeps launch to runtime + sessions for chat/rescue;
-        // sidebar tool mini-apps start only the service backing that tool.
-        // Everything else stays available on demand when its route opens.
+        // main app keeps shell launch free of runtime/session work; chat
+        // and other heavy surfaces start services through explicit demand.
         Task { @MainActor in
             await ClawixStartupCore.run(role: ClawixAppRole.current)
         }

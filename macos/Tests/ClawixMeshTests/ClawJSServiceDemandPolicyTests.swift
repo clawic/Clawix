@@ -39,8 +39,8 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .settings), [])
     }
 
-    func testChatRouteDemandsRuntimeAndSessions() {
-        XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .chat(UUID())), [.runtime, .sessions])
+    func testChatRouteKeepsFirstPaintOffRuntimeDemand() {
+        XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .chat(UUID())), [])
     }
 
     func testRouteDemandServicesCoverHeavyFrameworkSurfaces() {
