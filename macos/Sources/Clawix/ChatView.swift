@@ -252,6 +252,9 @@ struct ChatView: View {
                     : []
                 let hiddenLocalMessageCount = startIndex
                 let newerLocalMessageCount = max(0, messageStores.count - endIndex)
+                let initialTailWindow = firstVisibleRuntimeDemandChatId != chatId
+                    && clampedEndOffset == 0
+                    && visibleMessageStores.last?.id == transcript.messageIds.last
                 let visibleWindowEvidence = ChatVisibleWindowEvidence(
                     chatId: chatId,
                     visibleCount: visibleMessageStores.count,
@@ -259,7 +262,7 @@ struct ChatView: View {
                     hiddenCount: hiddenLocalMessageCount,
                     firstMessageId: visibleMessageStores.first?.id,
                     lastMessageId: visibleMessageStores.last?.id,
-                    bottomArmed: bottomId == chatTailId,
+                    bottomArmed: bottomId == chatTailId || initialTailWindow,
                     messages: visibleMessageStores.map {
                         ChatVisibleWindowMessageEvidence(message: $0.message)
                     }
