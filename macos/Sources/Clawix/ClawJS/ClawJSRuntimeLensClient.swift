@@ -1631,6 +1631,7 @@ struct ClawJSRuntimeLensClient {
         let wouldWriteRuntime: Bool?
         let writesLocalOverlay: Bool?
         let reason: String?
+        let degradedReason: String?
         let blockerClass: String?
         let officialContractRequired: Bool?
         let officialContractKnown: Bool?
@@ -1667,9 +1668,12 @@ struct ClawJSRuntimeLensClient {
 
         struct Result: Decodable, Equatable {
             let id: String?
+            let found: Bool?
             let messagePreview: String?
             let titleRequested: String?
             let titleApplied: Bool?
+            let contentIncluded: Bool?
+            let totalProjected: Int?
             let nativeIdentifier: NativeIdentifier?
             let gatewayReceipt: GatewayReceipt?
             let titleGatewayReceipt: GatewayReceipt?

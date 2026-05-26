@@ -187,6 +187,8 @@ struct ClawJSRuntimeLensSection: View {
             "writes runtime \(result.writesRuntime)",
             result.wouldWriteRuntime.map { "would write runtime \($0)" },
             result.writesLocalOverlay.map { "writes local overlay \($0)" },
+            result.reason.map { "reason \($0)" },
+            result.degradedReason.map { "degraded reason \($0)" },
             result.blockerClass.map { "blocker \($0)" },
             result.requiredFlag.map { "required flag \($0)" },
             result.officialProtocol.map { "protocol \($0)" },
@@ -262,6 +264,15 @@ struct ClawJSRuntimeLensSection: View {
             if !gatewayFields.isEmpty {
                 details.append("title gateway " + gatewayFields.joined(separator: ", "))
             }
+        }
+
+        let resultFields = [
+            result.result?.found.map { "found \($0)" },
+            result.result?.contentIncluded.map { "content included \($0)" },
+            result.result?.totalProjected.map { "total projected \($0)" }
+        ].compactMap { $0 }
+        if !resultFields.isEmpty {
+            details.append("result " + resultFields.joined(separator: ", "))
         }
 
         if let verification = result.result?.roundTripVerification {

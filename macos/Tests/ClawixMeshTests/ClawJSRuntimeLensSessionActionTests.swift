@@ -631,6 +631,86 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         ))
     }
 
+    @MainActor
+    func testRuntimeLensClientSurfacesHermesMissingStoreReadDegradation() async throws {
+        var requested: [[String]] = []
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            requested.append(args)
+            return .init(
+                data: """
+                {
+                  "data": {
+                    "runtimeId": "hermes",
+                    "domain": "sessions",
+                    "action": "history",
+                    "status": "degraded",
+                    "authority": "runtime",
+                    "writesRuntime": false,
+                    "degradedReason": "runtime_cli_unavailable_or_session_store_missing",
+                    "safeDefault": "metadata_only_projection_until_official_runtime_session_store_or_cli_is_available",
+                    "userVisibleContract": "session_history_is_degraded_until_native_store_or_cli_evidence_exists",
+                    "claimEffect": "does_not_satisfy_native_session_history_parity",
+                    "result": {
+                      "id": "missing-session",
+                      "found": false,
+                      "writesRuntime": false,
+                      "contentIncluded": false,
+                      "messages": [],
+                      "totalProjected": 0,
+                      "nativeIdentifier": {
+                        "name": "sessionPathId"
+                      }
+                    }
+                  }
+                }
+                """.data(using: .utf8)!,
+                exitCode: 2
+            )
+        })
+
+        let result = try await client.runSessionAction(
+            runtime: .hermes,
+            action: "history",
+            sessionId: "missing-session"
+        )
+
+        XCTAssertEqual(requested, [[
+            "runtime",
+            "hermes",
+            "sessions",
+            "history",
+            "--session-key",
+            "missing-session",
+            "--json"
+        ]])
+        XCTAssertEqual(result.status, "degraded")
+        XCTAssertEqual(result.degradedReason, "runtime_cli_unavailable_or_session_store_missing")
+        XCTAssertEqual(result.writesRuntime, false)
+        XCTAssertEqual(result.result?.found, false)
+        XCTAssertEqual(result.result?.contentIncluded, false)
+        XCTAssertEqual(result.result?.totalProjected, 0)
+        XCTAssertEqual(result.safeDefault, "metadata_only_projection_until_official_runtime_session_store_or_cli_is_available")
+        XCTAssertEqual(result.userVisibleContract, "session_history_is_degraded_until_native_store_or_cli_evidence_exists")
+        XCTAssertEqual(result.claimEffect, "does_not_satisfy_native_session_history_parity")
+
+        let section = ClawJSRuntimeLensSection()
+        XCTAssertEqual(section.runtimeLensSessionActionResultLabel(result), "history degraded missing-session")
+        let details = section.runtimeLensSessionActionResultDetails(result)
+        XCTAssertTrue(details.contains {
+            $0.contains("degraded reason runtime_cli_unavailable_or_session_store_missing")
+                && $0.contains("writes runtime false")
+        })
+        XCTAssertTrue(details.contains {
+            $0.contains("safe default metadata_only_projection_until_official_runtime_session_store_or_cli_is_available")
+                && $0.contains("user visible contract session_history_is_degraded_until_native_store_or_cli_evidence_exists")
+        })
+        XCTAssertTrue(details.contains {
+            $0.contains("found false")
+                && $0.contains("content included false")
+                && $0.contains("total projected 0")
+        })
+    }
+
     func testRuntimeLensClientDecodesHermesCreateRoundTripVerification() async throws {
         let client = ClawJSRuntimeLensClient(runner: .init { _ in
             .init(
