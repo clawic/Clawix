@@ -44,6 +44,8 @@ Options:
   --out-dir <dir>          Evidence root. Defaults to a temporary directory.
   --baseline <file>        Optional metrics.json or baseline-comparison source.
   --overhead-control <file> Optional public-safe harness-disabled control artifact for overhead comparison.
+  --harness-disabled-control Declare this run/suite is the harness-disabled control lane for overhead artifact capture.
+  --write-overhead-control <file> Write current metrics as a public-safe overhead control artifact.
   --write-baseline <file>  Write current measured metrics as a public-safe baseline artifact.
   --gate p0                Activate P0 baseline gate. Requires baseline and fails P0 regressions.
   --max-regression-percent <n> Allowed P0 regression percentage for --gate p0. Defaults to 10.
@@ -67,7 +69,7 @@ function parseArgs(argv) {
       continue;
     }
     const key = arg.slice(2);
-    if (["dry-run", "json", "list", "self-test", "generate-fixture"].includes(key)) {
+    if (["dry-run", "json", "list", "self-test", "generate-fixture", "harness-disabled-control"].includes(key)) {
       args[key] = true;
       continue;
     }
@@ -976,6 +978,53 @@ function writeBaselineArtifact(file, context, metrics) {
   return out;
 }
 
+function writeOverheadControlArtifact(file, context, metrics, args) {
+  if (!file) return null;
+  if (!args["harness-disabled-control"]) {
+    throw new Error("--write-overhead-control requires --harness-disabled-control");
+  }
+  const artifact = {
+    schemaVersion: 1,
+    program: "macos-ux-trace-overhead-control",
+    generatedAt: isoNow(),
+    platform: "macos",
+    sourceEvidence: {
+      runId: context.runId || null,
+      suiteId: context.suiteId || null,
+      scenarioId: context.scenarioId || null,
+      fixtureProfile: context.fixtureProfile || null,
+      status: context.status || null,
+      artifactKind: context.suiteId ? "suite" : "run",
+    },
+    highCardinalityInstrumentation: false,
+    declaration: {
+      harnessDisabledControl: true,
+      declaredByFlag: "--harness-disabled-control",
+      policy: "This artifact may be passed to --overhead-control only when captured from a harness-disabled control lane for the same scenario or suite context.",
+    },
+    privateBoundary: {
+      containsPrivateConversationText: false,
+      containsReadablePrivateScreenshots: false,
+      containsCredentials: false,
+      publicSafe: true,
+    },
+    metrics: metrics.map((metric) => ({
+      kpiId: metric.kpiId,
+      priority: metric.priority,
+      surface: metric.surface,
+      unit: metric.unit,
+      p95: metric.p95,
+      value: metric.p95,
+      sampleCount: metric.sampleCount,
+      status: metric.status,
+    })),
+  };
+  const out = path.resolve(file);
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  writeJson(out, artifact);
+  return out;
+}
+
 function totalP95(metrics) {
   const values = metrics
     .map((metric) => Number(metric.p95 ?? metric.value))
@@ -1009,7 +1058,22 @@ function readOverheadControlArtifact(file, metrics) {
     throw new Error(`overhead control artifact does not exist: ${resolved}`);
   }
   const artifact = readJson(resolved);
+  if (artifact.schemaVersion !== 1) {
+    throw new Error("overhead control artifact must declare schemaVersion 1");
+  }
+  if (artifact.program !== "macos-ux-trace-overhead-control") {
+    throw new Error("overhead control artifact must declare program macos-ux-trace-overhead-control");
+  }
+  if (artifact.highCardinalityInstrumentation !== false) {
+    throw new Error("overhead control artifact must explicitly declare highCardinalityInstrumentation=false");
+  }
+  if (artifact.privateBoundary?.publicSafe !== true) {
+    throw new Error("overhead control artifact must declare privateBoundary.publicSafe=true");
+  }
   const controlMetrics = Array.isArray(artifact.metrics) ? artifact.metrics : [];
+  if (controlMetrics.length === 0) {
+    throw new Error("overhead control artifact must expose comparable metrics");
+  }
   const currentTotalP95 = totalP95(metrics);
   const controlTotalP95 = totalP95(controlMetrics);
   const measured = Number.isFinite(currentTotalP95) && Number.isFinite(controlTotalP95);
@@ -1021,7 +1085,8 @@ function readOverheadControlArtifact(file, metrics) {
       pathHash: stableHash(resolved),
       schemaVersion: artifact.schemaVersion ?? null,
       program: artifact.program ?? null,
-      highCardinalityInstrumentation: artifact.highCardinalityInstrumentation ?? false,
+      highCardinalityInstrumentation: artifact.highCardinalityInstrumentation,
+      sourceEvidence: artifact.sourceEvidence ?? null,
     },
     estimate: {
       measured,
@@ -1551,6 +1616,12 @@ async function runScenario(args) {
   });
   writeJson(path.join(runDir, "baseline-comparison.json"), baselineComparison);
   const writtenBaselinePath = writeBaselineArtifact(args["write-baseline"], { runId, scenarioId, fixtureProfile, status }, metrics);
+  const writtenOverheadControlPath = writeOverheadControlArtifact(
+    args["write-overhead-control"],
+    { runId, scenarioId, fixtureProfile, status },
+    metrics,
+    args
+  );
 
   return {
     ok: status === "PASS",
@@ -1560,6 +1631,7 @@ async function runScenario(args) {
     failures: failures.length,
     metrics: metrics.length,
     baselinePath: writtenBaselinePath,
+    overheadControlPath: writtenOverheadControlPath,
     overheadCalibration,
     exitPolicy,
   };
@@ -1706,6 +1778,12 @@ async function runSuite(args) {
   writeJson(path.join(suiteDir, "suite-failures.json"), { schemaVersion: 1, suiteId, failures });
   writeJson(path.join(suiteDir, "suite-baseline-comparison.json"), suiteBaselineComparison);
   const writtenBaselinePath = writeBaselineArtifact(args["write-baseline"], { suiteId, scenarioId: null, fixtureProfile: requestedProfile || "mixed", status }, metrics);
+  const writtenOverheadControlPath = writeOverheadControlArtifact(
+    args["write-overhead-control"],
+    { suiteId, scenarioId: null, fixtureProfile: requestedProfile || "mixed", status },
+    metrics,
+    args
+  );
 
   return {
     ok: status === "PASS",
@@ -1716,6 +1794,7 @@ async function runSuite(args) {
     failures: failures.length,
     metrics: metrics.length,
     baselinePath: writtenBaselinePath,
+    overheadControlPath: writtenOverheadControlPath,
     exitPolicy,
     runs: results.map((result, index) => ({
       runId: result.runId,
@@ -1797,6 +1876,33 @@ async function selfTest() {
     throw new Error("self-test baseline must protect P0 promotion policy");
   }
   verifyEvidencePath(baselinePath);
+  const overheadControlPath = path.join(outDir, "self-test.overhead-control.json");
+  const overheadControlResult = await runScenario({
+    scenario: "startup-to-usable",
+    "fixture-profile": "smoke",
+    "dry-run": true,
+    "out-dir": outDir,
+    "harness-disabled-control": true,
+    "write-overhead-control": overheadControlPath,
+  });
+  if (!overheadControlResult.overheadControlPath) throw new Error("self-test overhead control artifact was not written");
+  const overheadControl = readJson(overheadControlPath);
+  if (overheadControl.program !== "macos-ux-trace-overhead-control") {
+    throw new Error("self-test overhead control artifact must declare its program");
+  }
+  if (overheadControl.highCardinalityInstrumentation !== false) {
+    throw new Error("self-test overhead control artifact must declare highCardinalityInstrumentation=false");
+  }
+  const comparedOverheadResult = await runScenario({
+    scenario: "startup-to-usable",
+    "fixture-profile": "smoke",
+    "dry-run": true,
+    "out-dir": outDir,
+    "overhead-control": overheadControlPath,
+  });
+  if (comparedOverheadResult.overheadCalibration?.status !== "compared") {
+    throw new Error("self-test overhead control artifact must produce compared overhead calibration");
+  }
   const pendingBaselineResult = spawnSync(process.execPath, [
     runnerPath,
     "--dry-run",
