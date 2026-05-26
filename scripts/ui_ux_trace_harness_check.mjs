@@ -270,6 +270,27 @@ const expectedP0Kpis = [
   "p0.idle.no_unbounded_log_growth",
 ];
 
+const expectedKpiFields = [
+  "id",
+  "priority",
+  "surface",
+  "userOutcome",
+  "trigger",
+  "completionCondition",
+  "geometryCondition",
+  "fixtureProfiles",
+  "sampleCount",
+  "coldWarmMode",
+  "absoluteBudget",
+  "baselineComparison",
+  "regressionThreshold",
+  "evidenceRequired",
+  "ownerDocs",
+  "failureSeverity",
+  "knownExternalDependencies",
+];
+const requiredNonNullKpiFields = expectedKpiFields.filter((field) => field !== "absoluteBudget");
+
 const expectedScalingDimensions = [
   "conversationCount",
   "activeConversationCount",
@@ -580,8 +601,39 @@ if (registry) {
   if (!kpis.some((kpi) => kpi.priority === "P1")) fail(`${registryPath}.kpis must include at least one P1 KPI`);
   if (!kpis.some((kpi) => kpi.priority === "P2")) fail(`${registryPath}.kpis must include at least one P2 KPI`);
   for (const kpi of kpis) {
-    requireFields(kpi, `${registryPath}.kpis.${kpi.id ?? "unknown"}`, ["id", "priority", "surface", "trigger", "completionCondition", "geometryCondition", "fixtureProfiles", "baselineComparison"]);
+    requireFields(kpi, `${registryPath}.kpis.${kpi.id ?? "unknown"}`, requiredNonNullKpiFields);
+    for (const field of expectedKpiFields) {
+      if (!Object.hasOwn(kpi, field)) fail(`${registryPath}.kpis.${kpi.id ?? "unknown"} is missing ${field}`);
+    }
     if (!["P0", "P1", "P2"].includes(kpi.priority)) fail(`${registryPath}.kpis.${kpi.id}.priority must be P0/P1/P2`);
+    if (typeof kpi.userOutcome !== "string" || kpi.userOutcome.length < 30) {
+      fail(`${registryPath}.kpis.${kpi.id}.userOutcome must explain the user outcome`);
+    }
+    if (!Number.isInteger(kpi.sampleCount) || kpi.sampleCount < 1) {
+      fail(`${registryPath}.kpis.${kpi.id}.sampleCount must be a positive integer`);
+    }
+    if (typeof kpi.coldWarmMode !== "string" || kpi.coldWarmMode.length === 0) {
+      fail(`${registryPath}.kpis.${kpi.id}.coldWarmMode must be a non-empty string`);
+    }
+    if (!kpi.regressionThreshold || typeof kpi.regressionThreshold !== "object" || Array.isArray(kpi.regressionThreshold)) {
+      fail(`${registryPath}.kpis.${kpi.id}.regressionThreshold must be an object`);
+    } else if (kpi.priority !== "P2" && !Number.isFinite(Number(kpi.regressionThreshold.maxRegressionPercent))) {
+      fail(`${registryPath}.kpis.${kpi.id}.regressionThreshold.maxRegressionPercent must be numeric for P0/P1 KPIs`);
+    }
+    if (kpi.absoluteBudget !== null && (typeof kpi.absoluteBudget !== "object" || Array.isArray(kpi.absoluteBudget))) {
+      fail(`${registryPath}.kpis.${kpi.id}.absoluteBudget must be null or an object`);
+    }
+    requireUniqueStringArray(requireArray(kpi.evidenceRequired, `${registryPath}.kpis.${kpi.id}.evidenceRequired`, 4), `${registryPath}.kpis.${kpi.id}.evidenceRequired`, ["run.json", "events.jsonl", "metrics.json", "baseline-comparison.json"]);
+    for (const ownerDoc of requireArray(kpi.ownerDocs, `${registryPath}.kpis.${kpi.id}.ownerDocs`, 1)) {
+      if (typeof ownerDoc !== "string" || !fs.existsSync(path.join(rootDir, ownerDoc))) {
+        fail(`${registryPath}.kpis.${kpi.id}.ownerDocs references missing doc ${ownerDoc}`);
+      }
+    }
+    requireUniqueStringArray(requireArray(kpi.knownExternalDependencies, `${registryPath}.kpis.${kpi.id}.knownExternalDependencies`, 0), `${registryPath}.kpis.${kpi.id}.knownExternalDependencies`);
+    const expectedSeverity = kpi.priority === "P0" ? "blocking" : kpi.priority === "P1" ? "warning" : "tracked";
+    if (kpi.failureSeverity !== expectedSeverity) {
+      fail(`${registryPath}.kpis.${kpi.id}.failureSeverity must be ${expectedSeverity}`);
+    }
     for (const profile of requireArray(kpi.fixtureProfiles, `${registryPath}.kpis.${kpi.id}.fixtureProfiles`)) {
       if (!fixtureIds.has(profile)) fail(`${registryPath}.kpis.${kpi.id}.fixtureProfiles references unknown profile ${profile}`);
     }

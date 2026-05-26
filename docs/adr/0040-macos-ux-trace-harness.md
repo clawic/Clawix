@@ -37,6 +37,13 @@ Primary measurement must come from the Clawix agent control bus and must measure
 from action dispatch to visual completion, geometry, scroll stability, hitches,
 resources, and baseline comparison.
 
+The KPI registry is machine-readable. Every KPI row declares the user outcome,
+trigger, completion and geometry conditions, fixture profiles, sample count,
+cold/warm mode, absolute budget when known, baseline comparison policy,
+regression threshold, required evidence artifacts, owner docs, failure
+severity, and external dependencies. P0 rows are blocking, P1 rows are warning
+until approved, and P2 rows are tracked-only unless promoted.
+
 Synthetic fixtures must scale across the dimensions that make real Clawix usage
 slow: conversation count, active runs, pinned/project distribution, transcript
 length, markdown/tool density, streaming deltas, attachment metadata, database

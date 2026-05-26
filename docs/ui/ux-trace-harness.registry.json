@@ -32,8 +32,21 @@
   },
   "privateBoundary": {
     "privateEvidenceLocation": "external-private-root",
-    "publicArtifactsMayContain": ["schemas", "redacted manifests", "commands", "aliases", "aggregate metric names"],
-    "publicArtifactsMustNotContain": ["private conversation text", "readable private screenshots", "credentials", "signing data", "local private paths", "real service payloads"],
+    "publicArtifactsMayContain": [
+      "schemas",
+      "redacted manifests",
+      "commands",
+      "aliases",
+      "aggregate metric names"
+    ],
+    "publicArtifactsMustNotContain": [
+      "private conversation text",
+      "readable private screenshots",
+      "credentials",
+      "signing data",
+      "local private paths",
+      "real service payloads"
+    ],
     "realEquivalentCalibration": "aggregate metrics only; synthetic profiles must match or exceed private real-mode P95 for P0 flows when calibration evidence is available"
   },
   "requiredArtifacts": {
@@ -51,81 +64,745 @@
     "verificationCommand": "node scripts/ui_ux_trace_harness_check.mjs"
   },
   "traceSurfaces": [
-    { "id": "app.shell.firstUsableWindow", "priority": "P0", "role": "window", "surface": "app.launch", "visibilityContract": "main shell visible and not blocked by modal overlay", "geometryContract": "frame available and stable", "criticalityReason": "Launch is the first product perception point; every later UX trace depends on a usable main window.", "kpiRefs": [ "p0.launch.process_to_first_window_visible_ms", "p0.launch.first_usable_interaction_ms", "p0.launch.hitches_until_usable_count", "p0.launch.memory_after_usable_mb", "p0.launch.no_crash_no_hang" ] },
-    { "id": "sidebar.container", "priority": "P0", "role": "panel", "surface": "sidebar", "visibilityContract": "left sidebar visible", "geometryContract": "frame available", "criticalityReason": "The sidebar is the primary monitoring and navigation surface for many parallel conversations.", "kpiRefs": [ "p0.launch.process_to_sidebar_ready_ms", "p0.sidebar.first_paint_ready_ms" ] },
-    { "id": "sidebar.allChats.entry", "priority": "P0", "role": "button", "surface": "sidebar", "visibilityContract": "All Chats navigation target visible", "geometryContract": "frame available", "criticalityReason": "All Chats is the baseline navigation path back to the complete conversation set.", "kpiRefs": [ "p0.sidebar.click_to_selection_visible_ms", "p0.sidebar.click_to_chat_route_started_ms" ] },
-    { "id": "sidebar.pinned.entry", "priority": "P0", "role": "button", "surface": "sidebar", "visibilityContract": "Pinned navigation target visible", "geometryContract": "frame available", "criticalityReason": "Pinned navigation must stay responsive because users rely on it to monitor important active work.", "kpiRefs": [ "p0.sidebar.click_to_selection_visible_ms", "p0.sidebar.selected_row_stability_px" ] },
-    { "id": "sidebar.projects.entry", "priority": "P0", "role": "button", "surface": "sidebar", "visibilityContract": "Projects navigation target visible", "geometryContract": "frame available", "criticalityReason": "Project navigation exercises grouped conversation density and must not degrade sidebar responsiveness.", "kpiRefs": [ "p0.sidebar.click_to_selection_visible_ms", "p0.sidebar.selected_row_stability_px" ] },
-    { "id": "sidebar.conversationList", "priority": "P0", "role": "list", "surface": "sidebar", "visibilityContract": "conversation list mounted", "geometryContract": "scroll state available", "criticalityReason": "Dense conversation lists are the main scaling risk for monitoring many active agents.", "kpiRefs": [ "p0.sidebar.first_paint_ready_ms", "p0.sidebar.scroll_frame_p95_ms", "p0.sidebar.scroll_hitch_count", "p0.sidebar.no_full_list_rebuild_on_single_row_update" ] },
-    { "id": "sidebar.conversation.row", "priority": "P0", "role": "row", "surface": "sidebar", "visibilityContract": "representative conversation row visible", "geometryContract": "row frame available", "criticalityReason": "Conversation rows are the action targets for opening heavy chats and preserving selected-state clarity.", "kpiRefs": [ "p0.sidebar.click_to_selection_visible_ms", "p0.sidebar.click_to_chat_route_started_ms", "p0.chat.open_click_to_route_selected_ms" ] },
-    { "id": "sidebar.hoverTarget", "priority": "P0", "role": "row", "surface": "sidebar", "visibilityContract": "hover target can be located", "geometryContract": "row frame stable during hover", "criticalityReason": "Hover feedback exposes perceived latency and row invalidation pressure in dense sidebars.", "kpiRefs": [ "p0.sidebar.hover_to_highlight_ms" ] },
-    { "id": "sidebar.selectedRow", "priority": "P0", "role": "row", "surface": "sidebar", "visibilityContract": "selected row state visible", "geometryContract": "selected row Y remains stable after selection", "criticalityReason": "Selection visibility and position prove navigation completed without losing user orientation.", "kpiRefs": [ "p0.sidebar.click_to_selection_visible_ms", "p0.sidebar.selected_row_stability_px", "p0.sidebar.metadata_update_invalidated_rows_count" ] },
-    { "id": "sidebar.runningIndicator", "priority": "P0", "role": "indicator", "surface": "sidebar", "visibilityContract": "running/unread/progress indicator visible when fixture declares it", "geometryContract": "indicator frame available", "criticalityReason": "Running and unread indicators are how users track active agent work across many conversations.", "kpiRefs": [ "p0.sidebar.metadata_update_invalidated_rows_count", "p0.sidebar.no_full_list_rebuild_on_single_row_update" ] },
-    { "id": "chat.route.container", "priority": "P0", "role": "panel", "surface": "chat", "visibilityContract": "chat route selected and container visible", "geometryContract": "frame available", "criticalityReason": "The chat route container proves navigation reached the conversation surface before transcript readiness is measured.", "kpiRefs": [ "p0.chat.open_click_to_route_selected_ms", "p0.terminal.switch_back_to_chat_ms", "p0.terminal.no_main_chat_freeze" ] },
-    { "id": "chat.transcript.scroll", "priority": "P0", "role": "scroll", "surface": "chat", "visibilityContract": "transcript scroll view mounted", "geometryContract": "scroll state, viewport, document size, and bottom distance available", "criticalityReason": "Transcript scroll geometry protects the latest-message window, history loading, and bottom anchoring.", "kpiRefs": [ "p0.chat.open_click_to_transcript_visible_ms", "p0.chat.scroll_frame_p95_ms", "p0.chat.scroll_hitch_count", "p0.chat.scroll_to_bottom_ms", "p0.chat.bottom_anchor_stability_px", "p0.chat.no_scroll_jump_during_prepend" ] },
-    { "id": "chat.visibleWindow.latest", "priority": "P0", "role": "transcript", "surface": "chat", "visibilityContract": "latest visible message window complete", "geometryContract": "first/last visible row frames available", "criticalityReason": "Seeing the latest meaningful messages is the north-star completion condition for opening heavy chats.", "kpiRefs": [ "p0.chat.open_click_to_final_visible_window_ms", "p0.chat.visible_latest_window_count", "p0.chat.visible_window_no_row_by_row_buildup", "p0.chat.no_lost_latest_message_after_scroll", "p0.terminal.no_main_chat_freeze" ] },
-    { "id": "chat.message.row", "priority": "P0", "role": "row", "surface": "chat", "visibilityContract": "visible message row has stable identity or row proxy", "geometryContract": "row frame available", "criticalityReason": "Stable message row geometry is required to prove scroll anchoring and coherent transcript painting.", "kpiRefs": [ "p0.chat.old_page_insert_anchor_delta_px", "p0.chat.scrollbar_position_consistency_px", "p0.chat.visible_window_no_row_by_row_buildup" ] },
-    { "id": "chat.message.user", "priority": "P0", "role": "text", "surface": "chat", "visibilityContract": "user message block visible", "geometryContract": "frame available", "criticalityReason": "The visible user message proves send completion from the user perspective.", "kpiRefs": [ "p0.composer.send_click_to_user_message_visible_ms", "p0.stream.user_message_visible_ms" ] },
-    { "id": "chat.message.assistant", "priority": "P0", "role": "text", "surface": "chat", "visibilityContract": "assistant message block visible", "geometryContract": "frame available", "criticalityReason": "Assistant message visibility is the core monitoring output for active agent conversations.", "kpiRefs": [ "p0.chat.latest_message_visible_ms", "p0.stream.completion_to_final_visible_ms" ] },
-    { "id": "chat.message.workSummary", "priority": "P0", "role": "panel", "surface": "chat", "visibilityContract": "tool/action/work summary visible when fixture declares it", "geometryContract": "frame available and expansion stable", "criticalityReason": "Tool and work summaries show what agents are doing and must remain stable inside dense transcripts.", "kpiRefs": [ "p0.chat.visible_window_no_row_by_row_buildup", "p0.stream.unrelated_invalidations_count" ] },
-    { "id": "chat.streaming.placeholder", "priority": "P0", "role": "loader", "surface": "streaming", "visibilityContract": "assistant placeholder visible after send/mock stream", "geometryContract": "placeholder frame available", "criticalityReason": "The streaming placeholder proves the app responded immediately after a send or mock stream starts.", "kpiRefs": [ "p0.stream.assistant_placeholder_visible_ms" ] },
-    { "id": "chat.streaming.deltaTarget", "priority": "P0", "role": "text", "surface": "streaming", "visibilityContract": "streaming delta visible", "geometryContract": "delta target frame available", "criticalityReason": "Streaming deltas are the fastest feedback that an agent is actively producing output.", "kpiRefs": [ "p0.stream.first_delta_received_to_visible_ms", "p0.stream.delta_batch_to_visible_p95_ms", "p0.stream.scroll_bottom_follow_stability_px" ] },
-    { "id": "composer.input", "priority": "P0", "role": "input", "surface": "composer", "visibilityContract": "composer focused with visible caret/text", "geometryContract": "input frame available", "criticalityReason": "Composer input responsiveness is required for user control while conversations are heavy or streaming.", "kpiRefs": [ "p0.launch.process_to_initial_chat_ready_ms", "p0.composer.focus_to_caret_visible_ms", "p0.composer.keystroke_to_text_visible_ms", "p0.composer.send_click_to_input_cleared_ms", "p0.composer.no_typing_hitches" ] },
-    { "id": "composer.sendButton", "priority": "P0", "role": "button", "surface": "composer", "visibilityContract": "send button visible and enabled when input is sendable", "geometryContract": "button frame available", "criticalityReason": "The send button is the primary action that starts new visible conversation output.", "kpiRefs": [ "p0.composer.send_click_to_user_message_visible_ms", "p0.composer.send_click_to_input_cleared_ms" ] },
-    { "id": "composer.stopButton", "priority": "P0", "role": "button", "surface": "composer", "visibilityContract": "stop/cancel generation control visible when generation is active", "geometryContract": "button frame available", "criticalityReason": "Stop control availability protects user control over active generations under load.", "kpiRefs": [ "p0.stream.no_freeze_under_many_active_runs" ] },
-    { "id": "terminal.openControl", "priority": "P0", "role": "button", "surface": "terminal", "visibilityContract": "terminal open control visible", "geometryContract": "button frame available", "criticalityReason": "Opening the terminal under conversation load must not block the main monitoring workflow.", "kpiRefs": [ "p0.terminal.open_under_load_ms" ] },
-    { "id": "terminal.panel", "priority": "P0", "role": "terminal", "surface": "terminal", "visibilityContract": "terminal panel visible and responsive", "geometryContract": "panel and scroll geometry available", "criticalityReason": "Terminal panel geometry proves auxiliary output can be opened, viewed, and scrolled under load.", "kpiRefs": [ "p0.terminal.open_under_load_ms", "p0.terminal.output_scroll_frame_p95_ms", "p0.terminal.no_main_chat_freeze" ] },
-    { "id": "app.loadingState", "priority": "P0", "role": "loader", "surface": "app.state", "visibilityContract": "blocking loading state detectable", "geometryContract": "frame available when visible", "criticalityReason": "Blocking loading states must be visible to distinguish waiting from broken or frozen UI.", "kpiRefs": [ "p0.launch.no_crash_no_hang", "p0.chat.old_page_load_request_to_visible_ms" ] },
-    { "id": "app.errorState", "priority": "P0", "role": "error", "surface": "app.state", "visibilityContract": "blocking error state detectable", "geometryContract": "frame available when visible", "criticalityReason": "Blocking errors must be observable as failed visual completion rather than mistaken as success.", "kpiRefs": [ "p0.launch.no_crash_no_hang" ] },
-    { "id": "app.blockingOverlay", "priority": "P0", "role": "overlay", "surface": "app.state", "visibilityContract": "blocking overlay detectable", "geometryContract": "frame available when visible", "criticalityReason": "Blocking overlays can invalidate all main-flow latency measurements if they are not explicitly detected.", "kpiRefs": [ "p0.launch.no_crash_no_hang", "p0.launch.first_usable_interaction_ms" ] },
-    { "id": "settings.route", "priority": "P1", "role": "panel", "surface": "settings", "visibilityContract": "settings route visible", "geometryContract": "frame available", "criticalityReason": "Settings is an auxiliary route whose opening latency must be tracked without compromising P0 chat flow.", "kpiRefs": [ "p1.settings.open_latency_ms" ] },
-    { "id": "sidebar.settings.openAccountPopover", "priority": "P1", "role": "button", "surface": "settings", "visibilityContract": "settings/account popover trigger visible in the sidebar", "geometryContract": "button frame available", "criticalityReason": "The account popover trigger starts the Settings route flow and must be addressable without cursor witnesses.", "kpiRefs": [ "p1.settings.open_latency_ms" ] },
-    { "id": "sidebar.settings.account", "priority": "P1", "role": "row", "surface": "settings", "visibilityContract": "account identity row visible inside the settings popover", "geometryContract": "row frame available", "criticalityReason": "The account row is a passive readiness anchor proving the popover became visible.", "kpiRefs": [ "p1.settings.open_latency_ms" ] },
-    { "id": "sidebar.settings.openSettings", "priority": "P1", "role": "button", "surface": "settings", "visibilityContract": "settings navigation row visible inside the settings popover", "geometryContract": "row frame available", "criticalityReason": "The Settings row is the action target whose visual completion is the Settings route becoming visible.", "kpiRefs": [ "p1.settings.open_latency_ms" ] },
-    { "id": "sidebar.settings.signOut", "priority": "P1", "role": "button", "surface": "settings", "visibilityContract": "sign-out row visible inside the settings popover", "geometryContract": "row frame available", "criticalityReason": "The destructive account action must remain directly identifiable for safety and traceability.", "kpiRefs": [ "p1.settings.open_latency_ms" ] },
-    { "id": "rightSidebar.panel", "priority": "P1", "role": "panel", "surface": "rightSidebar", "visibilityContract": "right sidebar visible", "geometryContract": "frame available", "criticalityReason": "Right sidebar opening is an auxiliary workflow that must not degrade the main monitoring path.", "kpiRefs": [ "p1.rightSidebar.open_latency_ms" ] },
-    { "id": "search.palette", "priority": "P1", "role": "panel", "surface": "search", "visibilityContract": "search or command palette visible", "geometryContract": "frame available", "criticalityReason": "Search/palette readiness affects finding conversations in dense workloads.", "kpiRefs": [ "p1.search.results_first_paint_ms" ] },
-    { "id": "diagnostics.panel", "priority": "P2", "role": "panel", "surface": "diagnostics", "visibilityContract": "diagnostics surface visible when opened", "geometryContract": "frame available", "criticalityReason": "Diagnostics are tracked as optional support tooling without blocking P0 UX closure.", "kpiRefs": [ "p2.diagnostics.panel_open_latency_ms" ] }
+    {
+      "id": "app.shell.firstUsableWindow",
+      "priority": "P0",
+      "role": "window",
+      "surface": "app.launch",
+      "visibilityContract": "main shell visible and not blocked by modal overlay",
+      "geometryContract": "frame available and stable",
+      "criticalityReason": "Launch is the first product perception point; every later UX trace depends on a usable main window.",
+      "kpiRefs": [
+        "p0.launch.process_to_first_window_visible_ms",
+        "p0.launch.first_usable_interaction_ms",
+        "p0.launch.hitches_until_usable_count",
+        "p0.launch.memory_after_usable_mb",
+        "p0.launch.no_crash_no_hang"
+      ]
+    },
+    {
+      "id": "sidebar.container",
+      "priority": "P0",
+      "role": "panel",
+      "surface": "sidebar",
+      "visibilityContract": "left sidebar visible",
+      "geometryContract": "frame available",
+      "criticalityReason": "The sidebar is the primary monitoring and navigation surface for many parallel conversations.",
+      "kpiRefs": [
+        "p0.launch.process_to_sidebar_ready_ms",
+        "p0.sidebar.first_paint_ready_ms"
+      ]
+    },
+    {
+      "id": "sidebar.allChats.entry",
+      "priority": "P0",
+      "role": "button",
+      "surface": "sidebar",
+      "visibilityContract": "All Chats navigation target visible",
+      "geometryContract": "frame available",
+      "criticalityReason": "All Chats is the baseline navigation path back to the complete conversation set.",
+      "kpiRefs": [
+        "p0.sidebar.click_to_selection_visible_ms",
+        "p0.sidebar.click_to_chat_route_started_ms"
+      ]
+    },
+    {
+      "id": "sidebar.pinned.entry",
+      "priority": "P0",
+      "role": "button",
+      "surface": "sidebar",
+      "visibilityContract": "Pinned navigation target visible",
+      "geometryContract": "frame available",
+      "criticalityReason": "Pinned navigation must stay responsive because users rely on it to monitor important active work.",
+      "kpiRefs": [
+        "p0.sidebar.click_to_selection_visible_ms",
+        "p0.sidebar.selected_row_stability_px"
+      ]
+    },
+    {
+      "id": "sidebar.projects.entry",
+      "priority": "P0",
+      "role": "button",
+      "surface": "sidebar",
+      "visibilityContract": "Projects navigation target visible",
+      "geometryContract": "frame available",
+      "criticalityReason": "Project navigation exercises grouped conversation density and must not degrade sidebar responsiveness.",
+      "kpiRefs": [
+        "p0.sidebar.click_to_selection_visible_ms",
+        "p0.sidebar.selected_row_stability_px"
+      ]
+    },
+    {
+      "id": "sidebar.conversationList",
+      "priority": "P0",
+      "role": "list",
+      "surface": "sidebar",
+      "visibilityContract": "conversation list mounted",
+      "geometryContract": "scroll state available",
+      "criticalityReason": "Dense conversation lists are the main scaling risk for monitoring many active agents.",
+      "kpiRefs": [
+        "p0.sidebar.first_paint_ready_ms",
+        "p0.sidebar.scroll_frame_p95_ms",
+        "p0.sidebar.scroll_hitch_count",
+        "p0.sidebar.no_full_list_rebuild_on_single_row_update"
+      ]
+    },
+    {
+      "id": "sidebar.conversation.row",
+      "priority": "P0",
+      "role": "row",
+      "surface": "sidebar",
+      "visibilityContract": "representative conversation row visible",
+      "geometryContract": "row frame available",
+      "criticalityReason": "Conversation rows are the action targets for opening heavy chats and preserving selected-state clarity.",
+      "kpiRefs": [
+        "p0.sidebar.click_to_selection_visible_ms",
+        "p0.sidebar.click_to_chat_route_started_ms",
+        "p0.chat.open_click_to_route_selected_ms"
+      ]
+    },
+    {
+      "id": "sidebar.hoverTarget",
+      "priority": "P0",
+      "role": "row",
+      "surface": "sidebar",
+      "visibilityContract": "hover target can be located",
+      "geometryContract": "row frame stable during hover",
+      "criticalityReason": "Hover feedback exposes perceived latency and row invalidation pressure in dense sidebars.",
+      "kpiRefs": [
+        "p0.sidebar.hover_to_highlight_ms"
+      ]
+    },
+    {
+      "id": "sidebar.selectedRow",
+      "priority": "P0",
+      "role": "row",
+      "surface": "sidebar",
+      "visibilityContract": "selected row state visible",
+      "geometryContract": "selected row Y remains stable after selection",
+      "criticalityReason": "Selection visibility and position prove navigation completed without losing user orientation.",
+      "kpiRefs": [
+        "p0.sidebar.click_to_selection_visible_ms",
+        "p0.sidebar.selected_row_stability_px",
+        "p0.sidebar.metadata_update_invalidated_rows_count"
+      ]
+    },
+    {
+      "id": "sidebar.runningIndicator",
+      "priority": "P0",
+      "role": "indicator",
+      "surface": "sidebar",
+      "visibilityContract": "running/unread/progress indicator visible when fixture declares it",
+      "geometryContract": "indicator frame available",
+      "criticalityReason": "Running and unread indicators are how users track active agent work across many conversations.",
+      "kpiRefs": [
+        "p0.sidebar.metadata_update_invalidated_rows_count",
+        "p0.sidebar.no_full_list_rebuild_on_single_row_update"
+      ]
+    },
+    {
+      "id": "chat.route.container",
+      "priority": "P0",
+      "role": "panel",
+      "surface": "chat",
+      "visibilityContract": "chat route selected and container visible",
+      "geometryContract": "frame available",
+      "criticalityReason": "The chat route container proves navigation reached the conversation surface before transcript readiness is measured.",
+      "kpiRefs": [
+        "p0.chat.open_click_to_route_selected_ms",
+        "p0.terminal.switch_back_to_chat_ms",
+        "p0.terminal.no_main_chat_freeze"
+      ]
+    },
+    {
+      "id": "chat.transcript.scroll",
+      "priority": "P0",
+      "role": "scroll",
+      "surface": "chat",
+      "visibilityContract": "transcript scroll view mounted",
+      "geometryContract": "scroll state, viewport, document size, and bottom distance available",
+      "criticalityReason": "Transcript scroll geometry protects the latest-message window, history loading, and bottom anchoring.",
+      "kpiRefs": [
+        "p0.chat.open_click_to_transcript_visible_ms",
+        "p0.chat.scroll_frame_p95_ms",
+        "p0.chat.scroll_hitch_count",
+        "p0.chat.scroll_to_bottom_ms",
+        "p0.chat.bottom_anchor_stability_px",
+        "p0.chat.no_scroll_jump_during_prepend"
+      ]
+    },
+    {
+      "id": "chat.visibleWindow.latest",
+      "priority": "P0",
+      "role": "transcript",
+      "surface": "chat",
+      "visibilityContract": "latest visible message window complete",
+      "geometryContract": "first/last visible row frames available",
+      "criticalityReason": "Seeing the latest meaningful messages is the north-star completion condition for opening heavy chats.",
+      "kpiRefs": [
+        "p0.chat.open_click_to_final_visible_window_ms",
+        "p0.chat.visible_latest_window_count",
+        "p0.chat.visible_window_no_row_by_row_buildup",
+        "p0.chat.no_lost_latest_message_after_scroll",
+        "p0.terminal.no_main_chat_freeze"
+      ]
+    },
+    {
+      "id": "chat.message.row",
+      "priority": "P0",
+      "role": "row",
+      "surface": "chat",
+      "visibilityContract": "visible message row has stable identity or row proxy",
+      "geometryContract": "row frame available",
+      "criticalityReason": "Stable message row geometry is required to prove scroll anchoring and coherent transcript painting.",
+      "kpiRefs": [
+        "p0.chat.old_page_insert_anchor_delta_px",
+        "p0.chat.scrollbar_position_consistency_px",
+        "p0.chat.visible_window_no_row_by_row_buildup"
+      ]
+    },
+    {
+      "id": "chat.message.user",
+      "priority": "P0",
+      "role": "text",
+      "surface": "chat",
+      "visibilityContract": "user message block visible",
+      "geometryContract": "frame available",
+      "criticalityReason": "The visible user message proves send completion from the user perspective.",
+      "kpiRefs": [
+        "p0.composer.send_click_to_user_message_visible_ms",
+        "p0.stream.user_message_visible_ms"
+      ]
+    },
+    {
+      "id": "chat.message.assistant",
+      "priority": "P0",
+      "role": "text",
+      "surface": "chat",
+      "visibilityContract": "assistant message block visible",
+      "geometryContract": "frame available",
+      "criticalityReason": "Assistant message visibility is the core monitoring output for active agent conversations.",
+      "kpiRefs": [
+        "p0.chat.latest_message_visible_ms",
+        "p0.stream.completion_to_final_visible_ms"
+      ]
+    },
+    {
+      "id": "chat.message.workSummary",
+      "priority": "P0",
+      "role": "panel",
+      "surface": "chat",
+      "visibilityContract": "tool/action/work summary visible when fixture declares it",
+      "geometryContract": "frame available and expansion stable",
+      "criticalityReason": "Tool and work summaries show what agents are doing and must remain stable inside dense transcripts.",
+      "kpiRefs": [
+        "p0.chat.visible_window_no_row_by_row_buildup",
+        "p0.stream.unrelated_invalidations_count"
+      ]
+    },
+    {
+      "id": "chat.streaming.placeholder",
+      "priority": "P0",
+      "role": "loader",
+      "surface": "streaming",
+      "visibilityContract": "assistant placeholder visible after send/mock stream",
+      "geometryContract": "placeholder frame available",
+      "criticalityReason": "The streaming placeholder proves the app responded immediately after a send or mock stream starts.",
+      "kpiRefs": [
+        "p0.stream.assistant_placeholder_visible_ms"
+      ]
+    },
+    {
+      "id": "chat.streaming.deltaTarget",
+      "priority": "P0",
+      "role": "text",
+      "surface": "streaming",
+      "visibilityContract": "streaming delta visible",
+      "geometryContract": "delta target frame available",
+      "criticalityReason": "Streaming deltas are the fastest feedback that an agent is actively producing output.",
+      "kpiRefs": [
+        "p0.stream.first_delta_received_to_visible_ms",
+        "p0.stream.delta_batch_to_visible_p95_ms",
+        "p0.stream.scroll_bottom_follow_stability_px"
+      ]
+    },
+    {
+      "id": "composer.input",
+      "priority": "P0",
+      "role": "input",
+      "surface": "composer",
+      "visibilityContract": "composer focused with visible caret/text",
+      "geometryContract": "input frame available",
+      "criticalityReason": "Composer input responsiveness is required for user control while conversations are heavy or streaming.",
+      "kpiRefs": [
+        "p0.launch.process_to_initial_chat_ready_ms",
+        "p0.composer.focus_to_caret_visible_ms",
+        "p0.composer.keystroke_to_text_visible_ms",
+        "p0.composer.send_click_to_input_cleared_ms",
+        "p0.composer.no_typing_hitches"
+      ]
+    },
+    {
+      "id": "composer.sendButton",
+      "priority": "P0",
+      "role": "button",
+      "surface": "composer",
+      "visibilityContract": "send button visible and enabled when input is sendable",
+      "geometryContract": "button frame available",
+      "criticalityReason": "The send button is the primary action that starts new visible conversation output.",
+      "kpiRefs": [
+        "p0.composer.send_click_to_user_message_visible_ms",
+        "p0.composer.send_click_to_input_cleared_ms"
+      ]
+    },
+    {
+      "id": "composer.stopButton",
+      "priority": "P0",
+      "role": "button",
+      "surface": "composer",
+      "visibilityContract": "stop/cancel generation control visible when generation is active",
+      "geometryContract": "button frame available",
+      "criticalityReason": "Stop control availability protects user control over active generations under load.",
+      "kpiRefs": [
+        "p0.stream.no_freeze_under_many_active_runs"
+      ]
+    },
+    {
+      "id": "terminal.openControl",
+      "priority": "P0",
+      "role": "button",
+      "surface": "terminal",
+      "visibilityContract": "terminal open control visible",
+      "geometryContract": "button frame available",
+      "criticalityReason": "Opening the terminal under conversation load must not block the main monitoring workflow.",
+      "kpiRefs": [
+        "p0.terminal.open_under_load_ms"
+      ]
+    },
+    {
+      "id": "terminal.panel",
+      "priority": "P0",
+      "role": "terminal",
+      "surface": "terminal",
+      "visibilityContract": "terminal panel visible and responsive",
+      "geometryContract": "panel and scroll geometry available",
+      "criticalityReason": "Terminal panel geometry proves auxiliary output can be opened, viewed, and scrolled under load.",
+      "kpiRefs": [
+        "p0.terminal.open_under_load_ms",
+        "p0.terminal.output_scroll_frame_p95_ms",
+        "p0.terminal.no_main_chat_freeze"
+      ]
+    },
+    {
+      "id": "app.loadingState",
+      "priority": "P0",
+      "role": "loader",
+      "surface": "app.state",
+      "visibilityContract": "blocking loading state detectable",
+      "geometryContract": "frame available when visible",
+      "criticalityReason": "Blocking loading states must be visible to distinguish waiting from broken or frozen UI.",
+      "kpiRefs": [
+        "p0.launch.no_crash_no_hang",
+        "p0.chat.old_page_load_request_to_visible_ms"
+      ]
+    },
+    {
+      "id": "app.errorState",
+      "priority": "P0",
+      "role": "error",
+      "surface": "app.state",
+      "visibilityContract": "blocking error state detectable",
+      "geometryContract": "frame available when visible",
+      "criticalityReason": "Blocking errors must be observable as failed visual completion rather than mistaken as success.",
+      "kpiRefs": [
+        "p0.launch.no_crash_no_hang"
+      ]
+    },
+    {
+      "id": "app.blockingOverlay",
+      "priority": "P0",
+      "role": "overlay",
+      "surface": "app.state",
+      "visibilityContract": "blocking overlay detectable",
+      "geometryContract": "frame available when visible",
+      "criticalityReason": "Blocking overlays can invalidate all main-flow latency measurements if they are not explicitly detected.",
+      "kpiRefs": [
+        "p0.launch.no_crash_no_hang",
+        "p0.launch.first_usable_interaction_ms"
+      ]
+    },
+    {
+      "id": "settings.route",
+      "priority": "P1",
+      "role": "panel",
+      "surface": "settings",
+      "visibilityContract": "settings route visible",
+      "geometryContract": "frame available",
+      "criticalityReason": "Settings is an auxiliary route whose opening latency must be tracked without compromising P0 chat flow.",
+      "kpiRefs": [
+        "p1.settings.open_latency_ms"
+      ]
+    },
+    {
+      "id": "sidebar.settings.openAccountPopover",
+      "priority": "P1",
+      "role": "button",
+      "surface": "settings",
+      "visibilityContract": "settings/account popover trigger visible in the sidebar",
+      "geometryContract": "button frame available",
+      "criticalityReason": "The account popover trigger starts the Settings route flow and must be addressable without cursor witnesses.",
+      "kpiRefs": [
+        "p1.settings.open_latency_ms"
+      ]
+    },
+    {
+      "id": "sidebar.settings.account",
+      "priority": "P1",
+      "role": "row",
+      "surface": "settings",
+      "visibilityContract": "account identity row visible inside the settings popover",
+      "geometryContract": "row frame available",
+      "criticalityReason": "The account row is a passive readiness anchor proving the popover became visible.",
+      "kpiRefs": [
+        "p1.settings.open_latency_ms"
+      ]
+    },
+    {
+      "id": "sidebar.settings.openSettings",
+      "priority": "P1",
+      "role": "button",
+      "surface": "settings",
+      "visibilityContract": "settings navigation row visible inside the settings popover",
+      "geometryContract": "row frame available",
+      "criticalityReason": "The Settings row is the action target whose visual completion is the Settings route becoming visible.",
+      "kpiRefs": [
+        "p1.settings.open_latency_ms"
+      ]
+    },
+    {
+      "id": "sidebar.settings.signOut",
+      "priority": "P1",
+      "role": "button",
+      "surface": "settings",
+      "visibilityContract": "sign-out row visible inside the settings popover",
+      "geometryContract": "row frame available",
+      "criticalityReason": "The destructive account action must remain directly identifiable for safety and traceability.",
+      "kpiRefs": [
+        "p1.settings.open_latency_ms"
+      ]
+    },
+    {
+      "id": "rightSidebar.panel",
+      "priority": "P1",
+      "role": "panel",
+      "surface": "rightSidebar",
+      "visibilityContract": "right sidebar visible",
+      "geometryContract": "frame available",
+      "criticalityReason": "Right sidebar opening is an auxiliary workflow that must not degrade the main monitoring path.",
+      "kpiRefs": [
+        "p1.rightSidebar.open_latency_ms"
+      ]
+    },
+    {
+      "id": "search.palette",
+      "priority": "P1",
+      "role": "panel",
+      "surface": "search",
+      "visibilityContract": "search or command palette visible",
+      "geometryContract": "frame available",
+      "criticalityReason": "Search/palette readiness affects finding conversations in dense workloads.",
+      "kpiRefs": [
+        "p1.search.results_first_paint_ms"
+      ]
+    },
+    {
+      "id": "diagnostics.panel",
+      "priority": "P2",
+      "role": "panel",
+      "surface": "diagnostics",
+      "visibilityContract": "diagnostics surface visible when opened",
+      "geometryContract": "frame available",
+      "criticalityReason": "Diagnostics are tracked as optional support tooling without blocking P0 UX closure.",
+      "kpiRefs": [
+        "p2.diagnostics.panel_open_latency_ms"
+      ]
+    }
   ],
   "traceControlImplementations": [
-    { "id": "app.shell.firstUsableWindow", "priority": "P0", "surfaceId": "app.shell.firstUsableWindow", "sourcePath": "macos/Sources/Clawix/ContentView.swift", "sourceSnippet": "clxControl(\"app.shell.firstUsableWindow\"", "coverageReason": "first usable app window must be addressable without screenshots" },
-    { "id": "sidebar.container", "priority": "P0", "surfaceId": "sidebar.container", "sourcePath": "macos/Sources/Clawix/SidebarView.swift", "sourceSnippet": "clxControl(\"sidebar.container\"", "coverageReason": "sidebar frame and readiness are launch and navigation KPIs" },
-    { "id": "sidebar.allChats.entry", "priority": "P0", "surfaceId": "sidebar.allChats.entry", "sourcePath": "macos/Sources/Clawix/SidebarView.swift", "sourceSnippet": "clxControl(\"sidebar.allChats.entry\"", "coverageReason": "primary navigation action must be measurable to visual completion" },
-    { "id": "sidebar.pinned.entry", "priority": "P0", "surfaceId": "sidebar.pinned.entry", "sourcePath": "macos/Sources/Clawix/SidebarView.swift", "sourceSnippet": "clxControl(\"sidebar.pinned.entry\"", "coverageReason": "pinned navigation is part of core parallel-chat monitoring" },
-    { "id": "sidebar.projects.entry", "priority": "P0", "surfaceId": "sidebar.projects.entry", "sourcePath": "macos/Sources/Clawix/SidebarView.swift", "sourceSnippet": "clxControl(\"sidebar.projects.entry\"", "coverageReason": "project navigation must stay responsive with dense sidebars" },
-    { "id": "sidebar.conversationList", "priority": "P0", "surfaceId": "sidebar.conversationList", "sourcePath": "macos/Sources/Clawix/SidebarView.swift", "sourceSnippet": "clxControl(\"sidebar.conversationList\"", "coverageReason": "scroll and dense-list KPIs depend on list geometry" },
-    { "id": "sidebar.conversation.row.dynamic", "priority": "P0", "surfaceId": "sidebar.conversation.row", "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+Controls.swift", "sourceSnippet": "sidebar.chat.\\(chat.clawixThreadId ?? chat.id.uuidString)", "coverageReason": "conversation rows need stable per-row proxy IDs for selection and route timing" },
-    { "id": "sidebar.runningIndicator", "priority": "P0", "surfaceId": "sidebar.runningIndicator", "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+Controls.swift", "sourceSnippet": "clxControl(\"sidebar.runningIndicator\"", "coverageReason": "active/unread state is part of monitoring many running conversations" },
-    { "id": "chat.route.container", "priority": "P0", "surfaceId": "chat.route.container", "sourcePath": "macos/Sources/Clawix/ChatView.swift", "sourceSnippet": "clxControl(\"chat.route.container\"", "coverageReason": "chat route selection must not be confused with click dispatch" },
-    { "id": "chat.visibleWindow.latest", "priority": "P0", "surfaceId": "chat.visibleWindow.latest", "sourcePath": "macos/Sources/Clawix/ChatView.swift", "sourceSnippet": "clxControl(\"chat.visibleWindow.latest\"", "coverageReason": "latest visible message window is the north-star user-visible condition" },
-    { "id": "chat.transcript.scroll", "priority": "P0", "surfaceId": "chat.transcript.scroll", "sourcePath": "macos/Sources/Clawix/Chat/ChatView+TranscriptScroller.swift", "sourceSnippet": "clxControl(\"chat.transcript.scroll\"", "coverageReason": "transcript scroll state and bottom anchoring must be measurable" },
-    { "id": "chat.message.row", "priority": "P0", "surfaceId": "chat.message.row", "sourcePath": "macos/Sources/Clawix/Chat/ChatView+MessageRow.swift", "sourceSnippet": "clxControl(\"chat.message.row\"", "coverageReason": "visible message rows need geometry for window and anchor checks" },
-    { "id": "chat.message.user", "priority": "P0", "surfaceId": "chat.message.user", "sourcePath": "macos/Sources/Clawix/Chat/ChatView+MessageRow.swift", "sourceSnippet": "chat.message.user", "coverageReason": "sent user messages are completion targets for composer KPIs" },
-    { "id": "chat.message.assistant", "priority": "P0", "surfaceId": "chat.message.assistant", "sourcePath": "macos/Sources/Clawix/Chat/ChatView+MessageRow.swift", "sourceSnippet": "chat.message.assistant", "coverageReason": "assistant output visibility is the core monitoring surface" },
-    { "id": "chat.message.workSummary", "priority": "P0", "surfaceId": "chat.message.workSummary", "sourcePath": "macos/Sources/Clawix/Chat/ChatView+MessageRow.swift", "sourceSnippet": "chat.workSummary.\\(message.id.uuidString)", "coverageReason": "tool/action summaries must be visible and stable inside dense transcripts" },
-    { "id": "chat.streaming.deltaTarget", "priority": "P0", "surfaceId": "chat.streaming.deltaTarget", "sourcePath": "macos/Sources/Clawix/Chat/ChatView+MessageRow.swift", "sourceSnippet": "chat.streaming.deltaTarget", "coverageReason": "streaming deltas must be measured from receive to visible text" },
-    { "id": "composer.input", "priority": "P0", "surfaceId": "composer.input", "sourcePath": "macos/Sources/Clawix/ComposerView.swift", "sourceSnippet": "clxControl(\"composer.input\"", "coverageReason": "typing latency and send readiness depend on input geometry" },
-    { "id": "composer.sendButton", "priority": "P0", "surfaceId": "composer.sendButton", "sourcePath": "macos/Sources/Clawix/ComposerView.swift", "sourceSnippet": "clxControl(\"composer.sendButton\"", "coverageReason": "send action must be measured through visible user-message completion" },
-    { "id": "composer.stopButton", "priority": "P0", "surfaceId": "composer.stopButton", "sourcePath": "macos/Sources/Clawix/ComposerView.swift", "sourceSnippet": "clxControl(\"composer.stopButton\"", "coverageReason": "active generation cancellation is a core visible control under load" },
-    { "id": "terminal.openControl", "priority": "P0", "surfaceId": "terminal.openControl", "sourcePath": "macos/Sources/Clawix/Terminal/TerminalToggleButton.swift", "sourceSnippet": "clxControl(\"terminal.openControl\"", "coverageReason": "terminal open latency under load is a P0 workflow" },
-    { "id": "terminal.panel", "priority": "P0", "surfaceId": "terminal.panel", "sourcePath": "macos/Sources/Clawix/Terminal/TerminalPanel.swift", "sourceSnippet": "clxControl(\"terminal.panel\"", "coverageReason": "terminal panel visibility and scroll geometry must be observable" },
-    { "id": "app.loadingState", "priority": "P0", "surfaceId": "app.loadingState", "sourcePath": "macos/Sources/Clawix/Chat/ChatView+TranscriptScroller.swift", "sourceSnippet": "clxControl(\"app.loadingState\"", "coverageReason": "blocking loading states must be detectable in transcript flows" },
-    { "id": "app.errorState", "priority": "P0", "surfaceId": "app.errorState", "sourcePath": "macos/Sources/Clawix/ChatView.swift", "sourceSnippet": "clxControl(\"app.errorState\"", "coverageReason": "blocking route errors must be detectable as failed visual completion" },
-    { "id": "settings.route", "priority": "P1", "surfaceId": "settings.route", "sourcePath": "macos/Sources/Clawix/SettingsView.swift", "sourceSnippet": "clxControl(\"settings.route\"", "coverageReason": "settings route open latency is a governed P1 surface" },
-    { "id": "sidebar.settings.openAccountPopover", "priority": "P1", "surfaceId": "sidebar.settings.openAccountPopover", "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+AccountPopover.swift", "sourceSnippet": "clxControl(\"sidebar.settings.openAccountPopover\"", "coverageReason": "account/settings popover must be opened without cursor-dependent witnesses" },
-    { "id": "sidebar.settings.account", "priority": "P1", "surfaceId": "sidebar.settings.account", "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+AccountPopover.swift", "sourceSnippet": "controlId: \"sidebar.settings.account\"", "coverageReason": "account row is the passive visible anchor for the settings popover" },
-    { "id": "sidebar.settings.openSettings", "priority": "P1", "surfaceId": "sidebar.settings.openSettings", "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+AccountPopover.swift", "sourceSnippet": "controlId: \"sidebar.settings.openSettings\"", "coverageReason": "settings navigation action must resolve to settings.route" },
-    { "id": "sidebar.settings.signOut", "priority": "P1", "surfaceId": "sidebar.settings.signOut", "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+AccountPopover.swift", "sourceSnippet": "controlId: \"sidebar.settings.signOut\"", "coverageReason": "destructive account action must remain directly traceable" }
+    {
+      "id": "app.shell.firstUsableWindow",
+      "priority": "P0",
+      "surfaceId": "app.shell.firstUsableWindow",
+      "sourcePath": "macos/Sources/Clawix/ContentView.swift",
+      "sourceSnippet": "clxControl(\"app.shell.firstUsableWindow\"",
+      "coverageReason": "first usable app window must be addressable without screenshots"
+    },
+    {
+      "id": "sidebar.container",
+      "priority": "P0",
+      "surfaceId": "sidebar.container",
+      "sourcePath": "macos/Sources/Clawix/SidebarView.swift",
+      "sourceSnippet": "clxControl(\"sidebar.container\"",
+      "coverageReason": "sidebar frame and readiness are launch and navigation KPIs"
+    },
+    {
+      "id": "sidebar.allChats.entry",
+      "priority": "P0",
+      "surfaceId": "sidebar.allChats.entry",
+      "sourcePath": "macos/Sources/Clawix/SidebarView.swift",
+      "sourceSnippet": "clxControl(\"sidebar.allChats.entry\"",
+      "coverageReason": "primary navigation action must be measurable to visual completion"
+    },
+    {
+      "id": "sidebar.pinned.entry",
+      "priority": "P0",
+      "surfaceId": "sidebar.pinned.entry",
+      "sourcePath": "macos/Sources/Clawix/SidebarView.swift",
+      "sourceSnippet": "clxControl(\"sidebar.pinned.entry\"",
+      "coverageReason": "pinned navigation is part of core parallel-chat monitoring"
+    },
+    {
+      "id": "sidebar.projects.entry",
+      "priority": "P0",
+      "surfaceId": "sidebar.projects.entry",
+      "sourcePath": "macos/Sources/Clawix/SidebarView.swift",
+      "sourceSnippet": "clxControl(\"sidebar.projects.entry\"",
+      "coverageReason": "project navigation must stay responsive with dense sidebars"
+    },
+    {
+      "id": "sidebar.conversationList",
+      "priority": "P0",
+      "surfaceId": "sidebar.conversationList",
+      "sourcePath": "macos/Sources/Clawix/SidebarView.swift",
+      "sourceSnippet": "clxControl(\"sidebar.conversationList\"",
+      "coverageReason": "scroll and dense-list KPIs depend on list geometry"
+    },
+    {
+      "id": "sidebar.conversation.row.dynamic",
+      "priority": "P0",
+      "surfaceId": "sidebar.conversation.row",
+      "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+Controls.swift",
+      "sourceSnippet": "sidebar.chat.\\(chat.clawixThreadId ?? chat.id.uuidString)",
+      "coverageReason": "conversation rows need stable per-row proxy IDs for selection and route timing"
+    },
+    {
+      "id": "sidebar.runningIndicator",
+      "priority": "P0",
+      "surfaceId": "sidebar.runningIndicator",
+      "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+Controls.swift",
+      "sourceSnippet": "clxControl(\"sidebar.runningIndicator\"",
+      "coverageReason": "active/unread state is part of monitoring many running conversations"
+    },
+    {
+      "id": "chat.route.container",
+      "priority": "P0",
+      "surfaceId": "chat.route.container",
+      "sourcePath": "macos/Sources/Clawix/ChatView.swift",
+      "sourceSnippet": "clxControl(\"chat.route.container\"",
+      "coverageReason": "chat route selection must not be confused with click dispatch"
+    },
+    {
+      "id": "chat.visibleWindow.latest",
+      "priority": "P0",
+      "surfaceId": "chat.visibleWindow.latest",
+      "sourcePath": "macos/Sources/Clawix/ChatView.swift",
+      "sourceSnippet": "clxControl(\"chat.visibleWindow.latest\"",
+      "coverageReason": "latest visible message window is the north-star user-visible condition"
+    },
+    {
+      "id": "chat.transcript.scroll",
+      "priority": "P0",
+      "surfaceId": "chat.transcript.scroll",
+      "sourcePath": "macos/Sources/Clawix/Chat/ChatView+TranscriptScroller.swift",
+      "sourceSnippet": "clxControl(\"chat.transcript.scroll\"",
+      "coverageReason": "transcript scroll state and bottom anchoring must be measurable"
+    },
+    {
+      "id": "chat.message.row",
+      "priority": "P0",
+      "surfaceId": "chat.message.row",
+      "sourcePath": "macos/Sources/Clawix/Chat/ChatView+MessageRow.swift",
+      "sourceSnippet": "clxControl(\"chat.message.row\"",
+      "coverageReason": "visible message rows need geometry for window and anchor checks"
+    },
+    {
+      "id": "chat.message.user",
+      "priority": "P0",
+      "surfaceId": "chat.message.user",
+      "sourcePath": "macos/Sources/Clawix/Chat/ChatView+MessageRow.swift",
+      "sourceSnippet": "chat.message.user",
+      "coverageReason": "sent user messages are completion targets for composer KPIs"
+    },
+    {
+      "id": "chat.message.assistant",
+      "priority": "P0",
+      "surfaceId": "chat.message.assistant",
+      "sourcePath": "macos/Sources/Clawix/Chat/ChatView+MessageRow.swift",
+      "sourceSnippet": "chat.message.assistant",
+      "coverageReason": "assistant output visibility is the core monitoring surface"
+    },
+    {
+      "id": "chat.message.workSummary",
+      "priority": "P0",
+      "surfaceId": "chat.message.workSummary",
+      "sourcePath": "macos/Sources/Clawix/Chat/ChatView+MessageRow.swift",
+      "sourceSnippet": "chat.workSummary.\\(message.id.uuidString)",
+      "coverageReason": "tool/action summaries must be visible and stable inside dense transcripts"
+    },
+    {
+      "id": "chat.streaming.deltaTarget",
+      "priority": "P0",
+      "surfaceId": "chat.streaming.deltaTarget",
+      "sourcePath": "macos/Sources/Clawix/Chat/ChatView+MessageRow.swift",
+      "sourceSnippet": "chat.streaming.deltaTarget",
+      "coverageReason": "streaming deltas must be measured from receive to visible text"
+    },
+    {
+      "id": "composer.input",
+      "priority": "P0",
+      "surfaceId": "composer.input",
+      "sourcePath": "macos/Sources/Clawix/ComposerView.swift",
+      "sourceSnippet": "clxControl(\"composer.input\"",
+      "coverageReason": "typing latency and send readiness depend on input geometry"
+    },
+    {
+      "id": "composer.sendButton",
+      "priority": "P0",
+      "surfaceId": "composer.sendButton",
+      "sourcePath": "macos/Sources/Clawix/ComposerView.swift",
+      "sourceSnippet": "clxControl(\"composer.sendButton\"",
+      "coverageReason": "send action must be measured through visible user-message completion"
+    },
+    {
+      "id": "composer.stopButton",
+      "priority": "P0",
+      "surfaceId": "composer.stopButton",
+      "sourcePath": "macos/Sources/Clawix/ComposerView.swift",
+      "sourceSnippet": "clxControl(\"composer.stopButton\"",
+      "coverageReason": "active generation cancellation is a core visible control under load"
+    },
+    {
+      "id": "terminal.openControl",
+      "priority": "P0",
+      "surfaceId": "terminal.openControl",
+      "sourcePath": "macos/Sources/Clawix/Terminal/TerminalToggleButton.swift",
+      "sourceSnippet": "clxControl(\"terminal.openControl\"",
+      "coverageReason": "terminal open latency under load is a P0 workflow"
+    },
+    {
+      "id": "terminal.panel",
+      "priority": "P0",
+      "surfaceId": "terminal.panel",
+      "sourcePath": "macos/Sources/Clawix/Terminal/TerminalPanel.swift",
+      "sourceSnippet": "clxControl(\"terminal.panel\"",
+      "coverageReason": "terminal panel visibility and scroll geometry must be observable"
+    },
+    {
+      "id": "app.loadingState",
+      "priority": "P0",
+      "surfaceId": "app.loadingState",
+      "sourcePath": "macos/Sources/Clawix/Chat/ChatView+TranscriptScroller.swift",
+      "sourceSnippet": "clxControl(\"app.loadingState\"",
+      "coverageReason": "blocking loading states must be detectable in transcript flows"
+    },
+    {
+      "id": "app.errorState",
+      "priority": "P0",
+      "surfaceId": "app.errorState",
+      "sourcePath": "macos/Sources/Clawix/ChatView.swift",
+      "sourceSnippet": "clxControl(\"app.errorState\"",
+      "coverageReason": "blocking route errors must be detectable as failed visual completion"
+    },
+    {
+      "id": "settings.route",
+      "priority": "P1",
+      "surfaceId": "settings.route",
+      "sourcePath": "macos/Sources/Clawix/SettingsView.swift",
+      "sourceSnippet": "clxControl(\"settings.route\"",
+      "coverageReason": "settings route open latency is a governed P1 surface"
+    },
+    {
+      "id": "sidebar.settings.openAccountPopover",
+      "priority": "P1",
+      "surfaceId": "sidebar.settings.openAccountPopover",
+      "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+AccountPopover.swift",
+      "sourceSnippet": "clxControl(\"sidebar.settings.openAccountPopover\"",
+      "coverageReason": "account/settings popover must be opened without cursor-dependent witnesses"
+    },
+    {
+      "id": "sidebar.settings.account",
+      "priority": "P1",
+      "surfaceId": "sidebar.settings.account",
+      "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+AccountPopover.swift",
+      "sourceSnippet": "controlId: \"sidebar.settings.account\"",
+      "coverageReason": "account row is the passive visible anchor for the settings popover"
+    },
+    {
+      "id": "sidebar.settings.openSettings",
+      "priority": "P1",
+      "surfaceId": "sidebar.settings.openSettings",
+      "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+AccountPopover.swift",
+      "sourceSnippet": "controlId: \"sidebar.settings.openSettings\"",
+      "coverageReason": "settings navigation action must resolve to settings.route"
+    },
+    {
+      "id": "sidebar.settings.signOut",
+      "priority": "P1",
+      "surfaceId": "sidebar.settings.signOut",
+      "sourcePath": "macos/Sources/Clawix/Sidebar/SidebarView+AccountPopover.swift",
+      "sourceSnippet": "controlId: \"sidebar.settings.signOut\"",
+      "coverageReason": "destructive account action must remain directly traceable"
+    }
   ],
   "fixtureProfiles": [
-    { "id": "smoke", "priority": "P0", "scaleIntent": "fast always-runnable harness sanity profile", "requiresCalibration": false },
-    { "id": "medium", "priority": "P0", "scaleIntent": "representative daily workload", "requiresCalibration": false },
-    { "id": "dense-sidebar", "priority": "P0", "scaleIntent": "many conversations, projects, pinned rows, running states, and row metadata churn", "requiresCalibration": true },
-    { "id": "dense-chat", "priority": "P0", "scaleIntent": "heavy transcript with latest-message visibility, history paging, markdown, and tool summaries", "requiresCalibration": true },
-    { "id": "streaming-heavy", "priority": "P0", "scaleIntent": "many streaming deltas, placeholder transitions, finalization, and unrelated invalidation pressure", "requiresCalibration": true },
-    { "id": "terminal-under-load", "priority": "P0", "scaleIntent": "terminal open/switch/scroll while chat and sidebar workloads are active", "requiresCalibration": true },
-    { "id": "worst-case", "priority": "P0", "scaleIntent": "opt-in stress profile intended to find nonlinear bottlenecks", "requiresCalibration": true },
-    { "id": "real-equivalent-private", "priority": "P0", "scaleIntent": "private aggregate calibration profile with no exported private content", "requiresCalibration": true }
+    {
+      "id": "smoke",
+      "priority": "P0",
+      "scaleIntent": "fast always-runnable harness sanity profile",
+      "requiresCalibration": false
+    },
+    {
+      "id": "medium",
+      "priority": "P0",
+      "scaleIntent": "representative daily workload",
+      "requiresCalibration": false
+    },
+    {
+      "id": "dense-sidebar",
+      "priority": "P0",
+      "scaleIntent": "many conversations, projects, pinned rows, running states, and row metadata churn",
+      "requiresCalibration": true
+    },
+    {
+      "id": "dense-chat",
+      "priority": "P0",
+      "scaleIntent": "heavy transcript with latest-message visibility, history paging, markdown, and tool summaries",
+      "requiresCalibration": true
+    },
+    {
+      "id": "streaming-heavy",
+      "priority": "P0",
+      "scaleIntent": "many streaming deltas, placeholder transitions, finalization, and unrelated invalidation pressure",
+      "requiresCalibration": true
+    },
+    {
+      "id": "terminal-under-load",
+      "priority": "P0",
+      "scaleIntent": "terminal open/switch/scroll while chat and sidebar workloads are active",
+      "requiresCalibration": true
+    },
+    {
+      "id": "worst-case",
+      "priority": "P0",
+      "scaleIntent": "opt-in stress profile intended to find nonlinear bottlenecks",
+      "requiresCalibration": true
+    },
+    {
+      "id": "real-equivalent-private",
+      "priority": "P0",
+      "scaleIntent": "private aggregate calibration profile with no exported private content",
+      "requiresCalibration": true
+    }
   ],
   "scalingDimensions": [
     "conversationCount",
@@ -158,77 +835,2399 @@
     "idleTimerPressure"
   ],
   "kpis": [
-    { "id": "p0.launch.process_to_first_window_visible_ms", "priority": "P0", "surface": "app.launch", "trigger": "process-start", "completionCondition": "first usable app window visible", "geometryCondition": "window frame stable", "fixtureProfiles": ["smoke", "medium", "dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.launch.process_to_sidebar_ready_ms", "priority": "P0", "surface": "app.launch", "trigger": "process-start", "completionCondition": "sidebar ready", "geometryCondition": "sidebar frame available", "fixtureProfiles": ["smoke", "dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.launch.process_to_initial_chat_ready_ms", "priority": "P0", "surface": "app.launch", "trigger": "process-start", "completionCondition": "initial chat route ready when the fixture selects a chat; otherwise primary composer surface ready", "geometryCondition": "chat frame or composer frame available", "fixtureProfiles": ["smoke", "dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.launch.first_usable_interaction_ms", "priority": "P0", "surface": "app.launch", "trigger": "process-start", "completionCondition": "first agent-control-bus interaction succeeds", "geometryCondition": "target frame available", "fixtureProfiles": ["smoke", "medium"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.launch.hitches_until_usable_count", "priority": "P0", "surface": "app.launch", "trigger": "process-start", "completionCondition": "first usable interaction", "geometryCondition": "not applicable", "fixtureProfiles": ["smoke", "dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.launch.memory_after_usable_mb", "priority": "P0", "surface": "app.launch", "trigger": "process-start", "completionCondition": "first usable interaction", "geometryCondition": "not applicable", "fixtureProfiles": ["smoke", "dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.launch.no_crash_no_hang", "priority": "P0", "surface": "app.launch", "trigger": "scenario-run", "completionCondition": "no crash and no hang", "geometryCondition": "not applicable", "fixtureProfiles": ["smoke", "worst-case"], "baselineComparison": "absolute-zero-failures" },
-
-    { "id": "p0.sidebar.first_paint_ready_ms", "priority": "P0", "surface": "sidebar", "trigger": "launch-or-route", "completionCondition": "sidebar list visible", "geometryCondition": "sidebar frame available", "fixtureProfiles": ["smoke", "dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.sidebar.scroll_frame_p95_ms", "priority": "P0", "surface": "sidebar", "trigger": "scroll-sidebar", "completionCondition": "scroll completes", "geometryCondition": "scroll offset changes as requested", "fixtureProfiles": ["dense-sidebar", "worst-case"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.sidebar.scroll_hitch_count", "priority": "P0", "surface": "sidebar", "trigger": "scroll-sidebar", "completionCondition": "scroll completes", "geometryCondition": "scroll offset changes as requested", "fixtureProfiles": ["dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.sidebar.hover_to_highlight_ms", "priority": "P0", "surface": "sidebar", "trigger": "hover-row", "completionCondition": "hover highlight visible", "geometryCondition": "row frame stable", "fixtureProfiles": ["dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.sidebar.click_to_selection_visible_ms", "priority": "P0", "surface": "sidebar", "trigger": "click-row", "completionCondition": "selected row visible", "geometryCondition": "selected row frame stable", "fixtureProfiles": ["dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.sidebar.click_to_chat_route_started_ms", "priority": "P0", "surface": "sidebar", "trigger": "click-row", "completionCondition": "chat route starts selection", "geometryCondition": "selected row remains visible", "fixtureProfiles": ["dense-sidebar", "dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.sidebar.metadata_update_invalidated_rows_count", "priority": "P0", "surface": "sidebar", "trigger": "single-row-metadata-update", "completionCondition": "metadata visible", "geometryCondition": "unrelated row frames stable", "fixtureProfiles": ["dense-sidebar", "streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.sidebar.no_full_list_rebuild_on_single_row_update", "priority": "P0", "surface": "sidebar", "trigger": "single-row-metadata-update", "completionCondition": "only expected rows invalidate", "geometryCondition": "list scroll position stable", "fixtureProfiles": ["dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.sidebar.selected_row_stability_px", "priority": "P0", "surface": "sidebar", "trigger": "select-row", "completionCondition": "selection visible", "geometryCondition": "selected row Y delta within tolerance", "fixtureProfiles": ["dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-
-    { "id": "p0.chat.open_click_to_route_selected_ms", "priority": "P0", "surface": "chat", "trigger": "click-heavy-chat", "completionCondition": "chat route selected", "geometryCondition": "chat container visible", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.open_click_to_transcript_visible_ms", "priority": "P0", "surface": "chat", "trigger": "click-heavy-chat", "completionCondition": "transcript visible", "geometryCondition": "transcript frame available", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.open_click_to_final_visible_window_ms", "priority": "P0", "surface": "chat", "trigger": "click-heavy-chat", "completionCondition": "latest visible window complete", "geometryCondition": "bottom anchor stable", "fixtureProfiles": ["dense-chat", "real-equivalent-private"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.latest_message_visible_ms", "priority": "P0", "surface": "chat", "trigger": "click-heavy-chat", "completionCondition": "latest message visible", "geometryCondition": "latest row frame visible", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.visible_latest_window_count", "priority": "P0", "surface": "chat", "trigger": "open-heavy-chat", "completionCondition": "minimum latest visible message count reached", "geometryCondition": "visible rows have frames", "fixtureProfiles": ["dense-chat"], "baselineComparison": "absolute-minimum" },
-    { "id": "p0.chat.visible_window_no_row_by_row_buildup", "priority": "P0", "surface": "chat", "trigger": "open-heavy-chat", "completionCondition": "latest window appears coherently", "geometryCondition": "visible row frames settle together", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.open_hitch_count", "priority": "P0", "surface": "chat", "trigger": "open-heavy-chat", "completionCondition": "latest visible window complete", "geometryCondition": "not applicable", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.open_frame_p95_ms", "priority": "P0", "surface": "chat", "trigger": "open-heavy-chat", "completionCondition": "latest visible window complete", "geometryCondition": "not applicable", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.open_memory_delta_mb", "priority": "P0", "surface": "chat", "trigger": "open-heavy-chat", "completionCondition": "latest visible window complete", "geometryCondition": "not applicable", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.open_database_query_count", "priority": "P0", "surface": "chat", "trigger": "open-heavy-chat", "completionCondition": "latest visible window complete", "geometryCondition": "not applicable", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.open_bridge_payload_bytes", "priority": "P0", "surface": "chat", "trigger": "open-heavy-chat", "completionCondition": "latest visible window complete", "geometryCondition": "not applicable", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-
-    { "id": "p0.chat.scroll_frame_p95_ms", "priority": "P0", "surface": "chat", "trigger": "scroll-transcript", "completionCondition": "scroll completes", "geometryCondition": "scroll state changes as requested", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.scroll_hitch_count", "priority": "P0", "surface": "chat", "trigger": "scroll-transcript", "completionCondition": "scroll completes", "geometryCondition": "scroll state changes as requested", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.scroll_to_bottom_ms", "priority": "P0", "surface": "chat", "trigger": "scroll-to-bottom", "completionCondition": "latest message window visible", "geometryCondition": "bottom distance within tolerance", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.bottom_anchor_stability_px", "priority": "P0", "surface": "chat", "trigger": "append-or-stream-at-bottom", "completionCondition": "new content visible", "geometryCondition": "bottom anchor delta within tolerance", "fixtureProfiles": ["dense-chat", "streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.old_page_load_request_to_visible_ms", "priority": "P0", "surface": "chat", "trigger": "scroll-near-top", "completionCondition": "old page visible", "geometryCondition": "anchor row still tracked", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.old_page_insert_anchor_delta_px", "priority": "P0", "surface": "chat", "trigger": "prepend-old-page", "completionCondition": "old page inserted", "geometryCondition": "anchor Y delta within tolerance across at least three loads", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.old_page_insert_hitch_count", "priority": "P0", "surface": "chat", "trigger": "prepend-old-page", "completionCondition": "old page inserted", "geometryCondition": "anchor Y delta measured", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.chat.no_scroll_jump_during_prepend", "priority": "P0", "surface": "chat", "trigger": "prepend-old-page", "completionCondition": "scroll remains user-controllable", "geometryCondition": "scroll offset corrected without visible jump", "fixtureProfiles": ["dense-chat"], "baselineComparison": "absolute-boolean" },
-    { "id": "p0.chat.no_lost_latest_message_after_scroll", "priority": "P0", "surface": "chat", "trigger": "scroll-history-then-bottom", "completionCondition": "latest message visible again", "geometryCondition": "bottom distance within tolerance", "fixtureProfiles": ["dense-chat"], "baselineComparison": "absolute-boolean" },
-    { "id": "p0.chat.scrollbar_position_consistency_px", "priority": "P0", "surface": "chat", "trigger": "scroll-history", "completionCondition": "scrollbar position reflects content position", "geometryCondition": "scrollbar/offset delta within tolerance", "fixtureProfiles": ["dense-chat"], "baselineComparison": "approved-private-baseline" },
-
-    { "id": "p0.stream.user_message_visible_ms", "priority": "P0", "surface": "streaming", "trigger": "send-or-mock-stream", "completionCondition": "user message visible", "geometryCondition": "message frame visible", "fixtureProfiles": ["streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.stream.assistant_placeholder_visible_ms", "priority": "P0", "surface": "streaming", "trigger": "send-or-mock-stream", "completionCondition": "assistant placeholder visible", "geometryCondition": "placeholder frame visible", "fixtureProfiles": ["streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.stream.first_delta_received_to_visible_ms", "priority": "P0", "surface": "streaming", "trigger": "mock-stream-delta", "completionCondition": "first delta visible", "geometryCondition": "delta frame visible", "fixtureProfiles": ["streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.stream.delta_batch_to_visible_p95_ms", "priority": "P0", "surface": "streaming", "trigger": "mock-stream-batch", "completionCondition": "batch visible", "geometryCondition": "delta target frame stable", "fixtureProfiles": ["streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.stream.completion_to_final_visible_ms", "priority": "P0", "surface": "streaming", "trigger": "mock-stream-complete", "completionCondition": "final assistant message visible", "geometryCondition": "final row frame stable", "fixtureProfiles": ["streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.stream.unrelated_invalidations_count", "priority": "P0", "surface": "streaming", "trigger": "mock-stream", "completionCondition": "stream completes", "geometryCondition": "unrelated surfaces stable", "fixtureProfiles": ["streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.stream.scroll_bottom_follow_stability_px", "priority": "P0", "surface": "streaming", "trigger": "stream-at-bottom", "completionCondition": "new deltas visible", "geometryCondition": "bottom follow delta within tolerance", "fixtureProfiles": ["streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.stream.no_freeze_under_many_active_runs", "priority": "P0", "surface": "streaming", "trigger": "many-active-mock-streams", "completionCondition": "app remains responsive", "geometryCondition": "primary chat frame remains visible", "fixtureProfiles": ["streaming-heavy", "worst-case"], "baselineComparison": "absolute-boolean" },
-
-    { "id": "p0.composer.focus_to_caret_visible_ms", "priority": "P0", "surface": "composer", "trigger": "focus-composer", "completionCondition": "caret visible", "geometryCondition": "input frame visible", "fixtureProfiles": ["smoke", "dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.composer.keystroke_to_text_visible_ms", "priority": "P0", "surface": "composer", "trigger": "type-character", "completionCondition": "typed text visible", "geometryCondition": "input frame stable", "fixtureProfiles": ["smoke", "streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.composer.send_click_to_user_message_visible_ms", "priority": "P0", "surface": "composer", "trigger": "send-mock-message", "completionCondition": "user message visible", "geometryCondition": "message frame visible", "fixtureProfiles": ["streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.composer.send_click_to_input_cleared_ms", "priority": "P0", "surface": "composer", "trigger": "send-mock-message", "completionCondition": "input clears", "geometryCondition": "input frame stable", "fixtureProfiles": ["streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.composer.no_typing_hitches", "priority": "P0", "surface": "composer", "trigger": "type-text", "completionCondition": "all text visible", "geometryCondition": "input frame stable", "fixtureProfiles": ["smoke", "streaming-heavy"], "baselineComparison": "approved-private-baseline" },
-
-    { "id": "p0.terminal.open_under_load_ms", "priority": "P0", "surface": "terminal", "trigger": "open-terminal-under-load", "completionCondition": "terminal panel visible", "geometryCondition": "terminal frame visible", "fixtureProfiles": ["terminal-under-load"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.terminal.switch_back_to_chat_ms", "priority": "P0", "surface": "terminal", "trigger": "switch-terminal-to-chat", "completionCondition": "chat visible and responsive", "geometryCondition": "chat frame stable", "fixtureProfiles": ["terminal-under-load"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.terminal.output_scroll_frame_p95_ms", "priority": "P0", "surface": "terminal", "trigger": "scroll-terminal-output", "completionCondition": "terminal scroll completes", "geometryCondition": "terminal scroll offset changes", "fixtureProfiles": ["terminal-under-load"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.terminal.no_main_chat_freeze", "priority": "P0", "surface": "terminal", "trigger": "terminal-under-load", "completionCondition": "chat remains responsive", "geometryCondition": "chat frame remains visible", "fixtureProfiles": ["terminal-under-load"], "baselineComparison": "absolute-boolean" },
-
-    { "id": "p0.idle.cpu_percent", "priority": "P0", "surface": "idle", "trigger": "idle-sample", "completionCondition": "idle window sampled", "geometryCondition": "not applicable", "fixtureProfiles": ["medium", "dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.idle.memory_slope_mb_per_min", "priority": "P0", "surface": "idle", "trigger": "idle-sample", "completionCondition": "idle window sampled", "geometryCondition": "not applicable", "fixtureProfiles": ["medium", "dense-chat"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.idle.timer_wakeups", "priority": "P0", "surface": "idle", "trigger": "idle-sample", "completionCondition": "idle window sampled", "geometryCondition": "not applicable", "fixtureProfiles": ["medium"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p0.idle.no_hang", "priority": "P0", "surface": "idle", "trigger": "idle-sample", "completionCondition": "no hang detected", "geometryCondition": "not applicable", "fixtureProfiles": ["medium", "worst-case"], "baselineComparison": "absolute-zero-failures" },
-    { "id": "p0.idle.no_unbounded_log_growth", "priority": "P0", "surface": "idle", "trigger": "idle-sample", "completionCondition": "trace/log size remains bounded", "geometryCondition": "not applicable", "fixtureProfiles": ["medium", "worst-case"], "baselineComparison": "absolute-boolean" },
-
-    { "id": "p1.dropdown.open_latency_ms", "priority": "P1", "surface": "dropdown", "trigger": "open-dropdown", "completionCondition": "dropdown visible", "geometryCondition": "dropdown frame visible", "fixtureProfiles": ["smoke"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p1.settings.open_latency_ms", "priority": "P1", "surface": "settings", "trigger": "open-settings", "completionCondition": "settings visible", "geometryCondition": "settings frame visible", "fixtureProfiles": ["smoke"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p1.rightSidebar.open_latency_ms", "priority": "P1", "surface": "rightSidebar", "trigger": "open-right-sidebar", "completionCondition": "right sidebar visible", "geometryCondition": "panel frame visible", "fixtureProfiles": ["medium"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p1.search.results_first_paint_ms", "priority": "P1", "surface": "search", "trigger": "open-search", "completionCondition": "search results visible", "geometryCondition": "result frame visible", "fixtureProfiles": ["medium", "dense-sidebar"], "baselineComparison": "approved-private-baseline" },
-    { "id": "p2.diagnostics.panel_open_latency_ms", "priority": "P2", "surface": "diagnostics", "trigger": "open-diagnostics", "completionCondition": "diagnostics panel visible", "geometryCondition": "panel frame visible", "fixtureProfiles": ["smoke"], "baselineComparison": "tracked-only" }
+    {
+      "id": "p0.launch.process_to_first_window_visible_ms",
+      "priority": "P0",
+      "surface": "app.launch",
+      "trigger": "process-start",
+      "completionCondition": "first usable app window visible",
+      "geometryCondition": "window frame stable",
+      "fixtureProfiles": [
+        "smoke",
+        "medium",
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can process start and reach first usable app window visible on app.launch without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "cold",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.launch.process_to_sidebar_ready_ms",
+      "priority": "P0",
+      "surface": "app.launch",
+      "trigger": "process-start",
+      "completionCondition": "sidebar ready",
+      "geometryCondition": "sidebar frame available",
+      "fixtureProfiles": [
+        "smoke",
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can process start and reach sidebar ready on app.launch without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "cold",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.launch.process_to_initial_chat_ready_ms",
+      "priority": "P0",
+      "surface": "app.launch",
+      "trigger": "process-start",
+      "completionCondition": "initial chat route ready when the fixture selects a chat; otherwise primary composer surface ready",
+      "geometryCondition": "chat frame or composer frame available",
+      "fixtureProfiles": [
+        "smoke",
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can process start and reach initial chat route ready when the fixture selects a chat; otherwise primary composer surface ready on app.launch without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "cold",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.launch.first_usable_interaction_ms",
+      "priority": "P0",
+      "surface": "app.launch",
+      "trigger": "process-start",
+      "completionCondition": "first agent-control-bus interaction succeeds",
+      "geometryCondition": "target frame available",
+      "fixtureProfiles": [
+        "smoke",
+        "medium"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can process start and reach first agent-control-bus interaction succeeds on app.launch without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "cold",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.launch.hitches_until_usable_count",
+      "priority": "P0",
+      "surface": "app.launch",
+      "trigger": "process-start",
+      "completionCondition": "first usable interaction",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "smoke",
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can process start and reach first usable interaction on app.launch without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "cold",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "hitch.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.launch.memory_after_usable_mb",
+      "priority": "P0",
+      "surface": "app.launch",
+      "trigger": "process-start",
+      "completionCondition": "first usable interaction",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "smoke",
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can process start and reach first usable interaction on app.launch without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "cold",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "resource.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.launch.no_crash_no_hang",
+      "priority": "P0",
+      "surface": "app.launch",
+      "trigger": "scenario-run",
+      "completionCondition": "no crash and no hang",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "smoke",
+        "worst-case"
+      ],
+      "baselineComparison": "absolute-zero-failures",
+      "userOutcome": "User can scenario run and reach no crash and no hang on app.launch without degrading higher-priority monitoring flows.",
+      "sampleCount": 1,
+      "coldWarmMode": "cold",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "failures",
+        "source": "product-invariant"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p0.sidebar.first_paint_ready_ms",
+      "priority": "P0",
+      "surface": "sidebar",
+      "trigger": "launch-or-route",
+      "completionCondition": "sidebar list visible",
+      "geometryCondition": "sidebar frame available",
+      "fixtureProfiles": [
+        "smoke",
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can launch or route and reach sidebar list visible on sidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.sidebar.scroll_frame_p95_ms",
+      "priority": "P0",
+      "surface": "sidebar",
+      "trigger": "scroll-sidebar",
+      "completionCondition": "scroll completes",
+      "geometryCondition": "scroll offset changes as requested",
+      "fixtureProfiles": [
+        "dense-sidebar",
+        "worst-case"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can scroll sidebar and reach scroll completes on sidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample",
+        "hitch.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.sidebar.scroll_hitch_count",
+      "priority": "P0",
+      "surface": "sidebar",
+      "trigger": "scroll-sidebar",
+      "completionCondition": "scroll completes",
+      "geometryCondition": "scroll offset changes as requested",
+      "fixtureProfiles": [
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can scroll sidebar and reach scroll completes on sidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "hitches",
+        "source": "product-target"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample",
+        "hitch.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.sidebar.hover_to_highlight_ms",
+      "priority": "P0",
+      "surface": "sidebar",
+      "trigger": "hover-row",
+      "completionCondition": "hover highlight visible",
+      "geometryCondition": "row frame stable",
+      "fixtureProfiles": [
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can hover row and reach hover highlight visible on sidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.sidebar.click_to_selection_visible_ms",
+      "priority": "P0",
+      "surface": "sidebar",
+      "trigger": "click-row",
+      "completionCondition": "selected row visible",
+      "geometryCondition": "selected row frame stable",
+      "fixtureProfiles": [
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can click row and reach selected row visible on sidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.sidebar.click_to_chat_route_started_ms",
+      "priority": "P0",
+      "surface": "sidebar",
+      "trigger": "click-row",
+      "completionCondition": "chat route starts selection",
+      "geometryCondition": "selected row remains visible",
+      "fixtureProfiles": [
+        "dense-sidebar",
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can click row and reach chat route starts selection on sidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.sidebar.metadata_update_invalidated_rows_count",
+      "priority": "P0",
+      "surface": "sidebar",
+      "trigger": "single-row-metadata-update",
+      "completionCondition": "metadata visible",
+      "geometryCondition": "unrelated row frames stable",
+      "fixtureProfiles": [
+        "dense-sidebar",
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can single row metadata update and reach metadata visible on sidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.sidebar.no_full_list_rebuild_on_single_row_update",
+      "priority": "P0",
+      "surface": "sidebar",
+      "trigger": "single-row-metadata-update",
+      "completionCondition": "only expected rows invalidate",
+      "geometryCondition": "list scroll position stable",
+      "fixtureProfiles": [
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can single row metadata update and reach only expected rows invalidate on sidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "regressions",
+        "source": "product-invariant"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.sidebar.selected_row_stability_px",
+      "priority": "P0",
+      "surface": "sidebar",
+      "trigger": "select-row",
+      "completionCondition": "selection visible",
+      "geometryCondition": "selected row Y delta within tolerance",
+      "fixtureProfiles": [
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can select row and reach selection visible on sidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 1,
+        "unit": "px",
+        "source": "visual-stability-tolerance"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.open_click_to_route_selected_ms",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "click-heavy-chat",
+      "completionCondition": "chat route selected",
+      "geometryCondition": "chat container visible",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can click heavy chat and reach chat route selected on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.open_click_to_transcript_visible_ms",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "click-heavy-chat",
+      "completionCondition": "transcript visible",
+      "geometryCondition": "transcript frame available",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can click heavy chat and reach transcript visible on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.open_click_to_final_visible_window_ms",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "click-heavy-chat",
+      "completionCondition": "latest visible window complete",
+      "geometryCondition": "bottom anchor stable",
+      "fixtureProfiles": [
+        "dense-chat",
+        "real-equivalent-private"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can click heavy chat and reach latest visible window complete on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline",
+        "private-real-equivalent-calibration"
+      ]
+    },
+    {
+      "id": "p0.chat.latest_message_visible_ms",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "click-heavy-chat",
+      "completionCondition": "latest message visible",
+      "geometryCondition": "latest row frame visible",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can click heavy chat and reach latest message visible on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.visible_latest_window_count",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "open-heavy-chat",
+      "completionCondition": "minimum latest visible message count reached",
+      "geometryCondition": "visible rows have frames",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "absolute-minimum",
+      "userOutcome": "User can open heavy chat and reach minimum latest visible message count reached on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p0.chat.visible_window_no_row_by_row_buildup",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "open-heavy-chat",
+      "completionCondition": "latest window appears coherently",
+      "geometryCondition": "visible row frames settle together",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open heavy chat and reach latest window appears coherently on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.open_hitch_count",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "open-heavy-chat",
+      "completionCondition": "latest visible window complete",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open heavy chat and reach latest visible window complete on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "hitches",
+        "source": "product-target"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "hitch.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.open_frame_p95_ms",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "open-heavy-chat",
+      "completionCondition": "latest visible window complete",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open heavy chat and reach latest visible window complete on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "hitch.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.open_memory_delta_mb",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "open-heavy-chat",
+      "completionCondition": "latest visible window complete",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open heavy chat and reach latest visible window complete on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "resource.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.open_database_query_count",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "open-heavy-chat",
+      "completionCondition": "latest visible window complete",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open heavy chat and reach latest visible window complete on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "database.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.open_bridge_payload_bytes",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "open-heavy-chat",
+      "completionCondition": "latest visible window complete",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open heavy chat and reach latest visible window complete on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "bridge.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.scroll_frame_p95_ms",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "scroll-transcript",
+      "completionCondition": "scroll completes",
+      "geometryCondition": "scroll state changes as requested",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can scroll transcript and reach scroll completes on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample",
+        "hitch.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.scroll_hitch_count",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "scroll-transcript",
+      "completionCondition": "scroll completes",
+      "geometryCondition": "scroll state changes as requested",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can scroll transcript and reach scroll completes on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "hitches",
+        "source": "product-target"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample",
+        "hitch.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.scroll_to_bottom_ms",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "scroll-to-bottom",
+      "completionCondition": "latest message window visible",
+      "geometryCondition": "bottom distance within tolerance",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can scroll to bottom and reach latest message window visible on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.bottom_anchor_stability_px",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "append-or-stream-at-bottom",
+      "completionCondition": "new content visible",
+      "geometryCondition": "bottom anchor delta within tolerance",
+      "fixtureProfiles": [
+        "dense-chat",
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can append or stream at bottom and reach new content visible on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 1,
+        "unit": "px",
+        "source": "visual-stability-tolerance"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.old_page_load_request_to_visible_ms",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "scroll-near-top",
+      "completionCondition": "old page visible",
+      "geometryCondition": "anchor row still tracked",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can scroll near top and reach old page visible on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.old_page_insert_anchor_delta_px",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "prepend-old-page",
+      "completionCondition": "old page inserted",
+      "geometryCondition": "anchor Y delta within tolerance across at least three loads",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can prepend old page and reach old page inserted on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 1,
+        "unit": "px",
+        "source": "visual-stability-tolerance"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.old_page_insert_hitch_count",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "prepend-old-page",
+      "completionCondition": "old page inserted",
+      "geometryCondition": "anchor Y delta measured",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can prepend old page and reach old page inserted on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "hitches",
+        "source": "product-target"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "hitch.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.chat.no_scroll_jump_during_prepend",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "prepend-old-page",
+      "completionCondition": "scroll remains user-controllable",
+      "geometryCondition": "scroll offset corrected without visible jump",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "absolute-boolean",
+      "userOutcome": "User can prepend old page and reach scroll remains user-controllable on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "regressions",
+        "source": "product-invariant"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p0.chat.no_lost_latest_message_after_scroll",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "scroll-history-then-bottom",
+      "completionCondition": "latest message visible again",
+      "geometryCondition": "bottom distance within tolerance",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "absolute-boolean",
+      "userOutcome": "User can scroll history then bottom and reach latest message visible again on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "regressions",
+        "source": "product-invariant"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p0.chat.scrollbar_position_consistency_px",
+      "priority": "P0",
+      "surface": "chat",
+      "trigger": "scroll-history",
+      "completionCondition": "scrollbar position reflects content position",
+      "geometryCondition": "scrollbar/offset delta within tolerance",
+      "fixtureProfiles": [
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can scroll history and reach scrollbar position reflects content position on chat without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 1,
+        "unit": "px",
+        "source": "visual-stability-tolerance"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.stream.user_message_visible_ms",
+      "priority": "P0",
+      "surface": "streaming",
+      "trigger": "send-or-mock-stream",
+      "completionCondition": "user message visible",
+      "geometryCondition": "message frame visible",
+      "fixtureProfiles": [
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can send or mock stream and reach user message visible on streaming without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.stream.assistant_placeholder_visible_ms",
+      "priority": "P0",
+      "surface": "streaming",
+      "trigger": "send-or-mock-stream",
+      "completionCondition": "assistant placeholder visible",
+      "geometryCondition": "placeholder frame visible",
+      "fixtureProfiles": [
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can send or mock stream and reach assistant placeholder visible on streaming without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.stream.first_delta_received_to_visible_ms",
+      "priority": "P0",
+      "surface": "streaming",
+      "trigger": "mock-stream-delta",
+      "completionCondition": "first delta visible",
+      "geometryCondition": "delta frame visible",
+      "fixtureProfiles": [
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can mock stream delta and reach first delta visible on streaming without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.stream.delta_batch_to_visible_p95_ms",
+      "priority": "P0",
+      "surface": "streaming",
+      "trigger": "mock-stream-batch",
+      "completionCondition": "batch visible",
+      "geometryCondition": "delta target frame stable",
+      "fixtureProfiles": [
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can mock stream batch and reach batch visible on streaming without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.stream.completion_to_final_visible_ms",
+      "priority": "P0",
+      "surface": "streaming",
+      "trigger": "mock-stream-complete",
+      "completionCondition": "final assistant message visible",
+      "geometryCondition": "final row frame stable",
+      "fixtureProfiles": [
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can mock stream complete and reach final assistant message visible on streaming without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.stream.unrelated_invalidations_count",
+      "priority": "P0",
+      "surface": "streaming",
+      "trigger": "mock-stream",
+      "completionCondition": "stream completes",
+      "geometryCondition": "unrelated surfaces stable",
+      "fixtureProfiles": [
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can mock stream and reach stream completes on streaming without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.stream.scroll_bottom_follow_stability_px",
+      "priority": "P0",
+      "surface": "streaming",
+      "trigger": "stream-at-bottom",
+      "completionCondition": "new deltas visible",
+      "geometryCondition": "bottom follow delta within tolerance",
+      "fixtureProfiles": [
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can stream at bottom and reach new deltas visible on streaming without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 1,
+        "unit": "px",
+        "source": "visual-stability-tolerance"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.stream.no_freeze_under_many_active_runs",
+      "priority": "P0",
+      "surface": "streaming",
+      "trigger": "many-active-mock-streams",
+      "completionCondition": "app remains responsive",
+      "geometryCondition": "primary chat frame remains visible",
+      "fixtureProfiles": [
+        "streaming-heavy",
+        "worst-case"
+      ],
+      "baselineComparison": "absolute-boolean",
+      "userOutcome": "User can many active mock streams and reach app remains responsive on streaming without degrading higher-priority monitoring flows.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "regressions",
+        "source": "product-invariant"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p0.composer.focus_to_caret_visible_ms",
+      "priority": "P0",
+      "surface": "composer",
+      "trigger": "focus-composer",
+      "completionCondition": "caret visible",
+      "geometryCondition": "input frame visible",
+      "fixtureProfiles": [
+        "smoke",
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can focus composer and reach caret visible on composer without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.composer.keystroke_to_text_visible_ms",
+      "priority": "P0",
+      "surface": "composer",
+      "trigger": "type-character",
+      "completionCondition": "typed text visible",
+      "geometryCondition": "input frame stable",
+      "fixtureProfiles": [
+        "smoke",
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can type character and reach typed text visible on composer without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.composer.send_click_to_user_message_visible_ms",
+      "priority": "P0",
+      "surface": "composer",
+      "trigger": "send-mock-message",
+      "completionCondition": "user message visible",
+      "geometryCondition": "message frame visible",
+      "fixtureProfiles": [
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can send mock message and reach user message visible on composer without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.composer.send_click_to_input_cleared_ms",
+      "priority": "P0",
+      "surface": "composer",
+      "trigger": "send-mock-message",
+      "completionCondition": "input clears",
+      "geometryCondition": "input frame stable",
+      "fixtureProfiles": [
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can send mock message and reach input clears on composer without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.composer.no_typing_hitches",
+      "priority": "P0",
+      "surface": "composer",
+      "trigger": "type-text",
+      "completionCondition": "all text visible",
+      "geometryCondition": "input frame stable",
+      "fixtureProfiles": [
+        "smoke",
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can type text and reach all text visible on composer without degrading higher-priority monitoring flows.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "hitch.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.terminal.open_under_load_ms",
+      "priority": "P0",
+      "surface": "terminal",
+      "trigger": "open-terminal-under-load",
+      "completionCondition": "terminal panel visible",
+      "geometryCondition": "terminal frame visible",
+      "fixtureProfiles": [
+        "terminal-under-load"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open terminal under load and reach terminal panel visible on terminal without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.terminal.switch_back_to_chat_ms",
+      "priority": "P0",
+      "surface": "terminal",
+      "trigger": "switch-terminal-to-chat",
+      "completionCondition": "chat visible and responsive",
+      "geometryCondition": "chat frame stable",
+      "fixtureProfiles": [
+        "terminal-under-load"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can switch terminal to chat and reach chat visible and responsive on terminal without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.terminal.output_scroll_frame_p95_ms",
+      "priority": "P0",
+      "surface": "terminal",
+      "trigger": "scroll-terminal-output",
+      "completionCondition": "terminal scroll completes",
+      "geometryCondition": "terminal scroll offset changes",
+      "fixtureProfiles": [
+        "terminal-under-load"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can scroll terminal output and reach terminal scroll completes on terminal without degrading higher-priority monitoring flows.",
+      "sampleCount": 5,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "scroll.sample",
+        "hitch.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.terminal.no_main_chat_freeze",
+      "priority": "P0",
+      "surface": "terminal",
+      "trigger": "terminal-under-load",
+      "completionCondition": "chat remains responsive",
+      "geometryCondition": "chat frame remains visible",
+      "fixtureProfiles": [
+        "terminal-under-load"
+      ],
+      "baselineComparison": "absolute-boolean",
+      "userOutcome": "User can terminal under load and reach chat remains responsive on terminal without degrading higher-priority monitoring flows.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p0.idle.cpu_percent",
+      "priority": "P0",
+      "surface": "idle",
+      "trigger": "idle-sample",
+      "completionCondition": "idle window sampled",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "medium",
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can idle sample and reach idle window sampled on idle without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm-idle-window",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "resource.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.idle.memory_slope_mb_per_min",
+      "priority": "P0",
+      "surface": "idle",
+      "trigger": "idle-sample",
+      "completionCondition": "idle window sampled",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "medium",
+        "dense-chat"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can idle sample and reach idle window sampled on idle without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm-idle-window",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "resource.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.idle.timer_wakeups",
+      "priority": "P0",
+      "surface": "idle",
+      "trigger": "idle-sample",
+      "completionCondition": "idle window sampled",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "medium"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can idle sample and reach idle window sampled on idle without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm-idle-window",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "resource.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p0.idle.no_hang",
+      "priority": "P0",
+      "surface": "idle",
+      "trigger": "idle-sample",
+      "completionCondition": "no hang detected",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "medium",
+        "worst-case"
+      ],
+      "baselineComparison": "absolute-zero-failures",
+      "userOutcome": "User can idle sample and reach no hang detected on idle without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm-idle-window",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "failures",
+        "source": "product-invariant"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p0.idle.no_unbounded_log_growth",
+      "priority": "P0",
+      "surface": "idle",
+      "trigger": "idle-sample",
+      "completionCondition": "trace/log size remains bounded",
+      "geometryCondition": "not applicable",
+      "fixtureProfiles": [
+        "medium",
+        "worst-case"
+      ],
+      "baselineComparison": "absolute-boolean",
+      "userOutcome": "User can idle sample and reach trace/log size remains bounded on idle without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm-idle-window",
+      "absoluteBudget": {
+        "value": 0,
+        "unit": "unbounded-growth-events",
+        "source": "product-invariant"
+      },
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 10
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "blocking",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p1.dropdown.open_latency_ms",
+      "priority": "P1",
+      "surface": "dropdown",
+      "trigger": "open-dropdown",
+      "completionCondition": "dropdown visible",
+      "geometryCondition": "dropdown frame visible",
+      "fixtureProfiles": [
+        "smoke"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open dropdown and reach dropdown visible on dropdown without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.settings.open_latency_ms",
+      "priority": "P1",
+      "surface": "settings",
+      "trigger": "open-settings",
+      "completionCondition": "settings visible",
+      "geometryCondition": "settings frame visible",
+      "fixtureProfiles": [
+        "smoke"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open settings and reach settings visible on settings without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.rightSidebar.open_latency_ms",
+      "priority": "P1",
+      "surface": "rightSidebar",
+      "trigger": "open-right-sidebar",
+      "completionCondition": "right sidebar visible",
+      "geometryCondition": "panel frame visible",
+      "fixtureProfiles": [
+        "medium"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open right sidebar and reach right sidebar visible on rightSidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.search.results_first_paint_ms",
+      "priority": "P1",
+      "surface": "search",
+      "trigger": "open-search",
+      "completionCondition": "search results visible",
+      "geometryCondition": "result frame visible",
+      "fixtureProfiles": [
+        "medium",
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can open search and reach search results visible on search without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p2.diagnostics.panel_open_latency_ms",
+      "priority": "P2",
+      "surface": "diagnostics",
+      "trigger": "open-diagnostics",
+      "completionCondition": "diagnostics panel visible",
+      "geometryCondition": "panel frame visible",
+      "fixtureProfiles": [
+        "smoke"
+      ],
+      "baselineComparison": "tracked-only",
+      "userOutcome": "User can open diagnostics and reach diagnostics panel visible on diagnostics without degrading higher-priority monitoring flows.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "tracked-only",
+        "maxRegressionPercent": null,
+        "enforcement": "none"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "tracked",
+      "knownExternalDependencies": []
+    }
   ]
 }

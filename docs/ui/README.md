@@ -102,7 +102,10 @@ the public repo.
 - `ux-trace-harness.registry.json`: macOS P0/P1/P2 UX trace contract for
   action-to-visual-completion measurement across launch, sidebar, dense chat,
   transcript scroll, streaming, composer, terminal-under-load, and idle
-  stability.
+  stability. Every KPI row must carry its user outcome, sample count,
+  cold/warm mode, absolute budget when known, regression threshold, required
+  evidence, owner docs, failure severity, and external dependencies so agents
+  can prioritize and gate work without inventing local policy.
 - `ux-trace-evidence.schema.json`: public-safe evidence shape for per-run
   action, visual condition, geometry, scroll, hitch, resource, fixture, and
   baseline-correlation data.
@@ -240,7 +243,10 @@ the public repo.
    `scripts/ui_ux_trace_harness_check.mjs`; P0 UI performance work must preserve
    traceable surfaces, KPI references, scenario coverage, evidence correlation,
    calibration status, private/public boundaries, and the rule that Computer
-   Use is witness-only. The same check also verifies normal-app overhead
+   Use is witness-only. The KPI registry is machine-readable, not prose-only:
+   each KPI declares outcome, sampling, cold/warm mode, budgets or null budget,
+   regression threshold, required evidence, owner docs, severity, and external
+   dependencies. The same check also verifies normal-app overhead
    safeguards: control frame probes and high-cardinality registries are gated
    by `CLAWIX_AGENT_INSTANCE=1`, the loopback control server starts only inside
    isolated agent instances, and harness evidence stays outside the main app
