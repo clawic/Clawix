@@ -620,16 +620,42 @@ function elapsedFromPayload(payload, fallbackMs) {
 }
 
 function sampleValueForKpi(kpiId, payload, fallbackMs) {
+  const resource = payload?.diagnostics?.resource ?? payload?.wait?.diagnostics?.resource;
   if (kpiId.includes("hitch")) {
     const total = Number(payload?.diagnostics?.hitches?.total ?? payload?.wait?.diagnostics?.hitches?.total);
-    return Number.isFinite(total) ? total : fallbackMs;
+    return Number.isFinite(total) ? total : null;
+  }
+  if (kpiId.endsWith("cpu_percent")) {
+    const value = Number(resource?.processCpuPercent);
+    return Number.isFinite(value) ? value : null;
+  }
+  if (kpiId.endsWith("memory_slope_mb_per_min")) {
+    const value = Number(resource?.memorySlopeMBPerMin);
+    return Number.isFinite(value) ? value : null;
+  }
+  if (kpiId.endsWith("timer_wakeups")) {
+    const value = Number(resource?.timerWakeups);
+    return Number.isFinite(value) ? value : null;
+  }
+  if (kpiId.endsWith("no_hang") || kpiId.endsWith("no_unbounded_log_growth") || kpiId.includes("no_freeze")) {
+    return payload?.ok === false || payload?.wait?.ok === false ? 1 : 0;
   }
   if (kpiId.endsWith("_mb")) {
-    const resource = payload?.diagnostics?.resource ?? payload?.wait?.diagnostics?.resource;
     const value = Number(resource?.footprintMB ?? resource?.residentMB);
-    return Number.isFinite(value) ? value : fallbackMs;
+    return Number.isFinite(value) ? value : null;
   }
   return elapsedFromPayload(payload, fallbackMs);
+}
+
+function unitForKpi(kpiId) {
+  if (kpiId.endsWith("cpu_percent")) return "percent";
+  if (kpiId.endsWith("memory_slope_mb_per_min")) return "mb_per_min";
+  if (kpiId.endsWith("timer_wakeups")) return "wakeups";
+  if (kpiId.endsWith("_count")) return "count";
+  if (kpiId.endsWith("_px")) return "px";
+  if (kpiId.endsWith("_mb")) return "mb";
+  if (kpiId.endsWith("no_hang") || kpiId.endsWith("no_unbounded_log_growth") || kpiId.includes("no_freeze")) return "boolean_failure_count";
+  return "ms";
 }
 
 function candidateObjects(root) {
@@ -798,7 +824,7 @@ function makeMetric(kpi, samples, eventRefs, baselineEntry) {
     priority: kpi.priority,
     surface: kpi.surface,
     sampleCount: sorted.length,
-    unit: kpi.id.endsWith("_count") ? "count" : kpi.id.endsWith("_mb") ? "mb" : "ms",
+    unit: unitForKpi(kpi.id),
     p50: percentile(50),
     p95,
     p99: percentile(99),
@@ -1379,7 +1405,9 @@ async function runScenario(args) {
       const elapsedMs = elapsedFromPayload(payload, fallbackMs);
       const sampleValue = sampleValueForKpi(kpiId, payload, fallbackMs);
       if (!kpiSamples.has(kpiId)) kpiSamples.set(kpiId, []);
-      if (kpiId !== "none") kpiSamples.get(kpiId).push(sampleValue);
+      if (kpiId !== "none" && typeof sampleValue === "number" && Number.isFinite(sampleValue)) {
+        kpiSamples.get(kpiId).push(sampleValue);
+      }
       emitPayloadSamples(events, {
         stepId: step.id,
         actionId,
