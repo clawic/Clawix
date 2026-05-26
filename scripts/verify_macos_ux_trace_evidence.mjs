@@ -193,9 +193,17 @@ function validateEvidenceSources(failures, sources, label, schema) {
     "evidenceVerifier",
   ]);
   const requiredIds = new Set(schema.evidenceSourcesContract?.requiredSourceIds || []);
+  const requiredSources = schema.evidenceSourcesContract?.requiredSources || {};
   for (const [sourceKey, source] of Object.entries(sources || {})) {
     if (sourceKey === "schemaVersion") continue;
     requireFields(failures, source, `${label}.evidenceSources.${sourceKey}`, ["id", "path", "contentHash"]);
+    const expectedSource = requiredSources[sourceKey];
+    if (expectedSource?.id && source?.id !== expectedSource.id) {
+      fail(failures, `${label}.evidenceSources.${sourceKey}.id must be ${expectedSource.id}`);
+    }
+    if (expectedSource?.path && source?.path !== expectedSource.path) {
+      fail(failures, `${label}.evidenceSources.${sourceKey}.path must be ${expectedSource.path}`);
+    }
     if (requiredIds.size > 0 && !requiredIds.has(source?.id)) {
       fail(failures, `${label}.evidenceSources.${sourceKey}.id is not an approved source id`);
     }

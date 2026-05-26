@@ -125,6 +125,29 @@
   "evidenceSourcesContract": {
     "pathPolicy": "Source paths must be repo-relative public artifact references, never absolute local paths.",
     "hashPolicy": "Every referenced source must include a sha256 content hash so evidence can be tied to the exact registry/schema/manifest/verifier used for the run.",
+    "keyIdentityPolicy": "Every evidenceSources key must keep its expected source id and repo-relative path; approved ids are not interchangeable across keys.",
+    "requiredSources": {
+      "registry": {
+        "id": "ux-trace-harness-registry",
+        "path": "docs/ui/ux-trace-harness.registry.json"
+      },
+      "scenarioManifest": {
+        "id": "ux-trace-scenarios-manifest",
+        "path": "docs/ui/ux-trace-scenarios.manifest.json"
+      },
+      "evidenceSchema": {
+        "id": "ux-trace-evidence-schema",
+        "path": "docs/ui/ux-trace-evidence.schema.json"
+      },
+      "fixtureGenerator": {
+        "id": "macos-ux-trace-fixture-generator",
+        "path": "scripts/generate_macos_ux_trace_fixtures.mjs"
+      },
+      "evidenceVerifier": {
+        "id": "macos-ux-trace-evidence-verifier",
+        "path": "scripts/verify_macos_ux_trace_evidence.mjs"
+      }
+    },
     "requiredSourceIds": [
       "ux-trace-harness-registry",
       "ux-trace-scenarios-manifest",

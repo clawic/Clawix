@@ -751,7 +751,27 @@ if (evidenceSchema) {
     fail(`${evidenceSchemaPath}.eventLifecycleContract must bind run lifecycle events to run status`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
-  requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "requiredSourceIds"]);
+  requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "keyIdentityPolicy", "requiredSources", "requiredSourceIds"]);
+  if (!String(evidenceSchema.evidenceSourcesContract?.keyIdentityPolicy ?? "").includes("not interchangeable")) {
+    fail(`${evidenceSchemaPath}.evidenceSourcesContract.keyIdentityPolicy must make evidence source keys non-interchangeable`);
+  }
+  const expectedEvidenceSources = {
+    registry: { id: "ux-trace-harness-registry", path: registryPath },
+    scenarioManifest: { id: "ux-trace-scenarios-manifest", path: scenariosPath },
+    evidenceSchema: { id: "ux-trace-evidence-schema", path: evidenceSchemaPath },
+    fixtureGenerator: { id: "macos-ux-trace-fixture-generator", path: fixtureGeneratorPath },
+    evidenceVerifier: { id: "macos-ux-trace-evidence-verifier", path: evidenceVerifierPath },
+  };
+  const requiredSources = requireObject(evidenceSchema.evidenceSourcesContract?.requiredSources, `${evidenceSchemaPath}.evidenceSourcesContract.requiredSources`);
+  for (const [sourceKey, expectedSource] of Object.entries(expectedEvidenceSources)) {
+    requireFields(requiredSources?.[sourceKey], `${evidenceSchemaPath}.evidenceSourcesContract.requiredSources.${sourceKey}`, ["id", "path"]);
+    if (requiredSources?.[sourceKey]?.id !== expectedSource.id) {
+      fail(`${evidenceSchemaPath}.evidenceSourcesContract.requiredSources.${sourceKey}.id must be ${expectedSource.id}`);
+    }
+    if (requiredSources?.[sourceKey]?.path !== expectedSource.path) {
+      fail(`${evidenceSchemaPath}.evidenceSourcesContract.requiredSources.${sourceKey}.path must be ${expectedSource.path}`);
+    }
+  }
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesContract?.requiredSourceIds, `${evidenceSchemaPath}.evidenceSourcesContract.requiredSourceIds`), `${evidenceSchemaPath}.evidenceSourcesContract.requiredSourceIds`, ["ux-trace-harness-registry", "ux-trace-scenarios-manifest", "ux-trace-evidence-schema", "macos-ux-trace-fixture-generator", "macos-ux-trace-evidence-verifier"]);
   if (!String(evidenceSchema.evidenceSourcesContract?.pathPolicy ?? "").includes("repo-relative")) {
     fail(`${evidenceSchemaPath}.evidenceSourcesContract.pathPolicy must require repo-relative paths`);
@@ -1092,6 +1112,9 @@ if (evidenceVerifierSource) {
     "sampleCounts",
     "validateTraceIsolation(",
     "validateEvidenceSources(",
+    "requiredSources",
+    "evidenceSources.${sourceKey}.id must be",
+    "evidenceSources.${sourceKey}.path must be",
     "validateExitPolicy(",
     "validateBaselineComparison(",
     "baselineComparisonStatuses",

@@ -89,7 +89,8 @@ explicit external-pending condition rather than an implied pass.
   the registry, evidence schema, and scenario manifest.
   `scripts/verify_macos_ux_trace_evidence.mjs` validates generated run/suite
   evidence against the schema, event correlation, metric references, failure
-  sidecars, normalized diagnostic sample events, contract source hashes,
+  sidecars, normalized diagnostic sample events, contract source key/id/path
+  identity and hashes,
   baseline artifact metadata, run and suite baseline comparisons, baseline path
   redaction, exact metric-row correlation for every comparison row, aggregate
   comparison status consistency, exact child-to-suite metric/failure
