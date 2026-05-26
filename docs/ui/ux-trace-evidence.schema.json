@@ -33,6 +33,7 @@
     "status",
     "launchMode",
     "instrumentationFlags",
+    "evidenceSources",
     "traceIsolation",
     "overheadCalibration",
     "privateBoundary",
@@ -53,6 +54,7 @@
     "osVersion",
     "launchMode",
     "instrumentationFlags",
+    "evidenceSources",
     "traceIsolation",
     "overheadCalibration",
     "startedAt",
@@ -109,6 +111,24 @@
       "maxEventBytesPerRun": 33554432,
       "maxFailureUIStateBytesPerRun": 16777216
     }
+  },
+  "evidenceSourcesRequiredFields": [
+    "registry",
+    "scenarioManifest",
+    "evidenceSchema",
+    "fixtureGenerator",
+    "evidenceVerifier"
+  ],
+  "evidenceSourcesContract": {
+    "pathPolicy": "Source paths must be repo-relative public artifact references, never absolute local paths.",
+    "hashPolicy": "Every referenced source must include a sha256 content hash so evidence can be tied to the exact registry/schema/manifest/verifier used for the run.",
+    "requiredSourceIds": [
+      "ux-trace-harness-registry",
+      "ux-trace-scenarios-manifest",
+      "ux-trace-evidence-schema",
+      "macos-ux-trace-fixture-generator",
+      "macos-ux-trace-evidence-verifier"
+    ]
   },
   "eventRequiredFields": [
     "schemaVersion",

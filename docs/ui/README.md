@@ -320,10 +320,13 @@ write redacted `logs/failure-ui-states.jsonl` rows that are referenced from
 available diagnostics into `geometry.sample`, `scroll.sample`,
 `render.window`, `hitch.sample`, `resource.sample`, `database.sample`, and
 `bridge.sample` events so agents can query performance facts without opening
-opaque payload hashes. `run.json` and `suite.json` include a `traceIsolation`
-block proving per-run/per-suite directories, no global shared trace file, no
-main app database trace writes, and relative-only artifact indexes; external
-fixture paths are represented by hashes rather than local absolute paths.
+opaque payload hashes. `run.json` and `suite.json` include `evidenceSources`
+with repo-relative registry, scenario manifest, schema, generator, and verifier
+paths plus content hashes, so a bundle is tied to the exact public contract that
+produced it. They also include a `traceIsolation` block proving
+per-run/per-suite directories, no global shared trace file, no main app
+database trace writes, and relative-only artifact indexes; external fixture
+paths are represented by hashes rather than local absolute paths.
 They also include `overheadCalibration`: a bounded writer summary plus either
 a hash-only harness-disabled control comparison supplied with
 `--overhead-control <file>` or an explicit `external_pending_control_run`

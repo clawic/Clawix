@@ -603,6 +603,7 @@ if (evidenceSchema) {
     "allowedRunStatuses",
     "traceIsolationRequiredFields",
     "overheadCalibrationRequiredFields",
+    "evidenceSourcesRequiredFields",
     "eventRequiredFields",
     "eventTypes",
     "metricRequiredFields",
@@ -617,8 +618,17 @@ if (evidenceSchema) {
   requireUniqueStringArray(requireArray(evidenceSchema.eventTypes, `${evidenceSchemaPath}.eventTypes`, expectedEventTypes.length), `${evidenceSchemaPath}.eventTypes`, expectedEventTypes);
   requireUniqueStringArray(requireArray(evidenceSchema.suiteDirectoryShape, `${evidenceSchemaPath}.suiteDirectoryShape`), `${evidenceSchemaPath}.suiteDirectoryShape`, ["suite.json", "suite-metrics.json", "suite-failures.json"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceDirectoryShape, `${evidenceSchemaPath}.evidenceDirectoryShape`), `${evidenceSchemaPath}.evidenceDirectoryShape`, ["logs/failure-ui-states.jsonl"]);
-  requireUniqueStringArray(requireArray(evidenceSchema.suiteRequiredFields, `${evidenceSchemaPath}.suiteRequiredFields`), `${evidenceSchemaPath}.suiteRequiredFields`, ["suiteId", "suiteName", "scenarioCount", "runs", "artifactIndex", "traceIsolation", "overheadCalibration"]);
-  requireUniqueStringArray(requireArray(evidenceSchema.runRequiredFields, `${evidenceSchemaPath}.runRequiredFields`), `${evidenceSchemaPath}.runRequiredFields`, ["runId", "scenarioId", "fixtureProfile", "artifactIndex", "traceIsolation", "overheadCalibration"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.suiteRequiredFields, `${evidenceSchemaPath}.suiteRequiredFields`), `${evidenceSchemaPath}.suiteRequiredFields`, ["suiteId", "suiteName", "scenarioCount", "runs", "artifactIndex", "evidenceSources", "traceIsolation", "overheadCalibration"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.runRequiredFields, `${evidenceSchemaPath}.runRequiredFields`), `${evidenceSchemaPath}.runRequiredFields`, ["runId", "scenarioId", "fixtureProfile", "artifactIndex", "evidenceSources", "traceIsolation", "overheadCalibration"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
+  requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "requiredSourceIds"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesContract?.requiredSourceIds, `${evidenceSchemaPath}.evidenceSourcesContract.requiredSourceIds`), `${evidenceSchemaPath}.evidenceSourcesContract.requiredSourceIds`, ["ux-trace-harness-registry", "ux-trace-scenarios-manifest", "ux-trace-evidence-schema", "macos-ux-trace-fixture-generator", "macos-ux-trace-evidence-verifier"]);
+  if (!String(evidenceSchema.evidenceSourcesContract?.pathPolicy ?? "").includes("repo-relative")) {
+    fail(`${evidenceSchemaPath}.evidenceSourcesContract.pathPolicy must require repo-relative paths`);
+  }
+  if (!String(evidenceSchema.evidenceSourcesContract?.hashPolicy ?? "").includes("sha256 content hash")) {
+    fail(`${evidenceSchemaPath}.evidenceSourcesContract.hashPolicy must require sha256 content hashes`);
+  }
   requireUniqueStringArray(requireArray(evidenceSchema.traceIsolationRequiredFields, `${evidenceSchemaPath}.traceIsolationRequiredFields`), `${evidenceSchemaPath}.traceIsolationRequiredFields`, ["mode", "evidenceRootHash", "globalSharedTraceFile", "mainDatabaseTraceWrites", "parallelSafe"]);
   requireFields(evidenceSchema.traceIsolationContract, `${evidenceSchemaPath}.traceIsolationContract`, ["runDirectory", "suiteDirectory", "forbidden", "externalPaths"]);
   requireUniqueStringArray(requireArray(evidenceSchema.traceIsolationContract?.forbidden, `${evidenceSchemaPath}.traceIsolationContract.forbidden`), `${evidenceSchemaPath}.traceIsolationContract.forbidden`, ["global shared trace files", "main app database trace writes", "absolute local paths in artifact indexes", "raw external fixture paths"]);
@@ -886,6 +896,9 @@ if (runnerSource) {
     "eventType: \"database.sample\"",
     "eventType: \"bridge.sample\"",
     "function traceIsolationForRun(",
+    "function evidenceSourceReferences(",
+    "scenarioManifest: contractSourceReference(\"ux-trace-scenarios-manifest\"",
+    "evidenceSources: evidenceSourceReferences()",
     "traceIsolation: traceIsolationForRun(",
     "traceIsolation: traceIsolationForSuite(",
     "overheadCalibrationForRun(",
@@ -916,6 +929,8 @@ if (evidenceVerifierSource) {
     "capture.written",
     "sampleCounts",
     "validateTraceIsolation(",
+    "validateEvidenceSources(",
+    "contentHash does not match current source content",
     "runDirectoryMatchesRunId must be true",
     "suiteDirectoryMatchesSuiteId must be true",
     "validateOverheadCalibration(",

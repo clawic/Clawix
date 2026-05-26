@@ -53,6 +53,10 @@ function stableHash(value) {
   return `sha256:${crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex")}`;
 }
 
+function fileContentHash(file) {
+  return `sha256:${crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex")}`;
+}
+
 function fail(failures, message) {
   failures.push(message);
 }
@@ -153,6 +157,38 @@ function validateOverheadCalibration(failures, overhead, label, schema) {
   }
 }
 
+function validateEvidenceSources(failures, sources, label, schema) {
+  requireFields(failures, sources, `${label}.evidenceSources`, schema.evidenceSourcesRequiredFields || [
+    "registry",
+    "scenarioManifest",
+    "evidenceSchema",
+    "fixtureGenerator",
+    "evidenceVerifier",
+  ]);
+  const requiredIds = new Set(schema.evidenceSourcesContract?.requiredSourceIds || []);
+  for (const [sourceKey, source] of Object.entries(sources || {})) {
+    if (sourceKey === "schemaVersion") continue;
+    requireFields(failures, source, `${label}.evidenceSources.${sourceKey}`, ["id", "path", "contentHash"]);
+    if (requiredIds.size > 0 && !requiredIds.has(source?.id)) {
+      fail(failures, `${label}.evidenceSources.${sourceKey}.id is not an approved source id`);
+    }
+    if (!isRelativeSafe(source?.path)) {
+      fail(failures, `${label}.evidenceSources.${sourceKey}.path must be repo-relative and safe`);
+      continue;
+    }
+    const absolutePath = path.join(rootDir, source.path);
+    if (!fs.existsSync(absolutePath)) {
+      fail(failures, `${label}.evidenceSources.${sourceKey}.path points to missing source`);
+      continue;
+    }
+    if (typeof source?.contentHash !== "string" || !source.contentHash.startsWith("sha256:")) {
+      fail(failures, `${label}.evidenceSources.${sourceKey}.contentHash must be a sha256 hash`);
+    } else if (source.contentHash !== fileContentHash(absolutePath)) {
+      fail(failures, `${label}.evidenceSources.${sourceKey}.contentHash does not match current source content`);
+    }
+  }
+}
+
 function validateArtifactIndex(failures, rows, label) {
   for (const row of rows || []) {
     if (!isRelativeSafe(row)) fail(failures, `${label}.artifactIndex contains unsafe path ${row}`);
@@ -204,6 +240,7 @@ function validateRun(runDir, schema, options = {}) {
   if (run.program !== "macos-ux-trace-harness") fail(failures, "run.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(run.status)) fail(failures, `run.json.status ${run.status} is not allowed`);
   validatePrivateBoundary(failures, run.privateBoundary, "run.json");
+  validateEvidenceSources(failures, run.evidenceSources, "run.json", schema);
   validateTraceIsolation(failures, run.traceIsolation, "run.json", "runDirectoryName", path.basename(runDir));
   if (run.traceIsolation?.runDirectoryMatchesRunId !== true) fail(failures, "run.json.traceIsolation.runDirectoryMatchesRunId must be true");
   validateOverheadCalibration(failures, run.overheadCalibration, "run.json", schema);
@@ -402,6 +439,7 @@ function validateSuite(suiteDir, schema) {
   if (suite.program !== "macos-ux-trace-harness") fail(failures, "suite.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(suite.status)) fail(failures, `suite.json.status ${suite.status} is not allowed`);
   validatePrivateBoundary(failures, suite.privateBoundary, "suite.json");
+  validateEvidenceSources(failures, suite.evidenceSources, "suite.json", schema);
   validateTraceIsolation(failures, suite.traceIsolation, "suite.json", "suiteDirectoryName", path.basename(suiteDir));
   if (suite.traceIsolation?.suiteDirectoryMatchesSuiteId !== true) fail(failures, "suite.json.traceIsolation.suiteDirectoryMatchesSuiteId must be true");
   validateOverheadCalibration(failures, suite.overheadCalibration, "suite.json", schema);

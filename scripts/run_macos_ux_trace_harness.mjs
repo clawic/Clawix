@@ -265,6 +265,37 @@ function publicPathReference(baseDir, absolutePath) {
   };
 }
 
+function repoRelativeReference(absolutePath) {
+  const relative = path.relative(rootDir, absolutePath);
+  if (!isRelativeSafe(relative)) {
+    throw new Error(`public evidence source is outside the repo: ${absolutePath}`);
+  }
+  return relative;
+}
+
+function fileContentHash(absolutePath) {
+  return `sha256:${crypto.createHash("sha256").update(fs.readFileSync(absolutePath)).digest("hex")}`;
+}
+
+function contractSourceReference(id, absolutePath) {
+  return {
+    id,
+    path: repoRelativeReference(absolutePath),
+    contentHash: fileContentHash(absolutePath),
+  };
+}
+
+function evidenceSourceReferences() {
+  return {
+    schemaVersion: 1,
+    registry: contractSourceReference("ux-trace-harness-registry", registryPath),
+    scenarioManifest: contractSourceReference("ux-trace-scenarios-manifest", scenarioManifestPath),
+    evidenceSchema: contractSourceReference("ux-trace-evidence-schema", evidenceSchemaPath),
+    fixtureGenerator: contractSourceReference("macos-ux-trace-fixture-generator", fixtureGeneratorPath),
+    evidenceVerifier: contractSourceReference("macos-ux-trace-evidence-verifier", evidenceVerifierPath),
+  };
+}
+
 function traceIsolationForRun(runDir, runId, options) {
   return {
     mode: options.dryRun ? "dry-run-per-run-directory" : "isolated-agent-instance",
@@ -1366,6 +1397,7 @@ async function runScenario(args) {
       computerUseWitness: false,
       mainDatabaseTraceWrites: false,
     },
+    evidenceSources: evidenceSourceReferences(),
     traceIsolation: traceIsolationForRun(runDir, runId, options),
     overheadCalibration,
     startedAt,
@@ -1511,6 +1543,7 @@ async function runSuite(args) {
       computerUseWitness: false,
       mainDatabaseTraceWrites: false,
     },
+    evidenceSources: evidenceSourceReferences(),
     traceIsolation: traceIsolationForSuite(suiteDir, suiteId, args, suiteRunDirs),
     overheadCalibration,
     privateBoundary: {
