@@ -253,6 +253,16 @@ function baselineComparisonMetricKey(row) {
   return [row?.runId || "", row?.scenarioId || "", row?.fixtureProfile || "", row?.kpiId || ""].join("\u001f");
 }
 
+function expectedBaselineComparisonStatus(comparison) {
+  if (comparison.comparisons.some((row) => row.status === "baseline_regression")) {
+    return comparison.gate ? "gate_failed" : "compared";
+  }
+  if (comparison.comparisons.some((row) => row.status === "baseline_missing")) {
+    return "baseline_missing";
+  }
+  return comparison.gate ? "gate_passed" : "compared";
+}
+
 function validateBaselineComparison(failures, comparison, label = "baseline-comparison.json", options = {}) {
   if (!comparison || typeof comparison !== "object") {
     fail(failures, `${label} must be an object`);
@@ -269,8 +279,18 @@ function validateBaselineComparison(failures, comparison, label = "baseline-comp
   if (!baselineComparisonStatuses.has(comparison.status)) {
     fail(failures, `${label}.status ${comparison.status} is not allowed`);
   }
-  if (comparison.gate !== null && comparison.gate !== undefined && typeof comparison.gate !== "object") {
-    fail(failures, `${label}.gate must be null or an object`);
+  if (comparison.gate !== null && comparison.gate !== undefined) {
+    if (typeof comparison.gate !== "object") {
+      fail(failures, `${label}.gate must be null or an object`);
+    } else {
+      requireFields(failures, comparison.gate, `${label}.gate`, ["priority", "maxRegressionPercent"]);
+      if (typeof comparison.gate.priority !== "string" || !/^P[0-2]$/.test(comparison.gate.priority)) {
+        fail(failures, `${label}.gate.priority must be P0, P1, or P2`);
+      }
+      if (!Number.isFinite(Number(comparison.gate.maxRegressionPercent))) {
+        fail(failures, `${label}.gate.maxRegressionPercent must be numeric`);
+      }
+    }
   }
   if (!Array.isArray(comparison.comparisons)) {
     fail(failures, `${label}.comparisons must be an array`);
@@ -303,6 +323,22 @@ function validateBaselineComparison(failures, comparison, label = "baseline-comp
     if (!baselineComparisonRowStatuses.has(row?.status)) {
       fail(failures, `${rowLabel}.status ${row?.status} is not allowed`);
     }
+    if (row?.status === "baseline_missing" && row?.baseline !== null) {
+      fail(failures, `${rowLabel}.status baseline_missing requires baseline=null`);
+    }
+    if (row?.status === "compared" && row?.baseline === null) {
+      fail(failures, `${rowLabel}.status compared requires a numeric baseline`);
+    }
+    if (row?.status === "baseline_regression") {
+      if (row?.baseline === null) fail(failures, `${rowLabel}.status baseline_regression requires a numeric baseline`);
+      if (row?.regressionPercent === null || !Number.isFinite(Number(row?.regressionPercent))) {
+        fail(failures, `${rowLabel}.status baseline_regression requires numeric regressionPercent`);
+      }
+    }
+  }
+  const expectedStatus = expectedBaselineComparisonStatus(comparison);
+  if (comparison.status !== expectedStatus) {
+    fail(failures, `${label}.status must be ${expectedStatus} for its comparison rows and gate`);
   }
 }
 

@@ -331,7 +331,9 @@ available diagnostics into `geometry.sample`, `scroll.sample`,
 opaque payload hashes. The verifier rejects baseline comparison artifacts that
 store raw external paths, omit a metric comparison row, reference a KPI that is
 not present in `metrics.json` / `suite-metrics.json`, or use an unsupported
-comparison status. `run.json` and `suite.json` include `evidenceSources`
+comparison status. It also recomputes the aggregate comparison status from the
+row statuses and active gate, so stale or contradictory gate summaries cannot
+support closure. `run.json` and `suite.json` include `evidenceSources`
 with repo-relative registry, scenario manifest, schema, generator, and verifier
 paths plus content hashes, so a bundle is tied to the exact public contract that
 produced it. They also include a `traceIsolation` block proving

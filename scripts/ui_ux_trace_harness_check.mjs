@@ -628,7 +628,7 @@ if (evidenceSchema) {
   if (!String(evidenceSchema.exitPolicyContract?.p0Gate ?? "").includes("exit code 1")) {
     fail(`${evidenceSchemaPath}.exitPolicyContract.p0Gate must require exit code 1`);
   }
-  requireFields(evidenceSchema.baselineComparisonContract, `${evidenceSchemaPath}.baselineComparisonContract`, ["baselineReferencePolicy", "suiteAggregationPolicy", "rowPolicy", "allowedStatuses", "allowedRowStatuses", "allowedReferenceKinds"]);
+  requireFields(evidenceSchema.baselineComparisonContract, `${evidenceSchemaPath}.baselineComparisonContract`, ["baselineReferencePolicy", "suiteAggregationPolicy", "rowPolicy", "statusConsistencyPolicy", "gatePolicy", "allowedStatuses", "allowedRowStatuses", "allowedReferenceKinds"]);
   if (!String(evidenceSchema.baselineComparisonContract?.baselineReferencePolicy ?? "").includes("must not store raw external baseline paths")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.baselineReferencePolicy must forbid raw external baseline paths`);
   }
@@ -637,6 +637,12 @@ if (evidenceSchema) {
   }
   if (!String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("reference an emitted KPI metric")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.rowPolicy must require KPI metric row correlation`);
+  }
+  if (!String(evidenceSchema.baselineComparisonContract?.statusConsistencyPolicy ?? "").includes("derived from row statuses")) {
+    fail(`${evidenceSchemaPath}.baselineComparisonContract.statusConsistencyPolicy must derive aggregate status from rows`);
+  }
+  if (!String(evidenceSchema.baselineComparisonContract?.gatePolicy ?? "").includes("numeric maxRegressionPercent")) {
+    fail(`${evidenceSchemaPath}.baselineComparisonContract.gatePolicy must require a numeric gate threshold`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedStatuses, `${evidenceSchemaPath}.baselineComparisonContract.allowedStatuses`), `${evidenceSchemaPath}.baselineComparisonContract.allowedStatuses`, ["gate_passed", "gate_failed", "baseline_missing", "compared"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedRowStatuses, `${evidenceSchemaPath}.baselineComparisonContract.allowedRowStatuses`), `${evidenceSchemaPath}.baselineComparisonContract.allowedRowStatuses`, ["baseline_missing", "baseline_regression", "compared"]);
@@ -980,9 +986,12 @@ if (evidenceVerifierSource) {
     "baselineComparisonStatuses",
     "baselineComparisonRowStatuses",
     "baselineComparisonMetricKey(",
+    "expectedBaselineComparisonStatus(",
     "metricKeys",
     "has no matching metric row",
     "comparisons must include one row per metric",
+    "status must be ${expectedStatus} for its comparison rows and gate",
+    "gate.maxRegressionPercent must be numeric",
     "validateBaselineArtifact(",
     "suite-baseline-comparison.json",
     "suiteBaselineComparison",
