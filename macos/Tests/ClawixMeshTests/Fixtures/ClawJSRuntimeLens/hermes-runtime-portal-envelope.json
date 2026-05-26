@@ -2938,6 +2938,7 @@
             "preview": "hermes sqlite preview",
             "status": "projected",
             "contentIncluded": false,
+            "enabled": true,
             "nativeIdentifier": {
               "name": "sessionId"
             },
@@ -7004,6 +7005,7 @@
             "label": "Gateway status",
             "status": "degraded",
             "kind": "cli",
+            "path": "/Users/tester/.hermes/config.yaml",
             "enabled": true,
             "summary": "Gateway endpoint unavailable or not configured.",
             "limitations": [],
@@ -7016,7 +7018,8 @@
             ],
             "provenance": {
               "source": "runtime-session-descriptor",
-              "runtimeId": "hermes"
+              "runtimeId": "hermes",
+              "path": "/Users/tester/.hermes/config.yaml"
             },
             "nativeIdentifier": {
               "name": "gatewayStatusId"
@@ -7027,6 +7030,7 @@
             "label": "TUI Gateway transport policy",
             "status": "blocked",
             "kind": "transport_lifecycle_policy",
+            "path": "/Users/tester/.hermes/config.yaml",
             "enabled": false,
             "summary": "Production TUI Gateway transport remains blocked until lifecycle policy and evidence exist.",
             "limitations": [
@@ -7073,7 +7077,8 @@
             },
             "provenance": {
               "source": "runtime-portal-hermes-tui-gateway-policy",
-              "runtimeId": "hermes"
+              "runtimeId": "hermes",
+              "path": "/Users/tester/.hermes/config.yaml"
             },
             "nativeIdentifier": {
               "name": "transportPolicyId"
@@ -7212,6 +7217,7 @@
             "label": "Doctor status",
             "status": "degraded",
             "kind": "native",
+            "path": "/Users/tester/.hermes",
             "enabled": true,
             "summary": "hermes CLI not found",
             "limitations": [],
@@ -7224,7 +7230,8 @@
             ],
             "provenance": {
               "source": "runtime-status",
-              "runtimeId": "hermes"
+              "runtimeId": "hermes",
+              "path": "/Users/tester/.hermes"
             },
             "nativeIdentifier": {
               "name": "doctorStatusId"
@@ -7335,6 +7342,7 @@
             "label": "Sandbox policy",
             "status": "degraded",
             "kind": "hosted",
+            "path": "/tmp/workspace",
             "enabled": true,
             "summary": "No runtime or host permission is changed by the runtime lens.",
             "limitations": [
@@ -7348,7 +7356,8 @@
             ],
             "provenance": {
               "source": "runtime-options",
-              "runtimeId": "hermes"
+              "runtimeId": "hermes",
+              "path": "/tmp/workspace"
             },
             "nativeIdentifier": {
               "name": "sandboxPolicyId"
