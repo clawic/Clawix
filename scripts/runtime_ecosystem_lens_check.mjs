@@ -1156,7 +1156,7 @@ for (const snippet of [
   "XCTAssertEqual(hermesPinCommand.nativeWriteBackStatus, \"blocked_until_official_runtime_write_back_contract\")",
   "XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.first { $0.action == \"pin\" }?.nativeWriteBackStatus, \"blocked_until_official_runtime_write_back_contract\")",
   "XCTAssertEqual(contractPresentation.nativeWriteBackBlockedCount, 2)",
-  "XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 2)",
+  "XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 6)",
   "channelInventory.statusLabel",
   "configurationInventory.statusLabel",
   "managed-file-1",

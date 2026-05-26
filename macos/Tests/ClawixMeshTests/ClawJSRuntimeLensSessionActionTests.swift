@@ -109,7 +109,7 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(commandPresentation.writesRuntimeCount, 0)
         XCTAssertEqual(commandPresentation.wouldWriteRuntimeCount, 4)
         XCTAssertEqual(commandPresentation.localOverlayCommandCount, 2)
-        XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 2)
+        XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 6)
         XCTAssertEqual(commandPresentation.readLocalCount, 18)
         XCTAssertEqual(commandPresentation.argumentCommandCount, 4)
         XCTAssertEqual(commandPresentation.argumentCount, 6)
@@ -117,6 +117,9 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(commandPresentation.resourceDomainsLabel, "sessions, skills, memory, channels, providers")
         XCTAssertEqual(commandPresentation.rows.first?.command, "runtime hermes sessions send --session-key <id> --message <text> --confirm-runtime-write")
         XCTAssertEqual(commandPresentation.rows.first?.writeDisposition, "blocked write")
+        XCTAssertEqual(commandPresentation.rows.first?.nativeWriteBackStatus, "blocked_until_tui_gateway_wrapper_fixture")
+        XCTAssertEqual(commandPresentation.rows.first?.nativeWriteBackSafeDefault, "keep_unpromoted_and_do_not_synthesize_runtime_state")
+        XCTAssertEqual(commandPresentation.rows.first?.evidenceRequirementId, "hermes.sessions.send.action_contract")
         XCTAssertTrue(commandPresentation.rows.contains { $0.command == "runtime hermes sessions conflicts" })
         XCTAssertTrue(commandPresentation.rows.contains { $0.command == "runtime hermes sessions send --session-key <id> --message <text> --confirm-runtime-write" })
         let pinCommandRow = try XCTUnwrap(commandPresentation.rows.first { $0.command == "runtime hermes sessions pin --session-key <id>" })
@@ -127,7 +130,7 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertTrue(pinCommandRow.accessibilityLabel.contains("native write-back blocked_until_official_runtime_write_back_contract"))
         XCTAssertTrue(commandPresentation.accessibilityLabel.contains("would write runtime 4"))
         XCTAssertTrue(commandPresentation.accessibilityLabel.contains("local overlay 2"))
-        XCTAssertTrue(commandPresentation.accessibilityLabel.contains("native write-back blocked 2"))
+        XCTAssertTrue(commandPresentation.accessibilityLabel.contains("native write-back blocked 6"))
         XCTAssertTrue(commandPresentation.accessibilityLabel.contains("resource domains 13"))
 
         let overlayPresentation = ClawJSRuntimeLensSessionOverlayPresentation.make(
