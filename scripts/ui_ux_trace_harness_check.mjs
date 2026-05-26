@@ -797,6 +797,7 @@ if (runnerSource) {
     "path.join(os.tmpdir(), \"clawix-ux-trace-runs\")",
     "mainDatabaseTraceWrites: false",
     "body.minVisibleMessages = step.minVisibleMessages",
+    "finalUIStateHash: payload?.finalUIState ? stableHash(payload.finalUIState) : null",
   ]) {
     requireSnippet(runnerSource, runnerPath, snippet);
   }

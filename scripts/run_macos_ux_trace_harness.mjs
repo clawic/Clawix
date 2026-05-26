@@ -751,6 +751,7 @@ async function runScenario(args) {
           surfaceId,
           kpiId,
           message: options.dryRun ? "dry-run evidence only" : `condition did not complete for ${step.wait}`,
+          finalUIStateHash: payload?.finalUIState ? stableHash(payload.finalUIState) : null,
         });
       }
     } catch (error) {
