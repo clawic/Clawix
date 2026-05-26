@@ -17,6 +17,8 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
         let lifecycleStatus: String?
         let requiredEvidenceCount: Int
         let requiredEvidenceLabel: String?
+        let userVisibleContract: String?
+        let claimEffect: String?
         let writeDisposition: String
 
         var detailLabel: String? {
@@ -33,7 +35,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 officialProtocol,
                 officialMethod,
                 officialContractSource,
-                requiredEvidenceLabel
+                requiredEvidenceLabel,
+                userVisibleContract.map { "user visible contract \($0)" },
+                claimEffect.map { "claim effect \($0)" }
             ].compactMap { $0 }
             let values = transportValues + actionValues
             guard !values.isEmpty else { return nil }
@@ -56,7 +60,9 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 productionTransportStatus.map { "production transport \($0)" },
                 lifecycleStatus.map { "lifecycle \($0)" },
                 "required evidence count \(requiredEvidenceCount)",
-                requiredEvidenceLabel.map { "required evidence \($0)" }
+                requiredEvidenceLabel.map { "required evidence \($0)" },
+                userVisibleContract.map { "user visible contract \($0)" },
+                claimEffect.map { "claim effect \($0)" }
             ]
             .compactMap { $0 }
             .joined(separator: ", ")
@@ -113,6 +119,8 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 lifecycleStatus: action.lifecycleStatus ?? action.transportPolicy?.lifecycleStatus,
                 requiredEvidenceCount: action.requiredEvidence?.count ?? 0,
                 requiredEvidenceLabel: listLabel(action.requiredEvidence ?? [], limit: 5),
+                userVisibleContract: action.userVisibleContract,
+                claimEffect: action.claimEffect,
                 writeDisposition: writeDisposition(for: action)
             )
         }

@@ -21,6 +21,8 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
         let nativeWriteBackStatus: String?
         let nativeWriteBackSafeDefault: String?
         let evidenceRequirementId: String?
+        let userVisibleContract: String?
+        let claimEffect: String?
         let requiredEvidenceCount: Int
 
         var detailLabel: String? {
@@ -37,6 +39,8 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 nativeWriteBackStatus.map { "native write-back \($0)" },
                 nativeWriteBackSafeDefault.map { "safe default \($0)" },
                 evidenceRequirementId.map { "evidence \($0)" },
+                userVisibleContract.map { "user visible contract \($0)" },
+                claimEffect.map { "claim effect \($0)" },
                 requiredEvidenceCount > 0 ? "evidence \(requiredEvidenceCount)" : nil,
                 statusChanged ? "materialized" : nil
             ].compactMap { $0 }
@@ -64,6 +68,8 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 nativeWriteBackStatus.map { "native write-back \($0)" },
                 nativeWriteBackSafeDefault.map { "safe default \($0)" },
                 evidenceRequirementId.map { "evidence \($0)" },
+                userVisibleContract.map { "user visible contract \($0)" },
+                claimEffect.map { "claim effect \($0)" },
                 "required evidence \(requiredEvidenceCount)"
             ]
             .compactMap { $0 }
@@ -151,6 +157,8 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 nativeWriteBackStatus: materialized?.nativeWriteBackStatus ?? contract?.nativeWriteBackStatus,
                 nativeWriteBackSafeDefault: materialized?.nativeWriteBackSafeDefault ?? contract?.nativeWriteBackSafeDefault,
                 evidenceRequirementId: materialized?.evidenceRequirementId ?? contract?.evidenceRequirementId,
+                userVisibleContract: materialized?.userVisibleContract ?? contract?.userVisibleContract,
+                claimEffect: materialized?.claimEffect ?? contract?.claimEffect,
                 requiredEvidenceCount: materialized?.requiredEvidence?.count ?? contract?.requiredEvidence?.count ?? 0
             )
         }

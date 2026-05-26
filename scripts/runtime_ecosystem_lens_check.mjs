@@ -679,7 +679,9 @@ for (const snippet of [
   "localOverlayActionsLabel",
   "blockedActionsLabel",
   "requiredEvidenceCount",
-  "requiredEvidenceLabel"
+  "requiredEvidenceLabel",
+  "userVisibleContract",
+  "claimEffect"
 ]) {
   requireSnippet("macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensSessionActionPresentation.swift", snippet);
 }
@@ -693,7 +695,10 @@ for (const snippet of [
   "runtimeWriteContractCount",
   "wouldWriteRuntimeCount",
   "localOverlayContractCount",
-  "statusChangedActionsLabel"
+  "statusChangedActionsLabel",
+  "nativeWriteBackSafeDefault",
+  "userVisibleContract",
+  "claimEffect"
 ]) {
   requireSnippet("macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensSessionActionContractPresentation.swift", snippet);
 }
@@ -948,7 +953,9 @@ for (const snippet of [
   "ClawJSRuntimeLensSessionDescriptorPresentation.make(session: session)",
   "ClawJSRuntimeLensSessionActionPresentation.make(actions: actions)",
   "evidence \\(action.requiredEvidenceCount)",
+  "sessionActionDetailLines($0)",
   "ClawJSRuntimeLensSessionActionContractPresentation.make",
+  "sessionActionContractDetailLines($0)",
   "ClawJSRuntimeLensCommandMatrixPresentation.make(commands: commands)",
   "args \\(command.argumentCount)",
   "commandDetailLines($0)",
@@ -1162,6 +1169,10 @@ for (const snippet of [
   "XCTAssertEqual(hermesPinCommand.nativeWriteBackStatus, \"blocked_until_official_runtime_write_back_contract\")",
   "XCTAssertEqual(snapshot.domainData?.sessions?.actionContracts?.first { $0.action == \"pin\" }?.nativeWriteBackStatus, \"blocked_until_official_runtime_write_back_contract\")",
   "XCTAssertEqual(contractPresentation.nativeWriteBackBlockedCount, 2)",
+  "XCTAssertEqual(actionPresentation.rows.first { $0.action == \"pin\" }?.userVisibleContract, \"local_overlay_only_until_official_runtime_pin_api_exists\")",
+  "XCTAssertEqual(contractPresentation.rows.first { $0.action == \"pin\" }?.userVisibleContract, \"local_overlay_only_until_official_runtime_pin_api_exists\")",
+  "XCTAssertTrue(pinAction.detailLines.contains(\"user visible contract local_overlay_only_until_official_runtime_pin_api_exists\"))",
+  "XCTAssertTrue(pinContract.detailLines.contains(\"claim effect blocks_native_write_back_parity_not_local_overlay\"))",
   "XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 6)",
   "XCTAssertEqual(commandPresentation.rows.first?.blockerClass, \"direct_blocker\")",
   "XCTAssertEqual(commandPresentation.rows.first?.nativeWriteBackFixtureRequired, true)",

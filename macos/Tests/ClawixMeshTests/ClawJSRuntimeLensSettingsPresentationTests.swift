@@ -99,5 +99,18 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(sendCommand.detailLines.contains("support resolution explicitly_product_blocked_not_a_silent_gap"))
         XCTAssertTrue(sendCommand.detailLines.contains("evidence hermes.sessions.send.action_contract"))
         XCTAssertTrue(sendCommand.detailLines.contains("required evidence tui_gateway_prompt_submit_fixture, non_destructive_fixture, confirmation_or_dry_run_policy, round_trip_native_visibility"))
+
+        let sessionActions = try XCTUnwrap(presentation.sections.first { $0.id == "session-actions" })
+        let pinAction = try XCTUnwrap(sessionActions.rows.first { $0.label == "pin" })
+        XCTAssertTrue(pinAction.detailLines.contains("user visible contract local_overlay_only_until_official_runtime_pin_api_exists"))
+        XCTAssertTrue(pinAction.detailLines.contains("claim effect blocks_native_write_back_parity_not_local_overlay"))
+
+        let actionContracts = try XCTUnwrap(presentation.sections.first { $0.id == "session-action-contracts" })
+        let pinContract = try XCTUnwrap(actionContracts.rows.first { $0.label == "pin" })
+        XCTAssertTrue(pinContract.detailLines.contains("native write-back blocked_until_official_runtime_write_back_contract"))
+        XCTAssertTrue(pinContract.detailLines.contains("safe default keep_local_overlay_and_do_not_write_runtime_pin_state"))
+        XCTAssertTrue(pinContract.detailLines.contains("evidence hermes.sessions.pin.native_write_back_contract"))
+        XCTAssertTrue(pinContract.detailLines.contains("user visible contract local_overlay_only_until_official_runtime_pin_api_exists"))
+        XCTAssertTrue(pinContract.detailLines.contains("claim effect blocks_native_write_back_parity_not_local_overlay"))
     }
 }

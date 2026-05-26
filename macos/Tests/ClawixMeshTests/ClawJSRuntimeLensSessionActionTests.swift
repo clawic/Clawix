@@ -68,6 +68,9 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertTrue(actionPresentation.rows.first { $0.action == "send" }?.detailLabel?.contains("lifecycle external_user_managed_not_started_by_claw") == true)
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "create" }?.writeDisposition, "would write")
         XCTAssertEqual(actionPresentation.rows.first { $0.action == "pin" }?.authority, "clawix_local_overlay")
+        XCTAssertEqual(actionPresentation.rows.first { $0.action == "pin" }?.userVisibleContract, "local_overlay_only_until_official_runtime_pin_api_exists")
+        XCTAssertEqual(actionPresentation.rows.first { $0.action == "pin" }?.claimEffect, "blocks_native_write_back_parity_not_local_overlay")
+        XCTAssertTrue(actionPresentation.rows.first { $0.action == "pin" }?.accessibilityLabel.contains("user visible contract local_overlay_only_until_official_runtime_pin_api_exists") == true)
         XCTAssertTrue(actionPresentation.accessibilityLabel.contains("blocked actions send, inject, abort, create"))
         XCTAssertTrue(actionPresentation.accessibilityLabel.contains("local overlay actions pin, unpin"))
 
@@ -99,6 +102,9 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "pin" }?.nativeWriteBackStatus, "blocked_until_official_runtime_write_back_contract")
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "pin" }?.nativeWriteBackSafeDefault, "keep_local_overlay_and_do_not_write_runtime_pin_state")
         XCTAssertEqual(contractPresentation.rows.first { $0.action == "pin" }?.evidenceRequirementId, "hermes.sessions.pin.native_write_back_contract")
+        XCTAssertEqual(contractPresentation.rows.first { $0.action == "pin" }?.userVisibleContract, "local_overlay_only_until_official_runtime_pin_api_exists")
+        XCTAssertEqual(contractPresentation.rows.first { $0.action == "pin" }?.claimEffect, "blocks_native_write_back_parity_not_local_overlay")
+        XCTAssertTrue(contractPresentation.rows.first { $0.action == "pin" }?.accessibilityLabel.contains("claim effect blocks_native_write_back_parity_not_local_overlay") == true)
         XCTAssertTrue(contractPresentation.accessibilityLabel.contains("native write-back blocked 2"))
 
         let commandPresentation = ClawJSRuntimeLensCommandMatrixPresentation.make(

@@ -522,8 +522,16 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                 $0.status.map { Pill(id: "status", label: $0, tone: ClawJSRuntimeLensStatusTone.sessionActionStatus($0)) },
                 Pill(id: "write", label: $0.writeDisposition, tone: ClawJSRuntimeLensStatusTone.sessionActionDisposition($0.writeDisposition)),
                 $0.requiredEvidenceCount > 0 ? Pill(id: "evidence", label: "evidence \($0.requiredEvidenceCount)", tone: .warning) : nil
-            ]), detailLines: optionalLines([$0.requiredEvidenceLabel]), accessibilityLabel: $0.accessibilityLabel)
+            ]), detailLines: sessionActionDetailLines($0), accessibilityLabel: $0.accessibilityLabel)
         }, accessibilityLabel: presentation.accessibilityLabel)
+    }
+
+    private static func sessionActionDetailLines(_ row: ClawJSRuntimeLensSessionActionPresentation.Row) -> [String] {
+        optionalLines([
+            row.requiredEvidenceLabel,
+            row.userVisibleContract.map { "user visible contract \($0)" },
+            row.claimEffect.map { "claim effect \($0)" }
+        ])
     }
 
     private static func sessionActionContractsSection(_ presentation: ClawJSRuntimeLensSessionActionContractPresentation) -> Section {
@@ -537,8 +545,29 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                 $0.contractStatus.map { Pill(id: "contract", label: "contract \($0)", tone: ClawJSRuntimeLensStatusTone.sessionActionStatus($0)) },
                 $0.materializedStatus.map { Pill(id: "materialized", label: "now \($0)", tone: ClawJSRuntimeLensStatusTone.sessionActionStatus($0)) },
                 Pill(id: "write", label: $0.materializedWriteDisposition, tone: ClawJSRuntimeLensStatusTone.sessionActionDisposition($0.materializedWriteDisposition))
-            ]), detailLines: [], accessibilityLabel: $0.accessibilityLabel)
+            ]), detailLines: sessionActionContractDetailLines($0), accessibilityLabel: $0.accessibilityLabel)
         }, accessibilityLabel: presentation.accessibilityLabel)
+    }
+
+    private static func sessionActionContractDetailLines(_ row: ClawJSRuntimeLensSessionActionContractPresentation.Row) -> [String] {
+        optionalLines([
+            row.authority,
+            row.delegatesTo,
+            row.guardName.map { "guard \($0)" },
+            row.officialProtocol.map { "official protocol \($0)" },
+            row.officialMethod.map { "official method \($0)" },
+            row.officialContractSource.map { "official contract source \($0)" },
+            row.transportPolicyId.map { "transport policy \($0)" },
+            row.productionTransportStatus.map { "production transport \($0)" },
+            row.lifecycleStatus.map { "lifecycle \($0)" },
+            row.nativeWriteBackStatus.map { "native write-back \($0)" },
+            row.nativeWriteBackSafeDefault.map { "safe default \($0)" },
+            row.evidenceRequirementId.map { "evidence \($0)" },
+            row.userVisibleContract.map { "user visible contract \($0)" },
+            row.claimEffect.map { "claim effect \($0)" },
+            row.requiredEvidenceCount > 0 ? "evidence \(row.requiredEvidenceCount)" : nil,
+            row.statusChanged ? "materialized status differs" : nil
+        ])
     }
 
     private static func sessionOverlaySection(_ presentation: ClawJSRuntimeLensSessionOverlayPresentation) -> Section {
