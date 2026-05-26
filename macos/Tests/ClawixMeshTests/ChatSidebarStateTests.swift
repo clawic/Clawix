@@ -45,29 +45,31 @@ final class ChatSidebarStateTests: XCTestCase {
         let chatId = UUID()
         let chatFavicon = try XCTUnwrap(URL(string: "https://example.com/favicon.ico"))
         let globalFavicon = try XCTUnwrap(URL(string: "https://global.example/favicon.ico"))
+        let chatWebId = UUID()
+        let globalWebId = UUID()
         let chatSidebar = ChatSidebarState(
             isOpen: true,
             items: [
                 .web(.init(
-                    id: UUID(),
+                    id: chatWebId,
                     url: try XCTUnwrap(URL(string: "https://example.com")),
                     title: "Example",
                     faviconURL: chatFavicon
                 ))
             ],
-            activeItemId: nil
+            activeItemId: chatWebId
         )
         let globalSidebar = ChatSidebarState(
             isOpen: true,
             items: [
                 .web(.init(
-                    id: UUID(),
+                    id: globalWebId,
                     url: try XCTUnwrap(URL(string: "https://global.example")),
                     title: "Global",
                     faviconURL: globalFavicon
                 ))
             ],
-            activeItemId: nil
+            activeItemId: globalWebId
         )
 
         defaults.set(
@@ -87,9 +89,56 @@ final class ChatSidebarStateTests: XCTestCase {
 
         let state = AppState()
 
-        XCTAssertEqual(state.chatSidebars[chatId], chatSidebar)
-        XCTAssertEqual(state.globalSidebar, globalSidebar)
+        XCTAssertEqual(state.chatSidebars[chatId]?.items, chatSidebar.items)
+        XCTAssertEqual(state.chatSidebars[chatId]?.activeItemId, chatSidebar.activeItemId)
+        XCTAssertEqual(state.globalSidebar.items, globalSidebar.items)
+        XCTAssertEqual(state.globalSidebar.activeItemId, globalSidebar.activeItemId)
+        XCTAssertFalse(state.chatSidebars[chatId]?.isOpen ?? true)
+        XCTAssertFalse(state.globalSidebar.isOpen)
         XCTAssertTrue(prefetches.isEmpty)
+    }
+
+    @MainActor
+    func testLoadingPersistedSidebarsPreservesTabsButStartsClosed() throws {
+        let defaults = AppState.sidebarDefaults
+        let originalChatSidebars = defaults.object(forKey: AppState.chatSidebarsKey)
+        let originalGlobalSidebar = defaults.object(forKey: AppState.globalSidebarKey)
+        defer {
+            restore(originalChatSidebars, key: AppState.chatSidebarsKey, defaults: defaults)
+            restore(originalGlobalSidebar, key: AppState.globalSidebarKey, defaults: defaults)
+        }
+
+        let chatId = UUID()
+        let fileId = UUID()
+        let globalFileId = UUID()
+        let chatSidebar = ChatSidebarState(
+            isOpen: true,
+            items: [.file(.init(id: fileId, path: "/tmp/heavy.md"))],
+            activeItemId: fileId
+        )
+        let globalSidebar = ChatSidebarState(
+            isOpen: true,
+            items: [.file(.init(id: globalFileId, path: "/tmp/global-heavy.md"))],
+            activeItemId: globalFileId
+        )
+
+        defaults.set(
+            try JSONEncoder().encode([chatId.uuidString: chatSidebar]),
+            forKey: AppState.chatSidebarsKey
+        )
+        defaults.set(
+            try JSONEncoder().encode(globalSidebar),
+            forKey: AppState.globalSidebarKey
+        )
+
+        let state = AppState()
+
+        XCTAssertEqual(state.chatSidebars[chatId]?.items, chatSidebar.items)
+        XCTAssertEqual(state.chatSidebars[chatId]?.activeItemId, fileId)
+        XCTAssertFalse(state.chatSidebars[chatId]?.isOpen ?? true)
+        XCTAssertEqual(state.globalSidebar.items, globalSidebar.items)
+        XCTAssertEqual(state.globalSidebar.activeItemId, globalFileId)
+        XCTAssertFalse(state.globalSidebar.isOpen)
     }
 
     @MainActor

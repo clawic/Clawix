@@ -588,13 +588,13 @@ extension AppState {
             var rebuilt: [UUID: ChatSidebarState] = [:]
             for (key, value) in saved {
                 guard let id = UUID(uuidString: key) else { continue }
-                rebuilt[id] = value
+                rebuilt[id] = value.closedForLaunch
             }
             chatSidebars = rebuilt
         }
         if let data = defaults.data(forKey: AppState.globalSidebarKey),
            let saved = try? JSONDecoder().decode(ChatSidebarState.self, from: data) {
-            globalSidebar = saved
+            globalSidebar = saved.closedForLaunch
         }
     }
 

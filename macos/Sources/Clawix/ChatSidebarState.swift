@@ -139,4 +139,10 @@ struct ChatSidebarState: Equatable, Codable {
         guard let id = activeItemId else { return nil }
         return items.first(where: { $0.id == id })
     }
+
+    var closedForLaunch: ChatSidebarState {
+        var state = self
+        state.isOpen = false
+        return state
+    }
 }

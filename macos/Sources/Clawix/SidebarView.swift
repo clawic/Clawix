@@ -37,7 +37,7 @@ struct SidebarView: View {
     @State private var chronoExpanded: Bool = SidebarPrefs.bool(forKey: ClawixPersistentSurfaceKeys.sidebarChronoExpanded, default: true)
     @State private var noProjectExpanded: Bool = SidebarPrefs.bool(forKey: ClawixPersistentSurfaceKeys.sidebarNoProjectExpanded, default: true)
     @State private var projectsExpanded: Bool = SidebarPrefs.bool(forKey: ClawixPersistentSurfaceKeys.sidebarProjectsExpanded, default: true)
-    @State private var archivedExpanded: Bool = SidebarPrefs.bool(forKey: ClawixPersistentSurfaceKeys.sidebarArchivedExpanded, default: false)
+    @State private var archivedExpanded: Bool = false
     @State private var toolsExpanded: Bool = SidebarPrefs.bool(forKey: ClawixPersistentSurfaceKeys.sidebarToolsExpanded, default: true)
     /// Master switch for the Apps surface. Mirrors the Settings toggle
     /// that lives on `SidebarPrefs.store`; defaults on for new users.
@@ -56,7 +56,7 @@ struct SidebarView: View {
     @AppStorage(ClawixPersistentSurfaceKeys.sidebarToolsHidden, store: SidebarPrefs.store)
     private var toolsHiddenRaw: String = ""
     @State private var toolsFilterMenuOpen: Bool = false
-    @State private var chronoLimit: Int = 100
+    @State private var chronoLimit: Int = 30
 
     init(appState: AppState) {
         self.appState = appState

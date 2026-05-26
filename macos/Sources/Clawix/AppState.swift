@@ -140,10 +140,10 @@ final class AppState: ObservableObject {
     /// Cap applied to the sidebar's archived section. The settings page
     /// can surface a larger list if we ever wire it up; the sidebar is
     /// for browsing recent archives, not exhaustive history.
-    static let archivedSidebarLimit: Int = 30
+    static let archivedSidebarLimit: Int = 20
     static let startupRecentSessionLimit: Int = 40
-    static let startupPinnedSessionLimit: Int = 100
-    static let sidebarBootstrapRecentLimit: Int = 200
+    static let startupPinnedSessionLimit: Int = 40
+    static let sidebarBootstrapRecentLimit: Int = 80
     let sampleChat: Chat
     let browserSampleChat: Chat
     let computerUseSampleChat: Chat
