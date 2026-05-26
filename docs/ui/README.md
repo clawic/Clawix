@@ -334,7 +334,11 @@ write redacted `logs/failure-ui-states.jsonl` rows that are referenced from
 values must be arrays of public-safe paths that exist; suite indexes must also
 include every required suite artifact and every child run directory. Metrics
 and failures artifacts must declare `schemaVersion: 1` and expose row arrays,
-so malformed aggregate JSON is rejected before it can support closure. The runner also normalizes
+so malformed aggregate JSON is rejected before it can support closure. Metric
+rows in run, suite, and baseline artifacts must also reference declared KPI IDs
+and keep `priority` and `surface` synchronized with
+`ux-trace-harness.registry.json`; evidence cannot reclassify a P0 KPI as a
+lower-priority or different-surface metric. The runner also normalizes
 available diagnostics into `geometry.sample`, `scroll.sample`,
 `render.window`, `hitch.sample`, `resource.sample`, `database.sample`, and
 `bridge.sample` events so agents can query performance facts without opening

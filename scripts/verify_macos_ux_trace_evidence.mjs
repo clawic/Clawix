@@ -5,6 +5,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const schemaPath = path.join(rootDir, "docs/ui/ux-trace-evidence.schema.json");
+const registryPath = path.join(rootDir, "docs/ui/ux-trace-harness.registry.json");
 
 function usage() {
   return `Usage:
@@ -47,6 +48,15 @@ function readJsonl(file) {
       throw new Error(`${file}:${index + 1} is not valid JSON: ${error.message}`);
     }
   });
+}
+
+let kpiRegistryById = null;
+function kpiRegistry() {
+  if (!kpiRegistryById) {
+    const registry = readJson(registryPath);
+    kpiRegistryById = new Map((registry.kpis || []).map((kpi) => [kpi.id, kpi]));
+  }
+  return kpiRegistryById;
 }
 
 function stableHash(value) {
@@ -300,6 +310,20 @@ function compareMultisets(failures, label, expected, actual) {
   }
 }
 
+function validateMetricsAgainstRegistry(failures, metrics, label) {
+  const registry = kpiRegistry();
+  for (const [index, metric] of metrics.entries()) {
+    const rowLabel = `${label}[${index}]`;
+    const kpi = registry.get(metric?.kpiId);
+    if (!kpi) {
+      fail(failures, `${rowLabel}.kpiId ${metric?.kpiId} is not declared in ux-trace-harness.registry.json`);
+      continue;
+    }
+    if (metric.priority !== kpi.priority) fail(failures, `${rowLabel}.priority must match KPI registry`);
+    if (metric.surface !== kpi.surface) fail(failures, `${rowLabel}.surface must match KPI registry`);
+  }
+}
+
 function comparisonValueMatchesMetric(rowValue, metricValue) {
   if (rowValue === null || metricValue === null || rowValue === undefined || metricValue === undefined) {
     return rowValue === metricValue;
@@ -467,6 +491,7 @@ function validateRun(runDir, schema, options = {}) {
   const failureList = requireArrayField(failures, failuresArtifact, "failures.json", "failures");
   if (metricsArtifact.schemaVersion !== 1) fail(failures, "metrics.json.schemaVersion must be 1");
   if (failuresArtifact.schemaVersion !== 1) fail(failures, "failures.json.schemaVersion must be 1");
+  validateMetricsAgainstRegistry(failures, metricList, "metrics.json.metrics");
   if (run.program !== "macos-ux-trace-harness") fail(failures, "run.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(run.status)) fail(failures, `run.json.status ${run.status} is not allowed`);
   validatePrivateBoundary(failures, run.privateBoundary, "run.json");
@@ -713,6 +738,7 @@ function validateSuite(suiteDir, schema) {
   const suiteFailureList = requireArrayField(failures, suiteFailures, "suite-failures.json", "failures");
   if (suiteMetrics.schemaVersion !== 1) fail(failures, "suite-metrics.json.schemaVersion must be 1");
   if (suiteFailures.schemaVersion !== 1) fail(failures, "suite-failures.json.schemaVersion must be 1");
+  validateMetricsAgainstRegistry(failures, suiteMetricList, "suite-metrics.json.metrics");
   if (suite.program !== "macos-ux-trace-harness") fail(failures, "suite.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(suite.status)) fail(failures, `suite.json.status ${suite.status} is not allowed`);
   validatePrivateBoundary(failures, suite.privateBoundary, "suite.json");
@@ -931,6 +957,7 @@ function validateBaselineArtifact(file, schema) {
       fail(failures, `baseline.metrics[${index}].kpiId must be a non-empty string`);
     }
   }
+  validateMetricsAgainstRegistry(failures, baseline.metrics || [], "baseline.metrics");
   return {
     ok: failures.length === 0,
     kind: "baseline",

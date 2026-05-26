@@ -95,8 +95,9 @@ explicit external-pending condition rather than an implied pass.
   comparison status consistency, exact child-to-suite metric/failure
   aggregation including required metric evidence fields such as `worstSample`,
   `budget`, and `evidenceEventRefs`, child baseline-comparison path ownership,
-  artifact-index existence/completeness, metrics/failures artifact shape, suite
-  status derivation from child runs, gated comparison-to-failure correlation, bidirectional
+  artifact-index existence/completeness, metrics/failures artifact shape,
+  metric-to-KPI-registry priority/surface binding, suite status derivation from
+  child runs, gated comparison-to-failure correlation, bidirectional
   failure-to-timeline correlation, enforceable gate exit policy,
   trace-isolation metadata, and private-boundary flags before evidence can
   support closure.

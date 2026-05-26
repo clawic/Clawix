@@ -658,6 +658,7 @@ if (evidenceSchema) {
     "evidenceSourcesRequiredFields",
     "exitPolicyRequiredFields",
     "baselineArtifactRequiredFields",
+    "metricRegistryContract",
     "eventRequiredFields",
     "eventTypes",
     "metricRequiredFields",
@@ -720,6 +721,17 @@ if (evidenceSchema) {
   if (!String(evidenceSchema.baselineArtifactContract?.verifierTarget ?? "").includes("baseline JSON files")) {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.verifierTarget must require baseline JSON verification`);
   }
+  requireFields(evidenceSchema.metricRegistryContract, `${evidenceSchemaPath}.metricRegistryContract`, ["source", "policy", "appliesTo"]);
+  if (evidenceSchema.metricRegistryContract?.source !== registryPath) {
+    fail(`${evidenceSchemaPath}.metricRegistryContract.source must be ${registryPath}`);
+  }
+  if (
+    !String(evidenceSchema.metricRegistryContract?.policy ?? "").includes("declared KPI id")
+    || !String(evidenceSchema.metricRegistryContract?.policy ?? "").includes("priority and surface")
+  ) {
+    fail(`${evidenceSchemaPath}.metricRegistryContract.policy must bind metric rows to KPI registry priority and surface`);
+  }
+  requireUniqueStringArray(requireArray(evidenceSchema.metricRegistryContract?.appliesTo, `${evidenceSchemaPath}.metricRegistryContract.appliesTo`), `${evidenceSchemaPath}.metricRegistryContract.appliesTo`, ["metrics.json", "suite-metrics.json", "baseline metrics"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
   requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "requiredSourceIds"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesContract?.requiredSourceIds, `${evidenceSchemaPath}.evidenceSourcesContract.requiredSourceIds`), `${evidenceSchemaPath}.evidenceSourcesContract.requiredSourceIds`, ["ux-trace-harness-registry", "ux-trace-scenarios-manifest", "ux-trace-evidence-schema", "macos-ux-trace-fixture-generator", "macos-ux-trace-evidence-verifier"]);
@@ -1063,6 +1075,9 @@ if (evidenceVerifierSource) {
     "stableAggregateKey(",
     "compareMultisets(",
     "requireArrayField(",
+    "validateMetricsAgainstRegistry(",
+    "must match KPI registry",
+    "is not declared in ux-trace-harness.registry.json",
     "metrics.json.schemaVersion must be 1",
     "failures.json.schemaVersion must be 1",
     "suite-metrics.json.schemaVersion must be 1",

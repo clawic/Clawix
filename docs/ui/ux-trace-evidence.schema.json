@@ -191,6 +191,15 @@
     "verifierTarget": "scripts/verify_macos_ux_trace_evidence.mjs must accept generated baseline JSON files in addition to run and suite directories.",
     "p0Protection": "Generated baselines must not allow lower-priority optimizations to update P0 baselines without approved evidence."
   },
+  "metricRegistryContract": {
+    "source": "docs/ui/ux-trace-harness.registry.json",
+    "policy": "Every run, suite, and baseline metric row must reference a declared KPI id and must keep priority and surface equal to the KPI registry row.",
+    "appliesTo": [
+      "metrics.json",
+      "suite-metrics.json",
+      "baseline metrics"
+    ]
+  },
   "eventRequiredFields": [
     "schemaVersion",
     "runId",
