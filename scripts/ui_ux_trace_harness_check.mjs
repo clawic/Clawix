@@ -693,6 +693,16 @@ if (scenarios) {
     }
   }
   requireUniqueStringArray([...scenarioActions].sort(), `${scenariosPath}.scenarioActions`, expectedScenarioActions);
+  const chatFinalWindowSteps = scenarioRecords.flatMap((scenario) =>
+    (scenario.steps || [])
+      .filter((step) => step.wait === "wait-chat-final-window" && step.action !== "include-scenario")
+      .map((step) => ({ scenarioId: scenario.id, step }))
+  );
+  for (const { scenarioId, step } of chatFinalWindowSteps) {
+    if (!Number.isInteger(step.minVisibleMessages) || step.minVisibleMessages < 1) {
+      fail(`${scenariosPath}.scenarios.${scenarioId}.steps.${step.id}.minVisibleMessages must be a positive integer for wait-chat-final-window`);
+    }
+  }
   for (const [action, dispatch] of Object.entries(expectedMeasuredActionDispatches)) {
     if (!runnerHasActionDispatch(action, dispatch)) {
       fail(`${runnerPath} must dispatch scenario action ${action} as control action ${dispatch}`);
@@ -769,6 +779,8 @@ if (clxControlHandlersSource) {
     "let maxControls = boundedInt(args[\"maxControls\"]",
     "state[\"scrollState\"] = registeredScrollState(id: id) ?? [:]",
     "if let selected = ClxAX.bool(element, kAXSelectedAttribute) { out[\"selected\"] = selected }",
+    "ChatVisibleWindowRenderLog.latestPayload(",
+    "let minVisibleMessages = boundedInt(args[\"minVisibleMessages\"]",
   ]) {
     requireSnippet(clxControlHandlersSource, clxControlHandlersPath, snippet);
   }
@@ -781,6 +793,7 @@ if (runnerSource) {
     "UX trace event writer exceeded",
     "path.join(os.tmpdir(), \"clawix-ux-trace-runs\")",
     "mainDatabaseTraceWrites: false",
+    "body.minVisibleMessages = step.minVisibleMessages",
   ]) {
     requireSnippet(runnerSource, runnerPath, snippet);
   }

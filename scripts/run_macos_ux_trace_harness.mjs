@@ -305,6 +305,7 @@ function requestBodyForStep(step, options) {
   if (step.contains) body.contains = step.contains;
   if (step.query) body.query = step.query;
   if (step.minCount) body.minCount = step.minCount;
+  if (step.minVisibleMessages) body.minVisibleMessages = step.minVisibleMessages;
   if (step.route) body.route = step.route;
   return body;
 }

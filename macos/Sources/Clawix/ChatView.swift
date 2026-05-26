@@ -37,14 +37,14 @@ private struct ChatVisibleWindowMessageEvidence: Equatable {
     }
 }
 
-private enum ChatVisibleWindowRenderLog {
+enum ChatVisibleWindowRenderLog {
     private static let lock = NSLock()
     nonisolated(unsafe) private static var lastEvidence: ChatVisibleWindowEvidence?
     nonisolated(unsafe) private static var lastLoggedAt: CFAbsoluteTime = 0
     private static let duplicateWindow: TimeInterval = 0.25
     private static let detailedMessageLimit = 12
 
-    static func record(_ evidence: ChatVisibleWindowEvidence, reason: String) {
+    fileprivate static func record(_ evidence: ChatVisibleWindowEvidence, reason: String) {
         guard evidence.visibleCount > 0 else { return }
         let now = CFAbsoluteTimeGetCurrent()
         lock.lock()
@@ -79,6 +79,31 @@ private enum ChatVisibleWindowRenderLog {
                 reason: reason
             )
         }
+    }
+
+    static func latestPayload(chatId requestedChatId: UUID?, minVisibleMessages: Int) -> [String: Any]? {
+        lock.lock()
+        let evidence = lastEvidence
+        lock.unlock()
+
+        guard let evidence,
+              requestedChatId == nil || evidence.chatId == requestedChatId,
+              evidence.visibleCount >= minVisibleMessages
+        else { return nil }
+
+        let incompleteRows = evidence.messages.filter { !$0.contentReady }.count
+        return [
+            "chat": evidence.chatId.uuidString,
+            "visibleCount": evidence.visibleCount,
+            "requiredVisibleMessages": minVisibleMessages,
+            "totalCount": evidence.totalCount,
+            "hiddenCount": evidence.hiddenCount,
+            "firstMessageId": evidence.firstMessageId?.uuidString ?? "",
+            "lastMessageId": evidence.lastMessageId?.uuidString ?? "",
+            "bottomArmed": evidence.bottomArmed,
+            "incompleteRows": incompleteRows,
+            "windowComplete": evidence.bottomArmed && incompleteRows == 0,
+        ]
     }
 
     private static func recordCompleteFinalWindow(

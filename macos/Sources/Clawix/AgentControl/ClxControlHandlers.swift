@@ -1400,10 +1400,24 @@ enum ClxControlHandlers {
             let bottomDistance = numeric(observed["bottomDistance"]) ?? .infinity
             return (bottomDistance <= tolerancePx, observed)
         case .chatFinalWindow:
-            let observed = observedControlState(["id": (args["id"] as? String) ?? "chat.visibleWindow.latest"])
-            if (observed["visible"] as? Bool) == true { return (true, observed) }
-            let fallback = observedControlState(["id": "chat.transcript.scroll"])
-            return ((fallback["visible"] as? Bool) == true, fallback)
+            let id = (args["id"] as? String) ?? "chat.visibleWindow.latest"
+            var observed = observedControlState(["id": id])
+            let minVisibleMessages = boundedInt(args["minVisibleMessages"], defaultValue: 1, min: 1, max: 1_000)
+            let requestedChatId = (args["chatId"] as? String).flatMap(UUID.init(uuidString:))
+                ?? appState?.currentChatId
+            if let evidence = ChatVisibleWindowRenderLog.latestPayload(
+                chatId: requestedChatId,
+                minVisibleMessages: minVisibleMessages
+            ) {
+                observed["chatFinalWindow"] = evidence
+                let controlVisible = (observed["visible"] as? Bool) == true
+                let windowComplete = (evidence["windowComplete"] as? Bool) == true
+                return (controlVisible && windowComplete, observed)
+            }
+            observed["requiredVisibleMessages"] = minVisibleMessages
+            observed["chatId"] = requestedChatId?.uuidString ?? ""
+            observed["windowComplete"] = false
+            return (false, observed)
         case .streamDelta:
             let observed = observedControlState(["id": (args["id"] as? String) ?? "chat.streaming.deltaTarget"])
             if (observed["visible"] as? Bool) == true { return (true, observed) }

@@ -107,9 +107,9 @@
         { "id": "click-heavy-chat", "action": "measure-action", "wait": "wait-route", "target": "sidebar.conversation.row", "route": "chat", "kpi": "p0.chat.open_click_to_route_selected_ms" },
         { "id": "wait-chat-container", "action": "observe", "wait": "wait-visible", "target": "chat.route.container", "kpi": "none" },
         { "id": "wait-transcript", "action": "observe", "wait": "wait-visible", "target": "chat.transcript.scroll", "kpi": "p0.chat.open_click_to_transcript_visible_ms" },
-        { "id": "wait-final-window", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "kpi": "p0.chat.open_click_to_final_visible_window_ms" },
+        { "id": "wait-final-window", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "minVisibleMessages": 1, "kpi": "p0.chat.open_click_to_final_visible_window_ms" },
         { "id": "verify-latest-message", "action": "observe", "wait": "wait-visible", "target": "chat.message.assistant", "kpi": "p0.chat.latest_message_visible_ms" },
-        { "id": "verify-visible-window-count", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "kpi": "p0.chat.visible_latest_window_count" },
+        { "id": "verify-visible-window-count", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "minVisibleMessages": 3, "kpi": "p0.chat.visible_latest_window_count" },
         { "id": "verify-bottom-anchor", "action": "observe", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll", "kpi": "none" },
         { "id": "verify-coherent-paint", "action": "analyze-events", "wait": "wait-frame-stable", "target": "chat.visibleWindow.latest", "kpi": "p0.chat.visible_window_no_row_by_row_buildup" },
         { "id": "sample-open-hitches", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "durationMs": 100, "kpi": "p0.chat.open_hitch_count" },
@@ -136,7 +136,7 @@
         "p0.chat.scrollbar_position_consistency_px"
       ],
       "steps": [
-        { "id": "open-heavy-chat", "action": "include-scenario", "wait": "wait-chat-final-window", "target": "open-heavy-chat-latest-window" },
+        { "id": "open-heavy-chat", "action": "include-scenario", "wait": "wait-chat-final-window", "target": "open-heavy-chat-latest-window", "minVisibleMessages": 3 },
         { "id": "record-anchor", "action": "snapshot", "wait": "wait-frame-stable", "target": "chat.message.row", "kpi": "p0.chat.scrollbar_position_consistency_px" },
         { "id": "load-old-page-1", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll", "kpi": "p0.chat.scroll_frame_p95_ms" },
         { "id": "measure-scroll-hitches", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "durationMs": 100, "kpi": "p0.chat.scroll_hitch_count" },
@@ -146,7 +146,7 @@
         { "id": "load-old-page-3", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll", "kpi": "p0.chat.no_scroll_jump_during_prepend" },
         { "id": "measure-anchor-3", "action": "measure-anchor-delta", "wait": "wait-frame-stable", "target": "chat.message.row", "kpi": "p0.chat.bottom_anchor_stability_px" },
         { "id": "scroll-bottom", "action": "scroll-to-bottom", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll", "kpi": "p0.chat.scroll_to_bottom_ms" },
-        { "id": "verify-latest-returned", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "kpi": "p0.chat.no_lost_latest_message_after_scroll" }
+        { "id": "verify-latest-returned", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "minVisibleMessages": 3, "kpi": "p0.chat.no_lost_latest_message_after_scroll" }
       ]
     },
     {
@@ -208,7 +208,7 @@
         { "id": "open-terminal", "action": "measure-action", "wait": "wait-visible", "target": "terminal.panel", "kpi": "p0.terminal.open_under_load_ms" },
         { "id": "switch-back-chat", "action": "measure-action", "wait": "wait-visible", "target": "chat.route.container", "kpi": "p0.terminal.switch_back_to_chat_ms" },
         { "id": "scroll-terminal", "action": "scroll", "wait": "wait-scroll-stable", "target": "terminal.panel", "direction": "up", "kpi": "p0.terminal.output_scroll_frame_p95_ms" },
-        { "id": "verify-chat-responsive", "action": "measure-action", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "kpi": "p0.terminal.no_main_chat_freeze" }
+        { "id": "verify-chat-responsive", "action": "measure-action", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "minVisibleMessages": 1, "kpi": "p0.terminal.no_main_chat_freeze" }
       ]
     },
     {
