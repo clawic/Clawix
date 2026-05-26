@@ -47,7 +47,8 @@ struct ClawJSRuntimeLensSupportOverviewPresentation: Equatable {
     }
 
     static func make(
-        support: ClawJSRuntimeLensSnapshot.Support
+        support: ClawJSRuntimeLensSnapshot.Support,
+        officialSnapshot fallbackOfficialSnapshot: ClawJSRuntimeLensSnapshot.OfficialSnapshot? = nil
     ) -> ClawJSRuntimeLensSupportOverviewPresentation {
         let adapterSupportLevel = normalized(support.adapter?.supportLevel) ?? normalized(support.supportLevel)
         let adapterStability = normalized(support.adapter?.stability) ?? normalized(support.stability)
@@ -62,7 +63,7 @@ struct ClawJSRuntimeLensSupportOverviewPresentation: Equatable {
         let claimSource = normalized(ecosystem?.claimSource)
         let provenanceSource = normalized(ecosystem?.provenance?.source)
         let provenanceRuntimeId = normalized(ecosystem?.provenance?.runtimeId)
-        let officialSnapshot = ecosystem?.officialSnapshot
+        let officialSnapshot = ecosystem?.officialSnapshot ?? fallbackOfficialSnapshot
         let officialSnapshotCapturedAt = normalized(officialSnapshot?.capturedAt)
         let officialSnapshotSourceSnapshotDate = normalized(officialSnapshot?.sourceSnapshotDate)
         let officialSnapshotSources = officialSnapshot?.sources ?? []
