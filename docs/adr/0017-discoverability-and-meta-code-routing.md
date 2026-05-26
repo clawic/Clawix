@@ -31,6 +31,15 @@ surfaces within two hops.
 Closure-gated canon, route, storage, permission, ADR, skill, and Clawix/ClawJS
 integration changes must also prove discovery with a real
 `claw search ... --json` command and a real `claw inspect ... --json` command.
+
+The agent-facing entry order for productivity work starts with `claw about`
+(framework purpose), then `claw router <terms> --json` (intent-to-command
+mapping), then `claw help <command>` (enriched, router-aware help), and
+finally `claw inspect` / `claw search query` for registry and content lookup.
+This ordering is canon in sibling ClawJS ADR 0017; the corresponding entries
+live in `@clawjs/core` `keyword-router.json` and are gated by
+`packages/clawjs-core/src/discovery/keyword-router-coverage.test.ts`.
+
 ADR numbers are repo-local; `adr:*` canonical names are cross-repository
 semantic identifiers for shared decisions.
 
