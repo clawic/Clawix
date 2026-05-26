@@ -30,6 +30,7 @@ struct SettingsBottomButton: View {
         .sidebarHover { hovered = $0 }
         .accessibilityLabel("Settings")
         .accessibilityAddTraits(open ? .isSelected : [])
+        .clxControl("sidebar.settings.openAccountPopover", role: "button", label: "Settings")
     }
 
     private var backgroundFill: Color {
@@ -52,19 +53,22 @@ struct SettingsAccountPopover: View {
         VStack(alignment: .leading, spacing: 0) {
             SettingsAccountRow(title: appState.auth.accountProfile?.email ?? L10n.t("Connected account"),
                                icon: "person.circle",
-                               trailing: nil)
+                               trailing: nil,
+                               controlId: "sidebar.settings.account")
             MenuStandardDivider()
                 .padding(.vertical, 4)
             SettingsAccountRow(title: L10n.t("Settings"),
                                icon: "clawix.settings",
-                               trailing: nil) {
+                               trailing: nil,
+                               controlId: "sidebar.settings.openSettings") {
                 appState.currentRoute = .settings
                 isOpen = false
             }
             SettingsLimitsSection(expanded: $limitsExpanded)
             SettingsAccountRow(title: L10n.t("Sign out"),
                                icon: "clawix.signout",
-                               trailing: nil) {
+                               trailing: nil,
+                               controlId: "sidebar.settings.signOut") {
                 isOpen = false
                 appState.performBackendLogout()
             }
@@ -257,6 +261,7 @@ struct SettingsAccountRow: View {
     let title: String
     let icon: String
     let trailing: String?
+    var controlId: String? = nil
     var action: (() -> Void)? = nil
 
     @State private var hovered = false
@@ -296,5 +301,6 @@ struct SettingsAccountRow: View {
         .buttonStyle(.plain)
         .sidebarHover { hovered = $0 }
         .disabled(action == nil)
+        .clxControl(controlId ?? "sidebar.settings.accountRow", role: "button", label: title)
     }
 }
