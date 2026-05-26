@@ -37,6 +37,12 @@ struct ChatTranscriptScrollerView: View {
         )
     }
 
+    private var visibleMessageWindowId: String {
+        let first = visibleMessageStores.first?.id.uuidString ?? "none"
+        let last = visibleMessageStores.last?.id.uuidString ?? "none"
+        return "\(first)-\(last)-\(newerLocalMessageCount)"
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -80,6 +86,7 @@ struct ChatTranscriptScrollerView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .id(visibleMessageWindowId)
                     Color.clear
                         .frame(height: CGFloat(newerLocalMessageCount) * ChatView.virtualizedTranscriptRowEstimate)
                     Color.clear
