@@ -175,6 +175,196 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertTrue(presentation.accessibilityLabel.contains("tui gateway fixture ids hermes.sessions.send.action_contract"))
     }
 
+    func testLocalParityPresentationOmitsClosedFixturePromotionNeeds() {
+        let summary = ClawJSRuntimeLensSnapshot.SupportAudit.EvidenceReadinessSummary(
+            statusCounts: [
+                "approval_required": 4,
+                "blocked_until_production_transport_lifecycle": 4,
+                "blocked_until_upstream_contract": 12
+            ],
+            blockerClassCounts: [
+                "direct_blocker": 16,
+                "external_pending": 4
+            ],
+            safeDefaultCounts: nil,
+            totalRequirementCount: 20,
+            approvalRequiredCount: 4,
+            externalPendingCount: 4,
+            upstreamContractBlockedCount: 12,
+            approvalGateBlockedCount: 0,
+            tuiGatewayBlockedCount: 4,
+            tuiGatewayWrapperBlockedCount: 0,
+            tuiGatewayFixtureBackedCount: 4,
+            productionTransportBlockedCount: 4,
+            writeBackContractBlockedCount: 12,
+            productBlockedCount: 16,
+            unresolvedNativeRequirementCount: 0,
+            approvalRequiredRequirementIds: [
+                "hermes.channels.live_evidence",
+                "hermes.providers.live_evidence",
+                "hermes.auth.live_evidence",
+                "hermes.models.live_evidence"
+            ],
+            externalPendingRequirementIds: [
+                "hermes.channels.live_evidence",
+                "hermes.providers.live_evidence",
+                "hermes.auth.live_evidence",
+                "hermes.models.live_evidence"
+            ],
+            upstreamContractRequirementIds: [
+                "hermes.sessions.write_back_contract",
+                "hermes.skills.write_back_contract",
+                "hermes.memory.write_back_contract",
+                "hermes.providers.write_back_contract",
+                "hermes.auth.write_back_contract",
+                "hermes.models.write_back_contract",
+                "hermes.scheduler.write_back_contract",
+                "hermes.plugins.write_back_contract",
+                "hermes.gateway.write_back_contract",
+                "hermes.configuration.write_back_contract",
+                "hermes.sessions.pin.native_write_back_contract",
+                "hermes.sessions.unpin.native_write_back_contract"
+            ],
+            approvalGateRequirementIds: [],
+            tuiGatewayRequirementIds: [
+                "hermes.sessions.send.action_contract",
+                "hermes.sessions.inject.action_contract",
+                "hermes.sessions.abort.action_contract",
+                "hermes.sessions.create.action_contract"
+            ],
+            tuiGatewayWrapperRequirementIds: [],
+            tuiGatewayFixtureBackedRequirementIds: [
+                "hermes.sessions.send.action_contract",
+                "hermes.sessions.inject.action_contract",
+                "hermes.sessions.abort.action_contract",
+                "hermes.sessions.create.action_contract"
+            ],
+            productionTransportRequirementIds: [
+                "hermes.sessions.send.action_contract",
+                "hermes.sessions.inject.action_contract",
+                "hermes.sessions.abort.action_contract",
+                "hermes.sessions.create.action_contract"
+            ],
+            writeBackContractRequirementIds: [
+                "hermes.sessions.write_back_contract",
+                "hermes.skills.write_back_contract",
+                "hermes.memory.write_back_contract",
+                "hermes.providers.write_back_contract",
+                "hermes.auth.write_back_contract",
+                "hermes.models.write_back_contract",
+                "hermes.scheduler.write_back_contract",
+                "hermes.plugins.write_back_contract",
+                "hermes.gateway.write_back_contract",
+                "hermes.configuration.write_back_contract",
+                "hermes.sessions.pin.native_write_back_contract",
+                "hermes.sessions.unpin.native_write_back_contract"
+            ],
+            productBlockedRequirementIds: nil,
+            unresolvedNativeRequirementIds: [],
+            nextRequiredActions: [
+                "approved_redacted_live_evidence",
+                "production_transport_lifecycle_policy_and_native_round_trip_evidence",
+                "official_runtime_write_back_contract_fixture",
+                "official_runtime_native_contract_fixture"
+            ],
+            reentryPolicy: "use_evidence_reentry_packets_before_claim_promotion",
+            safeDefault: "keep_unpromoted_and_follow_exact_reentry_packets"
+        )
+
+        let readiness = ClawJSRuntimeLensSupportSummaryPresentation.make(
+            evidenceReadiness: summary
+        )
+
+        XCTAssertEqual(readiness.totalRequirementCount, 20)
+        XCTAssertEqual(readiness.approvalGateBlockedCount, 0)
+        XCTAssertEqual(readiness.tuiGatewayWrapperBlockedCount, 0)
+        XCTAssertEqual(readiness.tuiGatewayFixtureBackedCount, 4)
+        XCTAssertNil(readiness.approvalGateIdsLabel)
+        XCTAssertNil(readiness.tuiGatewayWrapperIdsLabel)
+        XCTAssertEqual(
+            readiness.tuiGatewayFixtureBackedIdsLabel,
+            "hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, hermes.sessions.abort.action_contract, +1 more"
+        )
+        XCTAssertEqual(
+            readiness.upstreamContractIdsLabel,
+            "hermes.sessions.write_back_contract, hermes.skills.write_back_contract, hermes.memory.write_back_contract, +9 more"
+        )
+        XCTAssertEqual(
+            readiness.nextRequiredActionsLabel,
+            "approved_redacted_live_evidence, production_transport_lifecycle_policy_and_native_round_trip_evidence, official_runtime_write_back_contract_fixture, official_runtime_native_contract_fixture"
+        )
+        XCTAssertTrue(readiness.accessibilityLabel.contains("approval gate blocked 0"))
+        XCTAssertTrue(readiness.accessibilityLabel.contains("tui gateway wrapper blocked 0"))
+        XCTAssertTrue(readiness.accessibilityLabel.contains("tui gateway fixture backed 4"))
+        XCTAssertTrue(readiness.accessibilityLabel.contains("write back contract blocked 12"))
+
+        let decision = ClawJSRuntimeLensSnapshot.SupportAudit.FinalSupportClaimDecision(
+            status: "not_promoted",
+            decision: "keep_current_lowered_runtime_ecosystem_claim",
+            effectiveSupportStage: "dev_only",
+            recommended: false,
+            production: false,
+            uiParityClaim: "partial_runtime_lens",
+            commandCoverageSummary: nil,
+            uiParityDisposition: "partial_lens_validated_not_full_native_parity",
+            claimDisposition: "unpromoted_product_blocked_and_external_pending",
+            blockedPromotionClaims: [
+                "recommended",
+                "production",
+                "native_parity",
+                "write_back",
+                "external_live_evidence",
+                "production_transport_lifecycle",
+                "upstream_native_contracts"
+            ],
+            blockerClasses: [
+                "direct_blocker",
+                "external_pending"
+            ],
+            productBlockedRequirementIds: [
+                "hermes.sessions.write_back_contract",
+                "hermes.sessions.pin.native_write_back_contract"
+            ],
+            externalPendingRequirementIds: [
+                "hermes.channels.live_evidence",
+                "hermes.providers.live_evidence",
+                "hermes.auth.live_evidence",
+                "hermes.models.live_evidence"
+            ],
+            unresolvedNativeRequirementIds: [],
+            promotionEvidenceRequired: [
+                "approved_redacted_live_evidence",
+                "production_transport_lifecycle_policy_and_native_round_trip_evidence",
+                "keep_lowered_claim_until_upstream_native_contracts_exist",
+                "ecosystem_production_claim",
+                "ecosystem_recommended_claim"
+            ],
+            reentryPolicy: "use_evidenceReentryPackets_exactly_before_revisiting_claim",
+            safeDefault: "keep_unpromoted_until_evidence_or_upstream_contract_changes",
+            userVisibleStatus: "runtime_ecosystem_available_but_not_recommended_or_production"
+        )
+
+        let finalDecision = ClawJSRuntimeLensSupportDecisionPresentation.make(
+            decision: decision
+        )
+
+        XCTAssertFalse(finalDecision.blockedPromotionClaims.contains("approval_gate_fixture"))
+        XCTAssertFalse(finalDecision.blockedPromotionClaims.contains("tui_gateway_wrapper_fixture"))
+        XCTAssertEqual(
+            finalDecision.blockedPromotionClaimsLabel,
+            "recommended, production, native_parity, write_back, external_live_evidence, production_transport_lifecycle, upstream_native_contracts"
+        )
+        XCTAssertEqual(
+            finalDecision.promotionEvidenceRequiredLabel,
+            "approved_redacted_live_evidence, production_transport_lifecycle_policy_and_native_round_trip_evidence, keep_lowered_claim_until_upstream_native_contracts_exist, ecosystem_production_claim, ecosystem_recommended_claim"
+        )
+        XCTAssertFalse(finalDecision.accessibilityLabel.contains("approval_gate_fixture"))
+        XCTAssertFalse(finalDecision.accessibilityLabel.contains("tui_gateway_wrapper_fixture"))
+        XCTAssertTrue(finalDecision.accessibilityLabel.contains("blocked claims recommended, production, native_parity, write_back"))
+        XCTAssertTrue(finalDecision.accessibilityLabel.contains("external_live_evidence"))
+        XCTAssertTrue(finalDecision.accessibilityLabel.contains("production_transport_lifecycle"))
+    }
+
     func testRuntimeLensSupportAuditEvidenceAndPromotionPresentations() async throws {
         let snapshot = try await ClawJSRuntimeLensTestFixtures.degradedRuntimePortalSnapshot()
 
