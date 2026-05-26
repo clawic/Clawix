@@ -702,6 +702,9 @@ if (evidenceSchema) {
   if (!String(evidenceSchema.baselineComparisonContract?.baselineReferencePolicy ?? "").includes("sha256 contentHash")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.baselineReferencePolicy must bind baseline references to content hashes`);
   }
+  if (!String(evidenceSchema.baselineComparisonContract?.baselineReferencePolicy ?? "").includes("relative-to-run references must match that hash against the local file")) {
+    fail(`${evidenceSchemaPath}.baselineComparisonContract.baselineReferencePolicy must require local hash verification for relative baseline references`);
+  }
   if (!String(evidenceSchema.baselineComparisonContract?.suiteAggregationPolicy ?? "").includes("one comparison row per suite metric")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.suiteAggregationPolicy must require suite-level metric comparison coverage`);
   }
@@ -1334,6 +1337,9 @@ if (evidenceVerifierSource) {
     "validatePathReference(",
     "validateBaselineReference(",
     "${label}.contentHash must be a sha256 hash",
+    "fileContentHash(absolutePath)",
+    "path must exist for content hash verification",
+    "contentHash does not match referenced baseline artifact",
     "must not include an external local path",
     "geometry.sample",
     "resource.sample",

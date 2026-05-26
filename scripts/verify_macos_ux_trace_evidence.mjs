@@ -390,10 +390,18 @@ function validatePathReference(failures, value, label) {
   fail(failures, `${label}.kind must be relative-to-run or external-hash-only`);
 }
 
-function validateBaselineReference(failures, value, label) {
+function validateBaselineReference(failures, value, label, baseDir = null) {
   validatePathReference(failures, value, label);
   if (typeof value?.contentHash !== "string" || !value.contentHash.startsWith("sha256:")) {
     fail(failures, `${label}.contentHash must be a sha256 hash`);
+  }
+  if (value?.kind === "relative-to-run" && baseDir && isRelativeSafe(value.path)) {
+    const absolutePath = path.join(baseDir, value.path);
+    if (!fs.existsSync(absolutePath)) {
+      fail(failures, `${label}.path must exist for content hash verification`);
+    } else if (value.contentHash !== fileContentHash(absolutePath)) {
+      fail(failures, `${label}.contentHash does not match referenced baseline artifact`);
+    }
   }
 }
 
@@ -528,7 +536,7 @@ function validateBaselineComparison(failures, comparison, label = "baseline-comp
     fail(failures, `${label} must not include raw baselinePath`);
   }
   if (comparison.baselineReference) {
-    validateBaselineReference(failures, comparison.baselineReference, `${label}.baselineReference`);
+    validateBaselineReference(failures, comparison.baselineReference, `${label}.baselineReference`, options.baseDir);
   }
   requireFields(failures, comparison, label, ["schemaVersion", "status", "comparisons"]);
   if (comparison.schemaVersion !== 1) fail(failures, `${label}.schemaVersion must be 1`);
@@ -864,6 +872,7 @@ function validateRun(runDir, schema, options = {}) {
     metricRows,
     failureRows: failureList,
     expectedCount: metricList.length,
+    baseDir: runDir,
   });
 
   const failureTypes = new Set(schema.failureTypes);
@@ -1033,6 +1042,7 @@ function validateSuite(suiteDir, schema) {
     metricRows: suiteMetricRows,
     failureRows: suiteFailureList,
     expectedCount: suiteMetricList.length,
+    baseDir: suiteDir,
   });
   if (!Array.isArray(suiteBaselineObject.childRuns)) {
     fail(failures, "suite-baseline-comparison.json.childRuns must be an array");

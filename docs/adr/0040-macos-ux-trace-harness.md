@@ -86,7 +86,9 @@ hash-referenced, harness-disabled, measured, and numerically comparable.
   until the user approves the private evidence. Generated baseline artifacts
   stay capture-only while `approval.status` is `pending-user-approval`; the
   runner requires `approved-by-user` before using formal baseline artifacts for
-  comparison or P0 gates.
+  comparison or P0 gates. Evidence verification also rehashes relative in-run
+  baseline references against the local file so comparison evidence cannot be
+  detached from the exact approved artifact it used.
 
 ## Surface Parity
 

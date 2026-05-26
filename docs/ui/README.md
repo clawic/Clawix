@@ -320,7 +320,9 @@ primary timing source.
   add `--baseline <private-baseline-file> --gate p0`.
   External baseline paths are written to evidence only as hash references, and
   every non-null baseline reference carries a content hash for the exact
-  baseline artifact used.
+  baseline artifact used. Relative in-run baseline references are rehashed from
+  the local artifact during evidence verification, so a comparison cannot keep
+  passing after the referenced baseline file changes or disappears.
 - Evidence validation:
   `node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>`.
   The same verifier also accepts a generated baseline JSON file and validates
