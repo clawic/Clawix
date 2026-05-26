@@ -582,7 +582,6 @@ struct RecentChatRow: View, Equatable {
                 .help(L10n.t("Archive"))
             }
         }
-        .animation(.easeOut(duration: 0.16), value: archiveVisible)
         .animation(.easeOut(duration: 0.12), value: archiveHovered)
     }
 
@@ -611,7 +610,6 @@ struct RecentChatRow: View, Equatable {
         .padding(.trailing, 3)
         .onTapGesture(perform: selectChat)
         .sidebarHover { hovered = $0 }
-        .animation(.easeOut(duration: 0.12), value: hovered)
         .animation(.easeOut(duration: 0.12), value: pinHovered)
         .clxControl(
             "sidebar.chat.\(chat.clawixThreadId ?? chat.id.uuidString)",

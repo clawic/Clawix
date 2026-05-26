@@ -1,11 +1,11 @@
 import SwiftUI
 import AppKit
 
-/// Cooldown-based scroll gate. Any sidebar hover handler reads
-/// `SidebarScrollState.shared.isScrolling` and drops hover state writes
-/// when true. Tracking a moving cursor over passing rows is what costs
-/// during scroll: ungated, every row crossed produces two `@State`
-/// mutations and two body re-evaluations.
+/// Cooldown-based scroll gate. Sidebar hover handlers avoid writing state
+/// while scroll is active, then coalesce the final hover after the cooldown.
+/// Tracking a moving cursor over passing rows is what costs during scroll:
+/// ungated, every row crossed produces two `@State` mutations and two body
+/// re-evaluations.
 ///
 /// Implementation: every observed scroll event stamps `lastScrollTime`.
 /// `isScrolling` returns `true` for `cooldown` seconds after the last
@@ -13,11 +13,10 @@ import AppKit
 final class SidebarScrollState {
     static let shared = SidebarScrollState()
 
-    /// How long after the last scroll event the gate stays engaged. Long
-    /// enough to bridge gaps between discrete wheel ticks (~150-250ms),
-    /// short enough that hover re-engages quickly when the user actually
-    /// stops.
-    private static let cooldown: TimeInterval = 0.25
+    /// How long after the last scroll event the gate stays engaged.
+    /// Keep the gate short so hover can re-engage quickly; delayed replay
+    /// below bridges the final cooldown window after scrolling settles.
+    private static let cooldown: TimeInterval = 0.08
 
     private var lastScrollTime: TimeInterval = 0
 
@@ -25,6 +24,10 @@ final class SidebarScrollState {
 
     var isScrolling: Bool {
         CFAbsoluteTimeGetCurrent() - lastScrollTime < Self.cooldown
+    }
+
+    var remainingCooldown: TimeInterval {
+        max(0, Self.cooldown - (CFAbsoluteTimeGetCurrent() - lastScrollTime))
     }
 
     /// Stamp scroll activity. Called from the AppKit-side installer on
@@ -137,17 +140,34 @@ final class SidebarScrollStateInstallerView: NSView {
 }
 
 extension View {
-    /// `onHover` variant that drops events while the sidebar is in a
-    /// scroll cooldown window. The next genuine cursor motion after the
-    /// cooldown expires re-asserts hover state via the normal AppKit
-    /// tracking path; a row that was hovered when scroll began can stay
-    /// visually highlighted for a frame or two until the cursor actually
-    /// moves, which is invisible in practice and dramatically cheaper
-    /// than the per-frame thrash.
+    /// `onHover` variant that coalesces hover writes while the sidebar is in
+    /// a scroll cooldown window. The final hover state is applied shortly
+    /// after scroll settles, so feedback returns without waiting for another
+    /// physical mouse movement.
     func sidebarHover(_ action: @escaping (Bool) -> Void) -> some View {
-        self.onHover { entered in
-            guard !SidebarScrollState.shared.isScrolling else { return }
-            action(entered)
+        modifier(SidebarHoverModifier(action: action))
+    }
+}
+
+private struct SidebarHoverModifier: ViewModifier {
+    let action: (Bool) -> Void
+    @State private var pending: Task<Void, Never>?
+
+    func body(content: Content) -> some View {
+        content.onHover { entered in
+            pending?.cancel()
+            if SidebarScrollState.shared.isScrolling {
+                let delay = SidebarScrollState.shared.remainingCooldown + 0.01
+                pending = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                    guard !Task.isCancelled else { return }
+                    if !SidebarScrollState.shared.isScrolling {
+                        action(entered)
+                    }
+                }
+            } else {
+                action(entered)
+            }
         }
     }
 }
