@@ -34,6 +34,33 @@ enum CodexRolloutLocator {
         )
     }
 
+    static func findLikelyDayMatch(
+        threadId: String,
+        sessionsRoot: URL = ClawixAgentBackendRoutes.codexSessionsDirectory(),
+        fileManager: FileManager = .default
+    ) -> URL? {
+        let needle = threadId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !needle.isEmpty,
+              !needle.contains("/"),
+              !needle.contains("\\")
+        else { return nil }
+
+        for dayDirectory in likelySessionDayDirectories(
+            threadId: needle,
+            sessionsRoot: sessionsRoot
+        ) {
+            if let hit = bestMatch(
+                in: dayDirectory,
+                threadId: needle,
+                recursive: false,
+                fileManager: fileManager
+            ) {
+                return hit
+            }
+        }
+        return nil
+    }
+
     private static func bestMatch(
         in directory: URL,
         threadId needle: String,

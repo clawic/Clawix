@@ -343,6 +343,40 @@ extension AppState {
             return false
         }
 
+        if let path = CodexRolloutLocator.findLikelyDayMatch(threadId: threadId) {
+            let readStarted = CFAbsoluteTimeGetCurrent()
+            let result = RolloutReader.readTailWithStatus(path: path)
+            let messages = rolloutChatMessages(from: result)
+            let readMs = (CFAbsoluteTimeGetCurrent() - readStarted) * 1000
+            codexRolloutPathByThreadId[threadId] = path
+            mutateChat(id: chatId) { c in
+                c.rolloutPath = path
+            }
+            RenderProbe.mark(
+                "ChatHydrationLocalFallbackImmediate",
+                fields: [
+                    "chat": chatId.uuidString,
+                    "thread": threadId,
+                    "readMs": String(format: "%.1f", readMs)
+                ]
+            )
+            messagesPaginationByChat[chatId] = ChatPagination(
+                oldestKnownId: result.entries.first?.id.uuidString,
+                hasMore: result.hasMoreBefore,
+                loadingOlder: false
+            )
+            if let plan = result.latestPlan {
+                planByChat[chatId] = plan
+            }
+            applyRolloutMessages(
+                messages,
+                lastTurnInterrupted: result.lastTurnInterrupted,
+                chatId: chatId
+            )
+            scheduleChatMarkdownPrewarm(messages: messages)
+            return true
+        }
+
         let locator = codexRolloutLocator
         sessionHistoryHydrationTasks[chatId] = Task.detached(priority: .userInitiated) { [weak self] in
             let locateStarted = CFAbsoluteTimeGetCurrent()

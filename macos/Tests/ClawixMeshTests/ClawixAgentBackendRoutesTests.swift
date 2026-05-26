@@ -27,6 +27,34 @@ final class ClawixAgentBackendRoutesTests: XCTestCase {
         )
     }
 
+    func testCodexRolloutLocatorLikelyDayMatchDoesNotUseGlobalScan() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let threadId = "019e643b-920c-7112-9276-f49441fe8b7d"
+        let unrelated = root
+            .appendingPathComponent("archive", isDirectory: true)
+            .appendingPathComponent("nested", isDirectory: true)
+        try FileManager.default.createDirectory(at: unrelated, withIntermediateDirectories: true)
+        let globalOnly = unrelated.appendingPathComponent("rollout-\(threadId).jsonl")
+        try "{}\n".write(to: globalOnly, atomically: true, encoding: .utf8)
+
+        XCTAssertNil(
+            CodexRolloutLocator.findLikelyDayMatch(
+                threadId: threadId,
+                sessionsRoot: root
+            )
+        )
+        XCTAssertEqual(
+            CodexRolloutLocator.find(
+                threadId: threadId,
+                sessionsRoot: root
+            )?.resolvingSymlinksInPath(),
+            globalOnly.resolvingSymlinksInPath()
+        )
+    }
+
     func testAgentBackendRoutesCentralizeExecutableLookupPaths() throws {
         let routesSource = try readSource("AgentBackend/ClawixAgentBackendRoutes.swift")
         let titleGeneratorSource = try readSource("AgentBackend/TitleGenerator.swift")
