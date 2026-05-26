@@ -3358,6 +3358,42 @@
           "authStorePath": "/Users/tester/.hermes/auth.json"
         },
         "redactionPolicy": "redacted_paths_and_presence_only",
+        "redactedConfigSnapshot": {
+          "path": "/Users/tester/.hermes/config.yaml",
+          "exists": true,
+          "valuePolicy": "keys_and_value_kinds_only_no_plaintext_values",
+          "secretPolicy": "secret_keys_are_presence_only",
+          "entries": [
+            {
+              "key": "model",
+              "valueState": "present",
+              "valueKind": "string",
+              "redaction": "value_redacted",
+              "secret": false,
+              "source": "yaml-scalar"
+            },
+            {
+              "key": "providers.openai.api_key",
+              "valueState": "present",
+              "valueKind": "string",
+              "redaction": "secret_key_presence_only",
+              "secret": true,
+              "source": "yaml-scalar"
+            },
+            {
+              "key": "channels.slack.signing_secret",
+              "valueState": "present",
+              "valueKind": "string",
+              "redaction": "secret_key_presence_only",
+              "secret": true,
+              "source": "yaml-scalar"
+            }
+          ],
+          "totalEntryCount": 3,
+          "secretEntryCount": 2,
+          "parseMode": "yaml-scalar",
+          "truncated": false
+        },
         "capability": {
           "supported": true,
           "status": "ready",

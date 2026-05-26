@@ -558,8 +558,31 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let canonicalPaths: [String: String]?
             let managedFiles: [String]?
             let diagnostics: Status.Diagnostics?
+            let redactedConfigSnapshot: RedactedConfigSnapshot?
             let capability: RuntimeCapability?
             let supportContract: SupportContract?
+
+            struct RedactedConfigSnapshot: Decodable, Equatable {
+                let path: String?
+                let exists: Bool?
+                let valuePolicy: String?
+                let secretPolicy: String?
+                let entries: [Entry]?
+                let totalEntryCount: Int?
+                let secretEntryCount: Int?
+                let parseMode: String?
+                let truncated: Bool?
+
+                struct Entry: Decodable, Equatable, Identifiable {
+                    var id: String { key ?? "unknown-config-key" }
+                    let key: String?
+                    let valueState: String?
+                    let valueKind: String?
+                    let redaction: String?
+                    let secret: Bool?
+                    let source: String?
+                }
+            }
         }
     }
 
@@ -1086,6 +1109,101 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         .compactMap { $0 }
     }
 
+    private static func syntheticRuntimeResource(
+        id: String,
+        label: String,
+        status: String?,
+        kind: String?,
+        path: String? = nil,
+        summary: String? = nil,
+        enabled: Bool? = nil,
+        limitations: [String]? = nil,
+        attributes: [String]? = nil
+    ) -> RuntimeResource {
+        RuntimeResource(
+            id: id,
+            label: label,
+            status: status,
+            kind: kind,
+            path: path,
+            enabled: enabled,
+            summary: summary,
+            updatedAt: nil,
+            sizeBytes: nil,
+            pinned: nil,
+            nativeIdentifier: nil,
+            provenance: nil,
+            limitations: limitations,
+            attributes: attributes,
+            modelId: nil,
+            provider: nil,
+            available: nil,
+            source: nil,
+            isDefault: nil,
+            scope: nil,
+            parentSessionId: nil,
+            toolCallCount: nil,
+            inputTokens: nil,
+            outputTokens: nil,
+            cacheReadTokens: nil,
+            cacheWriteTokens: nil,
+            reasoningTokens: nil,
+            billingProvider: nil,
+            billingMode: nil,
+            estimatedCostUsd: nil,
+            actualCostUsd: nil,
+            costStatus: nil,
+            apiCallCount: nil,
+            providerAuth: nil,
+            envVars: nil,
+            lastError: nil,
+            metadata: nil,
+            pinAuthority: nil,
+            divergence: nil,
+            localOverlay: nil
+        )
+    }
+
+    private static func configurationSnapshotResources(
+        _ snapshot: DomainData.ConfigurationBucket.RedactedConfigSnapshot?
+    ) -> [RuntimeResource] {
+        guard let snapshot else { return [] }
+        let summary = syntheticRuntimeResource(
+            id: "configuration-redacted-snapshot",
+            label: "Redacted config snapshot",
+            status: snapshot.exists == true ? "projected" : "degraded",
+            kind: "redacted_config_snapshot",
+            path: snapshot.path,
+            summary: "Config values are redacted; only keys, value kinds, and presence are displayed.",
+            attributes: [
+                snapshot.valuePolicy.map { "value policy: \($0)" },
+                snapshot.secretPolicy.map { "secret policy: \($0)" },
+                snapshot.parseMode.map { "parse mode: \($0)" },
+                snapshot.totalEntryCount.map { "entries: \($0)" },
+                snapshot.secretEntryCount.map { "secret entries: \($0)" },
+                snapshot.truncated.map { "truncated: \($0)" }
+            ].compactMap { $0 }
+        )
+        let entries = (snapshot.entries ?? []).map { entry in
+            syntheticRuntimeResource(
+                id: "configuration-key-\((entry.key ?? "unknown").replacingOccurrences(of: ".", with: "-"))",
+                label: entry.key ?? "Config key",
+                status: entry.secret == true ? "redacted" : "projected",
+                kind: "config_key",
+                summary: entry.secret == true ? "Secret key presence only." : "Config value redacted.",
+                attributes: [
+                    entry.key.map { "key: \($0)" },
+                    entry.valueState.map { "value state: \($0)" },
+                    entry.valueKind.map { "value kind: \($0)" },
+                    entry.redaction.map { "redaction: \($0)" },
+                    entry.source.map { "source: \($0)" },
+                    entry.secret.map { "secret: \($0)" }
+                ].compactMap { $0 }
+            )
+        }
+        return [summary] + entries
+    }
+
     private func configurationResources() -> [RuntimeResource] {
         let canonicalPaths = domainData?.configuration?.canonicalPaths ?? workspace?.canonicalPaths ?? [:]
         let managedFiles = domainData?.configuration?.managedFiles ?? workspace?.managedFiles ?? []
@@ -1183,6 +1301,9 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
                     localOverlay: nil
                 )
             }
+        let redactedSnapshotResources = Self.configurationSnapshotResources(
+            domainData?.configuration?.redactedConfigSnapshot
+        )
         let diagnosticsResources: [RuntimeResource] = {
             guard let lastError = domainData?.configuration?.diagnostics?.lastError else { return [] }
             return [
@@ -1277,7 +1398,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
                 )
             ]
         }()
-        return pathResources + managedFileResources + diagnosticsResources + capabilityResources
+        return pathResources + managedFileResources + redactedSnapshotResources + diagnosticsResources + capabilityResources
     }
 }
 
