@@ -670,7 +670,13 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                 $0.claim.map { Pill(id: "claim", label: $0, tone: ClawJSRuntimeLensStatusTone.supportClaim($0)) },
                 $0.strategy.map { Pill(id: "strategy", label: $0, tone: .muted) },
                 $0.count.map { Pill(id: "count", label: "\($0)", tone: .muted) }
-            ]), detailLines: optionalLines([$0.policyLabel, $0.limitationsLabel, $0.provenanceLabel]), accessibilityLabel: $0.accessibilityLabel)
+            ]), detailLines: optionalLines([
+                $0.policyLabel,
+                $0.officialCommandsLabel.map { "official commands \($0)" },
+                $0.evidenceRequirementsLabel.map { "evidence \($0)" },
+                $0.limitationsLabel,
+                $0.provenanceLabel
+            ]), accessibilityLabel: $0.accessibilityLabel)
         }, accessibilityLabel: presentation.accessibilityLabel)
     }
 

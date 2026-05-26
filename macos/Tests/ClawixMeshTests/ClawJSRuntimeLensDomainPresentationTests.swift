@@ -116,7 +116,9 @@ final class ClawJSRuntimeLensDomainPresentationTests: XCTestCase {
             "runtime-ecosystem-manifest, runtime example, domain channels"
         )
         XCTAssertEqual(channelPresentation.commandCount, 3)
+        XCTAssertEqual(channelPresentation.officialCommandsLabel, "example gateway, example gateway setup, example gateway start")
         XCTAssertEqual(channelPresentation.evidenceRequirementCount, 1)
+        XCTAssertEqual(channelPresentation.evidenceRequirementsLabel, "example.channels.live_evidence")
         XCTAssertEqual(channelPresentation.limitationCount, 1)
         XCTAssertEqual(channelPresentation.limitationsLabel, "normalized")
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("external pending true"))
@@ -125,6 +127,8 @@ final class ClawJSRuntimeLensDomainPresentationTests: XCTestCase {
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("persistence secret_refs_only"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("write back allowed false"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("validation external_pending_for_live_accounts"))
+        XCTAssertTrue(channelPresentation.accessibilityLabel.contains("official commands example gateway, example gateway setup, example gateway start"))
+        XCTAssertTrue(channelPresentation.accessibilityLabel.contains("evidence ids example.channels.live_evidence"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("limitations normalized"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("provenance source runtime-ecosystem-manifest"))
         XCTAssertTrue(channelPresentation.accessibilityLabel.contains("provenance runtime example"))

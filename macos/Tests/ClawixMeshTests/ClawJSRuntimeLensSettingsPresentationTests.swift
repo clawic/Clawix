@@ -101,6 +101,12 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(details.contains("Drift policy: hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete"))
         XCTAssertTrue(support.accessibilityLabel.contains("official snapshot 2026-05-26"))
 
+        let domains = try XCTUnwrap(presentation.sections.first { $0.id == "domains" })
+        let channelDomain = try XCTUnwrap(domains.rows.first { $0.label == "Channels" })
+        XCTAssertTrue(channelDomain.detailLines.contains("official commands hermes gateway, hermes gateway setup, hermes gateway run, hermes gateway start"))
+        XCTAssertTrue(channelDomain.detailLines.contains("evidence hermes.channels.live_evidence"))
+        XCTAssertTrue(channelDomain.detailLines.contains("runtime-ecosystem-manifest, runtime hermes, domain channels"))
+
         let commands = try XCTUnwrap(presentation.sections.first { $0.id == "commands" })
         let sendCommand = try XCTUnwrap(commands.rows.first {
             $0.label == "runtime hermes sessions send --session-key <id> --message <text> --confirm-runtime-write"

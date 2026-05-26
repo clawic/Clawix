@@ -76,8 +76,16 @@ struct ClawJSRuntimeLensDomainPresentation: Equatable {
             officialCommands.count
         }
 
+        var officialCommandsLabel: String? {
+            ClawJSRuntimeLensDomainPresentation.listLabel(officialCommands, limit: 4)
+        }
+
         var evidenceRequirementCount: Int {
             evidenceRequirements.count
+        }
+
+        var evidenceRequirementsLabel: String? {
+            ClawJSRuntimeLensDomainPresentation.listLabel(evidenceRequirements.map(\.id), limit: 4)
         }
 
         var limitationCount: Int {
@@ -112,7 +120,9 @@ struct ClawJSRuntimeLensDomainPresentation: Equatable {
                 validation.map { "validation \($0)" },
                 "external pending \(externalPending)",
                 "commands \(commandCount)",
+                officialCommandsLabel.map { "official commands \($0)" },
                 "evidence \(evidenceRequirementCount)",
+                evidenceRequirementsLabel.map { "evidence ids \($0)" },
                 "limitations \(limitationCount)",
                 limitationsLabel.map { "limitations \($0)" },
                 provenanceSource.map { "provenance source \($0)" },
