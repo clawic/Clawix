@@ -67,6 +67,14 @@ function requireFields(failures, object, label, fields) {
   }
 }
 
+function requireArrayField(failures, object, label, field) {
+  if (!Array.isArray(object?.[field])) {
+    fail(failures, `${label}.${field} must be an array`);
+    return [];
+  }
+  return object[field];
+}
+
 function requireFile(failures, dir, relativePath) {
   const file = path.join(dir, relativePath);
   if (!fs.existsSync(file)) fail(failures, `${relativePath} is missing`);
@@ -453,6 +461,12 @@ function validateRun(runDir, schema, options = {}) {
   const failureStates = readJsonl(path.join(runDir, "logs/failure-ui-states.jsonl"));
 
   requireFields(failures, run, "run.json", schema.runRequiredFields);
+  requireFields(failures, metricsArtifact, "metrics.json", ["schemaVersion", "runId", "metrics"]);
+  requireFields(failures, failuresArtifact, "failures.json", ["schemaVersion", "runId", "failures"]);
+  const metricList = requireArrayField(failures, metricsArtifact, "metrics.json", "metrics");
+  const failureList = requireArrayField(failures, failuresArtifact, "failures.json", "failures");
+  if (metricsArtifact.schemaVersion !== 1) fail(failures, "metrics.json.schemaVersion must be 1");
+  if (failuresArtifact.schemaVersion !== 1) fail(failures, "failures.json.schemaVersion must be 1");
   if (run.program !== "macos-ux-trace-harness") fail(failures, "run.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(run.status)) fail(failures, `run.json.status ${run.status} is not allowed`);
   validatePrivateBoundary(failures, run.privateBoundary, "run.json");
@@ -564,7 +578,7 @@ function validateRun(runDir, schema, options = {}) {
   const kpiIds = new Set();
   const metricKeys = new Set();
   const metricRows = new Map();
-  for (const [index, metric] of (metricsArtifact.metrics || []).entries()) {
+  for (const [index, metric] of metricList.entries()) {
     const label = `metrics.json.metrics[${index}]`;
     requireFields(failures, metric, label, schema.metricRequiredFields);
     kpiIds.add(metric.kpiId);
@@ -578,8 +592,8 @@ function validateRun(runDir, schema, options = {}) {
   validateBaselineComparison(failures, baselineComparison, "baseline-comparison.json", {
     metricKeys,
     metricRows,
-    failureRows: failuresArtifact.failures || [],
-    expectedCount: (metricsArtifact.metrics || []).length,
+    failureRows: failureList,
+    expectedCount: metricList.length,
   });
 
   const failureTypes = new Set(schema.failureTypes);
@@ -607,7 +621,7 @@ function validateRun(runDir, schema, options = {}) {
   }
 
   const failureRowsByEventKey = new Map();
-  for (const [index, failure] of (failuresArtifact.failures || []).entries()) {
+  for (const [index, failure] of failureList.entries()) {
     const label = `failures.json.failures[${index}]`;
     requireFields(failures, failure, label, ["type", "message", "stepId", "actionId", "surfaceId", "controlId", "kpiId"]);
     if (!failureTypes.has(failure.type)) fail(failures, `${label}.type ${failure.type} is not declared`);
@@ -652,13 +666,13 @@ function validateRun(runDir, schema, options = {}) {
     }
   }
 
-  if (failureStates.length > 0 && !(failuresArtifact.failures || []).some((failure) => failure.finalUIStateRef)) {
+  if (failureStates.length > 0 && !failureList.some((failure) => failure.finalUIStateRef)) {
     fail(failures, "failure UI state sidecar rows require matching failures.json finalUIStateRef");
   }
-  if (!options.allowStatusMismatch && failuresArtifact.failures?.length > 0 && run.status === "PASS") {
+  if (!options.allowStatusMismatch && failureList.length > 0 && run.status === "PASS") {
     fail(failures, "run.json.status must not be PASS when failures.json has failures");
   }
-  if (!options.allowStatusMismatch && failuresArtifact.failures?.length === 0 && run.status !== "PASS") {
+  if (!options.allowStatusMismatch && failureList.length === 0 && run.status !== "PASS") {
     fail(failures, "run.json.status should be PASS when failures.json is empty");
   }
   if (stableHash(run).length < 10) fail(failures, "internal hash sanity failed");
@@ -670,8 +684,8 @@ function validateRun(runDir, schema, options = {}) {
     runId: run.runId,
     status: run.status,
     events: events.length,
-    metrics: (metricsArtifact.metrics || []).length,
-    failures: (failuresArtifact.failures || []).length,
+    metrics: metricList.length,
+    failures: failureList.length,
     failureUIStates: failureStates.length,
     sampleCounts,
     validationFailures: failures,
@@ -693,6 +707,12 @@ function validateSuite(suiteDir, schema) {
     ? suiteBaselineComparison
     : {};
   requireFields(failures, suite, "suite.json", schema.suiteRequiredFields);
+  requireFields(failures, suiteMetrics, "suite-metrics.json", ["schemaVersion", "suiteId", "metrics"]);
+  requireFields(failures, suiteFailures, "suite-failures.json", ["schemaVersion", "suiteId", "failures"]);
+  const suiteMetricList = requireArrayField(failures, suiteMetrics, "suite-metrics.json", "metrics");
+  const suiteFailureList = requireArrayField(failures, suiteFailures, "suite-failures.json", "failures");
+  if (suiteMetrics.schemaVersion !== 1) fail(failures, "suite-metrics.json.schemaVersion must be 1");
+  if (suiteFailures.schemaVersion !== 1) fail(failures, "suite-failures.json.schemaVersion must be 1");
   if (suite.program !== "macos-ux-trace-harness") fail(failures, "suite.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(suite.status)) fail(failures, `suite.json.status ${suite.status} is not allowed`);
   validatePrivateBoundary(failures, suite.privateBoundary, "suite.json");
@@ -714,7 +734,7 @@ function validateSuite(suiteDir, schema) {
   }
   const suiteMetricKeys = new Set();
   const suiteMetricRows = new Map();
-  for (const metric of suiteMetrics.metrics || []) {
+  for (const metric of suiteMetricList) {
     const metricKey = baselineComparisonMetricKey(metric);
     suiteMetricKeys.add(metricKey);
     suiteMetricRows.set(metricKey, metric);
@@ -722,8 +742,8 @@ function validateSuite(suiteDir, schema) {
   validateBaselineComparison(failures, suiteBaselineComparison, "suite-baseline-comparison.json", {
     metricKeys: suiteMetricKeys,
     metricRows: suiteMetricRows,
-    failureRows: suiteFailures.failures || [],
-    expectedCount: (suiteMetrics.metrics || []).length,
+    failureRows: suiteFailureList,
+    expectedCount: suiteMetricList.length,
   });
   if (!Array.isArray(suiteBaselineObject.childRuns)) {
     fail(failures, "suite-baseline-comparison.json.childRuns must be an array");
@@ -834,11 +854,11 @@ function validateSuite(suiteDir, schema) {
     if (suite.status !== expectedStatus) fail(failures, `suite.json.status must be ${expectedStatus} for child run statuses`);
   }
   const actualSuiteMetricRows = new Map();
-  for (const metric of suiteMetrics.metrics || []) {
+  for (const metric of suiteMetricList) {
     addMultisetRow(actualSuiteMetricRows, stableAggregateKey(metricAggregateFields, metric));
   }
   const actualSuiteFailureRows = new Map();
-  for (const failure of suiteFailures.failures || []) {
+  for (const failure of suiteFailureList) {
     addMultisetRow(actualSuiteFailureRows, stableAggregateKey(failureAggregateFields, failure));
   }
   compareMultisets(failures, "suite-metrics.json", expectedSuiteMetricRows, actualSuiteMetricRows);
@@ -851,8 +871,8 @@ function validateSuite(suiteDir, schema) {
     suiteId: suite.suiteId,
     status: suite.status,
     runs: runResults.length,
-    metrics: (suiteMetrics.metrics || []).length,
-    failures: (suiteFailures.failures || []).length,
+    metrics: suiteMetricList.length,
+    failures: suiteFailureList.length,
     validationFailures: failures,
   };
 }
