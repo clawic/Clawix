@@ -189,6 +189,38 @@ function validateEvidenceSources(failures, sources, label, schema) {
   }
 }
 
+function validateExitPolicy(failures, policy, status, label, schema) {
+  requireFields(failures, policy, `${label}.exitPolicy`, schema.exitPolicyRequiredFields || [
+    "gate",
+    "gateEnforced",
+    "nonZeroOnStatuses",
+    "computedExitCode",
+    "reason",
+  ]);
+  if (!Array.isArray(policy?.nonZeroOnStatuses)) {
+    fail(failures, `${label}.exitPolicy.nonZeroOnStatuses must be an array`);
+    return;
+  }
+  const allowed = new Set(schema.exitPolicyContract?.allowedNonZeroStatuses || []);
+  for (const row of policy.nonZeroOnStatuses) {
+    if (allowed.size > 0 && !allowed.has(row)) {
+      fail(failures, `${label}.exitPolicy.nonZeroOnStatuses contains unsupported status ${row}`);
+    }
+  }
+  const expectedExitCode = policy.nonZeroOnStatuses.includes(status) ? 1 : 0;
+  if (policy.computedExitCode !== expectedExitCode) {
+    fail(failures, `${label}.exitPolicy.computedExitCode must be ${expectedExitCode} for status ${status}`);
+  }
+  if (policy.gate === "p0") {
+    if (policy.gateEnforced !== true) fail(failures, `${label}.exitPolicy.gateEnforced must be true for p0 gate`);
+    for (const statusName of ["FAIL", "INVALID"]) {
+      if (!policy.nonZeroOnStatuses.includes(statusName)) {
+        fail(failures, `${label}.exitPolicy.nonZeroOnStatuses must include ${statusName} for p0 gate`);
+      }
+    }
+  }
+}
+
 function validateArtifactIndex(failures, rows, label) {
   for (const row of rows || []) {
     if (!isRelativeSafe(row)) fail(failures, `${label}.artifactIndex contains unsafe path ${row}`);
@@ -240,6 +272,7 @@ function validateRun(runDir, schema, options = {}) {
   if (run.program !== "macos-ux-trace-harness") fail(failures, "run.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(run.status)) fail(failures, `run.json.status ${run.status} is not allowed`);
   validatePrivateBoundary(failures, run.privateBoundary, "run.json");
+  validateExitPolicy(failures, run.exitPolicy, run.status, "run.json", schema);
   validateEvidenceSources(failures, run.evidenceSources, "run.json", schema);
   validateTraceIsolation(failures, run.traceIsolation, "run.json", "runDirectoryName", path.basename(runDir));
   if (run.traceIsolation?.runDirectoryMatchesRunId !== true) fail(failures, "run.json.traceIsolation.runDirectoryMatchesRunId must be true");
@@ -439,6 +472,7 @@ function validateSuite(suiteDir, schema) {
   if (suite.program !== "macos-ux-trace-harness") fail(failures, "suite.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(suite.status)) fail(failures, `suite.json.status ${suite.status} is not allowed`);
   validatePrivateBoundary(failures, suite.privateBoundary, "suite.json");
+  validateExitPolicy(failures, suite.exitPolicy, suite.status, "suite.json", schema);
   validateEvidenceSources(failures, suite.evidenceSources, "suite.json", schema);
   validateTraceIsolation(failures, suite.traceIsolation, "suite.json", "suiteDirectoryName", path.basename(suiteDir));
   if (suite.traceIsolation?.suiteDirectoryMatchesSuiteId !== true) fail(failures, "suite.json.traceIsolation.suiteDirectoryMatchesSuiteId must be true");

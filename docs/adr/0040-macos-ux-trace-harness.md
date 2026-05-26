@@ -83,8 +83,8 @@ explicit external-pending condition rather than an implied pass.
   `scripts/verify_macos_ux_trace_evidence.mjs` validates generated run/suite
   evidence against the schema, event correlation, metric references, failure
   sidecars, normalized diagnostic sample events, contract source hashes,
-  trace-isolation metadata, and private-boundary flags before evidence can
-  support closure.
+  enforceable gate exit policy, trace-isolation metadata, and private-boundary
+  flags before evidence can support closure.
 - **Persistence**: public-safe JSON contracts live under `docs/ui/`; private
   baselines and run evidence stay outside the public repo.
 - **Validation**: `node scripts/ui_ux_trace_harness_check.mjs`.

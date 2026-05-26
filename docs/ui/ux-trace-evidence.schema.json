@@ -33,6 +33,7 @@
     "status",
     "launchMode",
     "instrumentationFlags",
+    "exitPolicy",
     "evidenceSources",
     "traceIsolation",
     "overheadCalibration",
@@ -54,6 +55,7 @@
     "osVersion",
     "launchMode",
     "instrumentationFlags",
+    "exitPolicy",
     "evidenceSources",
     "traceIsolation",
     "overheadCalibration",
@@ -128,6 +130,21 @@
       "ux-trace-evidence-schema",
       "macos-ux-trace-fixture-generator",
       "macos-ux-trace-evidence-verifier"
+    ]
+  },
+  "exitPolicyRequiredFields": [
+    "gate",
+    "gateEnforced",
+    "nonZeroOnStatuses",
+    "computedExitCode",
+    "reason"
+  ],
+  "exitPolicyContract": {
+    "p0Gate": "When --gate p0 is active, FAIL and INVALID evidence must compute exit code 1 so P0 regression gates are enforceable by scripts and CI wrappers.",
+    "dryRunWithoutGate": "Dry-run evidence without an enforcing gate may stay process-successful while reporting BLOCKED evidence.",
+    "allowedNonZeroStatuses": [
+      "FAIL",
+      "INVALID"
     ]
   },
   "eventRequiredFields": [

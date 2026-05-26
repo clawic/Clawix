@@ -604,6 +604,7 @@ if (evidenceSchema) {
     "traceIsolationRequiredFields",
     "overheadCalibrationRequiredFields",
     "evidenceSourcesRequiredFields",
+    "exitPolicyRequiredFields",
     "eventRequiredFields",
     "eventTypes",
     "metricRequiredFields",
@@ -618,8 +619,14 @@ if (evidenceSchema) {
   requireUniqueStringArray(requireArray(evidenceSchema.eventTypes, `${evidenceSchemaPath}.eventTypes`, expectedEventTypes.length), `${evidenceSchemaPath}.eventTypes`, expectedEventTypes);
   requireUniqueStringArray(requireArray(evidenceSchema.suiteDirectoryShape, `${evidenceSchemaPath}.suiteDirectoryShape`), `${evidenceSchemaPath}.suiteDirectoryShape`, ["suite.json", "suite-metrics.json", "suite-failures.json"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceDirectoryShape, `${evidenceSchemaPath}.evidenceDirectoryShape`), `${evidenceSchemaPath}.evidenceDirectoryShape`, ["logs/failure-ui-states.jsonl"]);
-  requireUniqueStringArray(requireArray(evidenceSchema.suiteRequiredFields, `${evidenceSchemaPath}.suiteRequiredFields`), `${evidenceSchemaPath}.suiteRequiredFields`, ["suiteId", "suiteName", "scenarioCount", "runs", "artifactIndex", "evidenceSources", "traceIsolation", "overheadCalibration"]);
-  requireUniqueStringArray(requireArray(evidenceSchema.runRequiredFields, `${evidenceSchemaPath}.runRequiredFields`), `${evidenceSchemaPath}.runRequiredFields`, ["runId", "scenarioId", "fixtureProfile", "artifactIndex", "evidenceSources", "traceIsolation", "overheadCalibration"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.suiteRequiredFields, `${evidenceSchemaPath}.suiteRequiredFields`), `${evidenceSchemaPath}.suiteRequiredFields`, ["suiteId", "suiteName", "scenarioCount", "runs", "artifactIndex", "exitPolicy", "evidenceSources", "traceIsolation", "overheadCalibration"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.runRequiredFields, `${evidenceSchemaPath}.runRequiredFields`), `${evidenceSchemaPath}.runRequiredFields`, ["runId", "scenarioId", "fixtureProfile", "artifactIndex", "exitPolicy", "evidenceSources", "traceIsolation", "overheadCalibration"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.exitPolicyRequiredFields, `${evidenceSchemaPath}.exitPolicyRequiredFields`), `${evidenceSchemaPath}.exitPolicyRequiredFields`, ["gate", "gateEnforced", "nonZeroOnStatuses", "computedExitCode", "reason"]);
+  requireFields(evidenceSchema.exitPolicyContract, `${evidenceSchemaPath}.exitPolicyContract`, ["p0Gate", "dryRunWithoutGate", "allowedNonZeroStatuses"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.exitPolicyContract?.allowedNonZeroStatuses, `${evidenceSchemaPath}.exitPolicyContract.allowedNonZeroStatuses`), `${evidenceSchemaPath}.exitPolicyContract.allowedNonZeroStatuses`, ["FAIL", "INVALID"]);
+  if (!String(evidenceSchema.exitPolicyContract?.p0Gate ?? "").includes("exit code 1")) {
+    fail(`${evidenceSchemaPath}.exitPolicyContract.p0Gate must require exit code 1`);
+  }
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
   requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "requiredSourceIds"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesContract?.requiredSourceIds, `${evidenceSchemaPath}.evidenceSourcesContract.requiredSourceIds`), `${evidenceSchemaPath}.evidenceSourcesContract.requiredSourceIds`, ["ux-trace-harness-registry", "ux-trace-scenarios-manifest", "ux-trace-evidence-schema", "macos-ux-trace-fixture-generator", "macos-ux-trace-evidence-verifier"]);
@@ -897,6 +904,10 @@ if (runnerSource) {
     "eventType: \"bridge.sample\"",
     "function traceIsolationForRun(",
     "function evidenceSourceReferences(",
+    "function exitPolicyForRun(",
+    "computedExitCode: nonZeroOnStatuses.includes(status) ? 1 : 0",
+    "process.exitCode = result.exitPolicy?.computedExitCode ?? 0",
+    "self-test gated dry-run with missing P0 baseline must exit 1",
     "scenarioManifest: contractSourceReference(\"ux-trace-scenarios-manifest\"",
     "evidenceSources: evidenceSourceReferences()",
     "traceIsolation: traceIsolationForRun(",
@@ -930,6 +941,8 @@ if (evidenceVerifierSource) {
     "sampleCounts",
     "validateTraceIsolation(",
     "validateEvidenceSources(",
+    "validateExitPolicy(",
+    "exitPolicy.computedExitCode must be",
     "contentHash does not match current source content",
     "runDirectoryMatchesRunId must be true",
     "suiteDirectoryMatchesSuiteId must be true",

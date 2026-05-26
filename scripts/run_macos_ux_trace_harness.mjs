@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 
 const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
+const runnerPath = new URL(import.meta.url).pathname;
 const registryPath = path.join(rootDir, "docs/ui/ux-trace-harness.registry.json");
 const scenarioManifestPath = path.join(rootDir, "docs/ui/ux-trace-scenarios.manifest.json");
 const evidenceSchemaPath = path.join(rootDir, "docs/ui/ux-trace-evidence.schema.json");
@@ -844,6 +845,20 @@ function baselineComparisonStatus(comparisons, gate) {
   return "gate_passed";
 }
 
+function exitPolicyForRun(args, status) {
+  const gateEnforced = args.gate === "p0";
+  const nonZeroOnStatuses = gateEnforced ? ["FAIL", "INVALID"] : [];
+  return {
+    gate: args.gate || null,
+    gateEnforced,
+    nonZeroOnStatuses,
+    computedExitCode: nonZeroOnStatuses.includes(status) ? 1 : 0,
+    reason: gateEnforced
+      ? "P0 gate enforcement returns non-zero for failed or invalid gated evidence"
+      : "No enforcing gate requested; evidence status is reported without failing the process",
+  };
+}
+
 function writeBaselineArtifact(file, context, metrics) {
   if (!file) return null;
   const baseline = {
@@ -1375,6 +1390,7 @@ async function runScenario(args) {
   events.close();
   const finishedAt = isoNow();
   const overheadCalibration = overheadCalibrationForRun(args, options, metrics, eventStats, failureUIStateStats);
+  const exitPolicy = exitPolicyForRun(args, status);
   const run = {
     schemaVersion: 1,
     runId,
@@ -1397,6 +1413,7 @@ async function runScenario(args) {
       computerUseWitness: false,
       mainDatabaseTraceWrites: false,
     },
+    exitPolicy,
     evidenceSources: evidenceSourceReferences(),
     traceIsolation: traceIsolationForRun(runDir, runId, options),
     overheadCalibration,
@@ -1454,6 +1471,7 @@ async function runScenario(args) {
     metrics: metrics.length,
     baselinePath: writtenBaselinePath,
     overheadCalibration,
+    exitPolicy,
   };
 }
 
@@ -1525,6 +1543,7 @@ async function runSuite(args) {
   const finishedAt = isoNow();
   const suiteRunDirs = results.map((result) => path.relative(suiteDir, result.runDir));
   const overheadCalibration = overheadCalibrationForSuite(results);
+  const exitPolicy = exitPolicyForRun(args, status);
   const suite = {
     schemaVersion: 1,
     suiteId,
@@ -1543,6 +1562,7 @@ async function runSuite(args) {
       computerUseWitness: false,
       mainDatabaseTraceWrites: false,
     },
+    exitPolicy,
     evidenceSources: evidenceSourceReferences(),
     traceIsolation: traceIsolationForSuite(suiteDir, suiteId, args, suiteRunDirs),
     overheadCalibration,
@@ -1582,6 +1602,7 @@ async function runSuite(args) {
     failures: failures.length,
     metrics: metrics.length,
     baselinePath: writtenBaselinePath,
+    exitPolicy,
     runs: results.map((result, index) => ({
       runId: result.runId,
       scenarioId: selections[index].scenarioId,
@@ -1623,6 +1644,29 @@ async function selfTest() {
   const suite = readJson(path.join(suiteResult.suiteDir, "suite.json"));
   if (suite.status !== "BLOCKED") throw new Error("dry-run suite self-test must produce BLOCKED suite evidence");
   verifyEvidencePath(suiteResult.suiteDir);
+  const gateResult = spawnSync(process.execPath, [
+    runnerPath,
+    "--dry-run",
+    "--scenario",
+    "startup-to-usable",
+    "--fixture-profile",
+    "smoke",
+    "--gate",
+    "p0",
+    "--out-dir",
+    outDir,
+    "--json",
+  ], {
+    cwd: rootDir,
+    encoding: "utf8",
+  });
+  if (gateResult.status !== 1) {
+    throw new Error("self-test gated dry-run with missing P0 baseline must exit 1");
+  }
+  const gatePayload = gateResult.stdout ? JSON.parse(gateResult.stdout) : null;
+  if (gatePayload?.status !== "FAIL" || gatePayload?.exitPolicy?.computedExitCode !== 1) {
+    throw new Error("self-test gated dry-run must emit FAIL evidence with computed exit code 1");
+  }
   return result;
 }
 
@@ -1646,6 +1690,7 @@ async function main() {
   } else {
     console.log(`UX trace harness ${args.suite ? "suite" : "run"} ${result.status}: ${result.suiteDir || result.runDir}`);
   }
+  process.exitCode = result.exitPolicy?.computedExitCode ?? 0;
 }
 
 main().catch((error) => {

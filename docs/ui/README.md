@@ -327,6 +327,9 @@ produced it. They also include a `traceIsolation` block proving
 per-run/per-suite directories, no global shared trace file, no main app
 database trace writes, and relative-only artifact indexes; external fixture
 paths are represented by hashes rather than local absolute paths.
+`exitPolicy` records whether a gate is enforcing the run; when `--gate p0`
+produces `FAIL` or `INVALID` evidence, the runner computes and returns exit
+code 1 so scripts can enforce P0 regression gates.
 They also include `overheadCalibration`: a bounded writer summary plus either
 a hash-only harness-disabled control comparison supplied with
 `--overhead-control <file>` or an explicit `external_pending_control_run`
