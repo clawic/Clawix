@@ -309,6 +309,16 @@ extension AppState {
         sessionHistoryHydrationTasks[chatId] = Task { @MainActor [weak self] in
             guard let self else { return }
             defer { self.sessionHistoryHydrationTasks[chatId] = nil }
+            if await self.hydrateFromCodexRolloutFallback(threadId: threadId, chatId: chatId) {
+                RenderProbe.mark(
+                    "ChatHydrationLocalFallbackBeforeSession",
+                    fields: [
+                        "chat": chatId.uuidString,
+                        "thread": threadId
+                    ]
+                )
+                return
+            }
             do {
                 let page = try await self.loadClawJSSessionMessageTail(sessionId: threadId)
                 let records = page.records

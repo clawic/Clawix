@@ -276,7 +276,9 @@ final class ChatHydrationTests: XCTestCase {
         configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
         let session = URLSession(configuration: configuration)
         let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        var attempts = 0
         SessionsHistoryURLProtocol.handler = { request in
+            attempts += 1
             let response = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 200,
@@ -333,6 +335,7 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chatStore.transcript(for: chatId)?.messages.map(\.content), ["Original prompt", "Fallback history"])
         XCTAssertEqual(state.chats.first?.messages.count, 0)
         XCTAssertEqual(state.chats.first?.rolloutPath, rollout)
+        XCTAssertEqual(attempts, 0)
     }
 
     func testClawJSSessionHydrationLoadsOnlyTailWindowAndKeepsLegacyChatsSummaryOnly() async throws {
