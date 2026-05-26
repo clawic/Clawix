@@ -148,9 +148,9 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.commandCoverageSummary?.safeDefault, "guarded_command_coverage_does_not_promote_support")
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.recommended, false)
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.production, false)
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.upstreamContractBlockedCount, 12)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.upstreamContractBlockedCount, 15)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.statusCounts?["blocked_until_tui_gateway_wrapper_fixture"], 4)
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.statusCounts?["blocked_until_upstream_contract"], 12)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.statusCounts?["blocked_until_upstream_contract"], 15)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateBlockedCount, 2)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayBlockedCount, 4)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayWrapperBlockedCount, 4)
@@ -160,7 +160,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_read_projection_only_until_official_runtime_write_back_contract_exists"], 10)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["do_not_run_without_explicit_approval_and_redaction"], 4)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["do_not_run_without_approval_gate_fixture"], 2)
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_unpromoted_and_do_not_synthesize_runtime_state"], 4)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_unpromoted_and_do_not_synthesize_runtime_state"], 7)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_local_overlay_and_do_not_write_runtime_pin_state"], 2)
         let hermesWriteBackPolicy = "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence"
         XCTAssertEqual(snapshot.supportAudit?.syncPolicySummary?.writeBackPolicyCounts?[hermesWriteBackPolicy], 10)
@@ -190,6 +190,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         let hermesGatewayReentryPackets = snapshot.supportAudit?.evidenceReentryPackets?.filter {
             $0.requirementId?.hasPrefix("hermes.sessions.") == true
                 && $0.requirementId?.hasSuffix(".action_contract") == true
+                && $0.transportPolicyId == "hermes.tui_gateway.transport_lifecycle_policy"
         } ?? []
         XCTAssertEqual(hermesGatewayReentryPackets.map { $0.requirementId }, [
             "hermes.sessions.send.action_contract",
@@ -203,7 +204,28 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(hermesGatewayReentryPackets.allSatisfy {
             $0.productionTransportCommandShape == "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval"
         })
+        XCTAssertTrue(hermesGatewayReentryPackets.allSatisfy {
+            $0.officialTransportSurface == "stdio_or_websocket_json_rpc"
+        })
+        XCTAssertTrue(hermesGatewayReentryPackets.allSatisfy {
+            $0.officialTransportClasses == ["stdio_json_rpc", "websocket_json_rpc"]
+        })
+        XCTAssertTrue(hermesGatewayReentryPackets.allSatisfy {
+            $0.officialTransportSource == "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration"
+        })
+        XCTAssertTrue(hermesGatewayReentryPackets.allSatisfy {
+            $0.productionTransportBlocker == "approval_required_for_non_loopback_endpoint_and_lifecycle_management"
+        })
         XCTAssertTrue(hermesGatewayReentryPackets.allSatisfy { $0.doNotRunWithoutApproval == true })
+        let hermesReentryPresentation = ClawJSRuntimeLensEvidenceReentryPresentation.make(
+            packets: try XCTUnwrap(snapshot.supportAudit?.evidenceReentryPackets)
+        )
+        let hermesSendReentryRow = hermesReentryPresentation.rows.first {
+            $0.requirementId == "hermes.sessions.send.action_contract"
+        }
+        XCTAssertEqual(hermesSendReentryRow?.officialTransportSurface, "stdio_or_websocket_json_rpc")
+        XCTAssertEqual(hermesSendReentryRow?.officialTransportClassesLabel, "stdio_json_rpc, websocket_json_rpc")
+        XCTAssertEqual(hermesSendReentryRow?.productionTransportBlocker, "approval_required_for_non_loopback_endpoint_and_lifecycle_management")
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds?.contains("hermes.sessions.pin.native_write_back_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds?.contains("hermes.sessions.unpin.native_write_back_contract"), true)
         XCTAssertEqual(snapshot.status.capabilityMap?["memory"]?.status, "degraded")
@@ -503,6 +525,10 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(reentryPresentation.rows.first?.supportResolution, "external_pending_not_product_blocked")
         XCTAssertEqual(reentryPresentation.rows.first?.productDecision, "external_live_claim_not_supported_without_approved_redacted_evidence")
         XCTAssertEqual(reentryPresentation.rows.first?.userVisibleContract, "read_only_degraded_projection_until_live_evidence_is_approved")
+        XCTAssertEqual(reentryPresentation.rows.last?.officialTransportSurface, "stdio_or_websocket_json_rpc")
+        XCTAssertEqual(reentryPresentation.rows.last?.officialTransportClassesLabel, "stdio_json_rpc, websocket_json_rpc")
+        XCTAssertEqual(reentryPresentation.rows.last?.officialTransportSource, "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration")
+        XCTAssertEqual(reentryPresentation.rows.last?.productionTransportBlocker, "approval_required_for_non_loopback_endpoint_and_lifecycle_management")
     }
 
     func testRuntimeLensSessionDomainAndInventoryPresentationsExposeAllControlSurfaces() async throws {

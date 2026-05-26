@@ -212,21 +212,21 @@ if (!exists(hermesFixturePath)) {
   if (!readiness) {
     errors.push("Hermes runtime portal fixture missing evidenceReadinessSummary");
   } else {
-    requireEqual(readiness.totalRequirementCount, 22, "Hermes fixture total readiness requirement count");
+    requireEqual(readiness.totalRequirementCount, 25, "Hermes fixture total readiness requirement count");
     requireEqual(readiness.approvalRequiredCount, 6, "Hermes fixture approval-required count");
     requireEqual(readiness.externalPendingCount, 4, "Hermes fixture external-pending count");
-    requireEqual(readiness.upstreamContractBlockedCount, 12, "Hermes fixture upstream-contract blocked count");
+    requireEqual(readiness.upstreamContractBlockedCount, 15, "Hermes fixture upstream-contract blocked count");
     requireEqual(readiness.approvalGateBlockedCount, 2, "Hermes fixture approval-gate blocked count");
     requireEqual(readiness.tuiGatewayBlockedCount, 4, "Hermes fixture TUI Gateway blocked count");
     requireEqual(readiness.tuiGatewayWrapperBlockedCount, 4, "Hermes fixture TUI Gateway wrapper blocked count");
     requireEqual(readiness.tuiGatewayFixtureBackedCount, 0, "Hermes fixture TUI Gateway fixture-backed count");
     requireEqual(readiness.productionTransportBlockedCount, 4, "Hermes fixture production transport blocked count");
     requireEqual(readiness.writeBackContractBlockedCount, 12, "Hermes fixture write-back contract blocked count");
-    requireEqual(readiness.productBlockedCount, 18, "Hermes fixture product-blocked count");
+    requireEqual(readiness.productBlockedCount, 21, "Hermes fixture product-blocked count");
     requireEqual(readiness.safeDefaultCounts?.keep_read_projection_only_until_official_runtime_write_back_contract_exists, 10, "Hermes fixture read-projection safe-default count");
     requireEqual(readiness.safeDefaultCounts?.do_not_run_without_explicit_approval_and_redaction, 4, "Hermes fixture external live safe-default count");
     requireEqual(readiness.safeDefaultCounts?.do_not_run_without_approval_gate_fixture, 2, "Hermes fixture approval-gate safe-default count");
-    requireEqual(readiness.safeDefaultCounts?.keep_unpromoted_and_do_not_synthesize_runtime_state, 4, "Hermes fixture generic unpromoted safe-default count");
+    requireEqual(readiness.safeDefaultCounts?.keep_unpromoted_and_do_not_synthesize_runtime_state, 7, "Hermes fixture generic unpromoted safe-default count");
     requireEqual(readiness.safeDefaultCounts?.keep_local_overlay_and_do_not_write_runtime_pin_state, 2, "Hermes fixture local overlay pin safe-default count");
     requireEqual(supportAudit?.syncPolicySummary?.writeBackPolicyCounts?.[hermesWriteBackPolicy], 10, "Hermes fixture precise official write-back policy count");
     requireEqual(supportAudit?.syncPolicySummary?.writeBackPolicyCounts?.blocked_until_fixture_coverage, undefined, "Hermes fixture does not use generic fixture-coverage write-back policy");
@@ -256,7 +256,8 @@ if (!exists(hermesFixturePath)) {
     ], "Hermes fixture production transport requirement ids");
     const gatewayReentryPackets = (supportAudit?.evidenceReentryPackets ?? [])
       .filter((packet) => String(packet.requirementId ?? "").startsWith("hermes.sessions.")
-        && String(packet.requirementId ?? "").endsWith(".action_contract"));
+        && String(packet.requirementId ?? "").endsWith(".action_contract")
+        && packet.transportPolicyId === "hermes.tui_gateway.transport_lifecycle_policy");
     requireArrayEquals(gatewayReentryPackets.map((packet) => packet.requirementId), [
       "hermes.sessions.send.action_contract",
       "hermes.sessions.inject.action_contract",
@@ -274,6 +275,26 @@ if (!exists(hermesFixturePath)) {
         "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
         `Hermes fixture ${packet.requirementId} production command shape`
       );
+      requireEqual(
+        packet.officialTransportSurface,
+        "stdio_or_websocket_json_rpc",
+        `Hermes fixture ${packet.requirementId} official transport surface`
+      );
+      requireEqual(
+        (packet.officialTransportClasses ?? []).join(","),
+        "stdio_json_rpc,websocket_json_rpc",
+        `Hermes fixture ${packet.requirementId} official transport classes`
+      );
+      requireEqual(
+        packet.officialTransportSource,
+        "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+        `Hermes fixture ${packet.requirementId} official transport source`
+      );
+      requireEqual(
+        packet.productionTransportBlocker,
+        "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
+        `Hermes fixture ${packet.requirementId} production transport blocker`
+      );
       requireEqual(packet.doNotRunWithoutApproval, true, `Hermes fixture ${packet.requirementId} approval guard`);
     }
     const reentryPackets = supportAudit?.evidenceReentryPackets ?? [];
@@ -283,11 +304,11 @@ if (!exists(hermesFixturePath)) {
       return counts;
     }, {});
     const reentryPacket = (id) => reentryPackets.find((packet) => String(packet.requirementId ?? packet.id ?? "") === id);
-    requireEqual(reentryPackets.length, 22, "Hermes fixture reentry packet count");
+    requireEqual(reentryPackets.length, 25, "Hermes fixture reentry packet count");
     requireEqual(reentryStatusCounts.approval_required, 4, "Hermes fixture approval-required reentry packet count");
     requireEqual(reentryStatusCounts.blocked_until_approval_gate_fixture, 2, "Hermes fixture approval-gate reentry packet count");
     requireEqual(reentryStatusCounts.blocked_until_tui_gateway_wrapper_fixture, 4, "Hermes fixture TUI Gateway reentry packet count");
-    requireEqual(reentryStatusCounts.blocked_until_upstream_contract, 12, "Hermes fixture upstream-contract reentry packet count");
+    requireEqual(reentryStatusCounts.blocked_until_upstream_contract, 15, "Hermes fixture upstream-contract reentry packet count");
     requireEqual(reentryPacket("hermes.channels.live_evidence")?.blockerClass, "external_pending", "Hermes fixture channels live-evidence reentry blocker");
     requireEqual(reentryPacket("hermes.channels.live_evidence")?.approvalRequired, true, "Hermes fixture channels live-evidence approval requirement");
     requireEqual(reentryPacket("hermes.channels.live_evidence")?.doNotRunWithoutApproval, true, "Hermes fixture channels live-evidence approval guard");
@@ -923,6 +944,10 @@ for (const snippet of [
   "supportResolution",
   "productDecision",
   "userVisibleContract",
+  "officialTransportSurface",
+  "officialTransportClassesLabel",
+  "officialTransportSource",
+  "productionTransportBlocker",
   "productionTransportCommandShape",
   "doNotRunWithoutApproval",
   "expectedEvidenceCount",
@@ -930,6 +955,8 @@ for (const snippet of [
   "riskControlCount",
   "exact command",
   "evidence safety",
+  "official transport",
+  "production blocker",
   "production command",
   "reentry condition",
   "safe default"
@@ -1163,6 +1190,7 @@ for (const snippet of [
   "ClawJSRuntimeLensSnapshot.TransportPolicy?",
   "officialTransportSurface: String?",
   "officialTransportClasses: [String]?",
+  "officialTransportSource: String?",
   "productionTransportBlocker: String?"
 ]) {
   requireSnippet("macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensClient.swift", snippet);

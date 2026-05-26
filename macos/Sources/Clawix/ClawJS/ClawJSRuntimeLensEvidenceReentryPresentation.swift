@@ -33,7 +33,11 @@ struct ClawJSRuntimeLensEvidenceReentryPresentation: Equatable {
         let productDecision: String?
         let userVisibleContract: String?
         let officialMethod: String?
+        let officialTransportSurface: String?
+        let officialTransportClassesLabel: String?
+        let officialTransportSource: String?
         let productionTransportStatus: String?
+        let productionTransportBlocker: String?
         let productionTransportCommandShape: String?
         let doNotRunWithoutApproval: Bool
         let expectedEvidenceCount: Int
@@ -62,7 +66,11 @@ struct ClawJSRuntimeLensEvidenceReentryPresentation: Equatable {
                 productDecision.map { "product decision \($0)" },
                 userVisibleContract.map { "user visible contract \($0)" },
                 officialMethod.map { "official method \($0)" },
+                officialTransportSurface.map { "official transport \($0)" },
+                officialTransportClassesLabel.map { "official transport classes \($0)" },
+                officialTransportSource.map { "official transport source \($0)" },
                 productionTransportStatus.map { "production transport \($0)" },
+                productionTransportBlocker.map { "production blocker \($0)" },
                 productionTransportCommandShape.map { "production command \($0)" },
                 doNotRunWithoutApproval ? "do not run without approval" : nil,
                 "expected evidence count \(expectedEvidenceCount)",
@@ -101,7 +109,15 @@ struct ClawJSRuntimeLensEvidenceReentryPresentation: Equatable {
         let statusPills = statusCounts.keys.sorted().prefix(3).map {
             StatusPill(status: $0, count: statusCounts[$0] ?? 0)
         }
-        let rows = packets.prefix(3).map {
+        let highlightedPackets = Array(
+            (Array(packets.prefix(3)) + packets.filter {
+                $0.transportPolicyId != nil
+                    || $0.officialTransportSurface != nil
+                    || $0.productionTransportBlocker != nil
+            })
+            .uniquedBy { $0.id }
+        )
+        let rows = highlightedPackets.map {
             Row(
                 requirementId: $0.requirementId ?? $0.id,
                 status: $0.status ?? "unknown",
@@ -123,7 +139,11 @@ struct ClawJSRuntimeLensEvidenceReentryPresentation: Equatable {
                 productDecision: $0.productDecision,
                 userVisibleContract: $0.userVisibleContract,
                 officialMethod: $0.officialMethod,
+                officialTransportSurface: $0.officialTransportSurface,
+                officialTransportClassesLabel: listLabel($0.officialTransportClasses, limit: 3),
+                officialTransportSource: $0.officialTransportSource,
                 productionTransportStatus: $0.productionTransportStatus,
+                productionTransportBlocker: $0.productionTransportBlocker,
                 productionTransportCommandShape: $0.productionTransportCommandShape,
                 doNotRunWithoutApproval: $0.doNotRunWithoutApproval == true,
                 expectedEvidenceCount: $0.expectedEvidence?.count ?? 0,
@@ -143,5 +163,12 @@ struct ClawJSRuntimeLensEvidenceReentryPresentation: Equatable {
     private static func listLabel(_ values: [String]?, limit: Int) -> String? {
         guard let values, !values.isEmpty else { return nil }
         return values.prefix(limit).joined(separator: ", ")
+    }
+}
+
+private extension Sequence {
+    func uniquedBy<ID: Hashable>(_ id: (Element) -> ID) -> [Element] {
+        var seen = Set<ID>()
+        return filter { seen.insert(id($0)).inserted }
     }
 }

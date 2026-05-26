@@ -7131,15 +7131,15 @@
         "tuiGatewayTransportPolicy": {
           "id": "hermes.tui_gateway.transport_lifecycle_policy",
           "protocol": "tui_gateway_json_rpc",
-              "officialTransportSurface": "stdio_or_websocket_json_rpc",
-              "officialTransportClasses": [
-                "stdio_json_rpc",
-                "websocket_json_rpc"
-              ],
-              "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+          "officialTransportSurface": "stdio_or_websocket_json_rpc",
+          "officialTransportClasses": [
+            "stdio_json_rpc",
+            "websocket_json_rpc"
+          ],
+          "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "fixtureTransport": "loopback_http_json_rpc_fixture",
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
-              "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
+          "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "lifecycleOwner": "hermes_runtime_or_user",
           "allowedEndpointClassesWithoutApproval": [
@@ -7808,15 +7808,15 @@
           "transportPolicy": {
             "id": "hermes.tui_gateway.transport_lifecycle_policy",
             "protocol": "tui_gateway_json_rpc",
-              "officialTransportSurface": "stdio_or_websocket_json_rpc",
-              "officialTransportClasses": [
-                "stdio_json_rpc",
-                "websocket_json_rpc"
-              ],
-              "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+            "officialTransportSurface": "stdio_or_websocket_json_rpc",
+            "officialTransportClasses": [
+              "stdio_json_rpc",
+              "websocket_json_rpc"
+            ],
+            "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "fixtureTransport": "loopback_http_json_rpc_fixture",
             "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
-              "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
+            "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
             "lifecycleStatus": "external_user_managed_not_started_by_claw",
             "lifecycleOwner": "hermes_runtime_or_user",
             "allowedEndpointClassesWithoutApproval": [
@@ -7885,15 +7885,15 @@
           "transportPolicy": {
             "id": "hermes.tui_gateway.transport_lifecycle_policy",
             "protocol": "tui_gateway_json_rpc",
-              "officialTransportSurface": "stdio_or_websocket_json_rpc",
-              "officialTransportClasses": [
-                "stdio_json_rpc",
-                "websocket_json_rpc"
-              ],
-              "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+            "officialTransportSurface": "stdio_or_websocket_json_rpc",
+            "officialTransportClasses": [
+              "stdio_json_rpc",
+              "websocket_json_rpc"
+            ],
+            "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "fixtureTransport": "loopback_http_json_rpc_fixture",
             "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
-              "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
+            "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
             "lifecycleStatus": "external_user_managed_not_started_by_claw",
             "lifecycleOwner": "hermes_runtime_or_user",
             "allowedEndpointClassesWithoutApproval": [
@@ -7962,15 +7962,15 @@
           "transportPolicy": {
             "id": "hermes.tui_gateway.transport_lifecycle_policy",
             "protocol": "tui_gateway_json_rpc",
-              "officialTransportSurface": "stdio_or_websocket_json_rpc",
-              "officialTransportClasses": [
-                "stdio_json_rpc",
-                "websocket_json_rpc"
-              ],
-              "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+            "officialTransportSurface": "stdio_or_websocket_json_rpc",
+            "officialTransportClasses": [
+              "stdio_json_rpc",
+              "websocket_json_rpc"
+            ],
+            "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "fixtureTransport": "loopback_http_json_rpc_fixture",
             "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
-              "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
+            "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
             "lifecycleStatus": "external_user_managed_not_started_by_claw",
             "lifecycleOwner": "hermes_runtime_or_user",
             "allowedEndpointClassesWithoutApproval": [
@@ -8039,15 +8039,15 @@
           "transportPolicy": {
             "id": "hermes.tui_gateway.transport_lifecycle_policy",
             "protocol": "tui_gateway_json_rpc",
-              "officialTransportSurface": "stdio_or_websocket_json_rpc",
-              "officialTransportClasses": [
-                "stdio_json_rpc",
-                "websocket_json_rpc"
-              ],
-              "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+            "officialTransportSurface": "stdio_or_websocket_json_rpc",
+            "officialTransportClasses": [
+              "stdio_json_rpc",
+              "websocket_json_rpc"
+            ],
+            "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "fixtureTransport": "loopback_http_json_rpc_fixture",
             "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
-              "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
+            "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
             "lifecycleStatus": "external_user_managed_not_started_by_claw",
             "lifecycleOwner": "hermes_runtime_or_user",
             "allowedEndpointClassesWithoutApproval": [
@@ -9618,7 +9618,7 @@
       ],
       "blockerSummary": {
         "byBlockerClass": {
-          "direct_blocker": 18,
+          "direct_blocker": 21,
           "external_pending": 4
         },
         "directBlockerDomains": [
@@ -9661,8 +9661,8 @@
           "auth",
           "models"
         ],
-        "evidenceRequirementCount": 22,
-        "productBlockedRequirementCount": 18
+        "evidenceRequirementCount": 25,
+        "productBlockedRequirementCount": 21
       },
       "evidenceRequirements": [
         {
@@ -10374,6 +10374,156 @@
           "doNotRunWithoutApproval": false
         },
         {
+          "id": "hermes.sessions.preview.action_contract",
+          "blockerClass": "direct_blocker",
+          "approvalRequired": false,
+          "commandShape": "not_executable_until_official_runtime_preview_contract_exists",
+          "exactCommand": "not_executable_until_official_runtime_preview_contract_exists",
+          "preflightCommand": "claw runtime hermes support --json",
+          "approvalScope": "none_until_official_runtime_contract_exists",
+          "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+          "expectedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility"
+          ],
+          "expectedRedactedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility",
+            "no_plaintext_secrets_or_credentials",
+            "evidence_attached_to_goal_before_claim_promotion"
+          ],
+          "evidenceArtifactTemplate": {
+            "runtimeId": "hermes",
+            "domain": "sessions",
+            "action": "preview",
+            "command": "not_executable_until_official_runtime_preview_contract_exists",
+            "writesRuntime": false,
+            "wouldWriteRuntime": false,
+            "redacted": true,
+            "plaintextSecretLeak": false,
+            "fixtureBacked": false
+          },
+          "riskControls": [
+            "no_silent_runtime_write",
+            "no_direct_runtime_store_mutation",
+            "local_overlay_only_until_contract_exists"
+          ],
+          "evidenceDisposition": "blocked_until_official_runtime_action_contract",
+          "currentBehavior": "non_executable_action_plan_only",
+          "fallbackPolicy": "do_not_synthesize_native_runtime_action",
+          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state",
+          "claimEffect": "blocks_recommended_production_native_parity",
+          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
+          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
+          "promotionGate": "session_action_claim_remains_blocked_until_official_contract_fixture_and_round_trip_evidence_exist",
+          "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+          "doNotRunWithoutApproval": false
+        },
+        {
+          "id": "hermes.sessions.resolve.action_contract",
+          "blockerClass": "direct_blocker",
+          "approvalRequired": false,
+          "commandShape": "not_executable_until_official_runtime_resolve_contract_exists",
+          "exactCommand": "not_executable_until_official_runtime_resolve_contract_exists",
+          "preflightCommand": "claw runtime hermes support --json",
+          "approvalScope": "none_until_official_runtime_contract_exists",
+          "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+          "expectedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility"
+          ],
+          "expectedRedactedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility",
+            "no_plaintext_secrets_or_credentials",
+            "evidence_attached_to_goal_before_claim_promotion"
+          ],
+          "evidenceArtifactTemplate": {
+            "runtimeId": "hermes",
+            "domain": "sessions",
+            "action": "resolve",
+            "command": "not_executable_until_official_runtime_resolve_contract_exists",
+            "writesRuntime": false,
+            "wouldWriteRuntime": false,
+            "redacted": true,
+            "plaintextSecretLeak": false,
+            "fixtureBacked": false
+          },
+          "riskControls": [
+            "no_silent_runtime_write",
+            "no_direct_runtime_store_mutation",
+            "local_overlay_only_until_contract_exists"
+          ],
+          "evidenceDisposition": "blocked_until_official_runtime_action_contract",
+          "currentBehavior": "non_executable_action_plan_only",
+          "fallbackPolicy": "do_not_synthesize_native_runtime_action",
+          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state",
+          "claimEffect": "blocks_recommended_production_native_parity",
+          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
+          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
+          "promotionGate": "session_action_claim_remains_blocked_until_official_contract_fixture_and_round_trip_evidence_exist",
+          "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+          "doNotRunWithoutApproval": false
+        },
+        {
+          "id": "hermes.sessions.history.action_contract",
+          "blockerClass": "direct_blocker",
+          "approvalRequired": false,
+          "commandShape": "not_executable_until_official_runtime_history_contract_exists",
+          "exactCommand": "not_executable_until_official_runtime_history_contract_exists",
+          "preflightCommand": "claw runtime hermes support --json",
+          "approvalScope": "none_until_official_runtime_contract_exists",
+          "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+          "expectedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility"
+          ],
+          "expectedRedactedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility",
+            "no_plaintext_secrets_or_credentials",
+            "evidence_attached_to_goal_before_claim_promotion"
+          ],
+          "evidenceArtifactTemplate": {
+            "runtimeId": "hermes",
+            "domain": "sessions",
+            "action": "history",
+            "command": "not_executable_until_official_runtime_history_contract_exists",
+            "writesRuntime": false,
+            "wouldWriteRuntime": false,
+            "redacted": true,
+            "plaintextSecretLeak": false,
+            "fixtureBacked": false
+          },
+          "riskControls": [
+            "no_silent_runtime_write",
+            "no_direct_runtime_store_mutation",
+            "local_overlay_only_until_contract_exists"
+          ],
+          "evidenceDisposition": "blocked_until_official_runtime_action_contract",
+          "currentBehavior": "non_executable_action_plan_only",
+          "fallbackPolicy": "do_not_synthesize_native_runtime_action",
+          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state",
+          "claimEffect": "blocks_recommended_production_native_parity",
+          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
+          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
+          "promotionGate": "session_action_claim_remains_blocked_until_official_contract_fixture_and_round_trip_evidence_exist",
+          "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+          "doNotRunWithoutApproval": false
+        },
+        {
           "id": "hermes.sessions.send.action_contract",
           "blockerClass": "direct_blocker",
           "approvalRequired": false,
@@ -10429,15 +10579,15 @@
           "transportPolicy": {
             "id": "hermes.tui_gateway.transport_lifecycle_policy",
             "protocol": "tui_gateway_json_rpc",
-              "officialTransportSurface": "stdio_or_websocket_json_rpc",
-              "officialTransportClasses": [
-                "stdio_json_rpc",
-                "websocket_json_rpc"
-              ],
-              "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+            "officialTransportSurface": "stdio_or_websocket_json_rpc",
+            "officialTransportClasses": [
+              "stdio_json_rpc",
+              "websocket_json_rpc"
+            ],
+            "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "fixtureTransport": "loopback_http_json_rpc_fixture",
             "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
-              "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
+            "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
             "lifecycleStatus": "external_user_managed_not_started_by_claw",
             "lifecycleOwner": "hermes_runtime_or_user",
             "allowedEndpointClassesWithoutApproval": [
@@ -10460,7 +10610,14 @@
             ],
             "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
           },
+          "officialTransportSurface": "stdio_or_websocket_json_rpc",
+          "officialTransportClasses": [
+            "stdio_json_rpc",
+            "websocket_json_rpc"
+          ],
+          "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
           "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
@@ -10522,15 +10679,15 @@
           "transportPolicy": {
             "id": "hermes.tui_gateway.transport_lifecycle_policy",
             "protocol": "tui_gateway_json_rpc",
-              "officialTransportSurface": "stdio_or_websocket_json_rpc",
-              "officialTransportClasses": [
-                "stdio_json_rpc",
-                "websocket_json_rpc"
-              ],
-              "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+            "officialTransportSurface": "stdio_or_websocket_json_rpc",
+            "officialTransportClasses": [
+              "stdio_json_rpc",
+              "websocket_json_rpc"
+            ],
+            "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "fixtureTransport": "loopback_http_json_rpc_fixture",
             "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
-              "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
+            "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
             "lifecycleStatus": "external_user_managed_not_started_by_claw",
             "lifecycleOwner": "hermes_runtime_or_user",
             "allowedEndpointClassesWithoutApproval": [
@@ -10553,7 +10710,14 @@
             ],
             "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
           },
+          "officialTransportSurface": "stdio_or_websocket_json_rpc",
+          "officialTransportClasses": [
+            "stdio_json_rpc",
+            "websocket_json_rpc"
+          ],
+          "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
           "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
@@ -10615,15 +10779,15 @@
           "transportPolicy": {
             "id": "hermes.tui_gateway.transport_lifecycle_policy",
             "protocol": "tui_gateway_json_rpc",
-              "officialTransportSurface": "stdio_or_websocket_json_rpc",
-              "officialTransportClasses": [
-                "stdio_json_rpc",
-                "websocket_json_rpc"
-              ],
-              "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+            "officialTransportSurface": "stdio_or_websocket_json_rpc",
+            "officialTransportClasses": [
+              "stdio_json_rpc",
+              "websocket_json_rpc"
+            ],
+            "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "fixtureTransport": "loopback_http_json_rpc_fixture",
             "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
-              "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
+            "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
             "lifecycleStatus": "external_user_managed_not_started_by_claw",
             "lifecycleOwner": "hermes_runtime_or_user",
             "allowedEndpointClassesWithoutApproval": [
@@ -10646,7 +10810,14 @@
             ],
             "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
           },
+          "officialTransportSurface": "stdio_or_websocket_json_rpc",
+          "officialTransportClasses": [
+            "stdio_json_rpc",
+            "websocket_json_rpc"
+          ],
+          "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
           "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
@@ -10708,15 +10879,15 @@
           "transportPolicy": {
             "id": "hermes.tui_gateway.transport_lifecycle_policy",
             "protocol": "tui_gateway_json_rpc",
-              "officialTransportSurface": "stdio_or_websocket_json_rpc",
-              "officialTransportClasses": [
-                "stdio_json_rpc",
-                "websocket_json_rpc"
-              ],
-              "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+            "officialTransportSurface": "stdio_or_websocket_json_rpc",
+            "officialTransportClasses": [
+              "stdio_json_rpc",
+              "websocket_json_rpc"
+            ],
+            "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
             "fixtureTransport": "loopback_http_json_rpc_fixture",
             "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
-              "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
+            "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
             "lifecycleStatus": "external_user_managed_not_started_by_claw",
             "lifecycleOwner": "hermes_runtime_or_user",
             "allowedEndpointClassesWithoutApproval": [
@@ -10739,7 +10910,14 @@
             ],
             "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
           },
+          "officialTransportSurface": "stdio_or_websocket_json_rpc",
+          "officialTransportClasses": [
+            "stdio_json_rpc",
+            "websocket_json_rpc"
+          ],
+          "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
           "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
@@ -10869,6 +11047,7 @@
           ],
           "evidenceDispositions": [
             "blocked_until_official_runtime_contract",
+            "blocked_until_official_runtime_action_contract",
             "blocked_until_tui_gateway_wrapper_fixture",
             "local_overlay_until_official_runtime_write_back_contract"
           ],
@@ -10877,6 +11056,9 @@
           ],
           "evidenceRequirementIds": [
             "hermes.sessions.write_back_contract",
+            "hermes.sessions.preview.action_contract",
+            "hermes.sessions.resolve.action_contract",
+            "hermes.sessions.history.action_contract",
             "hermes.sessions.send.action_contract",
             "hermes.sessions.inject.action_contract",
             "hermes.sessions.abort.action_contract",
@@ -10889,10 +11071,6 @@
             "manifest_domain_contract",
             "claw_cli_resource_surface",
             "read_projection_contract",
-            "session_list_action",
-            "session_preview_action",
-            "session_resolve_action",
-            "session_history_action",
             "local_overlay_reconciliation_policy"
           ],
           "blockingFacets": [
@@ -11408,6 +11586,39 @@
           ]
         }
       ],
+      "commandCoverageSummary": {
+        "status": "guarded",
+        "runtimeId": "hermes",
+        "exactCommand": "claw runtime hermes commands --json",
+        "totalCommandCount": 44,
+        "topLevelCommandCount": 5,
+        "domainCommandCount": 13,
+        "resourceCommandCount": 13,
+        "scopedReadCommandCount": 2,
+        "sessionActionCommandCount": 11,
+        "manifestDomainCount": 13,
+        "sessionActions": [
+          "list",
+          "preview",
+          "resolve",
+          "history",
+          "send",
+          "inject",
+          "abort",
+          "create",
+          "pin",
+          "unpin",
+          "conflicts"
+        ],
+        "includesAllManifestDomains": true,
+        "includesAllDocumentedSessionActions": true,
+        "executableMatrixCommandCount": 22,
+        "promotionSignal": false,
+        "supportClaim": "partial_runtime_lens",
+        "supportStage": "dev_only",
+        "supportImpact": "guarded_command_coverage_does_not_promote_support",
+        "safeDefault": "guarded_command_coverage_does_not_promote_support"
+      },
       "promotionGate": "support_claim_remains_unpromoted_until_all_evidence_requirements_are_closed_or_explicitly_product_blocked",
       "syncPolicySummary": {
         "domainCount": 13,
@@ -11526,10 +11737,6 @@
           "manifest_domain_contract": 13,
           "claw_cli_resource_surface": 13,
           "read_projection_contract": 13,
-          "session_list_action": 1,
-          "session_preview_action": 1,
-          "session_resolve_action": 1,
-          "session_history_action": 1,
           "local_overlay_reconciliation_policy": 1,
           "degraded_runtime_projection": 11,
           "ready_runtime_projection": 1
@@ -11547,33 +11754,33 @@
       },
       "evidenceReadinessSummary": {
         "statusCounts": {
-          "blocked_until_upstream_contract": 12,
+          "blocked_until_upstream_contract": 15,
           "approval_required": 4,
           "blocked_until_approval_gate_fixture": 2,
           "blocked_until_tui_gateway_wrapper_fixture": 4
         },
         "blockerClassCounts": {
-          "direct_blocker": 18,
+          "direct_blocker": 21,
           "external_pending": 4
         },
         "safeDefaultCounts": {
           "keep_read_projection_only_until_official_runtime_write_back_contract_exists": 10,
           "do_not_run_without_explicit_approval_and_redaction": 4,
           "do_not_run_without_approval_gate_fixture": 2,
-          "keep_unpromoted_and_do_not_synthesize_runtime_state": 4,
+          "keep_unpromoted_and_do_not_synthesize_runtime_state": 7,
           "keep_local_overlay_and_do_not_write_runtime_pin_state": 2
         },
-        "totalRequirementCount": 22,
+        "totalRequirementCount": 25,
         "approvalRequiredCount": 6,
         "externalPendingCount": 4,
-        "upstreamContractBlockedCount": 12,
+        "upstreamContractBlockedCount": 15,
         "approvalGateBlockedCount": 2,
         "tuiGatewayBlockedCount": 4,
         "tuiGatewayWrapperBlockedCount": 4,
         "tuiGatewayFixtureBackedCount": 0,
         "productionTransportBlockedCount": 4,
         "writeBackContractBlockedCount": 12,
-        "productBlockedCount": 18,
+        "productBlockedCount": 21,
         "unresolvedNativeRequirementCount": 0,
         "approvalRequiredRequirementIds": [
           "hermes.channels.live_evidence",
@@ -11600,6 +11807,9 @@
           "hermes.plugins.write_back_contract",
           "hermes.gateway.write_back_contract",
           "hermes.configuration.write_back_contract",
+          "hermes.sessions.preview.action_contract",
+          "hermes.sessions.resolve.action_contract",
+          "hermes.sessions.history.action_contract",
           "hermes.sessions.pin.native_write_back_contract",
           "hermes.sessions.unpin.native_write_back_contract"
         ],
@@ -11653,6 +11863,9 @@
           "hermes.doctorCompat.approval_gate_evidence",
           "hermes.sandboxPermissions.approval_gate_evidence",
           "hermes.configuration.write_back_contract",
+          "hermes.sessions.preview.action_contract",
+          "hermes.sessions.resolve.action_contract",
+          "hermes.sessions.history.action_contract",
           "hermes.sessions.send.action_contract",
           "hermes.sessions.inject.action_contract",
           "hermes.sessions.abort.action_contract",
@@ -11683,10 +11896,6 @@
             "manifest_domain_contract",
             "claw_cli_resource_surface",
             "read_projection_contract",
-            "session_list_action",
-            "session_preview_action",
-            "session_resolve_action",
-            "session_history_action",
             "local_overlay_reconciliation_policy"
           ],
           "blockingFacets": [
@@ -11702,6 +11911,9 @@
           ],
           "evidenceRequirementIds": [
             "hermes.sessions.write_back_contract",
+            "hermes.sessions.preview.action_contract",
+            "hermes.sessions.resolve.action_contract",
+            "hermes.sessions.history.action_contract",
             "hermes.sessions.send.action_contract",
             "hermes.sessions.inject.action_contract",
             "hermes.sessions.abort.action_contract",
@@ -12106,47 +12318,6 @@
       "finalPromotionReview": {
         "status": "unpromoted",
         "finalPromotionAllowed": false,
-        "claimDisposition": "unpromoted_product_blocked_and_external_pending",
-        "productBlockedByDecisionCount": 18,
-        "externalPendingCount": 4,
-        "unresolvedNativeRequirementCount": 0,
-        "productBlockedRequirementIds": [
-          "hermes.sessions.write_back_contract",
-          "hermes.skills.write_back_contract",
-          "hermes.memory.write_back_contract",
-          "hermes.providers.write_back_contract",
-          "hermes.auth.write_back_contract",
-          "hermes.models.write_back_contract",
-          "hermes.scheduler.write_back_contract",
-          "hermes.plugins.write_back_contract",
-          "hermes.gateway.write_back_contract",
-          "hermes.doctorCompat.approval_gate_evidence",
-          "hermes.sandboxPermissions.approval_gate_evidence",
-          "hermes.configuration.write_back_contract",
-          "hermes.sessions.send.action_contract",
-          "hermes.sessions.inject.action_contract",
-          "hermes.sessions.abort.action_contract",
-          "hermes.sessions.create.action_contract",
-          "hermes.sessions.pin.native_write_back_contract",
-          "hermes.sessions.unpin.native_write_back_contract"
-        ],
-        "externalPendingRequirementIds": [
-          "hermes.channels.live_evidence",
-          "hermes.providers.live_evidence",
-          "hermes.auth.live_evidence",
-          "hermes.models.live_evidence"
-        ],
-        "unresolvedNativeRequirementIds": [],
-        "requiredForPromotion": [
-          "approved_redacted_live_evidence",
-          "approval_gate_fixture_and_redacted_receipt",
-          "tui_gateway_wrapper_fixture_and_round_trip_evidence",
-          "production_transport_lifecycle_policy_and_native_round_trip_evidence",
-          "keep_lowered_claim_until_upstream_native_contracts_exist",
-          "ecosystem_production_claim",
-          "ecosystem_recommended_claim"
-        ],
-        "userVisibleStatus": "runtime_ecosystem_available_with_product_blocked_or_external_pending_claims",
         "commandCoverageSummary": {
           "status": "guarded",
           "runtimeId": "hermes",
@@ -12179,7 +12350,51 @@
           "supportStage": "dev_only",
           "supportImpact": "guarded_command_coverage_does_not_promote_support",
           "safeDefault": "guarded_command_coverage_does_not_promote_support"
-        }
+        },
+        "claimDisposition": "unpromoted_product_blocked_and_external_pending",
+        "productBlockedByDecisionCount": 21,
+        "externalPendingCount": 4,
+        "unresolvedNativeRequirementCount": 0,
+        "productBlockedRequirementIds": [
+          "hermes.sessions.write_back_contract",
+          "hermes.skills.write_back_contract",
+          "hermes.memory.write_back_contract",
+          "hermes.providers.write_back_contract",
+          "hermes.auth.write_back_contract",
+          "hermes.models.write_back_contract",
+          "hermes.scheduler.write_back_contract",
+          "hermes.plugins.write_back_contract",
+          "hermes.gateway.write_back_contract",
+          "hermes.doctorCompat.approval_gate_evidence",
+          "hermes.sandboxPermissions.approval_gate_evidence",
+          "hermes.configuration.write_back_contract",
+          "hermes.sessions.preview.action_contract",
+          "hermes.sessions.resolve.action_contract",
+          "hermes.sessions.history.action_contract",
+          "hermes.sessions.send.action_contract",
+          "hermes.sessions.inject.action_contract",
+          "hermes.sessions.abort.action_contract",
+          "hermes.sessions.create.action_contract",
+          "hermes.sessions.pin.native_write_back_contract",
+          "hermes.sessions.unpin.native_write_back_contract"
+        ],
+        "externalPendingRequirementIds": [
+          "hermes.channels.live_evidence",
+          "hermes.providers.live_evidence",
+          "hermes.auth.live_evidence",
+          "hermes.models.live_evidence"
+        ],
+        "unresolvedNativeRequirementIds": [],
+        "requiredForPromotion": [
+          "approved_redacted_live_evidence",
+          "approval_gate_fixture_and_redacted_receipt",
+          "tui_gateway_wrapper_fixture_and_round_trip_evidence",
+          "production_transport_lifecycle_policy_and_native_round_trip_evidence",
+          "keep_lowered_claim_until_upstream_native_contracts_exist",
+          "ecosystem_production_claim",
+          "ecosystem_recommended_claim"
+        ],
+        "userVisibleStatus": "runtime_ecosystem_available_with_product_blocked_or_external_pending_claims"
       },
       "finalSupportClaimDecision": {
         "status": "not_promoted",
@@ -12189,6 +12404,39 @@
         "recommended": false,
         "production": false,
         "uiParityClaim": "partial_runtime_lens",
+        "commandCoverageSummary": {
+          "status": "guarded",
+          "runtimeId": "hermes",
+          "exactCommand": "claw runtime hermes commands --json",
+          "totalCommandCount": 44,
+          "topLevelCommandCount": 5,
+          "domainCommandCount": 13,
+          "resourceCommandCount": 13,
+          "scopedReadCommandCount": 2,
+          "sessionActionCommandCount": 11,
+          "manifestDomainCount": 13,
+          "sessionActions": [
+            "list",
+            "preview",
+            "resolve",
+            "history",
+            "send",
+            "inject",
+            "abort",
+            "create",
+            "pin",
+            "unpin",
+            "conflicts"
+          ],
+          "includesAllManifestDomains": true,
+          "includesAllDocumentedSessionActions": true,
+          "executableMatrixCommandCount": 22,
+          "promotionSignal": false,
+          "supportClaim": "partial_runtime_lens",
+          "supportStage": "dev_only",
+          "supportImpact": "guarded_command_coverage_does_not_promote_support",
+          "safeDefault": "guarded_command_coverage_does_not_promote_support"
+        },
         "uiParityDisposition": "partial_lens_validated_not_full_native_parity",
         "blockedPromotionClaims": [
           "recommended",
@@ -12205,7 +12453,7 @@
           "direct_blocker",
           "external_pending"
         ],
-        "productBlockedByDecisionCount": 18,
+        "productBlockedByDecisionCount": 21,
         "externalPendingCount": 4,
         "unresolvedNativeRequirementCount": 0,
         "productBlockedRequirementIds": [
@@ -12221,6 +12469,9 @@
           "hermes.doctorCompat.approval_gate_evidence",
           "hermes.sandboxPermissions.approval_gate_evidence",
           "hermes.configuration.write_back_contract",
+          "hermes.sessions.preview.action_contract",
+          "hermes.sessions.resolve.action_contract",
+          "hermes.sessions.history.action_contract",
           "hermes.sessions.send.action_contract",
           "hermes.sessions.inject.action_contract",
           "hermes.sessions.abort.action_contract",
@@ -12246,40 +12497,7 @@
         ],
         "reentryPolicy": "use_evidenceReentryPackets_exactly_before_revisiting_claim",
         "safeDefault": "keep_unpromoted_until_evidence_or_upstream_contract_changes",
-        "userVisibleStatus": "runtime_ecosystem_available_but_not_recommended_or_production",
-        "commandCoverageSummary": {
-          "status": "guarded",
-          "runtimeId": "hermes",
-          "exactCommand": "claw runtime hermes commands --json",
-          "totalCommandCount": 44,
-          "topLevelCommandCount": 5,
-          "domainCommandCount": 13,
-          "resourceCommandCount": 13,
-          "scopedReadCommandCount": 2,
-          "sessionActionCommandCount": 11,
-          "manifestDomainCount": 13,
-          "sessionActions": [
-            "list",
-            "preview",
-            "resolve",
-            "history",
-            "send",
-            "inject",
-            "abort",
-            "create",
-            "pin",
-            "unpin",
-            "conflicts"
-          ],
-          "includesAllManifestDomains": true,
-          "includesAllDocumentedSessionActions": true,
-          "executableMatrixCommandCount": 22,
-          "promotionSignal": false,
-          "supportClaim": "partial_runtime_lens",
-          "supportStage": "dev_only",
-          "supportImpact": "guarded_command_coverage_does_not_promote_support",
-          "safeDefault": "guarded_command_coverage_does_not_promote_support"
-        }
+        "userVisibleStatus": "runtime_ecosystem_available_but_not_recommended_or_production"
       },
       "evidenceReentryPackets": [
         {
@@ -12975,6 +13193,153 @@
           "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
+          "id": "hermes.sessions.preview.action_contract.reentry",
+          "requirementId": "hermes.sessions.preview.action_contract",
+          "blockerClass": "direct_blocker",
+          "status": "blocked_until_upstream_contract",
+          "approvalRequired": false,
+          "commandShape": "not_executable_until_official_runtime_preview_contract_exists",
+          "exactCommand": "not_executable_until_official_runtime_preview_contract_exists",
+          "preflightCommand": "claw runtime hermes support --json",
+          "approvalScope": "none_until_official_runtime_contract_exists",
+          "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+          "expectedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility"
+          ],
+          "expectedRedactedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility",
+            "no_plaintext_secrets_or_credentials",
+            "evidence_attached_to_goal_before_claim_promotion"
+          ],
+          "evidenceArtifactTemplate": {
+            "runtimeId": "hermes",
+            "domain": "sessions",
+            "action": "preview",
+            "command": "not_executable_until_official_runtime_preview_contract_exists",
+            "writesRuntime": false,
+            "wouldWriteRuntime": false,
+            "redacted": true,
+            "plaintextSecretLeak": false,
+            "fixtureBacked": false
+          },
+          "riskControls": [
+            "no_silent_runtime_write",
+            "no_direct_runtime_store_mutation",
+            "local_overlay_only_until_contract_exists"
+          ],
+          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
+          "fallbackPolicy": "do_not_synthesize_native_runtime_action",
+          "claimEffect": "blocks_recommended_production_native_parity",
+          "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+          "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
+          "doNotRunWithoutApproval": false,
+          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+        },
+        {
+          "id": "hermes.sessions.resolve.action_contract.reentry",
+          "requirementId": "hermes.sessions.resolve.action_contract",
+          "blockerClass": "direct_blocker",
+          "status": "blocked_until_upstream_contract",
+          "approvalRequired": false,
+          "commandShape": "not_executable_until_official_runtime_resolve_contract_exists",
+          "exactCommand": "not_executable_until_official_runtime_resolve_contract_exists",
+          "preflightCommand": "claw runtime hermes support --json",
+          "approvalScope": "none_until_official_runtime_contract_exists",
+          "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+          "expectedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility"
+          ],
+          "expectedRedactedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility",
+            "no_plaintext_secrets_or_credentials",
+            "evidence_attached_to_goal_before_claim_promotion"
+          ],
+          "evidenceArtifactTemplate": {
+            "runtimeId": "hermes",
+            "domain": "sessions",
+            "action": "resolve",
+            "command": "not_executable_until_official_runtime_resolve_contract_exists",
+            "writesRuntime": false,
+            "wouldWriteRuntime": false,
+            "redacted": true,
+            "plaintextSecretLeak": false,
+            "fixtureBacked": false
+          },
+          "riskControls": [
+            "no_silent_runtime_write",
+            "no_direct_runtime_store_mutation",
+            "local_overlay_only_until_contract_exists"
+          ],
+          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
+          "fallbackPolicy": "do_not_synthesize_native_runtime_action",
+          "claimEffect": "blocks_recommended_production_native_parity",
+          "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+          "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
+          "doNotRunWithoutApproval": false,
+          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+        },
+        {
+          "id": "hermes.sessions.history.action_contract.reentry",
+          "requirementId": "hermes.sessions.history.action_contract",
+          "blockerClass": "direct_blocker",
+          "status": "blocked_until_upstream_contract",
+          "approvalRequired": false,
+          "commandShape": "not_executable_until_official_runtime_history_contract_exists",
+          "exactCommand": "not_executable_until_official_runtime_history_contract_exists",
+          "preflightCommand": "claw runtime hermes support --json",
+          "approvalScope": "none_until_official_runtime_contract_exists",
+          "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+          "expectedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility"
+          ],
+          "expectedRedactedEvidence": [
+            "official_runtime_cli_or_api",
+            "non_destructive_fixture",
+            "round_trip_native_visibility",
+            "no_plaintext_secrets_or_credentials",
+            "evidence_attached_to_goal_before_claim_promotion"
+          ],
+          "evidenceArtifactTemplate": {
+            "runtimeId": "hermes",
+            "domain": "sessions",
+            "action": "history",
+            "command": "not_executable_until_official_runtime_history_contract_exists",
+            "writesRuntime": false,
+            "wouldWriteRuntime": false,
+            "redacted": true,
+            "plaintextSecretLeak": false,
+            "fixtureBacked": false
+          },
+          "riskControls": [
+            "no_silent_runtime_write",
+            "no_direct_runtime_store_mutation",
+            "local_overlay_only_until_contract_exists"
+          ],
+          "reentryCondition": "add_official_runtime_action_contract_fixture_and_round_trip_evidence",
+          "fallbackPolicy": "do_not_synthesize_native_runtime_action",
+          "claimEffect": "blocks_recommended_production_native_parity",
+          "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+          "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+          "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
+          "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
+          "doNotRunWithoutApproval": false,
+          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+        },
+        {
           "id": "hermes.sessions.send.action_contract.reentry",
           "requirementId": "hermes.sessions.send.action_contract",
           "blockerClass": "direct_blocker",
@@ -13026,7 +13391,14 @@
           "officialMethod": "prompt.submit",
           "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "transportPolicyId": "hermes.tui_gateway.transport_lifecycle_policy",
+          "officialTransportSurface": "stdio_or_websocket_json_rpc",
+          "officialTransportClasses": [
+            "stdio_json_rpc",
+            "websocket_json_rpc"
+          ],
+          "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
           "doNotRunWithoutApproval": true,
@@ -13084,7 +13456,14 @@
           "officialMethod": "session.steer",
           "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "transportPolicyId": "hermes.tui_gateway.transport_lifecycle_policy",
+          "officialTransportSurface": "stdio_or_websocket_json_rpc",
+          "officialTransportClasses": [
+            "stdio_json_rpc",
+            "websocket_json_rpc"
+          ],
+          "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
           "doNotRunWithoutApproval": true,
@@ -13142,7 +13521,14 @@
           "officialMethod": "session.interrupt",
           "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "transportPolicyId": "hermes.tui_gateway.transport_lifecycle_policy",
+          "officialTransportSurface": "stdio_or_websocket_json_rpc",
+          "officialTransportClasses": [
+            "stdio_json_rpc",
+            "websocket_json_rpc"
+          ],
+          "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
           "doNotRunWithoutApproval": true,
@@ -13200,7 +13586,14 @@
           "officialMethod": "session.create",
           "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "transportPolicyId": "hermes.tui_gateway.transport_lifecycle_policy",
+          "officialTransportSurface": "stdio_or_websocket_json_rpc",
+          "officialTransportClasses": [
+            "stdio_json_rpc",
+            "websocket_json_rpc"
+          ],
+          "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
           "doNotRunWithoutApproval": true,
@@ -13310,39 +13703,6 @@
         "runtimeId": "hermes",
         "officialSnapshotSource": "docs/runtime-ecosystem-integration.manifest.json",
         "sourceSnapshotDate": "2026-05-26"
-      },
-      "commandCoverageSummary": {
-        "status": "guarded",
-        "runtimeId": "hermes",
-        "exactCommand": "claw runtime hermes commands --json",
-        "totalCommandCount": 44,
-        "topLevelCommandCount": 5,
-        "domainCommandCount": 13,
-        "resourceCommandCount": 13,
-        "scopedReadCommandCount": 2,
-        "sessionActionCommandCount": 11,
-        "manifestDomainCount": 13,
-        "sessionActions": [
-          "list",
-          "preview",
-          "resolve",
-          "history",
-          "send",
-          "inject",
-          "abort",
-          "create",
-          "pin",
-          "unpin",
-          "conflicts"
-        ],
-        "includesAllManifestDomains": true,
-        "includesAllDocumentedSessionActions": true,
-        "executableMatrixCommandCount": 22,
-        "promotionSignal": false,
-        "supportClaim": "partial_runtime_lens",
-        "supportStage": "dev_only",
-        "supportImpact": "guarded_command_coverage_does_not_promote_support",
-        "safeDefault": "guarded_command_coverage_does_not_promote_support"
       }
     }
   },

@@ -343,7 +343,11 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let officialMethod: String?
             let officialContractSource: String?
             let transportPolicyId: String?
+            let officialTransportSurface: String?
+            let officialTransportClasses: [String]?
+            let officialTransportSource: String?
             let productionTransportStatus: String?
+            let productionTransportBlocker: String?
             let lifecycleStatus: String?
             let productionTransportCommandShape: String?
             let doNotRunWithoutApproval: Bool?

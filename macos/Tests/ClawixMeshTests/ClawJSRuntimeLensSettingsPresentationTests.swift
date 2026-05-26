@@ -144,14 +144,14 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
 
         let closure = try XCTUnwrap(presentation.sections.first { $0.id == "closure-checklist" })
         let sessionClosure = try XCTUnwrap(closure.rows.first { $0.label == "sessions" })
-        XCTAssertTrue(sessionClosure.detailLines.contains("hermes.sessions.write_back_contract, hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, +4 more"))
-        XCTAssertTrue(sessionClosure.detailLines.contains("implemented facets manifest_domain_contract, claw_cli_resource_surface, read_projection_contract, session_list_action, +4 more"))
+        XCTAssertTrue(sessionClosure.detailLines.contains("hermes.sessions.write_back_contract, hermes.sessions.preview.action_contract, hermes.sessions.resolve.action_contract, +7 more"))
+        XCTAssertTrue(sessionClosure.detailLines.contains("implemented facets manifest_domain_contract, claw_cli_resource_surface, read_projection_contract, local_overlay_reconciliation_policy"))
         XCTAssertTrue(sessionClosure.detailLines.contains("blocking facets native_write_back_contract, product_blocked_claim, native_action_contract"))
 
         let auditDomains = try XCTUnwrap(presentation.sections.first { $0.id == "support-audit-domains" })
         let sessionAuditDomain = try XCTUnwrap(auditDomains.rows.first { $0.label == "sessions" })
-        XCTAssertTrue(sessionAuditDomain.detailLines.contains("evidence dispositions blocked_until_official_runtime_contract, blocked_until_tui_gateway_wrapper_fixture, local_overlay_until_official_runtime_write_back_contract"))
-        XCTAssertTrue(sessionAuditDomain.detailLines.contains("evidence hermes.sessions.write_back_contract, hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, hermes.sessions.abort.action_contract, +3 more"))
+        XCTAssertTrue(sessionAuditDomain.detailLines.contains("evidence dispositions blocked_until_official_runtime_contract, blocked_until_official_runtime_action_contract, blocked_until_tui_gateway_wrapper_fixture, local_overlay_until_official_runtime_write_back_contract"))
+        XCTAssertTrue(sessionAuditDomain.detailLines.contains("evidence hermes.sessions.write_back_contract, hermes.sessions.preview.action_contract, hermes.sessions.resolve.action_contract, hermes.sessions.history.action_contract, +6 more"))
         XCTAssertTrue(sessionAuditDomain.detailLines.contains("support resolutions explicitly_product_blocked_not_a_silent_gap"))
 
         let sessionActions = try XCTUnwrap(presentation.sections.first { $0.id == "session-actions" })

@@ -514,7 +514,14 @@
           "productDecision": "native_session_action_unsupported_until_official_runtime_contract",
           "userVisibleContract": "non_executable_action_plan_only_until_runtime_contract_exists",
           "officialMethod": "session.create",
+          "officialTransportSurface": "stdio_or_websocket_json_rpc",
+          "officialTransportClasses": [
+            "stdio_json_rpc",
+            "websocket_json_rpc"
+          ],
+          "officialTransportSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "productionTransportBlocker": "approval_required_for_non_loopback_endpoint_and_lifecycle_management",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
           "doNotRunWithoutApproval": true,
           "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
