@@ -41,6 +41,8 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayBlockedCount, 4)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportBlockedCount, 4)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractBlockedCount, 12)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_unpromoted_and_do_not_synthesize_runtime_state"], 14)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_local_overlay_and_do_not_write_runtime_pin_state"], 2)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateRequirementIds, [
             "hermes.doctorCompat.approval_gate_evidence",
             "hermes.sandboxPermissions.approval_gate_evidence"

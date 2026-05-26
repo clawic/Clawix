@@ -170,6 +170,8 @@ if (!exists(hermesFixturePath)) {
     requireEqual(readiness.productionTransportBlockedCount, 4, "Hermes fixture production transport blocked count");
     requireEqual(readiness.writeBackContractBlockedCount, 12, "Hermes fixture write-back contract blocked count");
     requireEqual(readiness.productBlockedCount, 18, "Hermes fixture product-blocked count");
+    requireEqual(readiness.safeDefaultCounts?.keep_unpromoted_and_do_not_synthesize_runtime_state, 14, "Hermes fixture generic unpromoted safe-default count");
+    requireEqual(readiness.safeDefaultCounts?.keep_local_overlay_and_do_not_write_runtime_pin_state, 2, "Hermes fixture local overlay pin safe-default count");
     requireArrayEquals(readiness.approvalGateRequirementIds, [
       "hermes.doctorCompat.approval_gate_evidence",
       "hermes.sandboxPermissions.approval_gate_evidence"
