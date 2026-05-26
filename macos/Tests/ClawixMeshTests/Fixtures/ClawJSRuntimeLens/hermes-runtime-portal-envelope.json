@@ -2959,7 +2959,9 @@
             "limitations": [
               "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
               "validation: fixture_required"
-            ]
+            ],
+            "path": "/Users/tester/.hermes/state.db",
+            "summary": "Hermes SQLite session metadata; transcript content is not included by default."
           }
         ],
         "resources": [
@@ -5629,7 +5631,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "alibaba",
@@ -5657,7 +5660,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "anthropic",
@@ -5685,7 +5689,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "arcee",
@@ -5713,7 +5718,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "azure-foundry",
@@ -5741,7 +5747,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "bedrock",
@@ -5769,7 +5776,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "deepseek",
@@ -5797,7 +5805,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "gemini",
@@ -5825,7 +5834,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "gmi",
@@ -5853,7 +5863,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "google-gemini-cli",
@@ -5881,7 +5892,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "huggingface",
@@ -5909,7 +5921,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "kilocode",
@@ -5937,7 +5950,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "kimi-coding",
@@ -5965,7 +5979,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "lmstudio",
@@ -5993,7 +6008,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "minimax",
@@ -6021,7 +6037,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "nous",
@@ -6049,7 +6066,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "novita",
@@ -6077,7 +6095,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "nvidia",
@@ -6105,7 +6124,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "ollama-cloud",
@@ -6133,7 +6153,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "openai",
@@ -6190,7 +6211,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "opencode-zen",
@@ -6218,7 +6240,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "openrouter",
@@ -6246,7 +6269,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "stepfun",
@@ -6274,7 +6298,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "tencent-tokenhub",
@@ -6297,7 +6322,8 @@
             ],
             "attributes": [
               "auth scalar: redacted_value"
-            ]
+            ],
+            "summary": "Hermes auth state is redacted; no credential value is exposed."
           },
           {
             "id": "xai",
@@ -6325,7 +6351,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "xiaomi",
@@ -6353,7 +6380,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           },
           {
             "id": "zai",
@@ -6381,7 +6409,8 @@
               "profile key: false",
               "env key: false"
             ],
-            "enabled": false
+            "enabled": false,
+            "summary": "Hermes auth is missing; no credential value is exposed."
           }
         ],
         "supportContract": {

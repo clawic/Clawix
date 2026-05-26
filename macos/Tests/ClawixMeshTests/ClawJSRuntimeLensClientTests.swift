@@ -204,7 +204,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         let scalarAuthResource = try XCTUnwrap(snapshot.resources(for: "auth").first { $0.id == "tencent-tokenhub" })
         XCTAssertEqual(scalarAuthResource.status, "redacted")
         XCTAssertEqual(scalarAuthResource.kind, "redacted_auth_state")
-        XCTAssertNil(scalarAuthResource.summary)
+        XCTAssertEqual(scalarAuthResource.summary, "Hermes auth state is redacted; no credential value is exposed.")
         XCTAssertEqual(scalarAuthResource.attributes?.contains("auth scalar: redacted_value"), true)
 
         let sessionActionPresentation = ClawJSRuntimeLensSessionActionPresentation.make(

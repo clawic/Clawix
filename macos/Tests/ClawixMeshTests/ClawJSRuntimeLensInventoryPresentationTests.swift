@@ -302,6 +302,8 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
             sessionInventory.rows.first?.provenanceLabel,
             "runtime-session-sqlite, runtime hermes, /Users/tester/.hermes/state.db"
         )
+        XCTAssertEqual(sessionInventory.rows.first?.path, "/Users/tester/.hermes/state.db")
+        XCTAssertTrue(sessionInventory.rows.first?.summaryLabel?.contains("content is not included by default") == true)
         XCTAssertEqual(sessionInventory.rows.first?.limitationsLabel, "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence, validation: fixture_required")
         XCTAssertEqual(sessionInventory.rows.first?.pinned, false)
         XCTAssertEqual(sessionInventory.rows.first?.attributeCount, 18)
@@ -389,10 +391,11 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(openAIAuthRow.limitationsLabel, "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence, validation: secret_guard_and_external_pending_live_credentials")
         let scalarAuthRow = try XCTUnwrap(authInventory.rows.first { $0.id == "tencent-tokenhub" })
         XCTAssertEqual(scalarAuthRow.statusLabel, "redacted")
-        XCTAssertNil(scalarAuthRow.summaryLabel)
+        XCTAssertEqual(scalarAuthRow.summaryLabel, "Hermes auth state is redacted; no credential value is exposed.")
         XCTAssertEqual(scalarAuthRow.nativeIdentifierLabel, "native id: authProviderId")
         XCTAssertEqual(scalarAuthRow.provenanceSource, "hermes-runtime-adapter")
         XCTAssertEqual(scalarAuthRow.attributesLabel, "auth scalar: redacted_value")
+        XCTAssertTrue(authInventory.rows.first { $0.id == "anthropic" }?.summaryLabel?.contains("auth is missing") == true)
         XCTAssertTrue(authInventory.rows.contains { $0.id == "hermes-auth-secret-ref-policy" && $0.statusLabel == "projected" })
 
         let pluginInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "plugins" })
