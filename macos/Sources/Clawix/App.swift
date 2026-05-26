@@ -48,11 +48,35 @@ enum ClawixAppEntry {
         // anything reads it, so a provisioned instance isolates its state and
         // starts its control server. No-op on normal launches.
         ClxAgentInstance.applyLaunchArguments()
+        ClawixSingleInstanceGuard.activateExistingMainInstanceAndExitIfNeeded()
         LaunchMilestones.mark(.processStart)
         switch ClawixAppRole.current {
         case .main:    ClawixApp.main()
         case .tool:    ClawixToolApp.main()
         }
+    }
+}
+
+enum ClawixSingleInstanceGuard {
+    static func activateExistingMainInstanceAndExitIfNeeded() {
+        guard case .main = ClawixAppRole.current else { return }
+        guard !ClxAgentInstance.isAgent else { return }
+        guard let bundleID = Bundle.main.bundleIdentifier else { return }
+
+        let currentPID = ProcessInfo.processInfo.processIdentifier
+        let olderMainInstances = NSRunningApplication
+            .runningApplications(withBundleIdentifier: bundleID)
+            .filter { app in
+                app.processIdentifier != currentPID
+                    && app.processIdentifier < currentPID
+                    && !app.isTerminated
+            }
+
+        guard let existing = olderMainInstances.min(by: { $0.processIdentifier < $1.processIdentifier }) else {
+            return
+        }
+        existing.activate(options: [.activateAllWindows])
+        exit(0)
     }
 }
 
