@@ -189,6 +189,7 @@ struct ClawJSRuntimeLensSection: View {
             result.writesLocalOverlay.map { "writes local overlay \($0)" },
             result.reason.map { "reason \($0)" },
             result.degradedReason.map { "degraded reason \($0)" },
+            result.roundTripVerificationStatus.map { "round-trip verification \($0)" },
             result.blockerClass.map { "blocker \($0)" },
             result.requiredFlag.map { "required flag \($0)" },
             result.officialProtocol.map { "protocol \($0)" },

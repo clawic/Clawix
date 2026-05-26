@@ -1632,6 +1632,7 @@ struct ClawJSRuntimeLensClient {
         let writesLocalOverlay: Bool?
         let reason: String?
         let degradedReason: String?
+        let roundTripVerificationStatus: String?
         let blockerClass: String?
         let officialContractRequired: Bool?
         let officialContractKnown: Bool?

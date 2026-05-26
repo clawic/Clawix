@@ -711,6 +711,103 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         })
     }
 
+    @MainActor
+    func testRuntimeLensClientSurfacesHermesGatewayPartialWithoutNativeRoundTrip() async throws {
+        var requested: [[String]] = []
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            requested.append(args)
+            return .init(
+                data: """
+                {
+                  "data": {
+                    "runtimeId": "hermes",
+                    "domain": "sessions",
+                    "action": "send",
+                    "status": "partial",
+                    "authority": "runtime",
+                    "writesRuntime": true,
+                    "wouldWriteRuntime": true,
+                    "roundTripVerificationStatus": "unavailable_no_sqlite_history",
+                    "safeDefault": "keep_action_claim_unpromoted_until_native_history_can_be_read",
+                    "userVisibleContract": "gateway_send_accepted_but_native_round_trip_not_verified",
+                    "claimEffect": "does_not_satisfy_native_session_send_parity",
+                    "officialProtocol": "tui_gateway_json_rpc",
+                    "officialMethod": "prompt.submit",
+                    "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+                    "result": {
+                      "id": "missing-session",
+                      "messagePreview": "hello",
+                      "nativeIdentifier": {"name": "session_id"},
+                      "gatewayReceipt": {
+                        "protocol": "tui_gateway_json_rpc",
+                        "transport": "loopback_http_json_rpc_fixture",
+                        "method": "prompt.submit",
+                        "requestId": "fixture-send",
+                        "endpoint": "http://127.0.0.1:18999"
+                      },
+                      "roundTripVerification": {
+                        "status": "unavailable_no_sqlite_history",
+                        "id": "missing-session",
+                        "action": "send",
+                        "writesRuntime": false,
+                        "checked": ["sqlite_messages"],
+                        "safeDefault": "keep_action_claim_unpromoted_until_native_history_can_be_read"
+                      }
+                    }
+                  }
+                }
+                """.data(using: .utf8)!,
+                exitCode: 2
+            )
+        })
+
+        let result = try await client.runSessionAction(
+            runtime: .hermes,
+            action: "send",
+            sessionId: "missing-session",
+            message: "hello",
+            gatewayURL: "http://127.0.0.1:18999",
+            confirmRuntimeWrite: true
+        )
+
+        XCTAssertEqual(requested, [[
+            "runtime",
+            "hermes",
+            "sessions",
+            "send",
+            "--session-key",
+            "missing-session",
+            "--message",
+            "hello",
+            "--gateway-url",
+            "http://127.0.0.1:18999",
+            "--confirm-runtime-write",
+            "--json"
+        ]])
+        XCTAssertEqual(result.status, "partial")
+        XCTAssertEqual(result.writesRuntime, true)
+        XCTAssertEqual(result.roundTripVerificationStatus, "unavailable_no_sqlite_history")
+        XCTAssertEqual(result.safeDefault, "keep_action_claim_unpromoted_until_native_history_can_be_read")
+        XCTAssertEqual(result.userVisibleContract, "gateway_send_accepted_but_native_round_trip_not_verified")
+        XCTAssertEqual(result.claimEffect, "does_not_satisfy_native_session_send_parity")
+        XCTAssertEqual(result.result?.roundTripVerification?.status, "unavailable_no_sqlite_history")
+        XCTAssertEqual(result.result?.roundTripVerification?.safeDefault, "keep_action_claim_unpromoted_until_native_history_can_be_read")
+
+        let section = ClawJSRuntimeLensSection()
+        XCTAssertEqual(section.runtimeLensSessionActionResultLabel(result), "send partial prompt.submit missing-session round-trip unavailable_no_sqlite_history")
+        let details = section.runtimeLensSessionActionResultDetails(result)
+        XCTAssertTrue(details.contains {
+            $0.contains("round-trip verification unavailable_no_sqlite_history")
+                && $0.contains("writes runtime true")
+        })
+        XCTAssertTrue(details.contains(
+            "transport policy safe default keep_action_claim_unpromoted_until_native_history_can_be_read, user visible contract gateway_send_accepted_but_native_round_trip_not_verified"
+        ))
+        XCTAssertTrue(details.contains(
+            "provenance checked sqlite_messages, safe default keep_action_claim_unpromoted_until_native_history_can_be_read"
+        ))
+    }
+
     func testRuntimeLensClientDecodesHermesCreateRoundTripVerification() async throws {
         let client = ClawJSRuntimeLensClient(runner: .init { _ in
             .init(
