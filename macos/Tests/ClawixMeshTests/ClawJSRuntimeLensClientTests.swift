@@ -127,6 +127,8 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.domains.first { $0.domain == "doctorCompat" }?.approvalGateFixtureReceipt?.redacted, true)
         XCTAssertEqual(snapshot.domains.first { $0.domain == "doctorCompat" }?.approvalGateFixtureReceipt?.mutationWithoutApproval, false)
         XCTAssertEqual(snapshot.domains.first { $0.domain == "doctorCompat" }?.approvalGateFixtureReceipt?.plaintextSecretLeak, false)
+        XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "doctorCompat" }?.writeBackApprovalGated, true)
+        XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "doctorCompat" }?.approvalGateFixtureStatus, "attached")
         XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "doctorCompat" }?.approvalGateFixtureReceipt?.receiptId, "fixture-doctor-denial")
 
         let supportContracts = ClawJSRuntimeLensSupportContractPresentation.make(snapshot: snapshot)
