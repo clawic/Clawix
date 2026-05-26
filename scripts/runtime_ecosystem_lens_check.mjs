@@ -1108,6 +1108,7 @@ for (const snippet of [
   "result.transportPolicy?.configuredEndpointClass",
   "policyFields.append(\"endpoint class \\(configuredEndpointClass)\")",
   "policyFields.append(\"user visible contract \\(userVisibleContract)\")",
+  "policyFields.append(\"claim effect \\(claimEffect)\")",
   "policyFields.append(\"product decision \\(productDecision)\")"
 ]) {
   requireSnippet("macos/Sources/Clawix/Settings/ClawJSRuntimeLensSection.swift", snippet);
@@ -1287,6 +1288,7 @@ for (const snippet of [
   "XCTAssertEqual(result.roundTripVerificationStatus, \"unavailable_no_sqlite_history\")",
   "gateway_send_accepted_but_native_round_trip_not_verified",
   "round-trip verification unavailable_no_sqlite_history",
+  "claim effect does_not_satisfy_native_session_send_parity",
   "action contract runtime hermes, domain sessions, authority runtime, writes runtime true, would write runtime true, writes local overlay false, protocol tui_gateway_json_rpc, method session.interrupt",
   "XCTAssertEqual(readyForGateCheck.checkGateHelp, \"Check confirmation gate\")",
   "XCTAssertEqual(readyForGateCheck.confirmedRunHelp, \"confirmed run requires loopback gateway URL\")",

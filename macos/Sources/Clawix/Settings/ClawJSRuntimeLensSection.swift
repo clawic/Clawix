@@ -236,6 +236,27 @@ struct ClawJSRuntimeLensSection: View {
         if let userVisibleContract = result.userVisibleContract {
             policyFields.append("user visible contract \(userVisibleContract)")
         }
+        if let claimEffect = result.claimEffect {
+            policyFields.append("claim effect \(claimEffect)")
+        }
+        if let fallbackPolicy = result.fallbackPolicy {
+            policyFields.append("fallback \(fallbackPolicy)")
+        }
+        if let supportResolution = result.supportResolution {
+            policyFields.append("support resolution \(supportResolution)")
+        }
+        if let promotionGate = result.promotionGate {
+            policyFields.append("promotion gate \(promotionGate)")
+        }
+        if let evidenceRequirementId = result.evidenceRequirementId {
+            policyFields.append("evidence \(evidenceRequirementId)")
+        }
+        if let evidenceReentryStatus = result.evidenceReentryStatus {
+            policyFields.append("reentry \(evidenceReentryStatus)")
+        }
+        if let commandShape = result.commandShape {
+            policyFields.append("action command \(commandShape)")
+        }
         if let productDecision = result.productDecision {
             policyFields.append("product decision \(productDecision)")
         }

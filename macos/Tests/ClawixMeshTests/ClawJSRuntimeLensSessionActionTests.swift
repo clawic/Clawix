@@ -703,6 +703,7 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertTrue(details.contains {
             $0.contains("safe default metadata_only_projection_until_official_runtime_session_store_or_cli_is_available")
                 && $0.contains("user visible contract session_history_is_degraded_until_native_store_or_cli_evidence_exists")
+                && $0.contains("claim effect does_not_satisfy_native_session_history_parity")
         })
         XCTAssertTrue(details.contains {
             $0.contains("found false")
@@ -800,9 +801,11 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
             $0.contains("round-trip verification unavailable_no_sqlite_history")
                 && $0.contains("writes runtime true")
         })
-        XCTAssertTrue(details.contains(
-            "transport policy safe default keep_action_claim_unpromoted_until_native_history_can_be_read, user visible contract gateway_send_accepted_but_native_round_trip_not_verified"
-        ))
+        XCTAssertTrue(details.contains {
+            $0.contains("safe default keep_action_claim_unpromoted_until_native_history_can_be_read")
+                && $0.contains("user visible contract gateway_send_accepted_but_native_round_trip_not_verified")
+                && $0.contains("claim effect does_not_satisfy_native_session_send_parity")
+        })
         XCTAssertTrue(details.contains(
             "provenance checked sqlite_messages, safe default keep_action_claim_unpromoted_until_native_history_can_be_read"
         ))
