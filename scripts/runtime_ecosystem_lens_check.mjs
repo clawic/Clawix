@@ -162,18 +162,18 @@ if (!exists(hermesFixturePath)) {
     requireEqual(support?.ecosystem?.summary?.includes(summaryFragment), true, `Hermes fixture support summary includes ${summaryFragment}`);
     requireEqual(supportAudit?.summary?.includes(summaryFragment), true, `Hermes fixture support audit summary includes ${summaryFragment}`);
   }
-  requireEqual(officialSnapshot?.capturedAt, "2026-05-25", "Hermes fixture official snapshot captured date");
-  requireEqual(officialSnapshot?.sourceSnapshotDate, "2026-05-25", "Hermes fixture official snapshot source snapshot date");
+  requireEqual(officialSnapshot?.capturedAt, "2026-05-26", "Hermes fixture official snapshot captured date");
+  requireEqual(officialSnapshot?.sourceSnapshotDate, "2026-05-26", "Hermes fixture official snapshot source snapshot date");
   requireEqual(officialSnapshot?.sourceType, "official_docs", "Hermes fixture official snapshot source type");
   requireEqual(officialSnapshot?.manifestSource, "docs/runtime-ecosystem-integration.manifest.json", "Hermes fixture official snapshot manifest source");
   requireEqual(officialSnapshot?.driftPolicy, "hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete", "Hermes fixture official snapshot drift policy");
   requireEqual(officialSnapshot?.sources?.length, 8, "Hermes fixture official snapshot source count");
   requireEqual(officialSnapshot?.sources?.includes("https://hermes-agent.nousresearch.com/docs/user-guide/cli/"), true, "Hermes fixture official snapshot CLI source");
   requireEqual(officialSnapshot?.sources?.includes("https://github.com/NousResearch/hermes-agent"), true, "Hermes fixture official snapshot repo source");
-  requireEqual(support?.ecosystem?.officialSnapshot?.capturedAt, "2026-05-25", "Hermes fixture support ecosystem official snapshot");
-  requireEqual(supportAudit?.officialSnapshot?.capturedAt, "2026-05-25", "Hermes fixture support audit official snapshot");
+  requireEqual(support?.ecosystem?.officialSnapshot?.capturedAt, "2026-05-26", "Hermes fixture support ecosystem official snapshot");
+  requireEqual(supportAudit?.officialSnapshot?.capturedAt, "2026-05-26", "Hermes fixture support audit official snapshot");
   requireEqual(supportAudit?.provenance?.officialSnapshotSource, "docs/runtime-ecosystem-integration.manifest.json", "Hermes fixture support audit snapshot provenance");
-  requireEqual(supportAudit?.provenance?.sourceSnapshotDate, "2026-05-25", "Hermes fixture support audit source snapshot date");
+  requireEqual(supportAudit?.provenance?.sourceSnapshotDate, "2026-05-26", "Hermes fixture support audit source snapshot date");
   for (const reason of [
     "native_write_back_pending",
     "approval_gate_fixture_pending",
