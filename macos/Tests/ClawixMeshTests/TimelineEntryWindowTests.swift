@@ -74,6 +74,60 @@ final class TimelineEntryWindowTests: XCTestCase {
         })
     }
 
+    func testCompletedAssistantMessageExposesChangedFileCardsImmediately() {
+        let message = ChatMessage(
+            role: .assistant,
+            content: "Done.",
+            streamingFinished: true,
+            timeline: [
+                .tools(
+                    id: UUID(),
+                    items: [
+                        WorkItem(
+                            id: "file-1",
+                            kind: .fileChange(paths: ["README.md", "docs/notes.md", "README.md"]),
+                            status: .completed
+                        )
+                    ]
+                )
+            ]
+        )
+
+        let paths = ChatTrailingCards.changedFilePaths(
+            for: message,
+            responseStreaming: false
+        )
+
+        XCTAssertEqual(paths, ["README.md", "docs/notes.md"])
+    }
+
+    func testStreamingAssistantMessageDefersChangedFileCards() {
+        let message = ChatMessage(
+            role: .assistant,
+            content: "Working.",
+            streamingFinished: false,
+            timeline: [
+                .tools(
+                    id: UUID(),
+                    items: [
+                        WorkItem(
+                            id: "file-1",
+                            kind: .fileChange(paths: ["README.md"]),
+                            status: .completed
+                        )
+                    ]
+                )
+            ]
+        )
+
+        let paths = ChatTrailingCards.changedFilePaths(
+            for: message,
+            responseStreaming: true
+        )
+
+        XCTAssertEqual(paths, [])
+    }
+
     private func entries(count: Int) -> [AssistantTimelineEntry] {
         (0..<count).map { index in
             .message(id: UUID(), text: String(index))

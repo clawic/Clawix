@@ -337,18 +337,19 @@ struct MessageRow: View, Equatable {
                 // attachment cards. Order matches first-touch, deduped.
                 // Only surfaces once the turn fully ends so the cards
                 // don't pop in beside the still-streaming reasoning.
-                if closedMetadataReady, !responseStreaming, message.streamingFinished {
-                    let changedFiles = ChangedFilePathCache.shared.paths(for: message)
-                    if !changedFiles.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            ForEach(changedFiles, id: \.self) { path in
-                                ChangedFileCard(path: path)
-                                    .frame(maxWidth: chatRailMaxWidth * 0.7, alignment: .leading)
-                            }
+                let changedFiles = ChatTrailingCards.changedFilePaths(
+                    for: message,
+                    responseStreaming: responseStreaming
+                )
+                if !changedFiles.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(changedFiles, id: \.self) { path in
+                            ChangedFileCard(path: path)
+                                .frame(maxWidth: chatRailMaxWidth * 0.7, alignment: .leading)
                         }
-                        .padding(.top, 4)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .padding(.top, 4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 // The runtime shows a "Website · Open" preview card under the
@@ -358,7 +359,6 @@ struct MessageRow: View, Equatable {
                 // URL inside the plan body doesn't double up as a separate
                 // trailing card.
                 if isLastAssistantMessage,
-                   closedMetadataReady,
                    !responseStreaming,
                    message.streamingFinished,
                    !message.isError,
@@ -805,6 +805,18 @@ struct MessageActionIcon: View {
             IconImage(name, size: 14.3)
                 .foregroundColor((hovered ? Color.gray(light: 0.23, dark: 0.82) : Color.gray(light: 0.50, dark: 0.45)))
         }
+    }
+}
+
+enum ChatTrailingCards {
+    static func changedFilePaths(
+        for message: ChatMessage,
+        responseStreaming: Bool
+    ) -> [String] {
+        guard !responseStreaming,
+              message.streamingFinished
+        else { return [] }
+        return ChangedFilePathCache.shared.paths(for: message)
     }
 }
 

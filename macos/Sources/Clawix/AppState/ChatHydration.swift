@@ -207,6 +207,10 @@ extension AppState {
                 let convertStarted = CFAbsoluteTimeGetCurrent()
                 let messages = rolloutChatMessages(from: result)
                 let convertMs = (CFAbsoluteTimeGetCurrent() - convertStarted) * 1000
+                await ChatMarkdownPrewarmer.prewarm(
+                    messages: messages,
+                    timelineEntryLimit: 0
+                )
                 RenderProbe.mark(
                     "ChatHydrationLocalConvert",
                     fields: [
@@ -355,7 +359,12 @@ extension AppState {
             let locateMs = (CFAbsoluteTimeGetCurrent() - locateStarted) * 1000
             let readStarted = CFAbsoluteTimeGetCurrent()
             let result = RolloutReader.readTailWithStatus(path: path)
+            let messages = rolloutChatMessages(from: result)
             let readMs = (CFAbsoluteTimeGetCurrent() - readStarted) * 1000
+            await ChatMarkdownPrewarmer.prewarm(
+                messages: messages,
+                timelineEntryLimit: 0
+            )
             await MainActor.run { [weak self] in
                 guard let self else { return }
                 self.sessionHistoryHydrationTasks[chatId] = nil
@@ -373,7 +382,19 @@ extension AppState {
                         "readMs": String(format: "%.1f", readMs)
                     ]
                 )
-                self.applyRolloutResult(result, chatId: chatId)
+                self.messagesPaginationByChat[chatId] = ChatPagination(
+                    oldestKnownId: result.entries.first?.id.uuidString,
+                    hasMore: result.hasMoreBefore,
+                    loadingOlder: false
+                )
+                if let plan = result.latestPlan {
+                    self.planByChat[chatId] = plan
+                }
+                self.applyRolloutMessages(
+                    messages,
+                    lastTurnInterrupted: result.lastTurnInterrupted,
+                    chatId: chatId
+                )
             }
         }
         return true
@@ -407,6 +428,10 @@ extension AppState {
                     loadingOlder: false
                 )
                 let messages = records.map(Self.chatMessage(fromClawJSSessionMessage:))
+                await ChatMarkdownPrewarmer.prewarm(
+                    messages: messages,
+                    timelineEntryLimit: 0
+                )
                 self.applyRolloutMessages(
                     messages,
                     lastTurnInterrupted: false,
@@ -440,10 +465,27 @@ extension AppState {
         let result = await Task.detached(priority: .userInitiated) {
             RolloutReader.readTailWithStatus(path: path)
         }.value
+        let messages = rolloutChatMessages(from: result)
+        await ChatMarkdownPrewarmer.prewarm(
+            messages: messages,
+            timelineEntryLimit: 0
+        )
         mutateChat(id: chatId) { c in
             c.rolloutPath = path
         }
-        applyRolloutResult(result, chatId: chatId)
+        messagesPaginationByChat[chatId] = ChatPagination(
+            oldestKnownId: result.entries.first?.id.uuidString,
+            hasMore: result.hasMoreBefore,
+            loadingOlder: false
+        )
+        if let plan = result.latestPlan {
+            planByChat[chatId] = plan
+        }
+        applyRolloutMessages(
+            messages,
+            lastTurnInterrupted: result.lastTurnInterrupted,
+            chatId: chatId
+        )
         return true
     }
 
