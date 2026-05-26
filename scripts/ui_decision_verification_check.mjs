@@ -371,7 +371,7 @@ if (verifiedSemantics?.completionEffect !== "counts-toward-completion") {
 
 const d = (value) => Buffer.from(value, "base64").toString("utf8");
 const expectedDecisions = [
-  ["initial_scope", "Cross-platform from day one"],
+  ["initial_scope", "Cross-platform desde dia 1"],
   ["enforcement_mode", d("QmxvcXVlbyBlc3RyaWN0byB5YQ==")],
   ["canonical_source", d("UmVnaXN0cnkgKyByZWZlcmVuY2lhcw==")],
   ["debt_strategy", d("QmFzZWxpbmUgZGUgZGV1ZGE=")],
