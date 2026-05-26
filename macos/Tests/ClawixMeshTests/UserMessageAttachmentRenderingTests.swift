@@ -127,6 +127,36 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertGreaterThan(page.parsedRecordCount, 0)
     }
 
+    func testRolloutReaderDoesNotExpandSparseTailToWholeFile() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        var lines = [
+            #"{"timestamp":"2026-05-09T10:00:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#
+        ]
+        for idx in 0..<3_000 {
+            lines.append(jsonLine(timestamp: "2026-05-09T10:00:01.000Z", type: "response_item", payload: [
+                "type": "reasoning",
+                "text": "background event \(idx) \(String(repeating: "x", count: 80))"
+            ]))
+        }
+        lines.append(jsonLine(timestamp: "2026-05-09T10:00:02.000Z", type: "event_msg", payload: [
+            "type": "user_message",
+            "message": "latest prompt"
+        ]))
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout, limit: bridgeInitialPageLimit)
+
+        XCTAssertFalse(result.entries.isEmpty)
+        XCTAssertTrue(result.hasMoreBefore)
+        XCTAssertFalse(result.readEntireFile)
+        XCTAssertLessThan(UInt64(result.readBytes), result.totalFileBytes)
+    }
+
     func testRolloutChatMessagesAreSettledForHistoricalRendering() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

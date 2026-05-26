@@ -186,7 +186,7 @@ enum RolloutReader {
             sessionMetaLine: sessionMetaLine,
             now: now
         )
-        while lastResult.entries.count < limit, targetTailBytes < maxTailBytes {
+        while lastResult.entries.isEmpty, targetTailBytes < maxTailBytes {
             targetTailBytes = min(maxTailBytes, max(targetTailBytes * 2, targetTailBytes + 1))
             lastResult = readTailSlice(
                 handle: handle,
@@ -234,6 +234,12 @@ enum RolloutReader {
         }
         slices.append(ParseSlice(data: tailData, baseOffset: alignedOffset))
         var result = parse(slices: slices, now: now)
+        if result.entries.isEmpty {
+            let visibleTail = parseVisibleEventMessages(slices: slices, now: now)
+            if !visibleTail.entries.isEmpty {
+                result = visibleTail
+            }
+        }
         result.readMode = "tail"
         result.totalFileBytes = totalSize
         result.requestedMaxBytes = maxBytes
@@ -241,6 +247,85 @@ enum RolloutReader {
         result.alignedOffset = alignedOffset
         result.hasMoreBefore = alignedOffset > 0
         return result
+    }
+
+    private static func parseVisibleEventMessages(slices: [ParseSlice], now: Date) -> ReadResult {
+        var out: [RolloutHistoryEntry] = []
+        var pending: PendingAssistant?
+        var parsedRecordCount = 0
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let isoFallback = ISO8601DateFormatter()
+        isoFallback.formatOptions = [.withInternetDateTime]
+
+        for slice in slices {
+            var start = slice.data.startIndex
+            while start < slice.data.endIndex {
+                let lineStart = start
+                let nl = slice.data[start...].firstIndex(of: 0x0a) ?? slice.data.endIndex
+                let line = slice.data[start..<nl]
+                start = nl < slice.data.endIndex ? slice.data.index(after: nl) : slice.data.endIndex
+                guard !line.isEmpty,
+                      let obj = (try? JSONSerialization.jsonObject(with: Data(line), options: [])) as? [String: Any],
+                      let payload = obj["payload"] as? [String: Any],
+                      (obj["type"] as? String) == "event_msg"
+                else { continue }
+                let inner = payload["type"] as? String
+                guard inner == "user_message" || inner == "agent_message" else { continue }
+                parsedRecordCount += 1
+                let lineOffset = slice.baseOffset + UInt64(lineStart - slice.data.startIndex)
+                let timestamp = (obj["timestamp"] as? String).flatMap {
+                    isoFormatter.date(from: $0) ?? isoFallback.date(from: $0)
+                } ?? now
+
+                if inner == "user_message" {
+                    if let p = pending {
+                        out.append(p.finalize())
+                        pending = nil
+                    }
+                    let text = (payload["message"] as? String)?
+                        .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    let attachments = Self.loadImageAttachments(
+                        from: payload["images"],
+                        localImages: payload["local_images"]
+                    )
+                    if !text.isEmpty || !attachments.isEmpty {
+                        out.append(RolloutHistoryEntry(
+                            id: stableMessageId(offset: lineOffset),
+                            role: .user,
+                            text: text,
+                            timestamp: timestamp,
+                            timeline: [],
+                            attachments: attachments
+                        ))
+                    }
+                    continue
+                }
+
+                let phase = payload["phase"] as? String
+                guard phase != "interim_summary",
+                      let raw = payload["message"] as? String
+                else { continue }
+                let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !text.isEmpty else { continue }
+                if pending == nil {
+                    pending = PendingAssistant(
+                        id: stableMessageId(offset: lineOffset),
+                        startOffset: lineOffset,
+                        timestamp: timestamp
+                    )
+                }
+                pending?.appendText(text, isFinal: phase == "final_answer")
+            }
+        }
+        if let p = pending {
+            out.append(p.finalize())
+        }
+        return ReadResult(
+            entries: out,
+            lastTurnInterrupted: false,
+            parsedRecordCount: parsedRecordCount
+        )
     }
 
     static func readWindowBefore(
