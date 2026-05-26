@@ -496,6 +496,43 @@ function writeSupportArtifacts(outputDir, profile, config) {
   };
 }
 
+function scalingDimensionsFor(config) {
+  return {
+    conversationCount: config.conversationCount,
+    activeConversationCount: config.activeConversationCount,
+    pinnedConversationCount: config.pinnedConversationCount,
+    projectCount: config.projectCount,
+    conversationsPerProject: Math.ceil(config.conversationCount / Math.max(1, config.projectCount)),
+    archivedConversationCount: config.archivedConversationCount,
+    titleLengthDistribution: config.sidebarRowHeightVariance,
+    timestampDistribution: "recency-skewed-deterministic",
+    unreadRunningErrorStates: config.activeConversationCount,
+    messageCountPerConversation: {
+      default: config.messagesPerConversation,
+      heavy: config.heavyMessagesPerConversation,
+      heavyConversationCount: config.heavyConversationCount,
+    },
+    latestMessageLength: config.streamingDeltaByteSize * 4,
+    middleMessageLength: config.streamingDeltaByteSize * 2,
+    oldHistoryPageCount: config.oldHistoryPageCount,
+    markdownDensity: config.markdownDensity,
+    codeBlockDensity: config.codeBlockDensity,
+    tableListQuoteDensity: config.tableListQuoteDensity,
+    toolActionWorkSummaryDensity: config.toolActionWorkSummaryDensity,
+    streamingDeltaCount: config.streamingDeltaCount,
+    streamingDeltaByteSize: config.streamingDeltaByteSize,
+    attachmentMetadataCount: config.attachmentMetadataCount,
+    imageFilePlaceholderCount: config.imageFilePlaceholderCount,
+    errorRetryCancelStates: Math.max(1, Math.floor(config.activeConversationCount / 4)),
+    sidebarRowHeightVariance: config.sidebarRowHeightVariance,
+    searchVisibleTextVolume: config.searchVisibleTextVolume,
+    incrementalMetadataChurn: config.incrementalMetadataChurn,
+    databaseRowCount: config.databaseRowCount,
+    bridgePayloadBytes: config.bridgePayloadBytes,
+    idleTimerPressure: config.idleTimerPressure,
+  };
+}
+
 function checksumsFor(outputDir, relativeFiles) {
   const checksums = {};
   for (const relative of relativeFiles) {
@@ -548,40 +585,7 @@ function materializeProfile(profile, rootOutDir, seedText) {
       compatibleWorkloads: ["sessions", "attachments", "dense"],
       adapter: "clawix-macos-thread-fixture-and-rollout-jsonl",
     },
-    scalingDimensions: {
-      conversationCount: config.conversationCount,
-      activeConversationCount: config.activeConversationCount,
-      pinnedConversationCount: config.pinnedConversationCount,
-      projectCount: config.projectCount,
-      conversationsPerProject: Math.ceil(config.conversationCount / Math.max(1, config.projectCount)),
-      archivedConversationCount: config.archivedConversationCount,
-      titleLengthDistribution: config.sidebarRowHeightVariance,
-      timestampDistribution: "recency-skewed-deterministic",
-      unreadRunningErrorStates: config.activeConversationCount,
-      messageCountPerConversation: {
-        default: config.messagesPerConversation,
-        heavy: config.heavyMessagesPerConversation,
-        heavyConversationCount: config.heavyConversationCount,
-      },
-      latestMessageLength: config.streamingDeltaByteSize * 4,
-      middleMessageLength: config.streamingDeltaByteSize * 2,
-      oldHistoryPageCount: config.oldHistoryPageCount,
-      markdownDensity: config.markdownDensity,
-      codeBlockDensity: config.codeBlockDensity,
-      tableListQuoteDensity: config.tableListQuoteDensity,
-      toolActionWorkSummaryDensity: config.toolActionWorkSummaryDensity,
-      streamingDeltaCount: config.streamingDeltaCount,
-      streamingDeltaByteSize: config.streamingDeltaByteSize,
-      attachmentMetadataCount: config.attachmentMetadataCount,
-      imageFilePlaceholderCount: config.imageFilePlaceholderCount,
-      errorRetryCancelStates: Math.max(1, Math.floor(config.activeConversationCount / 4)),
-      sidebarRowHeightVariance: config.sidebarRowHeightVariance,
-      searchVisibleTextVolume: config.searchVisibleTextVolume,
-      incrementalMetadataChurn: config.incrementalMetadataChurn,
-      databaseRowCount: config.databaseRowCount,
-      bridgePayloadBytes: config.bridgePayloadBytes,
-      idleTimerPressure: config.idleTimerPressure,
-    },
+    scalingDimensions: scalingDimensionsFor(config),
     materializedArtifacts: {
       threadFixture: "threads.json",
       rolloutDirectory: "rollouts",
@@ -633,6 +637,7 @@ function listProfiles() {
     heavyMessagesPerConversation: config.heavyMessagesPerConversation,
     streamingDeltaCount: config.streamingDeltaCount,
     databaseRowCount: config.databaseRowCount,
+    scalingDimensions: scalingDimensionsFor(config),
   }));
 }
 

@@ -20,6 +20,12 @@ const errors = [];
 const runnerSource = fs.existsSync(path.join(rootDir, runnerPath))
   ? fs.readFileSync(path.join(rootDir, runnerPath), "utf8")
   : "";
+const fixtureGeneratorSource = fs.existsSync(path.join(rootDir, fixtureGeneratorPath))
+  ? fs.readFileSync(path.join(rootDir, fixtureGeneratorPath), "utf8")
+  : "";
+const fixtureVerificationSource = fs.existsSync(path.join(rootDir, fixtureVerificationPath))
+  ? fs.readFileSync(path.join(rootDir, fixtureVerificationPath), "utf8")
+  : "";
 const clxControlModifierSource = fs.existsSync(path.join(rootDir, clxControlModifierPath))
   ? fs.readFileSync(path.join(rootDir, clxControlModifierPath), "utf8")
   : "";
@@ -826,6 +832,27 @@ if (runnerSource) {
   }
   if (runnerSource.includes("ClawixPersistentSurfacePaths") || runnerSource.includes("GRDB") || runnerSource.includes("sqlite")) {
     fail(`${runnerPath} must not write UX trace evidence through the main app database path`);
+  }
+}
+
+if (fixtureGeneratorSource) {
+  for (const snippet of [
+    "function scalingDimensionsFor(config)",
+    "scalingDimensions: scalingDimensionsFor(config)",
+    "scalingDimensions: scalingDimensionsFor(config),",
+  ]) {
+    requireSnippet(fixtureGeneratorSource, fixtureGeneratorPath, snippet);
+  }
+}
+
+if (fixtureVerificationSource) {
+  for (const snippet of [
+    "docs\", \"ui\", \"ux-trace-harness.registry.json",
+    "assertListedProfileScaling(",
+    "realEquivalentPressureDimensions",
+    "real-equivalent-private messageCountPerConversation",
+  ]) {
+    requireSnippet(fixtureVerificationSource, fixtureVerificationPath, snippet);
   }
 }
 

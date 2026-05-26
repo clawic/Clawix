@@ -10,8 +10,9 @@ const clawixRoot = path.resolve(scriptDir, "..");
 const defaultClawjsRoot = path.resolve(clawixRoot, "..", "..", "clawjs");
 const clawjsRoot = process.env.CLAWJS_ROOT ? path.resolve(process.env.CLAWJS_ROOT) : defaultClawjsRoot;
 const generatorPath = path.join(clawixRoot, "scripts", "generate_macos_ux_trace_fixtures.mjs");
+const registryPath = path.join(clawixRoot, "docs", "ui", "ux-trace-harness.registry.json");
 
-const requiredProfiles = [
+const fallbackRequiredProfiles = [
   "smoke",
   "medium",
   "dense-sidebar",
@@ -22,7 +23,7 @@ const requiredProfiles = [
   "real-equivalent-private",
 ];
 
-const requiredScalingDimensions = [
+const fallbackRequiredScalingDimensions = [
   "conversationCount",
   "activeConversationCount",
   "pinnedConversationCount",
@@ -53,6 +54,32 @@ const requiredScalingDimensions = [
   "idleTimerPressure",
 ];
 
+const realEquivalentPressureDimensions = [
+  "conversationCount",
+  "activeConversationCount",
+  "pinnedConversationCount",
+  "projectCount",
+  "archivedConversationCount",
+  "unreadRunningErrorStates",
+  "latestMessageLength",
+  "middleMessageLength",
+  "oldHistoryPageCount",
+  "markdownDensity",
+  "codeBlockDensity",
+  "tableListQuoteDensity",
+  "toolActionWorkSummaryDensity",
+  "streamingDeltaCount",
+  "streamingDeltaByteSize",
+  "attachmentMetadataCount",
+  "imageFilePlaceholderCount",
+  "errorRetryCancelStates",
+  "searchVisibleTextVolume",
+  "incrementalMetadataChurn",
+  "databaseRowCount",
+  "bridgePayloadBytes",
+  "idleTimerPressure",
+];
+
 function fail(message) {
   console.error(`Clawix scale lab fixture check failed: ${message}`);
   process.exit(1);
@@ -60,6 +87,20 @@ function fail(message) {
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+function registryFixtureContract() {
+  if (!fs.existsSync(registryPath)) {
+    return {
+      requiredProfiles: fallbackRequiredProfiles,
+      requiredScalingDimensions: fallbackRequiredScalingDimensions,
+    };
+  }
+  const registry = readJson(registryPath);
+  return {
+    requiredProfiles: (registry.fixtureProfiles || []).map((profile) => profile.id).filter(Boolean),
+    requiredScalingDimensions: registry.scalingDimensions || fallbackRequiredScalingDimensions,
+  };
 }
 
 function runNode(args, options = {}) {
@@ -76,7 +117,7 @@ function runNode(args, options = {}) {
   return result.stdout;
 }
 
-function assertMacOSFixturePack(profile, outDir) {
+function assertMacOSFixturePack(profile, outDir, requiredScalingDimensions) {
   const manifestPath = path.join(outDir, "manifest.json");
   const threadsPath = path.join(outDir, "threads.json");
   for (const file of [
@@ -116,6 +157,48 @@ function assertMacOSFixturePack(profile, outDir) {
   return manifest;
 }
 
+function dimensionValue(profile, dimension) {
+  if (!profile?.scalingDimensions || profile.scalingDimensions[dimension] === undefined) {
+    fail(`${profile?.id || "unknown"} listed profile missing scaling dimension ${dimension}`);
+  }
+  return profile.scalingDimensions[dimension];
+}
+
+function numericDimension(profile, dimension) {
+  const value = dimensionValue(profile, dimension);
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    fail(`${profile.id} scaling dimension ${dimension} must be numeric`);
+  }
+  return value;
+}
+
+function assertListedProfileScaling(listedProfiles, requiredProfiles, requiredScalingDimensions) {
+  const byId = new Map(listedProfiles.map((profile) => [profile.id, profile]));
+  for (const profile of requiredProfiles) {
+    if (!byId.has(profile)) fail(`fixture generator is missing profile ${profile}`);
+  }
+  for (const profile of byId.values()) {
+    for (const dimension of requiredScalingDimensions) {
+      dimensionValue(profile, dimension);
+    }
+  }
+  const worst = byId.get("worst-case");
+  const realEquivalent = byId.get("real-equivalent-private");
+  if (!worst || !realEquivalent) return;
+  for (const dimension of realEquivalentPressureDimensions) {
+    if (numericDimension(realEquivalent, dimension) < numericDimension(worst, dimension)) {
+      fail(`real-equivalent-private ${dimension} must be >= worst-case`);
+    }
+  }
+  for (const field of ["default", "heavy", "heavyConversationCount"]) {
+    const realValue = dimensionValue(realEquivalent, "messageCountPerConversation")?.[field];
+    const worstValue = dimensionValue(worst, "messageCountPerConversation")?.[field];
+    if (typeof realValue !== "number" || typeof worstValue !== "number" || realValue < worstValue) {
+      fail(`real-equivalent-private messageCountPerConversation.${field} must be >= worst-case`);
+    }
+  }
+}
+
 if (!fs.existsSync(path.join(clawjsRoot, "scripts", "scale-lab.ts"))) {
   console.error(`EXTERNAL PENDING scale lab fixture: missing ClawJS scale lab at ${clawjsRoot}`);
   process.exit(2);
@@ -128,18 +211,17 @@ const scratchRoot = fs.mkdtempSync(path.join(os.tmpdir(), "clawix-scale-lab-fixt
 const reportPath = path.join(scratchRoot, "scale-lab-report.json");
 const lockPath = path.join(scratchRoot, "scale.lock");
 try {
+  const { requiredProfiles, requiredScalingDimensions } = registryFixtureContract();
   const listedProfiles = JSON.parse(runNode([generatorPath, "--list"]));
+  assertListedProfileScaling(listedProfiles, requiredProfiles, requiredScalingDimensions);
   const listedIds = new Set(listedProfiles.map((profile) => profile.id));
-  for (const profile of requiredProfiles) {
-    if (!listedIds.has(profile)) fail(`fixture generator is missing profile ${profile}`);
-  }
 
   const fixtureA = path.join(scratchRoot, "macos-fixture-a");
   const fixtureB = path.join(scratchRoot, "macos-fixture-b");
   runNode([generatorPath, "--profile", "smoke", "--seed", "scale-lab-check", "--out-dir", fixtureA, "--json"]);
   runNode([generatorPath, "--profile", "smoke", "--seed", "scale-lab-check", "--out-dir", fixtureB, "--json"]);
-  const manifestA = assertMacOSFixturePack("smoke", fixtureA);
-  const manifestB = assertMacOSFixturePack("smoke", fixtureB);
+  const manifestA = assertMacOSFixturePack("smoke", fixtureA, requiredScalingDimensions);
+  const manifestB = assertMacOSFixturePack("smoke", fixtureB, requiredScalingDimensions);
   if (manifestA.manifestHash !== manifestB.manifestHash) {
     fail("fixture generator must be deterministic for the same profile and seed");
   }
