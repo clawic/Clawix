@@ -593,6 +593,7 @@ if (evidenceSchema) {
     "suiteRequiredFields",
     "runRequiredFields",
     "allowedRunStatuses",
+    "traceIsolationRequiredFields",
     "eventRequiredFields",
     "eventTypes",
     "metricRequiredFields",
@@ -607,8 +608,14 @@ if (evidenceSchema) {
   requireUniqueStringArray(requireArray(evidenceSchema.eventTypes, `${evidenceSchemaPath}.eventTypes`, expectedEventTypes.length), `${evidenceSchemaPath}.eventTypes`, expectedEventTypes);
   requireUniqueStringArray(requireArray(evidenceSchema.suiteDirectoryShape, `${evidenceSchemaPath}.suiteDirectoryShape`), `${evidenceSchemaPath}.suiteDirectoryShape`, ["suite.json", "suite-metrics.json", "suite-failures.json"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceDirectoryShape, `${evidenceSchemaPath}.evidenceDirectoryShape`), `${evidenceSchemaPath}.evidenceDirectoryShape`, ["logs/failure-ui-states.jsonl"]);
-  requireUniqueStringArray(requireArray(evidenceSchema.suiteRequiredFields, `${evidenceSchemaPath}.suiteRequiredFields`), `${evidenceSchemaPath}.suiteRequiredFields`, ["suiteId", "suiteName", "scenarioCount", "runs", "artifactIndex"]);
-  requireUniqueStringArray(requireArray(evidenceSchema.runRequiredFields, `${evidenceSchemaPath}.runRequiredFields`), `${evidenceSchemaPath}.runRequiredFields`, ["runId", "scenarioId", "fixtureProfile", "artifactIndex"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.suiteRequiredFields, `${evidenceSchemaPath}.suiteRequiredFields`), `${evidenceSchemaPath}.suiteRequiredFields`, ["suiteId", "suiteName", "scenarioCount", "runs", "artifactIndex", "traceIsolation"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.runRequiredFields, `${evidenceSchemaPath}.runRequiredFields`), `${evidenceSchemaPath}.runRequiredFields`, ["runId", "scenarioId", "fixtureProfile", "artifactIndex", "traceIsolation"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.traceIsolationRequiredFields, `${evidenceSchemaPath}.traceIsolationRequiredFields`), `${evidenceSchemaPath}.traceIsolationRequiredFields`, ["mode", "evidenceRootHash", "globalSharedTraceFile", "mainDatabaseTraceWrites", "parallelSafe"]);
+  requireFields(evidenceSchema.traceIsolationContract, `${evidenceSchemaPath}.traceIsolationContract`, ["runDirectory", "suiteDirectory", "forbidden", "externalPaths"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.traceIsolationContract?.forbidden, `${evidenceSchemaPath}.traceIsolationContract.forbidden`), `${evidenceSchemaPath}.traceIsolationContract.forbidden`, ["global shared trace files", "main app database trace writes", "absolute local paths in artifact indexes", "raw external fixture paths"]);
+  if (!String(evidenceSchema.traceIsolationContract?.externalPaths ?? "").includes("sha256 hashes")) {
+    fail(`${evidenceSchemaPath}.traceIsolationContract.externalPaths must require hash-only external paths`);
+  }
   requireUniqueStringArray(requireArray(evidenceSchema.eventRequiredFields, `${evidenceSchemaPath}.eventRequiredFields`), `${evidenceSchemaPath}.eventRequiredFields`, ["runId", "actionId", "surfaceId", "controlId", "kpiId", "timestampMonotonicNs"]);
   requireUniqueStringArray(requireArray(evidenceSchema.metricRequiredFields, `${evidenceSchemaPath}.metricRequiredFields`), `${evidenceSchemaPath}.metricRequiredFields`, ["kpiId", "p50", "p95", "p99", "baseline", "evidenceEventRefs"]);
   requireFields(evidenceSchema.failureStateSidecar, `${evidenceSchemaPath}.failureStateSidecar`, ["path", "requiredWhenFinalUIStateExists", "maxControlsPerState", "maxBytesPerRun", "contentPolicy"]);
@@ -857,6 +864,12 @@ if (runnerSource) {
     "eventType: \"resource.sample\"",
     "eventType: \"database.sample\"",
     "eventType: \"bridge.sample\"",
+    "function traceIsolationForRun(",
+    "traceIsolation: traceIsolationForRun(",
+    "traceIsolation: traceIsolationForSuite(",
+    "globalSharedTraceFile: false",
+    "parallelSafe: true",
+    "publicPathReference(runDir, fixturePack.path)",
     "verifyEvidencePath(result.runDir)",
     "verifyEvidencePath(suiteResult.suiteDir)",
   ]) {
@@ -877,6 +890,11 @@ if (evidenceVerifierSource) {
     "finalUIStateRef points to missing sidecar row",
     "capture.written",
     "sampleCounts",
+    "validateTraceIsolation(",
+    "runDirectoryMatchesRunId must be true",
+    "suiteDirectoryMatchesSuiteId must be true",
+    "validatePathReference(",
+    "must not include an external local path",
     "geometry.sample",
     "resource.sample",
     "database.sample",

@@ -320,9 +320,13 @@ write redacted `logs/failure-ui-states.jsonl` rows that are referenced from
 available diagnostics into `geometry.sample`, `scroll.sample`,
 `render.window`, `hitch.sample`, `resource.sample`, `database.sample`, and
 `bridge.sample` events so agents can query performance facts without opening
-opaque payload hashes. Private baselines, raw captures, readable screenshots,
-local private paths, and aggregate real-mode evidence stay outside the public
-repo. In the normal app, `.clxControl` must remain an
+opaque payload hashes. `run.json` and `suite.json` include a `traceIsolation`
+block proving per-run/per-suite directories, no global shared trace file, no
+main app database trace writes, and relative-only artifact indexes; external
+fixture paths are represented by hashes rather than local absolute paths.
+Private baselines, raw captures, readable screenshots, local private paths,
+and aggregate real-mode evidence stay outside the public repo. In the normal
+app, `.clxControl` must remain an
 `accessibilityIdentifier`-only marker; frame probes, registry writes, fixture
 mutation, screenshots, the loopback server, and trace-event JSONL are allowed
 only in isolated agent instances or explicit diagnostic probes.

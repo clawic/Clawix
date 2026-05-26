@@ -237,6 +237,56 @@ function mkdirSuiteEvidence(root, suiteId) {
   return suiteDir;
 }
 
+function isRelativeSafe(relativePath) {
+  return Boolean(relativePath) && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
+}
+
+function publicPathReference(baseDir, absolutePath) {
+  if (!absolutePath) return null;
+  const relative = path.relative(baseDir, absolutePath);
+  if (isRelativeSafe(relative)) {
+    return {
+      kind: "relative-to-run",
+      path: relative,
+    };
+  }
+  return {
+    kind: "external-hash-only",
+    pathHash: stableHash(path.resolve(absolutePath)),
+  };
+}
+
+function traceIsolationForRun(runDir, runId, options) {
+  return {
+    mode: options.dryRun ? "dry-run-per-run-directory" : "isolated-agent-instance",
+    runDirectoryName: path.basename(runDir),
+    runDirectoryMatchesRunId: path.basename(runDir) === runId,
+    evidenceRootName: path.basename(path.dirname(runDir)),
+    evidenceRootHash: stableHash(path.dirname(runDir)),
+    controlEndpointHash: options.controlUrl ? stableHash(options.controlUrl) : null,
+    tokenHash: options.token ? stableHash(options.token) : null,
+    globalSharedTraceFile: false,
+    mainDatabaseTraceWrites: false,
+    parallelSafe: true,
+  };
+}
+
+function traceIsolationForSuite(suiteDir, suiteId, args, childRunDirs) {
+  return {
+    mode: args["dry-run"] ? "dry-run-suite-directory" : "isolated-agent-instance-suite",
+    suiteDirectoryName: path.basename(suiteDir),
+    suiteDirectoryMatchesSuiteId: path.basename(suiteDir) === suiteId,
+    evidenceRootName: path.basename(path.dirname(suiteDir)),
+    evidenceRootHash: stableHash(path.dirname(suiteDir)),
+    controlEndpointHash: args["control-url"] ? stableHash(args["control-url"]) : null,
+    tokenHash: args.token ? stableHash(args.token) : null,
+    childRunDirectories: childRunDirs,
+    globalSharedTraceFile: false,
+    mainDatabaseTraceWrites: false,
+    parallelSafe: true,
+  };
+}
+
 function buildIndexes(registry, manifest) {
   return {
     surfaceIds: new Set((registry.traceSurfaces || []).map((surface) => surface.id)),
@@ -1184,6 +1234,7 @@ async function runScenario(args) {
       computerUseWitness: false,
       mainDatabaseTraceWrites: false,
     },
+    traceIsolation: traceIsolationForRun(runDir, runId, options),
     startedAt,
     finishedAt,
     status,
@@ -1216,8 +1267,8 @@ async function runScenario(args) {
     synthetic: true,
     privateContentExported: false,
     generatedFixture: fixturePack ? {
-      path: fixturePack.path,
-      manifestPath: fixturePack.manifestPath,
+      path: publicPathReference(runDir, fixturePack.path),
+      manifestPath: publicPathReference(runDir, fixturePack.manifestPath),
       manifestHash: fixturePack.manifest.manifestHash,
       generatorVersion: fixturePack.manifest.generatorVersion,
       counts: fixturePack.manifest.counts,
@@ -1298,6 +1349,7 @@ async function runSuite(args) {
 
   const status = aggregateSuiteStatus(results, Boolean(args["dry-run"]));
   const finishedAt = isoNow();
+  const suiteRunDirs = results.map((result) => path.relative(suiteDir, result.runDir));
   const suite = {
     schemaVersion: 1,
     suiteId,
@@ -1316,6 +1368,7 @@ async function runSuite(args) {
       computerUseWitness: false,
       mainDatabaseTraceWrites: false,
     },
+    traceIsolation: traceIsolationForSuite(suiteDir, suiteId, args, suiteRunDirs),
     privateBoundary: {
       containsPrivateConversationText: false,
       containsReadablePrivateScreenshots: false,
@@ -1329,13 +1382,13 @@ async function runSuite(args) {
       status: result.status,
       failures: result.failures,
       metrics: result.metrics,
-      runDir: path.relative(suiteDir, result.runDir),
+      runDir: suiteRunDirs[index],
     })),
     artifactIndex: [
       "suite.json",
       "suite-metrics.json",
       "suite-failures.json",
-      ...results.map((result) => path.relative(suiteDir, result.runDir)),
+      ...suiteRunDirs,
     ],
   };
   writeJson(path.join(suiteDir, "suite.json"), suite);

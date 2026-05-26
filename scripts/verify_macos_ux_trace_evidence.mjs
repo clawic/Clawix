@@ -80,6 +80,52 @@ function validatePrivateBoundary(failures, boundary, label) {
   if (boundary.publicSafe !== true) fail(failures, `${label}.privateBoundary.publicSafe must be true`);
 }
 
+function isRelativeSafe(relativePath) {
+  return typeof relativePath === "string" && relativePath.length > 0 && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
+}
+
+function validateTraceIsolation(failures, isolation, label, expectedNameField, expectedName) {
+  requireFields(failures, isolation, `${label}.traceIsolation`, [
+    "mode",
+    "evidenceRootName",
+    "evidenceRootHash",
+    "globalSharedTraceFile",
+    "mainDatabaseTraceWrites",
+    "parallelSafe",
+  ]);
+  if (isolation?.globalSharedTraceFile !== false) fail(failures, `${label}.traceIsolation.globalSharedTraceFile must be false`);
+  if (isolation?.mainDatabaseTraceWrites !== false) fail(failures, `${label}.traceIsolation.mainDatabaseTraceWrites must be false`);
+  if (isolation?.parallelSafe !== true) fail(failures, `${label}.traceIsolation.parallelSafe must be true`);
+  if (expectedNameField && isolation?.[expectedNameField] !== expectedName) {
+    fail(failures, `${label}.traceIsolation.${expectedNameField} must be ${expectedName}`);
+  }
+}
+
+function validateArtifactIndex(failures, rows, label) {
+  for (const row of rows || []) {
+    if (!isRelativeSafe(row)) fail(failures, `${label}.artifactIndex contains unsafe path ${row}`);
+  }
+}
+
+function validatePathReference(failures, value, label) {
+  if (!value || typeof value !== "object") {
+    fail(failures, `${label} must be a public-safe path reference object`);
+    return;
+  }
+  if (value.kind === "relative-to-run") {
+    if (!isRelativeSafe(value.path)) fail(failures, `${label}.path must be relative and safe`);
+    return;
+  }
+  if (value.kind === "external-hash-only") {
+    if (typeof value.pathHash !== "string" || !value.pathHash.startsWith("sha256:")) {
+      fail(failures, `${label}.pathHash must be a sha256 hash`);
+    }
+    if (Object.hasOwn(value, "path")) fail(failures, `${label} must not include an external local path`);
+    return;
+  }
+  fail(failures, `${label}.kind must be relative-to-run or external-hash-only`);
+}
+
 function validateRun(runDir, schema, options = {}) {
   const failures = [];
   const requiredFiles = [
@@ -106,6 +152,9 @@ function validateRun(runDir, schema, options = {}) {
   if (run.program !== "macos-ux-trace-harness") fail(failures, "run.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(run.status)) fail(failures, `run.json.status ${run.status} is not allowed`);
   validatePrivateBoundary(failures, run.privateBoundary, "run.json");
+  validateTraceIsolation(failures, run.traceIsolation, "run.json", "runDirectoryName", path.basename(runDir));
+  if (run.traceIsolation?.runDirectoryMatchesRunId !== true) fail(failures, "run.json.traceIsolation.runDirectoryMatchesRunId must be true");
+  validateArtifactIndex(failures, run.artifactIndex, "run.json");
   for (const relativePath of requiredFiles) {
     if (!run.artifactIndex?.includes(relativePath)) fail(failures, `run.json.artifactIndex is missing ${relativePath}`);
   }
@@ -118,6 +167,10 @@ function validateRun(runDir, schema, options = {}) {
     validatePrivateBoundary(failures, fixtureManifest.generatedFixture?.privateBoundary ?? fixtureManifest.privateBoundary, "fixture-manifest.json");
   } else if (fixtureManifest.privateContentExported !== false) {
     fail(failures, "fixture-manifest.json must either carry privateBoundary or privateContentExported=false");
+  }
+  if (fixtureManifest.generatedFixture) {
+    validatePathReference(failures, fixtureManifest.generatedFixture.path, "fixture-manifest.json.generatedFixture.path");
+    validatePathReference(failures, fixtureManifest.generatedFixture.manifestPath, "fixture-manifest.json.generatedFixture.manifestPath");
   }
 
   const eventTypes = new Set(schema.eventTypes);
@@ -296,12 +349,16 @@ function validateSuite(suiteDir, schema) {
   if (suite.program !== "macos-ux-trace-harness") fail(failures, "suite.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(suite.status)) fail(failures, `suite.json.status ${suite.status} is not allowed`);
   validatePrivateBoundary(failures, suite.privateBoundary, "suite.json");
+  validateTraceIsolation(failures, suite.traceIsolation, "suite.json", "suiteDirectoryName", path.basename(suiteDir));
+  if (suite.traceIsolation?.suiteDirectoryMatchesSuiteId !== true) fail(failures, "suite.json.traceIsolation.suiteDirectoryMatchesSuiteId must be true");
+  validateArtifactIndex(failures, suite.artifactIndex, "suite.json");
   if (suiteMetrics.suiteId !== suite.suiteId) fail(failures, "suite-metrics.json suiteId must match suite.json");
   if (suiteFailures.suiteId !== suite.suiteId) fail(failures, "suite-failures.json suiteId must match suite.json");
 
   const runResults = [];
   for (const [index, row] of (suite.runs || []).entries()) {
     requireFields(failures, row, `suite.json.runs[${index}]`, ["runId", "scenarioId", "fixtureProfile", "status", "runDir"]);
+    if (!isRelativeSafe(row.runDir)) fail(failures, `suite.json.runs[${index}].runDir must be relative and safe`);
     const runDir = path.join(suiteDir, row.runDir);
     const runResult = validateRun(runDir, schema, { allowStatusMismatch: false });
     runResults.push(runResult);

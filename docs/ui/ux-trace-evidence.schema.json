@@ -33,6 +33,7 @@
     "status",
     "launchMode",
     "instrumentationFlags",
+    "traceIsolation",
     "privateBoundary",
     "runs",
     "artifactIndex"
@@ -51,6 +52,7 @@
     "osVersion",
     "launchMode",
     "instrumentationFlags",
+    "traceIsolation",
     "startedAt",
     "finishedAt",
     "status",
@@ -65,6 +67,25 @@
     "PARTIAL",
     "EXTERNAL_PENDING"
   ],
+  "traceIsolationRequiredFields": [
+    "mode",
+    "evidenceRootName",
+    "evidenceRootHash",
+    "globalSharedTraceFile",
+    "mainDatabaseTraceWrites",
+    "parallelSafe"
+  ],
+  "traceIsolationContract": {
+    "runDirectory": "Each run must declare a per-run directory name and prove it matches the run id.",
+    "suiteDirectory": "Each suite must declare a per-suite directory name and keep child run directories relative and unique.",
+    "forbidden": [
+      "global shared trace files",
+      "main app database trace writes",
+      "absolute local paths in artifact indexes",
+      "raw external fixture paths"
+    ],
+    "externalPaths": "External fixture paths may be represented only by sha256 hashes; generated in-run fixture packs may be represented as paths relative to the run directory."
+  },
   "eventRequiredFields": [
     "schemaVersion",
     "runId",
