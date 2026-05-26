@@ -175,9 +175,9 @@
       ],
       "steps": [
         { "id": "focus-composer", "action": "measure-action", "wait": "wait-enabled", "target": "composer.input" },
-        { "id": "type-text", "action": "type", "wait": "wait-text", "target": "composer.input" },
-        { "id": "send-mock", "action": "measure-action", "wait": "wait-visible", "target": "chat.message.user" },
-        { "id": "verify-input-cleared", "action": "observe", "wait": "wait-text", "target": "composer.input" },
+        { "id": "type-text", "action": "type", "wait": "wait-text", "target": "composer.input", "text": "reply OK" },
+        { "id": "send-mock", "action": "mock-send", "wait": "wait-visible", "target": "chat.message.user" },
+        { "id": "verify-input-cleared", "action": "observe", "wait": "wait-text", "target": "composer.input", "text": "" },
         { "id": "verify-placeholder", "action": "observe", "wait": "wait-visible", "target": "chat.streaming.placeholder" }
       ]
     },

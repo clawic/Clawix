@@ -925,7 +925,9 @@ struct ComposerView: View {
                         }
                     )
                     .equatable()
-                    .clxControl("composer.input", role: "input", label: "Composer input")
+                    .clxControl("composer.input", role: "input", label: "Composer input") { value in
+                        composer.text = value
+                    }
                     .padding(.horizontal, 9)
                     .padding(.vertical, composerVerticalPadding)
                     .frame(height: composerFrameHeight)

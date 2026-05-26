@@ -22,6 +22,18 @@ extension View {
         accessibilityIdentifier(id)
             .modifier(ClxControlRegistration(id: id, role: role, label: label, activate: activate, setValue: nil))
     }
+
+    /// Variant that lets the control bus set text-like values without AX.
+    /// This is only registered inside isolated agent instances.
+    func clxControl(
+        _ id: String,
+        role: String = "control",
+        label: String = "",
+        setValue: @escaping (String) -> Void
+    ) -> some View {
+        accessibilityIdentifier(id)
+            .modifier(ClxControlRegistration(id: id, role: role, label: label, activate: nil, setValue: setValue))
+    }
 }
 
 private struct ClxControlRegistration: ViewModifier {

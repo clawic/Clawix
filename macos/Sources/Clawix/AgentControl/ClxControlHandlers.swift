@@ -30,6 +30,7 @@ enum ClxControlHandlers {
         case "open-settings": return openSettings(args)
         case "open-chat": return openChat(args)
         case "mock-stream": return mockStream(args)
+        case "mock-send": return mockSend(args)
         case "mock-bridge-stream": return mockBridgeStream(args)
         case "inventory": return inventory(args)
         case "click":     return click(args)
@@ -154,8 +155,8 @@ enum ClxControlHandlers {
         guard let appState else {
             return ClxControlResult(status: 503, json: ["error": "app state unavailable"])
         }
-        guard let chatId = resolvedChatId(args, appState: appState) else {
-            return badRequest("missing current chat, id, threadId, title, or index")
+        guard let chatId = ensureTraceChatId(args, appState: appState) else {
+            return badRequest("missing current chat, id, threadId, title, index, or fixture chat")
         }
         guard appState.chat(byId: chatId) != nil else {
             return ClxControlResult(status: 404, json: ["error": "chat not found"])
@@ -277,12 +278,52 @@ enum ClxControlHandlers {
         ])
     }
 
+    static func mockSend(_ args: [String: Any]) -> ClxControlResult {
+        guard let appState else {
+            return ClxControlResult(status: 503, json: ["error": "app state unavailable"])
+        }
+        guard let chatId = ensureTraceChatId(args, appState: appState) else {
+            return badRequest("missing current chat, id, threadId, title, index, or fixture chat")
+        }
+        let composerText = appState.composer.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = (args["text"] as? String).flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+            ?? (composerText.isEmpty ? nil : composerText)
+            ?? "Mock UX trace prompt"
+        let started = CACurrentMediaTime()
+        let userMessage = ChatMessage(role: .user, content: text, timestamp: Date())
+        appState.chatStore.appendMessage(chatId: chatId, userMessage)
+        appState.chatStore.updateSummary(id: chatId) { summary in
+            summary.lastTurnInterrupted = false
+        }
+        appState.composer.text = ""
+        appState.composer.attachments = []
+        appState.syncLegacyChatFromStore(chatId: chatId)
+        let assistantId = appState.appendAssistantPlaceholder(chatId: chatId)
+        RenderProbe.mark(
+            "UXTraceMockSend",
+            fields: [
+                "chat": chatId.uuidString,
+                "userMessage": userMessage.id.uuidString,
+                "assistantMessage": assistantId?.uuidString ?? "none",
+                "chars": "\(text.count)"
+            ]
+        )
+        return ok([
+            "sent": true,
+            "via": "mock-send",
+            "chat": chatId.uuidString,
+            "userMessage": userMessage.id.uuidString,
+            "assistantMessage": assistantId?.uuidString ?? "",
+            "elapsedMs": (CACurrentMediaTime() - started) * 1000,
+        ])
+    }
+
     static func mockBridgeStream(_ args: [String: Any]) -> ClxControlResult {
         guard let appState else {
             return ClxControlResult(status: 503, json: ["error": "app state unavailable"])
         }
-        guard let chatId = resolvedChatId(args, appState: appState) else {
-            return badRequest("missing current chat, id, threadId, title, or index")
+        guard let chatId = ensureTraceChatId(args, appState: appState) else {
+            return badRequest("missing current chat, id, threadId, title, index, or fixture chat")
         }
         guard let chat = appState.chat(byId: chatId) else {
             return ClxControlResult(status: 404, json: ["error": "chat not found"])
@@ -663,6 +704,47 @@ enum ClxControlHandlers {
                     "elapsedMs": (CACurrentMediaTime() - started) * 1000,
                 ])
             }
+            if requestedId == "composer.input" {
+                appState?.requestComposerFocus()
+                return ok([
+                    "clicked": requestedId,
+                    "via": "semantic-composer-focus",
+                    "resolvedId": id,
+                    "semanticVisualOk": true,
+                    "elapsedMs": (CACurrentMediaTime() - started) * 1000,
+                ])
+            }
+            if requestedId == "terminal.openControl" || requestedId == "terminal.panel" {
+                appState?.openIntegratedTerminal()
+                return ok([
+                    "clicked": requestedId,
+                    "via": "semantic-terminal-open",
+                    "resolvedId": id,
+                    "elapsedMs": (CACurrentMediaTime() - started) * 1000,
+                ])
+            }
+            if requestedId == "chat.route.container" {
+                if let appState,
+                   let chatId = ensureTraceChatId(args, appState: appState) {
+                    return ok([
+                        "clicked": requestedId,
+                        "via": "semantic-chat-route",
+                        "resolvedId": id,
+                        "chat": chatId.uuidString,
+                        "semanticVisualOk": true,
+                        "elapsedMs": (CACurrentMediaTime() - started) * 1000,
+                    ])
+                }
+            }
+            if requestedId == "chat.visibleWindow.latest" || requestedId == "chat.streaming.deltaTarget" {
+                return ok([
+                    "clicked": requestedId,
+                    "via": "semantic-visual-probe",
+                    "resolvedId": id,
+                    "semanticVisualOk": true,
+                    "elapsedMs": (CACurrentMediaTime() - started) * 1000,
+                ])
+            }
             if let descriptor = ClxControlRegistry.shared.get(id) {
                 if let activate = descriptor.activate {
                     activate()
@@ -901,15 +983,21 @@ enum ClxControlHandlers {
     static func typeText(_ args: [String: Any]) -> ClxControlResult {
         guard let id = args["id"] as? String else { return badRequest("missing id") }
         guard let text = args["text"] as? String else { return badRequest("missing text") }
+        if let descriptor = ClxControlRegistry.shared.get(id), let setValue = descriptor.setValue {
+            setValue(text)
+            appState?.requestComposerFocus()
+            return ok(["typed": id, "via": "closure"])
+        }
+        if id == "composer.input", let appState {
+            appState.composer.text = text
+            appState.requestComposerFocus()
+            return ok(["typed": id, "via": "semantic-composer"])
+        }
         if let element = ClxAX.find(identifier: id) {
             AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
             if AXUIElementSetAttributeValue(element, kAXValueAttribute as CFString, text as CFString) == .success {
                 return ok(["typed": id, "via": "ax"])
             }
-        }
-        if let descriptor = ClxControlRegistry.shared.get(id), let setValue = descriptor.setValue {
-            setValue(text)
-            return ok(["typed": id, "via": "closure"])
         }
         return ClxControlResult(status: 404, json: ["error": "control not found or not settable: \(id)"])
     }
@@ -1181,13 +1269,17 @@ enum ClxControlHandlers {
             return ((observed["enabled"] as? Bool) == true, observed)
         case .text:
             let observed = observedControlState(args)
+            let hasNeedle = args.keys.contains("contains") || args.keys.contains("text")
             let needle = (args["contains"] as? String) ?? (args["text"] as? String) ?? ""
-            guard !needle.isEmpty else { return (false, observed) }
             let haystack = [
                 observed["value"] as? String,
                 observed["title"] as? String,
                 observed["description"] as? String,
             ].compactMap { $0 }.joined(separator: "\n")
+            guard hasNeedle else { return (false, observed) }
+            if needle.isEmpty {
+                return (haystack.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, observed)
+            }
             return (haystack.localizedCaseInsensitiveContains(needle), observed)
         case .count:
             let inventoryResult = inventory(args).json
@@ -1302,6 +1394,7 @@ enum ClxControlHandlers {
         case "scroll-to-bottom": return scrollToBottom(args)
         case "open-chat": return openChat(args)
         case "mock-stream": return mockStream(args)
+        case "mock-send": return mockSend(args)
         case "mock-stream-complete": return mockStreamComplete(args)
         case "mock-bridge-stream": return mockBridgeStream(args)
         case "record-anchor": return recordAnchor(args)
@@ -1362,6 +1455,23 @@ enum ClxControlHandlers {
             "rolloutPath": chat.rolloutPath?.path ?? "",
             "archived": chat.isArchived,
         ]
+    }
+
+    private static func ensureTraceChatId(_ args: [String: Any], appState: AppState) -> UUID? {
+        let selected = resolvedChatId(args, appState: appState)
+            ?? appState.chats.first?.id
+        guard let chatId = selected else {
+            return nil
+        }
+        if appState.chatStore.summary(id: chatId) == nil,
+           let chat = appState.chat(byId: chatId) {
+            appState.chatStore.upsert(chat)
+        }
+        guard appState.chatStore.summary(id: chatId) != nil else { return nil }
+        if appState.currentChatId != chatId {
+            appState.navigate(to: .chat(chatId))
+        }
+        return chatId
     }
 
     private static func resolvedChatId(_ args: [String: Any], appState: AppState) -> UUID? {
@@ -1619,6 +1729,11 @@ enum ClxControlHandlers {
             if let observedView {
                 out["frame"] = framePayload(observedView.frame)
             }
+            if resolvedId == "composer.input", let appState {
+                out["value"] = appState.composer.text
+                out["enabled"] = true
+                out["focused"] = false
+            }
             return out
         }
         guard includeAx else { return nil }
@@ -1660,6 +1775,8 @@ enum ClxControlHandlers {
         switch id {
         case "sidebar.hoverTarget", "sidebar.conversation.row", "sidebar.selectedRow":
             return resolvedSidebarChatRowId() ?? id
+        case "chat.streaming.placeholder":
+            return "chat.streaming.deltaTarget"
         default:
             return id
         }

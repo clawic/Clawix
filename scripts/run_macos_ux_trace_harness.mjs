@@ -239,6 +239,7 @@ function actionDispatchFor(step) {
   if (step.action === "scroll-to-bottom") return "scroll-to-bottom";
   if (step.action === "type") return "type";
   if (step.action === "hover") return "hover";
+  if (step.action === "mock-send") return "mock-send";
   if (step.action === "mock-stream" || step.action === "mock-bridge-stream") return step.action;
   if (step.action === "mock-stream-complete") return "mock-stream-complete";
   if (step.action === "fixture-metadata-update") return "fixture-metadata-update";
@@ -254,6 +255,7 @@ function verbForStep(step) {
     "scroll-to-bottom",
     "type",
     "hover",
+    "mock-send",
     "mock-stream",
     "mock-stream-complete",
     "mock-bridge-stream",
@@ -281,7 +283,7 @@ function requestBodyForStep(step, options) {
   };
   const dispatch = actionDispatchFor(step);
   if (dispatch) body.action = dispatch;
-  if (step.text) body.text = step.text;
+  if (Object.hasOwn(step, "text")) body.text = step.text;
   if (step.direction) body.direction = step.direction;
   if (step.pages) body.pages = step.pages;
   if (step.contains) body.contains = step.contains;
