@@ -27,6 +27,7 @@ enum ClxControlHandlers {
         case "ping":      return ok(["ok": true, "instanceId": ClxAgentInstance.instanceId])
         case "diagnostics": return diagnostics()
         case "accept-legal": return acceptLegal()
+        case "open-settings": return openSettings(args)
         case "open-chat": return openChat(args)
         case "mock-stream": return mockStream(args)
         case "mock-bridge-stream": return mockBridgeStream(args)
@@ -565,6 +566,23 @@ enum ClxControlHandlers {
     static func acceptLegal() -> ClxControlResult {
         LegalSafetyStore.shared.acceptCurrentLegal()
         return ok(["acceptedLegal": true])
+    }
+
+    static func openSettings(_ args: [String: Any]) -> ClxControlResult {
+        guard let appState else {
+            return ClxControlResult(status: 503, json: ["error": "app state unavailable"])
+        }
+        let requestedCategory = (args["target"] as? String)
+            ?? (args["category"] as? String)
+            ?? (args["id"] as? String)
+        let category = requestedCategory.flatMap(SettingsCategory.init(rawValue:)) ?? .general
+        appState.settingsCategory = category
+        appState.currentRoute = .settings
+        return ok([
+            "route": routeDescription(appState.currentRoute),
+            "settingsCategory": appState.settingsCategory.rawValue,
+            "requestedCategory": requestedCategory ?? "",
+        ])
     }
 
     private static let actionableRoles: Set<String> = [
