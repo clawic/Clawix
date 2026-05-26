@@ -696,7 +696,10 @@ if (evidenceSchema) {
   requireUniqueStringArray(requireArray(evidenceSchema.metricRequiredFields, `${evidenceSchemaPath}.metricRequiredFields`), `${evidenceSchemaPath}.metricRequiredFields`, ["kpiId", "p50", "p95", "p99", "baseline", "evidenceEventRefs"]);
   requireFields(evidenceSchema.failureCorrelationContract, `${evidenceSchemaPath}.failureCorrelationContract`, ["requiredFields", "timelinePolicy"]);
   requireUniqueStringArray(requireArray(evidenceSchema.failureCorrelationContract?.requiredFields, `${evidenceSchemaPath}.failureCorrelationContract.requiredFields`), `${evidenceSchemaPath}.failureCorrelationContract.requiredFields`, ["type", "message", "stepId", "actionId", "surfaceId", "controlId", "kpiId"]);
-  if (!String(evidenceSchema.failureCorrelationContract?.timelinePolicy ?? "").includes("matching step.failed event")) {
+  if (
+    !String(evidenceSchema.failureCorrelationContract?.timelinePolicy ?? "").includes("matching step.failed event")
+    || !String(evidenceSchema.failureCorrelationContract?.timelinePolicy ?? "").includes("every step.failed event must include a failure object")
+  ) {
     fail(`${evidenceSchemaPath}.failureCorrelationContract.timelinePolicy must require matching step.failed events`);
   }
   requireFields(evidenceSchema.failureStateSidecar, `${evidenceSchemaPath}.failureStateSidecar`, ["path", "requiredWhenFinalUIStateExists", "maxControlsPerState", "maxBytesPerRun", "contentPolicy"]);
@@ -1002,6 +1005,7 @@ if (evidenceVerifierSource) {
     "baselineComparisonMetricKey(",
     "baselineFailureKey(",
     "failureEventKey(",
+    "failureRowsByEventKey",
     "comparisonValueMatchesMetric(",
     "expectedBaselineComparisonStatus(",
     "metricKeys",
@@ -1012,6 +1016,8 @@ if (evidenceVerifierSource) {
     "comparisons must include one row per metric",
     "requires a matching failures.json row",
     "must have a matching step.failed event",
+    "step.failed must include a failure object",
+    "step.failed must have a matching failures.json row",
     "baseline_regression must exceed gate.maxRegressionPercent",
     "status must be ${expectedStatus} for its comparison rows and gate",
     "gate.maxRegressionPercent must be numeric",

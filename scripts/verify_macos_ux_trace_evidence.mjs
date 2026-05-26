@@ -566,10 +566,12 @@ function validateRun(runDir, schema, options = {}) {
     validatePrivateBoundary(failures, state.privateBoundary, ref);
   }
 
+  const failureRowsByEventKey = new Map();
   for (const [index, failure] of (failuresArtifact.failures || []).entries()) {
     const label = `failures.json.failures[${index}]`;
     requireFields(failures, failure, label, ["type", "message", "stepId", "actionId", "surfaceId", "controlId", "kpiId"]);
     if (!failureTypes.has(failure.type)) fail(failures, `${label}.type ${failure.type} is not declared`);
+    failureRowsByEventKey.set(failureEventKey(failure), failure);
     const stepFailedEvent = stepFailedEvents.get(failureEventKey(failure));
     if (!stepFailedEvent) {
       fail(failures, `${label} must have a matching step.failed event`);
@@ -586,6 +588,18 @@ function validateRun(runDir, schema, options = {}) {
       } else if (state.finalUIStateHash !== failure.finalUIStateHash) {
         fail(failures, `${label}.finalUIStateHash must match sidecar row`);
       }
+    }
+  }
+  for (const [eventKey, event] of stepFailedEvents.entries()) {
+    const label = `events.jsonl:${event.sequence}`;
+    if (!event.failure || typeof event.failure !== "object") {
+      fail(failures, `${label} step.failed must include a failure object`);
+      continue;
+    }
+    if (!failureRowsByEventKey.has(eventKey)) {
+      fail(failures, `${label} step.failed must have a matching failures.json row`);
+    } else if (failureRowsByEventKey.get(eventKey).type !== event.failure.type) {
+      fail(failures, `${label} failure.type must match failures.json row`);
     }
   }
 
