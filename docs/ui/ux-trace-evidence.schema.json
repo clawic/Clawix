@@ -34,6 +34,7 @@
     "launchMode",
     "instrumentationFlags",
     "traceIsolation",
+    "overheadCalibration",
     "privateBoundary",
     "runs",
     "artifactIndex"
@@ -53,6 +54,7 @@
     "launchMode",
     "instrumentationFlags",
     "traceIsolation",
+    "overheadCalibration",
     "startedAt",
     "finishedAt",
     "status",
@@ -85,6 +87,28 @@
       "raw external fixture paths"
     ],
     "externalPaths": "External fixture paths may be represented only by sha256 hashes; generated in-run fixture packs may be represented as paths relative to the run directory."
+  },
+  "overheadCalibrationRequiredFields": [
+    "status",
+    "harnessMode",
+    "feasible",
+    "controlRun",
+    "instrumentationOverheadEstimate",
+    "traceWriter"
+  ],
+  "overheadCalibrationContract": {
+    "statusValues": [
+      "compared",
+      "external_pending_control_run",
+      "control_artifact_without_comparable_metrics"
+    ],
+    "requiredWhenNoControlRun": "Evidence must explicitly record external_pending_control_run instead of silently omitting the harness-disabled comparison.",
+    "controlRunPrivacy": "Control artifact paths must not be written to public evidence; only artifact/path hashes and public-safe metadata are allowed.",
+    "traceWriterBounds": {
+      "maxEventsPerRun": 100000,
+      "maxEventBytesPerRun": 33554432,
+      "maxFailureUIStateBytesPerRun": 16777216
+    }
   },
   "eventRequiredFields": [
     "schemaVersion",

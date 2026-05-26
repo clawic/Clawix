@@ -101,6 +101,58 @@ function validateTraceIsolation(failures, isolation, label, expectedNameField, e
   }
 }
 
+function validateOverheadCalibration(failures, overhead, label, schema) {
+  requireFields(failures, overhead, `${label}.overheadCalibration`, schema.overheadCalibrationRequiredFields || [
+    "status",
+    "harnessMode",
+    "feasible",
+    "controlRun",
+    "instrumentationOverheadEstimate",
+    "traceWriter",
+  ]);
+  const allowed = new Set(schema.overheadCalibrationContract?.statusValues || []);
+  if (allowed.size > 0 && !allowed.has(overhead?.status)) {
+    fail(failures, `${label}.overheadCalibration.status must be one of ${[...allowed].join(", ")}`);
+  }
+  if (overhead?.feasible !== true) fail(failures, `${label}.overheadCalibration.feasible must be true`);
+  if (!overhead?.controlRun || typeof overhead.controlRun !== "object") {
+    fail(failures, `${label}.overheadCalibration.controlRun must be an object`);
+  } else if (Object.hasOwn(overhead.controlRun, "path")) {
+    fail(failures, `${label}.overheadCalibration.controlRun must not include a local path`);
+  }
+  const estimate = overhead?.instrumentationOverheadEstimate;
+  requireFields(failures, estimate, `${label}.overheadCalibration.instrumentationOverheadEstimate`, [
+    "measured",
+    "status",
+    "unit",
+  ]);
+  if (estimate?.status !== overhead?.status) {
+    fail(failures, `${label}.overheadCalibration.instrumentationOverheadEstimate.status must match overheadCalibration.status`);
+  }
+  const writer = overhead?.traceWriter;
+  requireFields(failures, writer, `${label}.overheadCalibration.traceWriter`, [
+    "eventCount",
+    "eventBytes",
+    "maxEventsPerRun",
+    "maxEventBytesPerRun",
+    "bounded",
+  ]);
+  const bounds = schema.overheadCalibrationContract?.traceWriterBounds || {};
+  if (writer?.bounded !== true) fail(failures, `${label}.overheadCalibration.traceWriter.bounded must be true`);
+  if (Number(writer?.eventCount) > Number(bounds.maxEventsPerRun ?? Number.POSITIVE_INFINITY)) {
+    fail(failures, `${label}.overheadCalibration.traceWriter.eventCount exceeds maxEventsPerRun`);
+  }
+  if (Number(writer?.eventBytes) > Number(bounds.maxEventBytesPerRun ?? Number.POSITIVE_INFINITY)) {
+    fail(failures, `${label}.overheadCalibration.traceWriter.eventBytes exceeds maxEventBytesPerRun`);
+  }
+  if (
+    Object.hasOwn(writer || {}, "failureUIStateBytes")
+    && Number(writer.failureUIStateBytes) > Number(bounds.maxFailureUIStateBytesPerRun ?? Number.POSITIVE_INFINITY)
+  ) {
+    fail(failures, `${label}.overheadCalibration.traceWriter.failureUIStateBytes exceeds maxFailureUIStateBytesPerRun`);
+  }
+}
+
 function validateArtifactIndex(failures, rows, label) {
   for (const row of rows || []) {
     if (!isRelativeSafe(row)) fail(failures, `${label}.artifactIndex contains unsafe path ${row}`);
@@ -154,6 +206,7 @@ function validateRun(runDir, schema, options = {}) {
   validatePrivateBoundary(failures, run.privateBoundary, "run.json");
   validateTraceIsolation(failures, run.traceIsolation, "run.json", "runDirectoryName", path.basename(runDir));
   if (run.traceIsolation?.runDirectoryMatchesRunId !== true) fail(failures, "run.json.traceIsolation.runDirectoryMatchesRunId must be true");
+  validateOverheadCalibration(failures, run.overheadCalibration, "run.json", schema);
   validateArtifactIndex(failures, run.artifactIndex, "run.json");
   for (const relativePath of requiredFiles) {
     if (!run.artifactIndex?.includes(relativePath)) fail(failures, `run.json.artifactIndex is missing ${relativePath}`);
@@ -351,6 +404,7 @@ function validateSuite(suiteDir, schema) {
   validatePrivateBoundary(failures, suite.privateBoundary, "suite.json");
   validateTraceIsolation(failures, suite.traceIsolation, "suite.json", "suiteDirectoryName", path.basename(suiteDir));
   if (suite.traceIsolation?.suiteDirectoryMatchesSuiteId !== true) fail(failures, "suite.json.traceIsolation.suiteDirectoryMatchesSuiteId must be true");
+  validateOverheadCalibration(failures, suite.overheadCalibration, "suite.json", schema);
   validateArtifactIndex(failures, suite.artifactIndex, "suite.json");
   if (suiteMetrics.suiteId !== suite.suiteId) fail(failures, "suite-metrics.json suiteId must match suite.json");
   if (suiteFailures.suiteId !== suite.suiteId) fail(failures, "suite-failures.json suiteId must match suite.json");

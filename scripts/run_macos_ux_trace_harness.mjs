@@ -42,6 +42,7 @@ Options:
   --token <token>          Owner token for the isolated agent instance.
   --out-dir <dir>          Evidence root. Defaults to a temporary directory.
   --baseline <file>        Optional metrics.json or baseline-comparison source.
+  --overhead-control <file> Optional public-safe harness-disabled control artifact for overhead comparison.
   --write-baseline <file>  Write current measured metrics as a public-safe baseline artifact.
   --gate p0                Activate P0 baseline gate. Requires baseline and fails P0 regressions.
   --max-regression-percent <n> Allowed P0 regression percentage for --gate p0. Defaults to 10.
@@ -190,6 +191,14 @@ function failureUIStateWriter(file, common, indexes) {
       return { ref, hash: finalUIStateHash };
     },
     refs,
+    stats() {
+      return {
+        rows: sequence,
+        bytesWritten,
+        maxRows: maxFailureUIStateControls,
+        maxBytesPerRun: maxFailureUIStateBytesPerRun,
+      };
+    },
   };
 }
 
@@ -390,6 +399,14 @@ function eventWriter(file, common) {
       // Events are written synchronously so evidence is complete on return.
     },
     eventRefs,
+    stats() {
+      return {
+        eventCount: sequence,
+        eventBytes: bytesWritten,
+        maxEventsPerRun: maxEvidenceEventsPerRun,
+        maxEventBytesPerRun: maxEvidenceEventBytesPerRun,
+      };
+    },
   };
 }
 
@@ -831,6 +848,118 @@ function writeBaselineArtifact(file, context, metrics) {
   return out;
 }
 
+function totalP95(metrics) {
+  const values = metrics
+    .map((metric) => Number(metric.p95 ?? metric.value))
+    .filter((value) => Number.isFinite(value));
+  if (values.length === 0) return null;
+  return values.reduce((sum, value) => sum + value, 0);
+}
+
+function readOverheadControlArtifact(file, metrics) {
+  if (!file) {
+    return {
+      controlRun: {
+        available: false,
+        reason: "harness-disabled control run not supplied",
+        requiredInput: "--overhead-control <public-safe-control-artifact>",
+      },
+      estimate: {
+        measured: false,
+        status: "external_pending_control_run",
+        reason: "requires a harness-disabled control artifact for the same scenario and fixture profile",
+        unit: "ms_total_p95_delta",
+        currentTotalP95: totalP95(metrics),
+        controlTotalP95: null,
+        delta: null,
+        percentDelta: null,
+      },
+    };
+  }
+  const resolved = path.resolve(file);
+  if (!fs.existsSync(resolved)) {
+    throw new Error(`overhead control artifact does not exist: ${resolved}`);
+  }
+  const artifact = readJson(resolved);
+  const controlMetrics = Array.isArray(artifact.metrics) ? artifact.metrics : [];
+  const currentTotalP95 = totalP95(metrics);
+  const controlTotalP95 = totalP95(controlMetrics);
+  const measured = Number.isFinite(currentTotalP95) && Number.isFinite(controlTotalP95);
+  const delta = measured ? currentTotalP95 - controlTotalP95 : null;
+  return {
+    controlRun: {
+      available: true,
+      artifactHash: stableHash(artifact),
+      pathHash: stableHash(resolved),
+      schemaVersion: artifact.schemaVersion ?? null,
+      program: artifact.program ?? null,
+      highCardinalityInstrumentation: artifact.highCardinalityInstrumentation ?? false,
+    },
+    estimate: {
+      measured,
+      status: measured ? "compared" : "control_artifact_without_comparable_metrics",
+      reason: measured ? null : "control artifact must expose comparable metrics with p95 or value fields",
+      unit: "ms_total_p95_delta",
+      currentTotalP95,
+      controlTotalP95,
+      delta,
+      percentDelta: measured && controlTotalP95 > 0 ? (delta / controlTotalP95) * 100 : null,
+    },
+  };
+}
+
+function overheadCalibrationForRun(args, options, metrics, eventStats, failureUIStateStats) {
+  const control = readOverheadControlArtifact(args["overhead-control"], metrics);
+  return {
+    status: control.estimate.status,
+    harnessMode: options.dryRun ? "dry-run" : "enabled-agent-instance",
+    feasible: true,
+    controlRun: control.controlRun,
+    instrumentationOverheadEstimate: control.estimate,
+    traceWriter: {
+      ...eventStats,
+      failureUIStateRows: failureUIStateStats.rows,
+      failureUIStateBytes: failureUIStateStats.bytesWritten,
+      maxFailureUIStateBytesPerRun: failureUIStateStats.maxBytesPerRun,
+      bounded: true,
+    },
+  };
+}
+
+function overheadCalibrationForSuite(results) {
+  const childRuns = results.map((result) => ({
+    runId: result.runId,
+    status: result.overheadCalibration?.status ?? "missing",
+    eventCount: result.overheadCalibration?.traceWriter?.eventCount ?? null,
+    eventBytes: result.overheadCalibration?.traceWriter?.eventBytes ?? null,
+    estimateMeasured: result.overheadCalibration?.instrumentationOverheadEstimate?.measured ?? false,
+  }));
+  return {
+    status: childRuns.every((run) => run.estimateMeasured) ? "compared" : "external_pending_control_run",
+    harnessMode: "suite-child-runs",
+    feasible: true,
+    controlRun: {
+      available: childRuns.every((run) => run.estimateMeasured),
+      reason: childRuns.every((run) => run.estimateMeasured) ? null : "one or more child runs lack a harness-disabled control artifact",
+    },
+    instrumentationOverheadEstimate: {
+      measured: childRuns.every((run) => run.estimateMeasured),
+      status: childRuns.every((run) => run.estimateMeasured) ? "compared" : "external_pending_control_run",
+      reason: childRuns.every((run) => run.estimateMeasured) ? null : "suite overhead requires comparable control artifacts for every child run",
+      unit: "child-run-total",
+      childRunCount: childRuns.length,
+    },
+    traceWriter: {
+      childRuns,
+      eventCount: childRuns.reduce((sum, run) => sum + Number(run.eventCount || 0), 0),
+      eventBytes: childRuns.reduce((sum, run) => sum + Number(run.eventBytes || 0), 0),
+      maxEventsPerRun: maxEvidenceEventsPerRun,
+      maxEventBytesPerRun: maxEvidenceEventBytesPerRun,
+      bounded: true,
+    },
+  };
+}
+
 function fixtureManifestFromPack(fixtureDir) {
   if (!fixtureDir) return null;
   const resolved = path.resolve(fixtureDir);
@@ -1210,8 +1339,11 @@ async function runScenario(args) {
   };
   const status = failures.length === 0 ? "PASS" : options.dryRun && gateFailures.length === 0 ? "BLOCKED" : "FAIL";
   events.write({ eventType: "run.completed", stepId: "run", actionId: runId, status });
+  const eventStats = events.stats();
+  const failureUIStateStats = failureUIStates.stats();
   events.close();
   const finishedAt = isoNow();
+  const overheadCalibration = overheadCalibrationForRun(args, options, metrics, eventStats, failureUIStateStats);
   const run = {
     schemaVersion: 1,
     runId,
@@ -1235,6 +1367,7 @@ async function runScenario(args) {
       mainDatabaseTraceWrites: false,
     },
     traceIsolation: traceIsolationForRun(runDir, runId, options),
+    overheadCalibration,
     startedAt,
     finishedAt,
     status,
@@ -1280,7 +1413,16 @@ async function runScenario(args) {
   writeJson(path.join(runDir, "baseline-comparison.json"), baselineComparison);
   const writtenBaselinePath = writeBaselineArtifact(args["write-baseline"], { scenarioId, fixtureProfile }, metrics);
 
-  return { ok: status === "PASS", status, runId, runDir, failures: failures.length, metrics: metrics.length, baselinePath: writtenBaselinePath };
+  return {
+    ok: status === "PASS",
+    status,
+    runId,
+    runDir,
+    failures: failures.length,
+    metrics: metrics.length,
+    baselinePath: writtenBaselinePath,
+    overheadCalibration,
+  };
 }
 
 function aggregateSuiteStatus(results, dryRun) {
@@ -1350,6 +1492,7 @@ async function runSuite(args) {
   const status = aggregateSuiteStatus(results, Boolean(args["dry-run"]));
   const finishedAt = isoNow();
   const suiteRunDirs = results.map((result) => path.relative(suiteDir, result.runDir));
+  const overheadCalibration = overheadCalibrationForSuite(results);
   const suite = {
     schemaVersion: 1,
     suiteId,
@@ -1369,6 +1512,7 @@ async function runSuite(args) {
       mainDatabaseTraceWrites: false,
     },
     traceIsolation: traceIsolationForSuite(suiteDir, suiteId, args, suiteRunDirs),
+    overheadCalibration,
     privateBoundary: {
       containsPrivateConversationText: false,
       containsReadablePrivateScreenshots: false,

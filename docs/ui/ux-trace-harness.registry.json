@@ -17,6 +17,7 @@
     "normalAppHighCardinalityInstrumentation": "disabled unless CLAWIX_AGENT_INSTANCE=1 or an explicit diagnostic flag enables a diagnostic probe",
     "normalAppControlRegistration": "accessibilityIdentifier only; no frame probes, registry writes, control server, fixture mutation, screenshots, or event JSONL writer",
     "harnessEvidenceWrites": "per-run evidence directory outside the main app database; default root is an operating-system temporary directory",
+    "harnessDisabledControlRun": "runtime overhead comparison is explicit: pass a public-safe harness-disabled control artifact with --overhead-control <file>, otherwise evidence must record external_pending_control_run",
     "eventWriterBounds": {
       "maxEventsPerRun": 100000,
       "maxEventBytesPerRun": 33554432
@@ -25,7 +26,8 @@
       "ClxControlModifier registers probes only under ClxAgentInstance.isAgent",
       "ClxAgentInstance starts the loopback control server only when CLAWIX_AGENT_INSTANCE=1",
       "run_macos_ux_trace_harness writes evidence only to the selected per-run directory",
-      "run_macos_ux_trace_harness records mainDatabaseTraceWrites=false in run and suite artifacts"
+      "run_macos_ux_trace_harness records mainDatabaseTraceWrites=false in run and suite artifacts",
+      "run_macos_ux_trace_harness records overheadCalibration in run and suite artifacts"
     ]
   },
   "privateBoundary": {

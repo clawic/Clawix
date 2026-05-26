@@ -324,9 +324,12 @@ opaque payload hashes. `run.json` and `suite.json` include a `traceIsolation`
 block proving per-run/per-suite directories, no global shared trace file, no
 main app database trace writes, and relative-only artifact indexes; external
 fixture paths are represented by hashes rather than local absolute paths.
-Private baselines, raw captures, readable screenshots, local private paths,
-and aggregate real-mode evidence stay outside the public repo. In the normal
-app, `.clxControl` must remain an
+They also include `overheadCalibration`: a bounded writer summary plus either
+a hash-only harness-disabled control comparison supplied with
+`--overhead-control <file>` or an explicit `external_pending_control_run`
+status. Private baselines, raw captures, readable screenshots, local private
+paths, and aggregate real-mode evidence stay outside the public repo. In the
+normal app, `.clxControl` must remain an
 `accessibilityIdentifier`-only marker; frame probes, registry writes, fixture
 mutation, screenshots, the loopback server, and trace-event JSONL are allowed
 only in isolated agent instances or explicit diagnostic probes.

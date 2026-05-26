@@ -462,6 +462,7 @@ if (registry) {
     "normalAppHighCardinalityInstrumentation",
     "normalAppControlRegistration",
     "harnessEvidenceWrites",
+    "harnessDisabledControlRun",
     "eventWriterBounds",
     "staticVerification",
   ]);
@@ -477,6 +478,12 @@ if (registry) {
   if (!String(registry.overheadContract?.harnessEvidenceWrites ?? "").includes("outside the main app database")) {
     fail(`${registryPath}.overheadContract.harnessEvidenceWrites must keep evidence outside the main app database`);
   }
+  if (!String(registry.overheadContract?.harnessDisabledControlRun ?? "").includes("--overhead-control <file>")) {
+    fail(`${registryPath}.overheadContract.harnessDisabledControlRun must document --overhead-control <file>`);
+  }
+  if (!String(registry.overheadContract?.harnessDisabledControlRun ?? "").includes("external_pending_control_run")) {
+    fail(`${registryPath}.overheadContract.harnessDisabledControlRun must require explicit pending status without a control run`);
+  }
   if (registry.overheadContract?.eventWriterBounds?.maxEventsPerRun !== 100000) {
     fail(`${registryPath}.overheadContract.eventWriterBounds.maxEventsPerRun must be 100000`);
   }
@@ -488,6 +495,7 @@ if (registry) {
     "ClxAgentInstance starts the loopback control server only when CLAWIX_AGENT_INSTANCE=1",
     "run_macos_ux_trace_harness writes evidence only to the selected per-run directory",
     "run_macos_ux_trace_harness records mainDatabaseTraceWrites=false in run and suite artifacts",
+    "run_macos_ux_trace_harness records overheadCalibration in run and suite artifacts",
   ]);
   if (registry.requiredArtifacts?.evidenceSchema !== evidenceSchemaPath) fail(`${registryPath}.requiredArtifacts.evidenceSchema must point to ${evidenceSchemaPath}`);
   if (registry.requiredArtifacts?.scenarioManifest !== scenariosPath) fail(`${registryPath}.requiredArtifacts.scenarioManifest must point to ${scenariosPath}`);
@@ -594,6 +602,7 @@ if (evidenceSchema) {
     "runRequiredFields",
     "allowedRunStatuses",
     "traceIsolationRequiredFields",
+    "overheadCalibrationRequiredFields",
     "eventRequiredFields",
     "eventTypes",
     "metricRequiredFields",
@@ -608,13 +617,25 @@ if (evidenceSchema) {
   requireUniqueStringArray(requireArray(evidenceSchema.eventTypes, `${evidenceSchemaPath}.eventTypes`, expectedEventTypes.length), `${evidenceSchemaPath}.eventTypes`, expectedEventTypes);
   requireUniqueStringArray(requireArray(evidenceSchema.suiteDirectoryShape, `${evidenceSchemaPath}.suiteDirectoryShape`), `${evidenceSchemaPath}.suiteDirectoryShape`, ["suite.json", "suite-metrics.json", "suite-failures.json"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceDirectoryShape, `${evidenceSchemaPath}.evidenceDirectoryShape`), `${evidenceSchemaPath}.evidenceDirectoryShape`, ["logs/failure-ui-states.jsonl"]);
-  requireUniqueStringArray(requireArray(evidenceSchema.suiteRequiredFields, `${evidenceSchemaPath}.suiteRequiredFields`), `${evidenceSchemaPath}.suiteRequiredFields`, ["suiteId", "suiteName", "scenarioCount", "runs", "artifactIndex", "traceIsolation"]);
-  requireUniqueStringArray(requireArray(evidenceSchema.runRequiredFields, `${evidenceSchemaPath}.runRequiredFields`), `${evidenceSchemaPath}.runRequiredFields`, ["runId", "scenarioId", "fixtureProfile", "artifactIndex", "traceIsolation"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.suiteRequiredFields, `${evidenceSchemaPath}.suiteRequiredFields`), `${evidenceSchemaPath}.suiteRequiredFields`, ["suiteId", "suiteName", "scenarioCount", "runs", "artifactIndex", "traceIsolation", "overheadCalibration"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.runRequiredFields, `${evidenceSchemaPath}.runRequiredFields`), `${evidenceSchemaPath}.runRequiredFields`, ["runId", "scenarioId", "fixtureProfile", "artifactIndex", "traceIsolation", "overheadCalibration"]);
   requireUniqueStringArray(requireArray(evidenceSchema.traceIsolationRequiredFields, `${evidenceSchemaPath}.traceIsolationRequiredFields`), `${evidenceSchemaPath}.traceIsolationRequiredFields`, ["mode", "evidenceRootHash", "globalSharedTraceFile", "mainDatabaseTraceWrites", "parallelSafe"]);
   requireFields(evidenceSchema.traceIsolationContract, `${evidenceSchemaPath}.traceIsolationContract`, ["runDirectory", "suiteDirectory", "forbidden", "externalPaths"]);
   requireUniqueStringArray(requireArray(evidenceSchema.traceIsolationContract?.forbidden, `${evidenceSchemaPath}.traceIsolationContract.forbidden`), `${evidenceSchemaPath}.traceIsolationContract.forbidden`, ["global shared trace files", "main app database trace writes", "absolute local paths in artifact indexes", "raw external fixture paths"]);
   if (!String(evidenceSchema.traceIsolationContract?.externalPaths ?? "").includes("sha256 hashes")) {
     fail(`${evidenceSchemaPath}.traceIsolationContract.externalPaths must require hash-only external paths`);
+  }
+  requireUniqueStringArray(requireArray(evidenceSchema.overheadCalibrationRequiredFields, `${evidenceSchemaPath}.overheadCalibrationRequiredFields`), `${evidenceSchemaPath}.overheadCalibrationRequiredFields`, ["status", "controlRun", "instrumentationOverheadEstimate", "traceWriter"]);
+  requireFields(evidenceSchema.overheadCalibrationContract, `${evidenceSchemaPath}.overheadCalibrationContract`, ["statusValues", "requiredWhenNoControlRun", "controlRunPrivacy", "traceWriterBounds"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.overheadCalibrationContract?.statusValues, `${evidenceSchemaPath}.overheadCalibrationContract.statusValues`), `${evidenceSchemaPath}.overheadCalibrationContract.statusValues`, ["compared", "external_pending_control_run", "control_artifact_without_comparable_metrics"]);
+  if (!String(evidenceSchema.overheadCalibrationContract?.requiredWhenNoControlRun ?? "").includes("external_pending_control_run")) {
+    fail(`${evidenceSchemaPath}.overheadCalibrationContract.requiredWhenNoControlRun must require external_pending_control_run`);
+  }
+  if (!String(evidenceSchema.overheadCalibrationContract?.controlRunPrivacy ?? "").includes("must not be written")) {
+    fail(`${evidenceSchemaPath}.overheadCalibrationContract.controlRunPrivacy must forbid public local control paths`);
+  }
+  if (evidenceSchema.overheadCalibrationContract?.traceWriterBounds?.maxEventsPerRun !== 100000) {
+    fail(`${evidenceSchemaPath}.overheadCalibrationContract.traceWriterBounds.maxEventsPerRun must be 100000`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.eventRequiredFields, `${evidenceSchemaPath}.eventRequiredFields`), `${evidenceSchemaPath}.eventRequiredFields`, ["runId", "actionId", "surfaceId", "controlId", "kpiId", "timestampMonotonicNs"]);
   requireUniqueStringArray(requireArray(evidenceSchema.metricRequiredFields, `${evidenceSchemaPath}.metricRequiredFields`), `${evidenceSchemaPath}.metricRequiredFields`, ["kpiId", "p50", "p95", "p99", "baseline", "evidenceEventRefs"]);
@@ -867,6 +888,10 @@ if (runnerSource) {
     "function traceIsolationForRun(",
     "traceIsolation: traceIsolationForRun(",
     "traceIsolation: traceIsolationForSuite(",
+    "overheadCalibrationForRun(",
+    "overheadCalibrationForSuite(",
+    "external_pending_control_run",
+    "--overhead-control <file>",
     "globalSharedTraceFile: false",
     "parallelSafe: true",
     "publicPathReference(runDir, fixturePack.path)",
@@ -893,6 +918,9 @@ if (evidenceVerifierSource) {
     "validateTraceIsolation(",
     "runDirectoryMatchesRunId must be true",
     "suiteDirectoryMatchesSuiteId must be true",
+    "validateOverheadCalibration(",
+    "overheadCalibration.controlRun must not include a local path",
+    "overheadCalibration.traceWriter.bounded must be true",
     "validatePathReference(",
     "must not include an external local path",
     "geometry.sample",
