@@ -333,7 +333,10 @@ store raw external paths, omit a metric comparison row, reference a KPI that is
 not present in `metrics.json` / `suite-metrics.json`, or use an unsupported
 comparison status. It also recomputes the aggregate comparison status from the
 row statuses and active gate, so stale or contradictory gate summaries cannot
-support closure. `run.json` and `suite.json` include `evidenceSources`
+support closure. When a gate is active, gated-priority `baseline_missing` and
+`baseline_regression` comparison rows must also have matching structured failure
+rows, so a gate failure is visible both in the comparison artifact and in
+`failures.json`. `run.json` and `suite.json` include `evidenceSources`
 with repo-relative registry, scenario manifest, schema, generator, and verifier
 paths plus content hashes, so a bundle is tied to the exact public contract that
 produced it. They also include a `traceIsolation` block proving

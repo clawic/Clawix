@@ -253,6 +253,10 @@ function baselineComparisonMetricKey(row) {
   return [row?.runId || "", row?.scenarioId || "", row?.fixtureProfile || "", row?.kpiId || ""].join("\u001f");
 }
 
+function baselineFailureKey(row, type) {
+  return [row?.runId || "", row?.scenarioId || "", row?.fixtureProfile || "", row?.kpiId || "", type].join("\u001f");
+}
+
 function expectedBaselineComparisonStatus(comparison) {
   if (comparison.comparisons.some((row) => row.status === "baseline_regression")) {
     return comparison.gate ? "gate_failed" : "compared";
@@ -300,9 +304,10 @@ function validateBaselineComparison(failures, comparison, label = "baseline-comp
     fail(failures, `${label}.comparisons must include one row per metric`);
   }
   const seenRows = new Set();
+  const failureKeys = new Set((options.failureRows || []).map((failure) => baselineFailureKey(failure, failure?.type || "")));
   for (const [index, row] of comparison.comparisons.entries()) {
     const rowLabel = `${label}.comparisons[${index}]`;
-    requireFields(failures, row, rowLabel, ["kpiId", "p95", "baseline", "regressionPercent", "status"]);
+    requireFields(failures, row, rowLabel, ["kpiId", "priority", "surface", "p95", "baseline", "regressionPercent", "status"]);
     if (typeof row?.kpiId !== "string" || row.kpiId.length === 0) {
       fail(failures, `${rowLabel}.kpiId must be a non-empty string`);
     } else {
@@ -312,6 +317,12 @@ function validateBaselineComparison(failures, comparison, label = "baseline-comp
       if (options.metricKeys && !options.metricKeys.has(metricKey)) {
         fail(failures, `${rowLabel}.kpiId ${row.kpiId} has no matching metric row`);
       }
+    }
+    if (typeof row?.priority !== "string" || !/^P[0-2]$/.test(row.priority)) {
+      fail(failures, `${rowLabel}.priority must be P0, P1, or P2`);
+    }
+    if (typeof row?.surface !== "string" || row.surface.length === 0) {
+      fail(failures, `${rowLabel}.surface must be a non-empty string`);
     }
     if (!Number.isFinite(Number(row?.p95))) fail(failures, `${rowLabel}.p95 must be numeric`);
     if (row?.baseline !== null && !Number.isFinite(Number(row?.baseline))) {
@@ -334,6 +345,22 @@ function validateBaselineComparison(failures, comparison, label = "baseline-comp
       if (row?.regressionPercent === null || !Number.isFinite(Number(row?.regressionPercent))) {
         fail(failures, `${rowLabel}.status baseline_regression requires numeric regressionPercent`);
       }
+      if (
+        comparison.gate
+        && row?.priority === comparison.gate.priority
+        && Number(row?.regressionPercent) <= Number(comparison.gate.maxRegressionPercent)
+      ) {
+        fail(failures, `${rowLabel}.status baseline_regression must exceed gate.maxRegressionPercent`);
+      }
+    }
+    if (
+      comparison.gate
+      && row?.priority === comparison.gate.priority
+      && (row?.status === "baseline_missing" || row?.status === "baseline_regression")
+      && options.failureRows
+      && !failureKeys.has(baselineFailureKey(row, row.status))
+    ) {
+      fail(failures, `${rowLabel}.status ${row.status} requires a matching failures.json row`);
     }
   }
   const expectedStatus = expectedBaselineComparisonStatus(comparison);
@@ -481,6 +508,7 @@ function validateRun(runDir, schema, options = {}) {
   }
   validateBaselineComparison(failures, baselineComparison, "baseline-comparison.json", {
     metricKeys,
+    failureRows: failuresArtifact.failures || [],
     expectedCount: (metricsArtifact.metrics || []).length,
   });
 
@@ -595,6 +623,7 @@ function validateSuite(suiteDir, schema) {
   const suiteMetricKeys = new Set((suiteMetrics.metrics || []).map((metric) => baselineComparisonMetricKey(metric)));
   validateBaselineComparison(failures, suiteBaselineComparison, "suite-baseline-comparison.json", {
     metricKeys: suiteMetricKeys,
+    failureRows: suiteFailures.failures || [],
     expectedCount: (suiteMetrics.metrics || []).length,
   });
   if (!Array.isArray(suiteBaselineObject.childRuns)) {

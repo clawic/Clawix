@@ -872,6 +872,8 @@ function baselineComparisonsFromMetrics(metrics, gate) {
     }
     const comparison = {
       kpiId: metric.kpiId,
+      priority: metric.priority,
+      surface: metric.surface,
       p95: metric.p95,
       baseline: metric.baseline,
       regressionPercent: metric.regressionPercent,
