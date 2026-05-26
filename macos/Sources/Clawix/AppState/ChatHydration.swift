@@ -306,6 +306,81 @@ extension AppState {
             return
         }
         guard sessionHistoryHydrationTasks[chatId] == nil else { return }
+        if scheduleCodexRolloutFallbackBeforeSession(threadId: threadId, chatId: chatId) {
+            return
+        }
+        startClawJSSessionHydrationTask(threadId: threadId, chatId: chatId)
+    }
+
+    private func scheduleCodexRolloutFallbackBeforeSession(threadId: String, chatId: UUID) -> Bool {
+        if let localPath = chat(byId: chatId)?.rolloutPath,
+           FileManager.default.fileExists(atPath: localPath.path) {
+            hydrateHistoryFromLocalRollout(path: localPath, chatId: chatId, blocking: false)
+            return true
+        }
+        if let cachedPath = codexRolloutPathByThreadId[threadId],
+           FileManager.default.fileExists(atPath: cachedPath.path) {
+            mutateChat(id: chatId) { c in
+                c.rolloutPath = cachedPath
+            }
+            hydrateHistoryFromLocalRollout(path: cachedPath, chatId: chatId, blocking: false)
+            return true
+        }
+        if missingCodexRolloutPathThreadIds.contains(threadId) {
+            return false
+        }
+
+        let locator = codexRolloutLocator
+        sessionHistoryHydrationTasks[chatId] = Task.detached(priority: .userInitiated) { [weak self] in
+            let locateStarted = CFAbsoluteTimeGetCurrent()
+            guard let path = locator(threadId) else {
+                let locateMs = (CFAbsoluteTimeGetCurrent() - locateStarted) * 1000
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.sessionHistoryHydrationTasks[chatId] = nil
+                    self.missingCodexRolloutPathThreadIds.insert(threadId)
+                    RenderProbe.mark(
+                        "ChatHydrationLocalFallbackPathMissing",
+                        fields: [
+                            "chat": chatId.uuidString,
+                            "thread": threadId,
+                            "ms": String(format: "%.1f", locateMs)
+                        ]
+                    )
+                    self.startClawJSSessionHydrationTask(threadId: threadId, chatId: chatId)
+                }
+                return
+            }
+
+            let locateMs = (CFAbsoluteTimeGetCurrent() - locateStarted) * 1000
+            let readStarted = CFAbsoluteTimeGetCurrent()
+            let result = RolloutReader.readTailWithStatus(path: path)
+            let readMs = (CFAbsoluteTimeGetCurrent() - readStarted) * 1000
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.sessionHistoryHydrationTasks[chatId] = nil
+                guard self.chat(byId: chatId)?.historyHydrated == false else { return }
+                self.codexRolloutPathByThreadId[threadId] = path
+                self.mutateChat(id: chatId) { c in
+                    c.rolloutPath = path
+                }
+                RenderProbe.mark(
+                    "ChatHydrationLocalFallbackBeforeSession",
+                    fields: [
+                        "chat": chatId.uuidString,
+                        "thread": threadId,
+                        "locateMs": String(format: "%.1f", locateMs),
+                        "readMs": String(format: "%.1f", readMs)
+                    ]
+                )
+                self.applyRolloutResult(result, chatId: chatId)
+            }
+        }
+        return true
+    }
+
+    private func startClawJSSessionHydrationTask(threadId: String, chatId: UUID) {
+        guard sessionHistoryHydrationTasks[chatId] == nil else { return }
         sessionHistoryHydrationTasks[chatId] = Task { @MainActor [weak self] in
             guard let self else { return }
             defer { self.sessionHistoryHydrationTasks[chatId] = nil }

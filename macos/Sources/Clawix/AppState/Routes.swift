@@ -19,6 +19,9 @@ extension AppState {
                 "to": visibleRoute.renderProbeIdentifier
             ]
         )
+        if case let .chat(id) = visibleRoute {
+            hydrateHistoryIfNeeded(chatId: id)
+        }
         currentRoute = visibleRoute
     }
 
