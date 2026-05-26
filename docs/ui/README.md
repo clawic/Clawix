@@ -338,7 +338,10 @@ so malformed aggregate JSON is rejected before it can support closure. Metric
 rows in run, suite, and baseline artifacts must also reference declared KPI IDs
 and keep `priority` and `surface` synchronized with
 `ux-trace-harness.registry.json`; evidence cannot reclassify a P0 KPI as a
-lower-priority or different-surface metric. The runner also normalizes
+lower-priority or different-surface metric. Run metric rows must include
+non-empty `evidenceEventRefs` and at least one referenced timeline event must
+carry the same KPI ID, keeping aggregate numbers tied to action and visual
+condition evidence. The runner also normalizes
 available diagnostics into `geometry.sample`, `scroll.sample`,
 `render.window`, `hitch.sample`, `resource.sample`, `database.sample`, and
 `bridge.sample` events so agents can query performance facts without opening

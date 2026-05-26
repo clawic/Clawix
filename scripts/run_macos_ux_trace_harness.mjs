@@ -410,6 +410,7 @@ function eventWriter(file, common) {
   let sequence = 0;
   let bytesWritten = 0;
   const eventRefs = [];
+  const eventRefsByKpi = new Map();
   return {
     write(fields) {
       if (sequence >= maxEvidenceEventsPerRun) {
@@ -438,13 +439,22 @@ function eventWriter(file, common) {
         throw new Error(`UX trace event writer exceeded ${maxEvidenceEventBytesPerRun} bytes for ${common.runId}`);
       }
       fs.appendFileSync(file, line);
-      eventRefs.push(`${event.sequence}:${event.eventType}:${event.stepId}`);
+      const eventRef = `${event.sequence}:${event.eventType}:${event.stepId}`;
+      eventRefs.push(eventRef);
+      if (event.kpiId && event.kpiId !== "none") {
+        const refs = eventRefsByKpi.get(event.kpiId) || [];
+        refs.push(eventRef);
+        eventRefsByKpi.set(event.kpiId, refs);
+      }
       return event;
     },
     close() {
       // Events are written synchronously so evidence is complete on return.
     },
     eventRefs,
+    eventRefsForKpi(kpiId) {
+      return (eventRefsByKpi.get(kpiId) || []).slice(0, 20);
+    },
     stats() {
       return {
         eventCount: sequence,
@@ -1424,7 +1434,7 @@ async function runScenario(args) {
   }
   const metrics = metricKpiRefsForScenario(scenario, expandedSteps).map((kpiId) => {
     const kpi = indexes.kpisById.get(kpiId);
-    return makeMetric(kpi, kpiSamples.get(kpiId) || [], events.eventRefs, baseline.get(kpiId));
+    return makeMetric(kpi, kpiSamples.get(kpiId) || [], events.eventRefsForKpi(kpiId), baseline.get(kpiId));
   });
   const gateFailures = baselineGateFailures(metrics, gate);
   for (const failure of gateFailures) {

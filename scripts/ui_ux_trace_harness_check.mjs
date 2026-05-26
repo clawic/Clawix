@@ -659,6 +659,7 @@ if (evidenceSchema) {
     "exitPolicyRequiredFields",
     "baselineArtifactRequiredFields",
     "metricRegistryContract",
+    "metricEventReferenceContract",
     "eventRequiredFields",
     "eventTypes",
     "metricRequiredFields",
@@ -732,6 +733,13 @@ if (evidenceSchema) {
     fail(`${evidenceSchemaPath}.metricRegistryContract.policy must bind metric rows to KPI registry priority and surface`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.metricRegistryContract?.appliesTo, `${evidenceSchemaPath}.metricRegistryContract.appliesTo`), `${evidenceSchemaPath}.metricRegistryContract.appliesTo`, ["metrics.json", "suite-metrics.json", "baseline metrics"]);
+  requireFields(evidenceSchema.metricEventReferenceContract, `${evidenceSchemaPath}.metricEventReferenceContract`, ["policy", "purpose"]);
+  if (
+    !String(evidenceSchema.metricEventReferenceContract?.policy ?? "").includes("same KPI id")
+    || !String(evidenceSchema.metricEventReferenceContract?.purpose ?? "").includes("action/visual-condition timeline")
+  ) {
+    fail(`${evidenceSchemaPath}.metricEventReferenceContract must bind metric rows to KPI-specific timeline events`);
+  }
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
   requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "requiredSourceIds"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesContract?.requiredSourceIds, `${evidenceSchemaPath}.evidenceSourcesContract.requiredSourceIds`), `${evidenceSchemaPath}.evidenceSourcesContract.requiredSourceIds`, ["ux-trace-harness-registry", "ux-trace-scenarios-manifest", "ux-trace-evidence-schema", "macos-ux-trace-fixture-generator", "macos-ux-trace-evidence-verifier"]);
@@ -1015,6 +1023,8 @@ if (runnerSource) {
     "eventType: \"resource.sample\"",
     "eventType: \"database.sample\"",
     "eventType: \"bridge.sample\"",
+    "eventRefsByKpi",
+    "eventRefsForKpi(kpiId)",
     "actionId,",
     "controlId: step.target",
     "function traceIsolationForRun(",
@@ -1078,6 +1088,8 @@ if (evidenceVerifierSource) {
     "validateMetricsAgainstRegistry(",
     "must match KPI registry",
     "is not declared in ux-trace-harness.registry.json",
+    "evidenceEventRefs must include at least one event ref",
+    "evidenceEventRefs must include an event for the same KPI",
     "metrics.json.schemaVersion must be 1",
     "failures.json.schemaVersion must be 1",
     "suite-metrics.json.schemaVersion must be 1",

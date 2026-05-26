@@ -610,8 +610,21 @@ function validateRun(runDir, schema, options = {}) {
     const metricKey = baselineComparisonMetricKey(metric);
     metricKeys.add(metricKey);
     metricRows.set(metricKey, metric);
+    if (!Array.isArray(metric.evidenceEventRefs) || metric.evidenceEventRefs.length === 0) {
+      fail(failures, `${label}.evidenceEventRefs must include at least one event ref`);
+    }
+    let hasMatchingKpiEventRef = false;
     for (const ref of metric.evidenceEventRefs || []) {
-      if (!eventKeys.has(ref)) fail(failures, `${label}.evidenceEventRefs contains unknown event ref ${ref}`);
+      if (!eventKeys.has(ref)) {
+        fail(failures, `${label}.evidenceEventRefs contains unknown event ref ${ref}`);
+        continue;
+      }
+      const sequence = Number(String(ref).split(":")[0]);
+      const event = eventsBySequence.get(sequence);
+      if (event?.kpiId === metric.kpiId) hasMatchingKpiEventRef = true;
+    }
+    if (metric.kpiId !== "none" && !hasMatchingKpiEventRef) {
+      fail(failures, `${label}.evidenceEventRefs must include an event for the same KPI`);
     }
   }
   validateBaselineComparison(failures, baselineComparison, "baseline-comparison.json", {
