@@ -2,6 +2,18 @@ import Foundation
 import SwiftUI
 import ClawixCore
 
+private func scheduleChatMarkdownPrewarm(
+    messages: [ChatMessage],
+    timelineEntryLimit: Int = 0
+) {
+    Task.detached(priority: .utility) {
+        await ChatMarkdownPrewarmer.prewarm(
+            messages: messages,
+            timelineEntryLimit: timelineEntryLimit
+        )
+    }
+}
+
 extension AppState {
     // MARK: - Clawix bridge helpers
 
@@ -207,10 +219,7 @@ extension AppState {
                 let convertStarted = CFAbsoluteTimeGetCurrent()
                 let messages = rolloutChatMessages(from: result)
                 let convertMs = (CFAbsoluteTimeGetCurrent() - convertStarted) * 1000
-                await ChatMarkdownPrewarmer.prewarm(
-                    messages: messages,
-                    timelineEntryLimit: 0
-                )
+                scheduleChatMarkdownPrewarm(messages: messages)
                 RenderProbe.mark(
                     "ChatHydrationLocalConvert",
                     fields: [
@@ -361,10 +370,7 @@ extension AppState {
             let result = RolloutReader.readTailWithStatus(path: path)
             let messages = rolloutChatMessages(from: result)
             let readMs = (CFAbsoluteTimeGetCurrent() - readStarted) * 1000
-            await ChatMarkdownPrewarmer.prewarm(
-                messages: messages,
-                timelineEntryLimit: 0
-            )
+            scheduleChatMarkdownPrewarm(messages: messages)
             await MainActor.run { [weak self] in
                 guard let self else { return }
                 self.sessionHistoryHydrationTasks[chatId] = nil
@@ -428,10 +434,7 @@ extension AppState {
                     loadingOlder: false
                 )
                 let messages = records.map(Self.chatMessage(fromClawJSSessionMessage:))
-                await ChatMarkdownPrewarmer.prewarm(
-                    messages: messages,
-                    timelineEntryLimit: 0
-                )
+                scheduleChatMarkdownPrewarm(messages: messages)
                 self.applyRolloutMessages(
                     messages,
                     lastTurnInterrupted: false,
@@ -466,10 +469,7 @@ extension AppState {
             RolloutReader.readTailWithStatus(path: path)
         }.value
         let messages = rolloutChatMessages(from: result)
-        await ChatMarkdownPrewarmer.prewarm(
-            messages: messages,
-            timelineEntryLimit: 0
-        )
+        scheduleChatMarkdownPrewarm(messages: messages)
         mutateChat(id: chatId) { c in
             c.rolloutPath = path
         }

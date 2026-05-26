@@ -61,9 +61,12 @@ enum ChatMarkdownPrewarmer {
             ]
         )
         let texts = prewarmSet.texts
-        guard !texts.isEmpty else { return }
-        PerfSignpost.renderMarkdown.event("prewarm.texts", texts.count)
+        if !texts.isEmpty {
+            PerfSignpost.renderMarkdown.event("prewarm.texts", texts.count)
+        }
+        guard !texts.isEmpty || hasCompletedAssistantMessages(messages) else { return }
         await Task.detached(priority: .utility) {
+            prewarmChangedFilePaths(messages: messages)
             for text in texts {
                 MarkdownParseCache.prewarm(text)
             }
@@ -98,6 +101,19 @@ enum ChatMarkdownPrewarmer {
             }
         }
         return result
+    }
+
+    private static func hasCompletedAssistantMessages(_ messages: [ChatMessage]) -> Bool {
+        messages.contains {
+            $0.role == .assistant && $0.streamingFinished
+        }
+    }
+
+    private static func prewarmChangedFilePaths(messages: [ChatMessage]) {
+        for message in messages
+        where message.role == .assistant && message.streamingFinished {
+            _ = ChangedFilePathCache.shared.paths(for: message)
+        }
     }
 }
 
@@ -823,6 +839,7 @@ enum ChatTrailingCards {
 final class ChangedFilePathCache {
     static let shared = ChangedFilePathCache()
 
+    private let lock = NSLock()
     private var values: [Key: [String]] = [:]
     private var order: [Key] = []
     private let limit = 256
@@ -831,9 +848,12 @@ final class ChangedFilePathCache {
 
     func paths(for message: ChatMessage) -> [String] {
         let key = Key(message: message)
+        lock.lock()
         if let cached = values[key] {
+            lock.unlock()
             return cached
         }
+        lock.unlock()
 
         RenderProbe.mark(
             "ChangedFilePathsCompute",
@@ -855,6 +875,11 @@ final class ChangedFilePathCache {
             }
         }
 
+        lock.lock()
+        if let cached = values[key] {
+            lock.unlock()
+            return cached
+        }
         values[key] = result
         order.append(key)
         if order.count > limit {
@@ -864,6 +889,7 @@ final class ChangedFilePathCache {
             }
             order.removeFirst(overflow)
         }
+        lock.unlock()
         return result
     }
 
