@@ -101,6 +101,12 @@ extension ClawJSRuntimeLensSection {
                 .clxControl("runtime-lens-auth-store", role: "input", label: "Runtime lens auth store") { value in
                     runtimeLensAuthStore = value
                 }
+            TextField("Loopback gateway URL", text: $runtimeLensActionGatewayURL)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .clxControl("runtime-lens-gateway-url", role: "input", label: "Runtime lens gateway URL") { value in
+                    runtimeLensActionGatewayURL = value
+                }
         }
     }
 
@@ -214,12 +220,6 @@ extension ClawJSRuntimeLensSection {
                         runtimeLensActionTitle = value
                     }
             }
-            TextField("Loopback gateway URL", text: $runtimeLensActionGatewayURL)
-                .textFieldStyle(.roundedBorder)
-                .font(BodyFont.system(size: 11.5))
-                .clxControl("runtime-lens-session-action-gateway-url", role: "input", label: "Runtime lens session action gateway URL") { value in
-                    runtimeLensActionGatewayURL = value
-                }
             if let result = runtimeLensActionResult {
                 Text(result)
                     .font(BodyFont.system(size: 10.5))

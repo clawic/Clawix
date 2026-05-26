@@ -1811,7 +1811,8 @@ struct ClawJSRuntimeLensClient {
         homeDir: String? = nil,
         runtimeWorkspace: String? = nil,
         configPath: String? = nil,
-        authStore: String? = nil
+        authStore: String? = nil,
+        gatewayURL: String? = nil
     ) async throws -> ClawJSRuntimeLensSnapshot {
         var args = ["runtime", runtime.rawValue, "domains"]
         appendRuntimeScopeArgs(
@@ -1819,7 +1820,8 @@ struct ClawJSRuntimeLensClient {
             homeDir: homeDir,
             runtimeWorkspace: runtimeWorkspace,
             configPath: configPath,
-            authStore: authStore
+            authStore: authStore,
+            gatewayURL: gatewayURL
         )
         args.append("--json")
         let result = try await runner.run(args)
@@ -1900,11 +1902,9 @@ struct ClawJSRuntimeLensClient {
             homeDir: homeDir,
             runtimeWorkspace: runtimeWorkspace,
             configPath: configPath,
-            authStore: authStore
+            authStore: authStore,
+            gatewayURL: gatewayURL
         )
-        if let gatewayURL, !gatewayURL.isEmpty {
-            args.append(contentsOf: ["--gateway-url", gatewayURL])
-        }
         if confirmRuntimeWrite {
             args.append("--confirm-runtime-write")
         }
@@ -1931,7 +1931,8 @@ struct ClawJSRuntimeLensClient {
         homeDir: String?,
         runtimeWorkspace: String?,
         configPath: String?,
-        authStore: String?
+        authStore: String?,
+        gatewayURL: String?
     ) {
         if let homeDir, !homeDir.isEmpty {
             args.append(contentsOf: ["--home-dir", homeDir])
@@ -1944,6 +1945,9 @@ struct ClawJSRuntimeLensClient {
         }
         if let authStore, !authStore.isEmpty {
             args.append(contentsOf: ["--auth-store", authStore])
+        }
+        if let gatewayURL, !gatewayURL.isEmpty {
+            args.append(contentsOf: ["--gateway-url", gatewayURL])
         }
     }
 

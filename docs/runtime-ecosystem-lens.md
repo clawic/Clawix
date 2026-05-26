@@ -221,10 +221,11 @@ than silently rendering aggregate or stale state from another runtime.
 
 The lens may pass explicit runtime scope overrides to the ClawJS portal when a
 user needs to inspect an isolated runtime store: runtime home, runtime
-workspace, config path, and auth store. Empty override fields preserve the
-default runtime scope. Overrides must be forwarded to both the selected runtime
-snapshot refresh and scoped session actions so UI validation can target the
-same runtime store as CLI evidence without changing global machine state.
+workspace, config path, auth store, and an approved loopback gateway URL.
+Empty override fields preserve the default runtime scope. Overrides must be
+forwarded to both the selected runtime snapshot refresh and scoped session
+actions so UI validation can target the same runtime store and gateway fixture
+as CLI evidence without changing global machine state.
 Loading, load-error, action-error, and empty-snapshot UI states are rendered
 through a tested presentation model so transient runtime failures remain scoped
 to the selected lens and expose stable accessibility labels for validation.

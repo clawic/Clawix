@@ -83,6 +83,8 @@ final class ClawJSRuntimeLensClientBoundaryTests: XCTestCase {
                 "/tmp/hermes-config.yaml",
                 "--auth-store",
                 "/tmp/hermes-auth.json",
+                "--gateway-url",
+                "http://127.0.0.1:18789",
                 "--json"
             ])
             return .init(
@@ -96,7 +98,8 @@ final class ClawJSRuntimeLensClientBoundaryTests: XCTestCase {
             homeDir: "/tmp/hermes-home",
             runtimeWorkspace: "/tmp/hermes-workspace",
             configPath: "/tmp/hermes-config.yaml",
-            authStore: "/tmp/hermes-auth.json"
+            authStore: "/tmp/hermes-auth.json",
+            gatewayURL: "http://127.0.0.1:18789"
         )
 
         XCTAssertEqual(snapshot.runtimeId, "example")

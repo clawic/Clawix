@@ -115,7 +115,8 @@ struct ClawJSRuntimeLensSection: View {
                     homeDir: trimmedRuntimeLensInput(runtimeLensHomeDir),
                     runtimeWorkspace: trimmedRuntimeLensInput(runtimeLensRuntimeWorkspace),
                     configPath: trimmedRuntimeLensInput(runtimeLensConfigPath),
-                    authStore: trimmedRuntimeLensInput(runtimeLensAuthStore)
+                    authStore: trimmedRuntimeLensInput(runtimeLensAuthStore),
+                    gatewayURL: trimmedRuntimeLensInput(runtimeLensActionGatewayURL)
                 )
             } catch {
                 if target == runtimeLensSelection {
