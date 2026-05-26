@@ -341,6 +341,7 @@ struct SettingsContent: View {
         }
         .thinScrollers()
         .background(Palette.background)
+        .clxControl("settings.route", role: "panel", label: "Settings route")
     }
 }
 

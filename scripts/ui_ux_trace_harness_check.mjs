@@ -152,6 +152,37 @@ const expectedP0SurfaceIds = [
   "app.blockingOverlay",
 ];
 
+const expectedTraceControlImplementationIds = [
+  "app.shell.firstUsableWindow",
+  "sidebar.container",
+  "sidebar.allChats.entry",
+  "sidebar.pinned.entry",
+  "sidebar.projects.entry",
+  "sidebar.conversationList",
+  "sidebar.conversation.row.dynamic",
+  "sidebar.runningIndicator",
+  "chat.route.container",
+  "chat.visibleWindow.latest",
+  "chat.transcript.scroll",
+  "chat.message.row",
+  "chat.message.user",
+  "chat.message.assistant",
+  "chat.message.workSummary",
+  "chat.streaming.deltaTarget",
+  "composer.input",
+  "composer.sendButton",
+  "composer.stopButton",
+  "terminal.openControl",
+  "terminal.panel",
+  "app.loadingState",
+  "app.errorState",
+  "settings.route",
+  "sidebar.settings.openAccountPopover",
+  "sidebar.settings.account",
+  "sidebar.settings.openSettings",
+  "sidebar.settings.signOut",
+];
+
 const expectedFixtureProfiles = [
   "smoke",
   "medium",
@@ -389,6 +420,7 @@ if (registry) {
     "privateBoundary",
     "requiredArtifacts",
     "traceSurfaces",
+    "traceControlImplementations",
     "fixtureProfiles",
     "scalingDimensions",
     "kpis",
@@ -462,6 +494,31 @@ if (registry) {
   for (const surface of surfaces) {
     requireFields(surface, `${registryPath}.traceSurfaces.${surface.id ?? "unknown"}`, ["id", "priority", "role", "surface", "visibilityContract", "geometryContract"]);
     if (!["P0", "P1", "P2"].includes(surface.priority)) fail(`${registryPath}.traceSurfaces.${surface.id}.priority must be P0/P1/P2`);
+  }
+
+  const controlImplementations = requireArray(
+    registry.traceControlImplementations,
+    `${registryPath}.traceControlImplementations`,
+    expectedTraceControlImplementationIds.length
+  );
+  requireRecordIds(controlImplementations, `${registryPath}.traceControlImplementations`, expectedTraceControlImplementationIds);
+  for (const implementation of controlImplementations) {
+    const label = `${registryPath}.traceControlImplementations.${implementation.id ?? "unknown"}`;
+    requireFields(implementation, label, ["id", "priority", "surfaceId", "sourcePath", "sourceSnippet", "coverageReason"]);
+    if (!["P0", "P1", "P2"].includes(implementation.priority)) fail(`${label}.priority must be P0/P1/P2`);
+    if (!surfaceIds.has(implementation.surfaceId)) fail(`${label}.surfaceId references unknown surface ${implementation.surfaceId}`);
+    if (typeof implementation.sourcePath === "string" && privatePathPattern.test(implementation.sourcePath)) {
+      fail(`${label}.sourcePath must be repo-relative and public`);
+    }
+    const sourcePath = path.join(rootDir, implementation.sourcePath ?? "");
+    if (!implementation.sourcePath || !fs.existsSync(sourcePath)) {
+      fail(`${label}.sourcePath does not exist: ${implementation.sourcePath}`);
+      continue;
+    }
+    const implementationSource = fs.readFileSync(sourcePath, "utf8");
+    if (!implementationSource.includes(implementation.sourceSnippet)) {
+      fail(`${label}.sourceSnippet was not found in ${implementation.sourcePath}`);
+    }
   }
 
   const fixtureProfiles = requireArray(registry.fixtureProfiles, `${registryPath}.fixtureProfiles`, expectedFixtureProfiles.length);
