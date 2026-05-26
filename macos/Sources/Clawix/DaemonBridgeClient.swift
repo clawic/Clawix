@@ -163,16 +163,7 @@ final class DaemonBridgeClient {
                !appState.chats.isEmpty || !appState.archivedChats.isEmpty {
                 break
             }
-            if bridgeState != "ready",
-               !chats.isEmpty,
-               let appState,
-               appState.shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() {
-                for chat in chats {
-                    appState.applyDaemonChat(chat)
-                }
-            } else {
-                appState?.applyDaemonChats(chats)
-            }
+            appState?.applyDaemonChats(chats)
             appState?.persistSnapshotDebounced()
         case .sessionUpdated(let session):
             appState?.applyDaemonChat(session)

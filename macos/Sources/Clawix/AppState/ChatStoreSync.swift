@@ -33,12 +33,13 @@ extension AppState {
             }
             chats.removeAll { $0.id == chatId }
         } else {
-            if let idx = chats.firstIndex(where: { $0.id == chatId }) {
-                chats[idx] = snapshot
+            var nextChats = chats
+            if let idx = nextChats.firstIndex(where: { $0.id == chatId }) {
+                nextChats[idx] = snapshot
             } else {
-                chats.insert(snapshot, at: 0)
+                nextChats.insert(snapshot, at: 0)
             }
-            chats = boundedSidebarChats(chats, preserving: chatId)
+            chats = boundedSidebarChats(nextChats, preserving: chatId)
             archivedChats.removeAll { $0.id == chatId }
         }
         syncingLegacyChatsFromStore = false

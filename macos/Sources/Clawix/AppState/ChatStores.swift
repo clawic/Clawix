@@ -138,6 +138,7 @@ final class ChatTranscriptStore: ObservableObject, Identifiable {
     init(chatId: UUID, messages: [ChatMessage] = [], onChange: @escaping () -> Void = {}) {
         id = chatId
         self.onChange = onChange
+        guard !messages.isEmpty else { return }
         replaceMessages(messages)
     }
 
