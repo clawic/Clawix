@@ -246,6 +246,19 @@ function validatePathReference(failures, value, label) {
   fail(failures, `${label}.kind must be relative-to-run or external-hash-only`);
 }
 
+function validateBaselineComparison(failures, comparison) {
+  if (!comparison || typeof comparison !== "object") {
+    fail(failures, "baseline-comparison.json must be an object");
+    return;
+  }
+  if (Object.hasOwn(comparison, "baselinePath")) {
+    fail(failures, "baseline-comparison.json must not include raw baselinePath");
+  }
+  if (comparison.baselineReference) {
+    validatePathReference(failures, comparison.baselineReference, "baseline-comparison.json.baselineReference");
+  }
+}
+
 function validateRun(runDir, schema, options = {}) {
   const failures = [];
   const requiredFiles = [
@@ -286,6 +299,7 @@ function validateRun(runDir, schema, options = {}) {
   if (failuresArtifact.runId !== run.runId) fail(failures, "failures.json runId must match run.json");
   if (fixtureManifest.runId !== run.runId) fail(failures, "fixture-manifest.json runId must match run.json");
   if (baselineComparison.runId !== run.runId) fail(failures, "baseline-comparison.json runId must match run.json");
+  validateBaselineComparison(failures, baselineComparison);
   if (fixtureManifest.generatedFixture?.privateBoundary || fixtureManifest.privateBoundary) {
     validatePrivateBoundary(failures, fixtureManifest.generatedFixture?.privateBoundary ?? fixtureManifest.privateBoundary, "fixture-manifest.json");
   } else if (fixtureManifest.privateContentExported !== false) {

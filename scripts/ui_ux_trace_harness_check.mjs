@@ -605,6 +605,7 @@ if (evidenceSchema) {
     "overheadCalibrationRequiredFields",
     "evidenceSourcesRequiredFields",
     "exitPolicyRequiredFields",
+    "baselineArtifactRequiredFields",
     "eventRequiredFields",
     "eventTypes",
     "metricRequiredFields",
@@ -626,6 +627,19 @@ if (evidenceSchema) {
   requireUniqueStringArray(requireArray(evidenceSchema.exitPolicyContract?.allowedNonZeroStatuses, `${evidenceSchemaPath}.exitPolicyContract.allowedNonZeroStatuses`), `${evidenceSchemaPath}.exitPolicyContract.allowedNonZeroStatuses`, ["FAIL", "INVALID"]);
   if (!String(evidenceSchema.exitPolicyContract?.p0Gate ?? "").includes("exit code 1")) {
     fail(`${evidenceSchemaPath}.exitPolicyContract.p0Gate must require exit code 1`);
+  }
+  requireFields(evidenceSchema.baselineComparisonContract, `${evidenceSchemaPath}.baselineComparisonContract`, ["baselineReferencePolicy", "allowedReferenceKinds"]);
+  if (!String(evidenceSchema.baselineComparisonContract?.baselineReferencePolicy ?? "").includes("must not store raw external baseline paths")) {
+    fail(`${evidenceSchemaPath}.baselineComparisonContract.baselineReferencePolicy must forbid raw external baseline paths`);
+  }
+  requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedReferenceKinds, `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`), `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`, ["relative-to-run", "external-hash-only"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.baselineArtifactRequiredFields, `${evidenceSchemaPath}.baselineArtifactRequiredFields`), `${evidenceSchemaPath}.baselineArtifactRequiredFields`, ["baselineVersion", "sourceEvidence", "approval", "promotionPolicy", "evidenceSources", "privateBoundary", "metrics"]);
+  requireFields(evidenceSchema.baselineArtifactContract, `${evidenceSchemaPath}.baselineArtifactContract`, ["defaultApprovalStatus", "versioned", "privateEvidenceRemainsExternal", "p0Protection"]);
+  if (evidenceSchema.baselineArtifactContract?.defaultApprovalStatus !== "pending-user-approval") {
+    fail(`${evidenceSchemaPath}.baselineArtifactContract.defaultApprovalStatus must be pending-user-approval`);
+  }
+  if (evidenceSchema.baselineArtifactContract?.versioned !== true) {
+    fail(`${evidenceSchemaPath}.baselineArtifactContract.versioned must be true`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
   requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "requiredSourceIds"]);
@@ -905,6 +919,11 @@ if (runnerSource) {
     "function traceIsolationForRun(",
     "function evidenceSourceReferences(",
     "function exitPolicyForRun(",
+    "function baselineReferenceForRun(",
+    "baselineReference: baselineReferenceForRun(runDir, args.baseline)",
+    "approval: {",
+    "status: \"pending-user-approval\"",
+    "lowerPriorityOptimizationMayUpdateP0: false",
     "computedExitCode: nonZeroOnStatuses.includes(status) ? 1 : 0",
     "process.exitCode = result.exitPolicy?.computedExitCode ?? 0",
     "self-test gated dry-run with missing P0 baseline must exit 1",
@@ -942,6 +961,8 @@ if (evidenceVerifierSource) {
     "validateTraceIsolation(",
     "validateEvidenceSources(",
     "validateExitPolicy(",
+    "validateBaselineComparison(",
+    "baseline-comparison.json must not include raw baselinePath",
     "exitPolicy.computedExitCode must be",
     "contentHash does not match current source content",
     "runDirectoryMatchesRunId must be true",

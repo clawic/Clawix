@@ -116,8 +116,11 @@ the public repo.
   the run evidence. Use `--suite p0` to execute the P0 scenario matrix into a
   single suite directory with `suite.json`, `suite-metrics.json`, and
   `suite-failures.json`. Use `--write-baseline <file>` after an approved
-  measured run, and use `--baseline <file> --gate p0` to make P0 baseline
-  regressions fail. Event JSONL is capped per run and written only to the
+  measured run; generated baseline artifacts are versioned and remain
+  `pending-user-approval` until promoted through the private evidence workflow.
+  Use `--baseline <file> --gate p0` to make P0 baseline regressions fail. The
+  comparison artifact stores a hash-only reference for external baseline paths,
+  never a raw local private path. Event JSONL is capped per run and written only to the
   selected evidence directory, never to the main app database. Use `--dry-run`
   only to validate harness wiring; it is not performance evidence.
 - `scripts/verify_macos_ux_trace_evidence.mjs`: public-safe run/suite evidence
@@ -308,6 +311,7 @@ primary timing source.
   add `--write-baseline <private-baseline-file>`.
 - Baseline comparison and P0 gate:
   add `--baseline <private-baseline-file> --gate p0`.
+  External baseline paths are written to evidence only as hash references.
 - Evidence validation:
   `node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>`.
 

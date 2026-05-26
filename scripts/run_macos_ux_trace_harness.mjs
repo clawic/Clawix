@@ -859,16 +859,40 @@ function exitPolicyForRun(args, status) {
   };
 }
 
+function baselineReferenceForRun(runDir, baselinePath) {
+  if (!baselinePath) return null;
+  return publicPathReference(runDir, path.resolve(baselinePath));
+}
+
 function writeBaselineArtifact(file, context, metrics) {
   if (!file) return null;
   const baseline = {
     schemaVersion: 1,
     program: "macos-ux-trace-harness-baseline",
+    baselineVersion: 1,
     generatedAt: isoNow(),
     platform: "macos",
     scenarioId: context.scenarioId,
     fixtureProfile: context.fixtureProfile,
     suiteId: context.suiteId || null,
+    sourceEvidence: {
+      runId: context.runId || null,
+      suiteId: context.suiteId || null,
+      status: context.status || null,
+      artifactKind: context.suiteId ? "suite" : "run",
+    },
+    approval: {
+      status: "pending-user-approval",
+      approvedByUserAt: null,
+      approvedScope: null,
+      reason: "Generated baseline artifacts are not approved until reviewed through the private evidence workflow.",
+    },
+    promotionPolicy: {
+      lowerPriorityOptimizationMayUpdateP0: false,
+      requiresApprovedEvidence: true,
+      privateEvidenceRemainsExternal: true,
+    },
+    evidenceSources: evidenceSourceReferences(),
     privateBoundary: {
       containsPrivateConversationText: false,
       containsReadablePrivateScreenshots: false,
@@ -1375,7 +1399,7 @@ async function runScenario(args) {
     runId,
     scenarioId,
     fixtureProfile,
-    baselinePath: args.baseline || null,
+    baselineReference: baselineReferenceForRun(runDir, args.baseline),
     gate: gate ? {
       priority: gate.priority,
       maxRegressionPercent: gate.maxRegressionPercent,
@@ -1460,7 +1484,7 @@ async function runScenario(args) {
     } : null,
   });
   writeJson(path.join(runDir, "baseline-comparison.json"), baselineComparison);
-  const writtenBaselinePath = writeBaselineArtifact(args["write-baseline"], { scenarioId, fixtureProfile }, metrics);
+  const writtenBaselinePath = writeBaselineArtifact(args["write-baseline"], { runId, scenarioId, fixtureProfile, status }, metrics);
 
   return {
     ok: status === "PASS",
@@ -1591,7 +1615,7 @@ async function runSuite(args) {
   writeJson(path.join(suiteDir, "suite.json"), suite);
   writeJson(path.join(suiteDir, "suite-metrics.json"), { schemaVersion: 1, suiteId, metrics });
   writeJson(path.join(suiteDir, "suite-failures.json"), { schemaVersion: 1, suiteId, failures });
-  const writtenBaselinePath = writeBaselineArtifact(args["write-baseline"], { suiteId, scenarioId: null, fixtureProfile: requestedProfile || "mixed" }, metrics);
+  const writtenBaselinePath = writeBaselineArtifact(args["write-baseline"], { suiteId, scenarioId: null, fixtureProfile: requestedProfile || "mixed", status }, metrics);
 
   return {
     ok: status === "PASS",
@@ -1666,6 +1690,21 @@ async function selfTest() {
   const gatePayload = gateResult.stdout ? JSON.parse(gateResult.stdout) : null;
   if (gatePayload?.status !== "FAIL" || gatePayload?.exitPolicy?.computedExitCode !== 1) {
     throw new Error("self-test gated dry-run must emit FAIL evidence with computed exit code 1");
+  }
+  const baselinePath = path.join(outDir, "self-test.baseline.json");
+  const baselineResult = await runScenario({
+    scenario: "startup-to-usable",
+    "fixture-profile": "smoke",
+    "dry-run": true,
+    "out-dir": outDir,
+    "write-baseline": baselinePath,
+  });
+  const baseline = readJson(baselinePath);
+  if (baseline.baselineVersion !== 1) throw new Error("self-test baseline must be versioned");
+  if (baseline.approval?.status !== "pending-user-approval") throw new Error("self-test baseline must be pending user approval");
+  if (baseline.sourceEvidence?.runId !== baselineResult.runId) throw new Error("self-test baseline source run must match");
+  if (baseline.promotionPolicy?.lowerPriorityOptimizationMayUpdateP0 !== false) {
+    throw new Error("self-test baseline must protect P0 promotion policy");
   }
   return result;
 }

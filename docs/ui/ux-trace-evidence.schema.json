@@ -147,6 +147,32 @@
       "INVALID"
     ]
   },
+  "baselineComparisonContract": {
+    "baselineReferencePolicy": "baseline-comparison.json must not store raw external baseline paths; external baselines are represented by sha256 path hashes, while generated in-run baselines may be relative references.",
+    "allowedReferenceKinds": [
+      "relative-to-run",
+      "external-hash-only"
+    ]
+  },
+  "baselineArtifactRequiredFields": [
+    "schemaVersion",
+    "program",
+    "baselineVersion",
+    "generatedAt",
+    "platform",
+    "sourceEvidence",
+    "approval",
+    "promotionPolicy",
+    "evidenceSources",
+    "privateBoundary",
+    "metrics"
+  ],
+  "baselineArtifactContract": {
+    "defaultApprovalStatus": "pending-user-approval",
+    "versioned": true,
+    "privateEvidenceRemainsExternal": true,
+    "p0Protection": "Generated baselines must not allow lower-priority optimizations to update P0 baselines without approved evidence."
+  },
   "eventRequiredFields": [
     "schemaVersion",
     "runId",
