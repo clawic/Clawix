@@ -673,6 +673,8 @@ function validateRun(runDir, schema, options = {}) {
   if (failuresArtifact.runId !== run.runId) fail(failures, "failures.json runId must match run.json");
   if (fixtureManifest.runId !== run.runId) fail(failures, "fixture-manifest.json runId must match run.json");
   if (baselineComparison.runId !== run.runId) fail(failures, "baseline-comparison.json runId must match run.json");
+  if (baselineComparison.scenarioId !== run.scenarioId) fail(failures, "baseline-comparison.json scenarioId must match run.json");
+  if (baselineComparison.fixtureProfile !== run.fixtureProfile) fail(failures, "baseline-comparison.json fixtureProfile must match run.json");
   if (fixtureManifest.generatedFixture?.privateBoundary || fixtureManifest.privateBoundary) {
     validatePrivateBoundary(failures, fixtureManifest.generatedFixture?.privateBoundary ?? fixtureManifest.privateBoundary, "fixture-manifest.json");
   } else if (fixtureManifest.privateContentExported !== false) {
@@ -998,6 +1000,12 @@ function validateSuite(suiteDir, schema) {
   if (suiteFailures.suiteId !== suite.suiteId) fail(failures, "suite-failures.json suiteId must match suite.json");
   if (suiteBaselineObject.suiteId !== suite.suiteId) {
     fail(failures, "suite-baseline-comparison.json suiteId must match suite.json");
+  }
+  if (suiteBaselineObject.suiteName !== suite.suiteName) {
+    fail(failures, "suite-baseline-comparison.json suiteName must match suite.json");
+  }
+  if (suiteBaselineObject.requestedFixtureProfile !== suite.requestedFixtureProfile) {
+    fail(failures, "suite-baseline-comparison.json requestedFixtureProfile must match suite.json");
   }
   const suiteMetricKeys = new Set();
   const suiteMetricRows = new Map();

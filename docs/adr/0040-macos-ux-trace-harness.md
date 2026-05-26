@@ -100,6 +100,7 @@ hash-referenced, harness-disabled, measured, and numerically comparable.
   comparison status consistency, exact child-to-suite metric/failure
   aggregation including required metric evidence fields such as `worstSample`,
   `budget`, and `evidenceEventRefs`, child baseline-comparison path ownership,
+  run/suite baseline-comparison source-context binding,
   artifact-index existence/completeness, metrics/failures artifact shape,
   run/suite artifact identity and run build-context shape, suite run array/count/path shape,
   metric-to-KPI-registry priority/surface binding, KPI-specific metric event

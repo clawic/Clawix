@@ -706,7 +706,10 @@ if (evidenceSchema) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.suiteAggregationPolicy must require exact child aggregation`);
   }
   if (
-    !String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("reference an emitted KPI metric")
+    !String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("source context")
+    || !String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("runId, scenarioId, and fixtureProfile")
+    || !String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("suiteId, suiteName, and requestedFixtureProfile")
+    || !String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("reference an emitted KPI metric")
     || !String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("must match the emitted metric row")
   ) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.rowPolicy must require KPI metric row correlation`);
@@ -1263,6 +1266,10 @@ if (evidenceVerifierSource) {
     "parseIsoTimestamp(failures, baseline.generatedAt, \"baseline.generatedAt\")",
     "suite-baseline-comparison.json",
     "suiteBaselineComparison",
+    "baseline-comparison.json scenarioId must match run.json",
+    "baseline-comparison.json fixtureProfile must match run.json",
+    "suite-baseline-comparison.json suiteName must match suite.json",
+    "suite-baseline-comparison.json requestedFixtureProfile must match suite.json",
     "baselineComparisonPath",
     "baselineComparisonPath must point to the child run baseline-comparison.json",
     "baselineComparisonPath runId must match child run",
