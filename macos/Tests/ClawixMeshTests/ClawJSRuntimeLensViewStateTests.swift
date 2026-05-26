@@ -53,6 +53,7 @@ final class ClawJSRuntimeLensViewStateTests: XCTestCase {
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.closureStatus("direct_blocker"), .danger)
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.closureStatus("external_pending"), .warning)
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.evidenceReentryStatus("approval_required"), .warning)
+        XCTAssertEqual(ClawJSRuntimeLensStatusTone.evidenceReentryStatus("blocked_until_approval_gate_fixture"), .warning)
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.ecosystemStage("native_parity"), .success)
         XCTAssertEqual(ClawJSRuntimeLensStatusTone.ecosystemStage("dev_only"), .warning)
         XCTAssertEqual(

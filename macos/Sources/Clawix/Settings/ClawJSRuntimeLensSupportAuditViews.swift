@@ -250,6 +250,9 @@ extension ClawJSRuntimeLensSection {
                 if presentation.upstreamContractBlockedCount > 0 {
                     statusPill(text: "upstream \(presentation.upstreamContractBlockedCount)", color: .orange)
                 }
+                if presentation.approvalGateBlockedCount > 0 {
+                    statusPill(text: "approval gate \(presentation.approvalGateBlockedCount)", color: .orange)
+                }
                 if presentation.unresolvedNativeRequirementCount > 0 {
                     statusPill(text: "unresolved \(presentation.unresolvedNativeRequirementCount)", color: .red)
                 }
@@ -292,6 +295,13 @@ extension ClawJSRuntimeLensSection {
             }
             if let upstreamIds = presentation.upstreamContractIdsLabel {
                 Text("Upstream ids: \(upstreamIds)")
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            if let approvalGateIds = presentation.approvalGateIdsLabel {
+                Text("Approval gate ids: \(approvalGateIds)")
                     .font(BodyFont.system(size: 10.5))
                     .foregroundColor(Palette.textSecondary.opacity(0.72))
                     .lineLimit(1)

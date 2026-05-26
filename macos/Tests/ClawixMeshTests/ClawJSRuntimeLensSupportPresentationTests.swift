@@ -28,8 +28,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.closureState, "blocked")
         XCTAssertEqual(snapshot.supportAudit?.supportComplete, false)
         XCTAssertEqual(snapshot.supportAudit?.allDomainsAccountedFor, true)
-        XCTAssertEqual(snapshot.supportAudit?.blockerSummary?.byBlockerClass?["direct_blocker"], 2)
-        XCTAssertEqual(snapshot.supportAudit?.blockerSummary?.productBlockedRequirementCount, 2)
+        XCTAssertEqual(snapshot.supportAudit?.blockerSummary?.byBlockerClass?["direct_blocker"], 3)
+        XCTAssertEqual(snapshot.supportAudit?.blockerSummary?.productBlockedRequirementCount, 3)
         XCTAssertEqual(snapshot.supportAudit?.blockerSummary?.externalPendingDomains, ["channels"])
         XCTAssertEqual(snapshot.supportAudit?.provenance?.source, "runtime-portal-support-audit")
         XCTAssertEqual(snapshot.supportAudit?.provenance?.runtimeId, "example")
@@ -39,12 +39,12 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(supportAuditPresentation.closureState, "blocked")
         XCTAssertEqual(supportAuditPresentation.supportComplete, false)
         XCTAssertEqual(supportAuditPresentation.allDomainsAccountedFor, true)
-        XCTAssertEqual(supportAuditPresentation.evidenceRequirementCount, 3)
-        XCTAssertEqual(supportAuditPresentation.directBlockerCount, 2)
+        XCTAssertEqual(supportAuditPresentation.evidenceRequirementCount, 4)
+        XCTAssertEqual(supportAuditPresentation.directBlockerCount, 3)
         XCTAssertEqual(supportAuditPresentation.externalPendingCount, 1)
-        XCTAssertEqual(supportAuditPresentation.productBlockedRequirementCount, 2)
+        XCTAssertEqual(supportAuditPresentation.productBlockedRequirementCount, 3)
         XCTAssertEqual(supportAuditPresentation.supportStage, "dev_only")
-        XCTAssertEqual(supportAuditPresentation.blockerClassLabel, "direct_blocker 2, external_pending 1")
+        XCTAssertEqual(supportAuditPresentation.blockerClassLabel, "direct_blocker 3, external_pending 1")
         XCTAssertEqual(supportAuditPresentation.directBlockerDomainsLabel, "sessions")
         XCTAssertEqual(supportAuditPresentation.externalPendingDomainsLabel, "channels")
         XCTAssertEqual(supportAuditPresentation.blockedWriteBackDomainsLabel, "sessions")
@@ -53,7 +53,7 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(supportAuditPresentation.provenanceRuntimeId, "example")
         XCTAssertEqual(supportAuditPresentation.provenanceLabel, "runtime-portal-support-audit, runtime example")
         XCTAssertTrue(supportAuditPresentation.accessibilityLabel.contains("Runtime support audit"))
-        XCTAssertTrue(supportAuditPresentation.accessibilityLabel.contains("product blocked 2"))
+        XCTAssertTrue(supportAuditPresentation.accessibilityLabel.contains("product blocked 3"))
         XCTAssertTrue(supportAuditPresentation.accessibilityLabel.contains("blocked write back domains sessions"))
         XCTAssertTrue(supportAuditPresentation.accessibilityLabel.contains("promotion gate support_claim_remains_unpromoted"))
         XCTAssertTrue(supportAuditPresentation.accessibilityLabel.contains("provenance source runtime-portal-support-audit"))
@@ -121,19 +121,23 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.syncPolicySummary?.noSilentOverwrite, true)
         XCTAssertEqual(snapshot.supportAudit?.syncPolicySummary?.defaultSyncMode, "read_projection_first_no_silent_write_back")
         XCTAssertEqual(snapshot.supportAudit?.syncPolicySummary?.safeDefault, "project_runtime_state_do_not_sync_or_write_back_without_official_contract")
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.totalRequirementCount, 3)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.totalRequirementCount, 4)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalRequiredCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.externalPendingCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.upstreamContractBlockedCount, 1)
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productBlockedCount, 2)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateBlockedCount, 1)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productBlockedCount, 3)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.unresolvedNativeRequirementCount, 0)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.blockerClassCounts?["direct_blocker"], 1)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["do_not_run_without_approval_gate_fixture"], 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_unpromoted_and_do_not_synthesize_runtime_state"], 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalRequiredRequirementIds?.contains("example.channels.live_evidence"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.externalPendingRequirementIds?.contains("example.channels.live_evidence"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.upstreamContractRequirementIds?.contains("example.sessions.create.action_contract"), true)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateRequirementIds?.contains("example.sandboxPermissions.approval_gate_evidence"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productBlockedRequirementIds?.contains("example.sessions.pin.native_write_back_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.unresolvedNativeRequirementIds, [])
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.nextRequiredActions?.contains("approval_gate_fixture_and_redacted_receipt"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.nextRequiredActions?.contains("official_runtime_native_contract_fixture"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.reentryPolicy, "use_evidence_reentry_packets_before_claim_promotion")
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefault, "keep_unpromoted_and_follow_exact_reentry_packets")
@@ -171,20 +175,24 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         let readinessPresentation = ClawJSRuntimeLensSupportSummaryPresentation.make(
             evidenceReadiness: try XCTUnwrap(snapshot.supportAudit?.evidenceReadinessSummary)
         )
-        XCTAssertEqual(readinessPresentation.totalRequirementCount, 3)
+        XCTAssertEqual(readinessPresentation.totalRequirementCount, 4)
         XCTAssertEqual(readinessPresentation.approvalRequiredCount, 1)
         XCTAssertEqual(readinessPresentation.upstreamContractBlockedCount, 1)
-        XCTAssertEqual(readinessPresentation.statusLabel, "approval_required 1, blocked_until_upstream_contract 1")
+        XCTAssertEqual(readinessPresentation.approvalGateBlockedCount, 1)
+        XCTAssertEqual(readinessPresentation.statusLabel, "approval_required 1, blocked_until_approval_gate_fixture 1, blocked_until_upstream_contract 1")
         XCTAssertEqual(readinessPresentation.blockerClassLabel, "direct_blocker 1, external_pending 1")
-        XCTAssertEqual(readinessPresentation.safeDefaultLabel, "do_not_run_without_explicit_approval_and_redaction 1, keep_unpromoted_and_do_not_synthesize_runtime_state 1")
+        XCTAssertEqual(readinessPresentation.safeDefaultLabel, "do_not_run_without_approval_gate_fixture 1, do_not_run_without_explicit_approval_and_redaction 1, keep_unpromoted_and_do_not_synthesize_runtime_state 1")
         XCTAssertEqual(readinessPresentation.approvalRequiredIdsLabel, "example.channels.live_evidence")
         XCTAssertEqual(readinessPresentation.externalPendingIdsLabel, "example.channels.live_evidence")
         XCTAssertEqual(readinessPresentation.upstreamContractIdsLabel, "example.sessions.create.action_contract")
-        XCTAssertEqual(readinessPresentation.productBlockedIdsLabel, "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract")
+        XCTAssertEqual(readinessPresentation.approvalGateIdsLabel, "example.sandboxPermissions.approval_gate_evidence")
+        XCTAssertEqual(readinessPresentation.productBlockedIdsLabel, "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract, example.sandboxPermissions.approval_gate_evidence")
         XCTAssertNil(readinessPresentation.unresolvedNativeIdsLabel)
-        XCTAssertEqual(readinessPresentation.nextRequiredActionsLabel, "approved_redacted_live_evidence, official_runtime_native_contract_fixture")
+        XCTAssertEqual(readinessPresentation.nextRequiredActionsLabel, "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, official_runtime_native_contract_fixture")
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("Runtime evidence readiness summary"))
+        XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("approval gate blocked 1"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("blocker classes direct_blocker 1"))
+        XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("approval gate ids example.sandboxPermissions.approval_gate_evidence"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("product blocked ids example.sessions.create.action_contract"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("safe default keep_unpromoted_and_follow_exact_reentry_packets"))
         let closurePresentation = ClawJSRuntimeLensClosureChecklistPresentation.make(
@@ -215,7 +223,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(validationSummary.coverageStatus, "semantic_lens_covered")
         XCTAssertTrue(validationSummary.isSemanticallyCovered)
         XCTAssertEqual(validationSummary.checklistTotal, 2)
-        XCTAssertEqual(validationSummary.evidenceReentryPacketCount, 2)
+        XCTAssertEqual(validationSummary.evidenceReentryPacketCount, 3)
+        XCTAssertEqual(validationSummary.evidenceApprovalGateBlockedCount, 1)
         XCTAssertEqual(validationSummary.projectedDomainCount, 2)
         XCTAssertEqual(validationSummary.unsupportedDomainCount, 0)
         XCTAssertEqual(validationSummary.productBlockedButProjectedDomainCount, 1)
@@ -225,6 +234,7 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(validationSummary.syncFreshnessLabel, "degraded_snapshot 1, snapshot 1")
         XCTAssertEqual(validationSummary.evidenceApprovalRequiredCount, 1)
         XCTAssertEqual(validationSummary.evidenceUpstreamContractBlockedCount, 1)
+        XCTAssertEqual(validationSummary.evidenceApprovalGateBlockedCount, 1)
         XCTAssertEqual(validationSummary.evidenceUnresolvedNativeRequirementCount, 0)
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("projected domains 2"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("product blocked but projected 1"))
@@ -233,35 +243,35 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("freshness degraded_snapshot 1, snapshot 1"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("upstream contract blocked 1"))
         XCTAssertEqual(validationSummary.externalPendingRequirementCount, 1)
-        XCTAssertEqual(validationSummary.productBlockedRequirementCount, 2)
+        XCTAssertEqual(validationSummary.productBlockedRequirementCount, 3)
         XCTAssertEqual(validationSummary.finalDecisionId, "keep_current_lowered_runtime_ecosystem_claim")
         XCTAssertFalse(validationSummary.recommended)
         XCTAssertFalse(validationSummary.production)
         XCTAssertEqual(validationSummary.uiParityClaim, "partial_template_only")
         XCTAssertEqual(validationSummary.uiParityDisposition, "partial_lens_validated_not_full_native_parity")
-        XCTAssertEqual(validationSummary.blockedPromotionClaims, ["recommended", "production", "native_parity", "write_back"])
+        XCTAssertEqual(validationSummary.blockedPromotionClaims, ["recommended", "production", "native_parity", "write_back", "approval_gate_fixture"])
         XCTAssertEqual(validationSummary.finalDecisionBlockerClassesLabel, "external_pending, direct_blocker")
         XCTAssertEqual(
             validationSummary.finalDecisionProductBlockedIdsLabel,
-            "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract"
+            "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract, example.sandboxPermissions.approval_gate_evidence"
         )
         XCTAssertEqual(validationSummary.finalDecisionExternalPendingIdsLabel, "example.channels.live_evidence")
         XCTAssertNil(validationSummary.finalDecisionUnresolvedNativeIdsLabel)
         XCTAssertEqual(
             validationSummary.finalDecisionPromotionEvidenceLabel,
-            "approved_redacted_live_evidence, keep_lowered_claim_until_upstream_native_contracts_exist"
+            "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, keep_lowered_claim_until_upstream_native_contracts_exist"
         )
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("all domains accounted"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("decision id keep_current_lowered_runtime_ecosystem_claim"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("recommended false"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("ui parity claim partial_template_only"))
-        XCTAssertTrue(validationSummary.accessibilityLabel.contains("blocked claims recommended, production, native_parity, write_back"))
+        XCTAssertTrue(validationSummary.accessibilityLabel.contains("blocked claims recommended, production, native_parity, write_back, approval_gate_fixture"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("final blocker classes external_pending, direct_blocker"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("final promotion evidence approved_redacted_live_evidence"))
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.status, "unpromoted")
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.finalPromotionAllowed, false)
-        XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.claimDisposition, "unpromoted_external_pending")
-        XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.productBlockedByDecisionCount, 2)
+        XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.claimDisposition, "unpromoted_product_blocked_and_external_pending")
+        XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.productBlockedByDecisionCount, 3)
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.externalPendingRequirementIds?.contains("example.channels.live_evidence"), true)
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.productBlockedRequirementIds?.contains("example.sessions.create.action_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.unresolvedNativeRequirementCount, 0)
@@ -272,22 +282,22 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
             review: try XCTUnwrap(snapshot.supportAudit?.finalPromotionReview)
         )
         XCTAssertEqual(promotionReviewPresentation.status, "unpromoted")
-        XCTAssertEqual(promotionReviewPresentation.claimDisposition, "unpromoted_external_pending")
-        XCTAssertEqual(promotionReviewPresentation.productBlockedCount, 2)
+        XCTAssertEqual(promotionReviewPresentation.claimDisposition, "unpromoted_product_blocked_and_external_pending")
+        XCTAssertEqual(promotionReviewPresentation.productBlockedCount, 3)
         XCTAssertEqual(promotionReviewPresentation.externalPendingCount, 1)
         XCTAssertEqual(promotionReviewPresentation.unresolvedNativeRequirementCount, 0)
         XCTAssertEqual(
             promotionReviewPresentation.productBlockedIdsLabel,
-            "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract"
+            "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract, example.sandboxPermissions.approval_gate_evidence"
         )
         XCTAssertEqual(promotionReviewPresentation.externalPendingIdsLabel, "example.channels.live_evidence")
         XCTAssertNil(promotionReviewPresentation.unresolvedNativeIdsLabel)
         XCTAssertEqual(
             promotionReviewPresentation.requiredForPromotionLabel,
-            "approved_redacted_live_evidence, keep_lowered_claim_until_upstream_native_contracts_exist, ecosystem_production_claim, ecosystem_recommended_claim"
+            "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, keep_lowered_claim_until_upstream_native_contracts_exist, ecosystem_production_claim"
         )
         XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("Runtime final promotion review"))
-        XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("product blocked 2"))
+        XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("product blocked 3"))
         XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("external pending 1"))
         XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("product blocked ids example.sessions.create.action_contract"))
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.status, "not_promoted")
@@ -315,21 +325,22 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertFalse(finalDecisionPresentation.production)
         XCTAssertEqual(finalDecisionPresentation.uiParityClaim, "partial_template_only")
         XCTAssertEqual(finalDecisionPresentation.uiParityDisposition, "partial_lens_validated_not_full_native_parity")
-        XCTAssertEqual(finalDecisionPresentation.blockedPromotionClaimsLabel, "recommended, production, native_parity, write_back")
+        XCTAssertEqual(finalDecisionPresentation.claimDisposition, "unpromoted_product_blocked_and_external_pending")
+        XCTAssertEqual(finalDecisionPresentation.blockedPromotionClaimsLabel, "recommended, production, native_parity, write_back, approval_gate_fixture")
         XCTAssertEqual(finalDecisionPresentation.blockerClassesLabel, "external_pending, direct_blocker")
         XCTAssertEqual(
             finalDecisionPresentation.productBlockedIdsLabel,
-            "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract"
+            "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract, example.sandboxPermissions.approval_gate_evidence"
         )
         XCTAssertEqual(finalDecisionPresentation.externalPendingIdsLabel, "example.channels.live_evidence")
         XCTAssertNil(finalDecisionPresentation.unresolvedNativeIdsLabel)
         XCTAssertEqual(
             finalDecisionPresentation.promotionEvidenceRequiredLabel,
-            "approved_redacted_live_evidence, keep_lowered_claim_until_upstream_native_contracts_exist"
+            "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, keep_lowered_claim_until_upstream_native_contracts_exist"
         )
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("Runtime final support claim decision"))
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("decision keep_current_lowered_runtime_ecosystem_claim"))
-        XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("blocked claims recommended, production, native_parity, write_back"))
+        XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("blocked claims recommended, production, native_parity, write_back, approval_gate_fixture"))
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("blocker classes external_pending, direct_blocker"))
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("promotion evidence approved_redacted_live_evidence"))
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("safe default keep_unpromoted_until_evidence_or_upstream_contract_changes"))
@@ -350,17 +361,22 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.last?.exactCommand, "claw runtime example sessions create --title <approved-title> --confirm-runtime-write --gateway-url <approved-loopback-fixture-url> --json")
         XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.last?.productionTransportStatus, "blocked_until_production_transport_lifecycle_policy")
         XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?.last?.productionTransportCommandShape, "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval")
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?[1].status, "blocked_until_approval_gate_fixture")
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?[1].safeDefault, "do_not_run_without_approval_gate_fixture")
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReentryPackets?[1].expectedRedactedEvidence?.contains("approval_gate_fixture_receipt"), true)
         let reentryPresentation = ClawJSRuntimeLensEvidenceReentryPresentation.make(
             packets: snapshot.supportAudit?.evidenceReentryPackets ?? []
         )
-        XCTAssertEqual(reentryPresentation.totalLabel, "reentry 2")
+        XCTAssertEqual(reentryPresentation.totalLabel, "reentry 3")
         XCTAssertEqual(reentryPresentation.statusPills.map(\.label), [
             "approval_required 1",
+            "blocked_until_approval_gate_fixture 1",
             "blocked_until_upstream_contract 1"
         ])
-        XCTAssertEqual(reentryPresentation.approvalRequiredCount, 1)
+        XCTAssertEqual(reentryPresentation.approvalRequiredCount, 2)
         XCTAssertEqual(reentryPresentation.rows.map(\.requirementId), [
             "example.channels.live_evidence",
+            "example.sandboxPermissions.approval_gate_evidence",
             "example.sessions.create.action_contract"
         ])
         XCTAssertEqual(reentryPresentation.rows.first?.approvalRequired, true)
@@ -391,11 +407,16 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertTrue(reentryPresentation.rows.first?.accessibilityLabel.contains("do not run without approval") == true)
         XCTAssertTrue(reentryPresentation.rows.first?.accessibilityLabel.contains("expected evidence redacted_json_receipt") == true)
         XCTAssertTrue(reentryPresentation.rows.first?.accessibilityLabel.contains("support resolution external_pending_not_product_blocked") == true)
+        XCTAssertEqual(reentryPresentation.rows[1].status, "blocked_until_approval_gate_fixture")
+        XCTAssertEqual(reentryPresentation.rows[1].safeDefault, "do_not_run_without_approval_gate_fixture")
+        XCTAssertEqual(reentryPresentation.rows[1].expectedRedactedEvidenceLabel, "approval_gate_fixture_receipt, non_destructive_dry_run_or_denial_receipt, no_plaintext_secrets_or_permission_tokens")
+        XCTAssertTrue(reentryPresentation.rows[1].accessibilityLabel.contains("claim blocked until approval_gate_fixture_and_redacted_receipt_attached") == true)
         XCTAssertEqual(reentryPresentation.rows.last?.officialMethod, "session.create")
         XCTAssertEqual(reentryPresentation.rows.last?.productionTransportStatus, "blocked_until_production_transport_lifecycle_policy")
         XCTAssertEqual(reentryPresentation.rows.last?.productionTransportCommandShape, "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval")
         XCTAssertTrue(reentryPresentation.rows.last?.accessibilityLabel.contains("product decision native_session_action_unsupported_until_official_runtime_contract") == true)
-        XCTAssertTrue(reentryPresentation.accessibilityLabel.contains("approval required 1"))
+        XCTAssertTrue(reentryPresentation.accessibilityLabel.contains("approval required 2"))
+        XCTAssertTrue(reentryPresentation.accessibilityLabel.contains("blocked_until_approval_gate_fixture 1"))
         XCTAssertTrue(reentryPresentation.accessibilityLabel.contains("blocked_until_upstream_contract 1"))
     }
 }

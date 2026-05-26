@@ -56,7 +56,7 @@
       ],
       "blockerSummary": {
         "byBlockerClass": {
-          "direct_blocker": 2,
+          "direct_blocker": 3,
           "external_pending": 1
         },
         "directBlockerDomains": [
@@ -71,8 +71,8 @@
         "ecosystemExternalPendingDomains": [
           "channels"
         ],
-        "evidenceRequirementCount": 3,
-        "productBlockedRequirementCount": 2
+        "evidenceRequirementCount": 4,
+        "productBlockedRequirementCount": 3
       },
       "evidenceRequirements": [
         {
@@ -286,6 +286,7 @@
       "evidenceReadinessSummary": {
         "statusCounts": {
           "approval_required": 1,
+          "blocked_until_approval_gate_fixture": 1,
           "blocked_until_upstream_contract": 1
         },
         "blockerClassCounts": {
@@ -293,14 +294,16 @@
           "direct_blocker": 1
         },
         "safeDefaultCounts": {
+          "do_not_run_without_approval_gate_fixture": 1,
           "do_not_run_without_explicit_approval_and_redaction": 1,
           "keep_unpromoted_and_do_not_synthesize_runtime_state": 1
         },
-        "totalRequirementCount": 3,
+        "totalRequirementCount": 4,
         "approvalRequiredCount": 1,
         "externalPendingCount": 1,
         "upstreamContractBlockedCount": 1,
-        "productBlockedCount": 2,
+        "approvalGateBlockedCount": 1,
+        "productBlockedCount": 3,
         "unresolvedNativeRequirementCount": 0,
         "approvalRequiredRequirementIds": [
           "example.channels.live_evidence"
@@ -311,13 +314,18 @@
         "upstreamContractRequirementIds": [
           "example.sessions.create.action_contract"
         ],
+        "approvalGateRequirementIds": [
+          "example.sandboxPermissions.approval_gate_evidence"
+        ],
         "productBlockedRequirementIds": [
           "example.sessions.create.action_contract",
-          "example.sessions.pin.native_write_back_contract"
+          "example.sessions.pin.native_write_back_contract",
+          "example.sandboxPermissions.approval_gate_evidence"
         ],
         "unresolvedNativeRequirementIds": [],
         "nextRequiredActions": [
           "approved_redacted_live_evidence",
+          "approval_gate_fixture_and_redacted_receipt",
           "official_runtime_native_contract_fixture"
         ],
         "reentryPolicy": "use_evidence_reentry_packets_before_claim_promotion",
@@ -326,13 +334,14 @@
       "finalPromotionReview": {
         "status": "unpromoted",
         "finalPromotionAllowed": false,
-        "claimDisposition": "unpromoted_external_pending",
-        "productBlockedByDecisionCount": 2,
+        "claimDisposition": "unpromoted_product_blocked_and_external_pending",
+        "productBlockedByDecisionCount": 3,
         "externalPendingCount": 1,
         "unresolvedNativeRequirementCount": 0,
         "productBlockedRequirementIds": [
           "example.sessions.create.action_contract",
-          "example.sessions.pin.native_write_back_contract"
+          "example.sessions.pin.native_write_back_contract",
+          "example.sandboxPermissions.approval_gate_evidence"
         ],
         "externalPendingRequirementIds": [
           "example.channels.live_evidence"
@@ -340,6 +349,7 @@
         "unresolvedNativeRequirementIds": [],
         "requiredForPromotion": [
           "approved_redacted_live_evidence",
+          "approval_gate_fixture_and_redacted_receipt",
           "keep_lowered_claim_until_upstream_native_contracts_exist",
           "ecosystem_production_claim",
           "ecosystem_recommended_claim"
@@ -354,11 +364,13 @@
         "production": false,
         "uiParityClaim": "partial_template_only",
         "uiParityDisposition": "partial_lens_validated_not_full_native_parity",
+        "claimDisposition": "unpromoted_product_blocked_and_external_pending",
         "blockedPromotionClaims": [
           "recommended",
           "production",
           "native_parity",
-          "write_back"
+          "write_back",
+          "approval_gate_fixture"
         ],
         "blockerClasses": [
           "external_pending",
@@ -366,7 +378,8 @@
         ],
         "productBlockedRequirementIds": [
           "example.sessions.create.action_contract",
-          "example.sessions.pin.native_write_back_contract"
+          "example.sessions.pin.native_write_back_contract",
+          "example.sandboxPermissions.approval_gate_evidence"
         ],
         "externalPendingRequirementIds": [
           "example.channels.live_evidence"
@@ -374,6 +387,7 @@
         "unresolvedNativeRequirementIds": [],
         "promotionEvidenceRequired": [
           "approved_redacted_live_evidence",
+          "approval_gate_fixture_and_redacted_receipt",
           "keep_lowered_claim_until_upstream_native_contracts_exist"
         ],
         "reentryPolicy": "use_evidenceReentryPackets_exactly_before_revisiting_claim",
@@ -416,6 +430,38 @@
           "userVisibleContract": "read_only_degraded_projection_until_live_evidence_is_approved",
           "doNotRunWithoutApproval": true,
           "safeDefault": "do_not_run_without_explicit_approval_and_redaction"
+        },
+        {
+          "id": "example.sandboxPermissions.approval_gate_evidence.reentry",
+          "requirementId": "example.sandboxPermissions.approval_gate_evidence",
+          "blockerClass": "direct_blocker",
+          "status": "blocked_until_approval_gate_fixture",
+          "approvalRequired": true,
+          "commandShape": "runtime example domain sandboxPermissions --json",
+          "exactCommand": "claw runtime example domain sandboxPermissions --json",
+          "preflightCommand": "claw runtime example support --json",
+          "approvalScope": "non_destructive_approval_gate_fixture_only",
+          "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+          "expectedEvidence": [
+            "approval_gate_fixture",
+            "non_destructive_dry_run_or_denial_receipt"
+          ],
+          "expectedRedactedEvidence": [
+            "approval_gate_fixture_receipt",
+            "non_destructive_dry_run_or_denial_receipt",
+            "no_plaintext_secrets_or_permission_tokens"
+          ],
+          "riskControls": [
+            "no_unapproved_host_permission_change"
+          ],
+          "reentryCondition": "add_sandboxPermissions_approval_gate_fixture_and_redacted_receipt",
+          "claimEffect": "blocks_recommended_production_native_parity",
+          "claimBlockedUntil": "approval_gate_fixture_and_redacted_receipt_attached",
+          "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+          "productDecision": "approval_gated_runtime_or_host_action_unpromoted_until_fixture_exists",
+          "userVisibleContract": "read_only_projection_until_non_destructive_approval_gate_is_validated",
+          "doNotRunWithoutApproval": true,
+          "safeDefault": "do_not_run_without_approval_gate_fixture"
         },
         {
           "id": "example.sessions.create.action_contract.reentry",

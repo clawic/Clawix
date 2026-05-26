@@ -42,6 +42,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
         let production: Bool
         let uiParityClaim: String?
         let uiParityDisposition: String?
+        let claimDisposition: String
         let blockedPromotionClaims: [String]
         let blockerClassesLabel: String?
         let productBlockedIdsLabel: String?
@@ -67,6 +68,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
                 "production \(production)",
                 uiParityClaim.map { "ui parity claim \($0)" },
                 uiParityDisposition.map { "ui parity \($0)" },
+                "disposition \(claimDisposition)",
                 blockedPromotionClaimsLabel.map { "blocked claims \($0)" },
                 blockerClassesLabel.map { "blocker classes \($0)" },
                 productBlockedIdsLabel.map { "product blocked ids \($0)" },
@@ -111,6 +113,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
             production: decision.production == true,
             uiParityClaim: decision.uiParityClaim,
             uiParityDisposition: decision.uiParityDisposition,
+            claimDisposition: decision.claimDisposition ?? "unknown",
             blockedPromotionClaims: decision.blockedPromotionClaims ?? [],
             blockerClassesLabel: listLabel(decision.blockerClasses, limit: 4),
             productBlockedIdsLabel: listLabel(decision.productBlockedRequirementIds, limit: 4),

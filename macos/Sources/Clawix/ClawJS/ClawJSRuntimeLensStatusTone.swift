@@ -66,7 +66,7 @@ enum ClawJSRuntimeLensStatusTone: String, Equatable {
 
     static func evidenceReentryStatus(_ status: String) -> ClawJSRuntimeLensStatusTone {
         switch status {
-        case "approval_required", "blocked_until_upstream_contract":
+        case "approval_required", "blocked_until_upstream_contract", "blocked_until_approval_gate_fixture":
             return .warning
         case "closed":
             return .success

@@ -366,7 +366,8 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                     pills: [
                         Pill(id: "requirements", label: "requirements \(presentation.totalRequirementCount)", tone: presentation.totalRequirementCount == 0 ? .success : .warning),
                         Pill(id: "approval", label: "approval \(presentation.approvalRequiredCount)", tone: presentation.approvalRequiredCount > 0 ? .warning : .muted),
-                        Pill(id: "upstream", label: "upstream \(presentation.upstreamContractBlockedCount)", tone: presentation.upstreamContractBlockedCount > 0 ? .warning : .muted)
+                        Pill(id: "upstream", label: "upstream \(presentation.upstreamContractBlockedCount)", tone: presentation.upstreamContractBlockedCount > 0 ? .warning : .muted),
+                        Pill(id: "approval-gate", label: "approval gate \(presentation.approvalGateBlockedCount)", tone: presentation.approvalGateBlockedCount > 0 ? .warning : .muted)
                     ],
                     detailLines: optionalLines([
                         presentation.blockerClassLabel,
@@ -374,6 +375,7 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                         presentation.approvalRequiredIdsLabel,
                         presentation.externalPendingIdsLabel,
                         presentation.upstreamContractIdsLabel,
+                        presentation.approvalGateIdsLabel,
                         presentation.productBlockedIdsLabel,
                         presentation.unresolvedNativeIdsLabel,
                         presentation.safeDefault
@@ -435,10 +437,12 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                     value: presentation.decision,
                     pills: [
                         Pill(id: "status", label: presentation.status, tone: presentation.status == "promoted" ? .success : .warning),
-                        Pill(id: "claim", label: "claim \(presentation.effectiveSupportStage)", tone: ClawJSRuntimeLensStatusTone.supportClaim(presentation.effectiveSupportStage))
+                        Pill(id: "claim", label: "claim \(presentation.effectiveSupportStage)", tone: ClawJSRuntimeLensStatusTone.supportClaim(presentation.effectiveSupportStage)),
+                        Pill(id: "disposition", label: presentation.claimDisposition, tone: presentation.claimDisposition == "all_claims_supported_by_current_evidence" ? .success : .warning)
                     ],
                     detailLines: optionalLines([
                         presentation.uiParityClaim,
+                        presentation.claimDisposition,
                         presentation.blockedPromotionClaimsLabel,
                         presentation.blockerClassesLabel,
                         presentation.productBlockedIdsLabel,

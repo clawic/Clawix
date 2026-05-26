@@ -216,6 +216,11 @@ extension ClawJSRuntimeLensSection {
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
+            Text("Disposition: \(presentation.claimDisposition)")
+                .font(BodyFont.system(size: 10.5))
+                .foregroundColor(Palette.textSecondary.opacity(0.72))
+                .lineLimit(1)
+                .truncationMode(.middle)
             Text("Recommended: \(presentation.recommended ? "yes" : "no") · Production: \(presentation.production ? "yes" : "no")")
                 .font(BodyFont.system(size: 10.5))
                 .foregroundColor(Palette.textSecondary.opacity(0.72))

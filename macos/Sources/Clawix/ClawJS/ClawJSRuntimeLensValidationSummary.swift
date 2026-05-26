@@ -30,6 +30,7 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
     let syncFreshnessLabel: String?
     let evidenceApprovalRequiredCount: Int
     let evidenceUpstreamContractBlockedCount: Int
+    let evidenceApprovalGateBlockedCount: Int
     let evidenceUnresolvedNativeRequirementCount: Int
     let checklistTotal: Int
     let evidenceReentryPacketCount: Int
@@ -62,6 +63,7 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
             syncFreshnessLabel.map { "freshness \($0)" },
             "approval required \(evidenceApprovalRequiredCount)",
             "upstream contract blocked \(evidenceUpstreamContractBlockedCount)",
+            "approval gate blocked \(evidenceApprovalGateBlockedCount)",
             "unresolved native \(evidenceUnresolvedNativeRequirementCount)",
             "external \(externalPendingRequirementCount)",
             "product blocked \(productBlockedRequirementCount)",
@@ -135,6 +137,7 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
             syncFreshnessLabel: Self.countLabel(syncPolicySummary?.freshnessCounts),
             evidenceApprovalRequiredCount: evidenceReadinessSummary?.approvalRequiredCount ?? 0,
             evidenceUpstreamContractBlockedCount: evidenceReadinessSummary?.upstreamContractBlockedCount ?? 0,
+            evidenceApprovalGateBlockedCount: evidenceReadinessSummary?.approvalGateBlockedCount ?? 0,
             evidenceUnresolvedNativeRequirementCount: evidenceReadinessSummary?.unresolvedNativeRequirementCount ?? 0,
             checklistTotal: checklist.count,
             evidenceReentryPacketCount: audit?.evidenceReentryPackets?.count ?? 0
