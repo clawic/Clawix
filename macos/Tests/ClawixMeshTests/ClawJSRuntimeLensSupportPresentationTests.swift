@@ -2,6 +2,90 @@ import XCTest
 @testable import Clawix
 
 final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
+    func testEvidenceReadinessPresentationMarksTruncatedRequirementIds() {
+        let summary = ClawJSRuntimeLensSnapshot.SupportAudit.EvidenceReadinessSummary(
+            statusCounts: nil,
+            blockerClassCounts: nil,
+            safeDefaultCounts: nil,
+            totalRequirementCount: 16,
+            approvalRequiredCount: 0,
+            externalPendingCount: 0,
+            upstreamContractBlockedCount: 0,
+            approvalGateBlockedCount: 0,
+            tuiGatewayBlockedCount: 4,
+            productionTransportBlockedCount: 4,
+            writeBackContractBlockedCount: 8,
+            productBlockedCount: 16,
+            unresolvedNativeRequirementCount: 0,
+            approvalRequiredRequirementIds: nil,
+            externalPendingRequirementIds: nil,
+            upstreamContractRequirementIds: nil,
+            approvalGateRequirementIds: nil,
+            tuiGatewayRequirementIds: [
+                "hermes.sessions.send.action_contract",
+                "hermes.sessions.inject.action_contract",
+                "hermes.sessions.abort.action_contract",
+                "hermes.sessions.create.action_contract"
+            ],
+            productionTransportRequirementIds: [
+                "hermes.sessions.send.action_contract",
+                "hermes.sessions.inject.action_contract",
+                "hermes.sessions.abort.action_contract",
+                "hermes.sessions.create.action_contract"
+            ],
+            writeBackContractRequirementIds: [
+                "hermes.sessions.pin.native_write_back_contract",
+                "hermes.sessions.unpin.native_write_back_contract",
+                "hermes.skills.write_back_contract",
+                "hermes.configuration.write_back_contract"
+            ],
+            productBlockedRequirementIds: [
+                "hermes.sessions.send.action_contract",
+                "hermes.sessions.inject.action_contract",
+                "hermes.sessions.abort.action_contract",
+                "hermes.sessions.create.action_contract"
+            ],
+            unresolvedNativeRequirementIds: [],
+            nextRequiredActions: [
+                "approved_redacted_live_evidence",
+                "approval_gate_fixture_and_redacted_receipt",
+                "tui_gateway_wrapper_fixture_and_round_trip_evidence",
+                "production_transport_lifecycle_policy_and_native_round_trip_evidence",
+                "official_runtime_write_back_contract_fixture",
+                "official_runtime_native_contract_fixture",
+                "approved_native_pin_api"
+            ],
+            reentryPolicy: "use_evidence_reentry_packets_before_claim_promotion",
+            safeDefault: "keep_unpromoted_and_follow_exact_reentry_packets"
+        )
+
+        let presentation = ClawJSRuntimeLensSupportSummaryPresentation.make(
+            evidenceReadiness: summary
+        )
+
+        XCTAssertEqual(
+            presentation.tuiGatewayIdsLabel,
+            "hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, hermes.sessions.abort.action_contract, +1 more"
+        )
+        XCTAssertEqual(
+            presentation.productionTransportIdsLabel,
+            "hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, hermes.sessions.abort.action_contract, +1 more"
+        )
+        XCTAssertEqual(
+            presentation.writeBackContractIdsLabel,
+            "hermes.sessions.pin.native_write_back_contract, hermes.sessions.unpin.native_write_back_contract, hermes.skills.write_back_contract, +1 more"
+        )
+        XCTAssertEqual(
+            presentation.productBlockedIdsLabel,
+            "hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, hermes.sessions.abort.action_contract, +1 more"
+        )
+        XCTAssertEqual(
+            presentation.nextRequiredActionsLabel,
+            "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, tui_gateway_wrapper_fixture_and_round_trip_evidence, production_transport_lifecycle_policy_and_native_round_trip_evidence, official_runtime_write_back_contract_fixture, official_runtime_native_contract_fixture, +1 more"
+        )
+        XCTAssertTrue(presentation.accessibilityLabel.contains("+1 more"))
+    }
+
     func testRuntimeLensSupportAuditEvidenceAndPromotionPresentations() async throws {
         let snapshot = try await ClawJSRuntimeLensTestFixtures.degradedRuntimePortalSnapshot()
 

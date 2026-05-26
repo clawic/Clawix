@@ -205,6 +205,9 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
 
     private static func listLabel(_ values: [String]?, limit: Int) -> String? {
         guard let values, !values.isEmpty else { return nil }
-        return values.prefix(limit).joined(separator: ", ")
+        let visible = values.prefix(limit).joined(separator: ", ")
+        let remaining = values.count - min(values.count, limit)
+        guard remaining > 0 else { return visible }
+        return "\(visible), +\(remaining) more"
     }
 }
