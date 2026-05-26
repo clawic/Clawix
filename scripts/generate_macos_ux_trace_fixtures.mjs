@@ -33,6 +33,7 @@ const profileDefinitions = {
     databaseRowCount: 120,
     bridgePayloadBytes: 32_768,
     idleTimerPressure: 2,
+    multiWindowInstanceCount: 1,
   },
   "medium": {
     conversationCount: 180,
@@ -58,6 +59,7 @@ const profileDefinitions = {
     databaseRowCount: 4_200,
     bridgePayloadBytes: 786_432,
     idleTimerPressure: 14,
+    multiWindowInstanceCount: 2,
   },
   "dense-sidebar": {
     conversationCount: 2_400,
@@ -83,6 +85,7 @@ const profileDefinitions = {
     databaseRowCount: 18_000,
     bridgePayloadBytes: 4_194_304,
     idleTimerPressure: 32,
+    multiWindowInstanceCount: 4,
   },
   "dense-chat": {
     conversationCount: 96,
@@ -108,6 +111,7 @@ const profileDefinitions = {
     databaseRowCount: 230_000,
     bridgePayloadBytes: 12_582_912,
     idleTimerPressure: 22,
+    multiWindowInstanceCount: 2,
   },
   "streaming-heavy": {
     conversationCount: 220,
@@ -133,6 +137,7 @@ const profileDefinitions = {
     databaseRowCount: 120_000,
     bridgePayloadBytes: 18_874_368,
     idleTimerPressure: 55,
+    multiWindowInstanceCount: 6,
   },
   "terminal-under-load": {
     conversationCount: 260,
@@ -158,6 +163,7 @@ const profileDefinitions = {
     databaseRowCount: 160_000,
     bridgePayloadBytes: 10_485_760,
     idleTimerPressure: 64,
+    multiWindowInstanceCount: 3,
   },
   "worst-case": {
     conversationCount: 3_200,
@@ -183,6 +189,7 @@ const profileDefinitions = {
     databaseRowCount: 900_000,
     bridgePayloadBytes: 41_943_040,
     idleTimerPressure: 100,
+    multiWindowInstanceCount: 8,
   },
   "real-equivalent-private": {
     conversationCount: 3_500,
@@ -208,6 +215,7 @@ const profileDefinitions = {
     databaseRowCount: 1_100_000,
     bridgePayloadBytes: 52_428_800,
     idleTimerPressure: 120,
+    multiWindowInstanceCount: 10,
   },
 };
 
@@ -474,6 +482,7 @@ function writeSupportArtifacts(outputDir, profile, config) {
   const streamPlan = Array.from({ length: config.streamingDeltaCount }, (_, index) => ({
     sequence: index + 1,
     byteSize: config.streamingDeltaByteSize + (index % 7) * 17,
+    channel: index % 5 === 0 ? "reasoning" : index % 7 === 0 ? "action" : "answer",
     targetThreadId: `${profile}-thread-${pad((index % Math.max(1, config.activeConversationCount)) + 1, 5)}`,
   }));
   const churnPlan = Array.from({ length: Math.min(config.incrementalMetadataChurn, 2_000) }, (_, index) => ({
@@ -484,14 +493,22 @@ function writeSupportArtifacts(outputDir, profile, config) {
   const terminalLines = Array.from({ length: Math.min(config.databaseRowCount / 100, 5_000) }, (_, index) => (
     `terminal fixture line ${pad(index + 1, 5)} profile=${profile} status=synthetic`
   ));
+  const windowInstancePlan = Array.from({ length: config.multiWindowInstanceCount }, (_, index) => ({
+    sequence: index + 1,
+    kind: index === 0 ? "primary-window" : "agent-instance-window",
+    activeConversationCount: Math.max(1, Math.floor(config.activeConversationCount / Math.max(1, config.multiWindowInstanceCount))),
+    targetThreadId: `${profile}-thread-${pad((index % Math.max(1, config.conversationCount)) + 1, 5)}`,
+  }));
   writeJson(path.join(outputDir, "pinned-thread-ids.json"), pinnedThreadIds);
   writeJson(path.join(outputDir, "stream-plan.json"), streamPlan);
   writeJson(path.join(outputDir, "metadata-churn-plan.json"), churnPlan);
+  writeJson(path.join(outputDir, "window-instance-plan.json"), windowInstancePlan);
   fs.writeFileSync(path.join(outputDir, "terminal-output.log"), `${terminalLines.join("\n")}\n`);
   return {
     pinnedThreadIds: "pinned-thread-ids.json",
     streamPlan: "stream-plan.json",
     metadataChurnPlan: "metadata-churn-plan.json",
+    windowInstancePlan: "window-instance-plan.json",
     terminalOutput: "terminal-output.log",
   };
 }
@@ -521,6 +538,11 @@ function scalingDimensionsFor(config) {
     toolActionWorkSummaryDensity: config.toolActionWorkSummaryDensity,
     streamingDeltaCount: config.streamingDeltaCount,
     streamingDeltaByteSize: config.streamingDeltaByteSize,
+    reasoningActionSplit: {
+      reasoningEvery: 5,
+      actionEvery: 7,
+      answerRemainder: true,
+    },
     attachmentMetadataCount: config.attachmentMetadataCount,
     imageFilePlaceholderCount: config.imageFilePlaceholderCount,
     errorRetryCancelStates: Math.max(1, Math.floor(config.activeConversationCount / 4)),
@@ -530,6 +552,7 @@ function scalingDimensionsFor(config) {
     databaseRowCount: config.databaseRowCount,
     bridgePayloadBytes: config.bridgePayloadBytes,
     idleTimerPressure: config.idleTimerPressure,
+    multiWindowInstanceCount: config.multiWindowInstanceCount,
   };
 }
 
@@ -556,6 +579,7 @@ function materializeProfile(profile, rootOutDir, seedText) {
     supportArtifacts.pinnedThreadIds,
     supportArtifacts.streamPlan,
     supportArtifacts.metadataChurnPlan,
+    supportArtifacts.windowInstancePlan,
     supportArtifacts.terminalOutput,
   ];
   const manifest = {

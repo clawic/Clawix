@@ -50,7 +50,8 @@ a single placeholder row.
 Synthetic fixtures must scale across the dimensions that make real Clawix usage
 slow: conversation count, active runs, pinned/project distribution, transcript
 length, markdown/tool density, streaming deltas, attachment metadata, database
-cardinality, bridge payload size, and idle timer pressure. Private real-mode
+cardinality, bridge payload size, reasoning/action split, multi-window or
+agent-instance pressure, and idle timer pressure. Private real-mode
 calibration may use aggregate metrics only; public artifacts must not contain
 private conversation text, readable private screenshots, credentials, signing
 details, local private paths, or real service payloads.

@@ -340,6 +340,7 @@ const expectedScalingDimensions = [
   "toolActionWorkSummaryDensity",
   "streamingDeltaCount",
   "streamingDeltaByteSize",
+  "reasoningActionSplit",
   "attachmentMetadataCount",
   "imageFilePlaceholderCount",
   "errorRetryCancelStates",
@@ -349,6 +350,7 @@ const expectedScalingDimensions = [
   "databaseRowCount",
   "bridgePayloadBytes",
   "idleTimerPressure",
+  "multiWindowInstanceCount",
 ];
 
 const expectedScenarios = [

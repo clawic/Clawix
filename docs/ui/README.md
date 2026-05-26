@@ -314,6 +314,10 @@ primary timing source.
   run the same command with `real-equivalent-private`, then check
   `docs/ui/ux-trace-calibration.manifest.json` before making any real-mode
   equivalence claim.
+- Fixture scale dimensions include reasoning/action/answer stream splits and
+  multi-window or agent-instance pressure. Generated packs write
+  `stream-plan.json` with explicit channels and `window-instance-plan.json`
+  alongside the thread, pin, metadata churn, and terminal support artifacts.
 - P1/P2 KPI coverage:
   `docs/ui/ux-trace-harness.registry.json` enumerates the full phase-2 P1
   warning set and P2 tracked categories; `node scripts/ui_ux_trace_harness_check.mjs`

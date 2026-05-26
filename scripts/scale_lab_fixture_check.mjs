@@ -43,6 +43,7 @@ const fallbackRequiredScalingDimensions = [
   "toolActionWorkSummaryDensity",
   "streamingDeltaCount",
   "streamingDeltaByteSize",
+  "reasoningActionSplit",
   "attachmentMetadataCount",
   "imageFilePlaceholderCount",
   "errorRetryCancelStates",
@@ -52,6 +53,7 @@ const fallbackRequiredScalingDimensions = [
   "databaseRowCount",
   "bridgePayloadBytes",
   "idleTimerPressure",
+  "multiWindowInstanceCount",
 ];
 
 const realEquivalentPressureDimensions = [
@@ -70,6 +72,7 @@ const realEquivalentPressureDimensions = [
   "toolActionWorkSummaryDensity",
   "streamingDeltaCount",
   "streamingDeltaByteSize",
+  "multiWindowInstanceCount",
   "attachmentMetadataCount",
   "imageFilePlaceholderCount",
   "errorRetryCancelStates",
@@ -126,6 +129,7 @@ function assertMacOSFixturePack(profile, outDir, requiredScalingDimensions) {
     path.join(outDir, "pinned-thread-ids.json"),
     path.join(outDir, "stream-plan.json"),
     path.join(outDir, "metadata-churn-plan.json"),
+    path.join(outDir, "window-instance-plan.json"),
     path.join(outDir, "terminal-output.log"),
   ]) {
     if (!fs.existsSync(file)) fail(`generated ${profile} pack is missing ${path.basename(file)}`);
@@ -154,6 +158,15 @@ function assertMacOSFixturePack(profile, outDir, requiredScalingDimensions) {
   if (!firstRollout.some((record) => record.type === "event_msg" && record.payload?.type === "user_message")) fail(`${profile} rollout missing user_message`);
   if (!firstRollout.some((record) => record.type === "event_msg" && record.payload?.type === "agent_message" && record.payload?.phase === "final_answer")) fail(`${profile} rollout missing final assistant message`);
   if (!firstRollout.some((record) => record.type === "event_msg" && record.payload?.type === "exec_command_end")) fail(`${profile} rollout missing tool/work summary event`);
+  const streamPlan = readJson(path.join(outDir, "stream-plan.json"));
+  const streamChannels = new Set(streamPlan.map((entry) => entry.channel));
+  for (const channel of ["reasoning", "action", "answer"]) {
+    if (!streamChannels.has(channel)) fail(`${profile} stream plan missing ${channel} channel`);
+  }
+  const windowInstancePlan = readJson(path.join(outDir, "window-instance-plan.json"));
+  if (windowInstancePlan.length !== manifest.scalingDimensions?.multiWindowInstanceCount) {
+    fail(`${profile} window instance plan must match multiWindowInstanceCount`);
+  }
   return manifest;
 }
 
