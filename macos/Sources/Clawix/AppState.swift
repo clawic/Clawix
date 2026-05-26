@@ -830,7 +830,7 @@ final class AppState: ObservableObject {
         manualProjectOrder = projectOrdersRepo.orderedIds()
         loadMockStartupState()
         if let fixtureThreads = AgentThreadStore.fixtureThreads() {
-            applyThreads(fixtureThreads)
+            applyThreads(fixtureThreads, extraPinnedThreadIds: AgentThreadStore.fixturePinnedThreadIds())
         } else if dummyModeActive {
             chats = [computerUseSampleChat, browserSampleChat, sampleChat]
             currentRoute = .chat(computerUseSampleChat.id)

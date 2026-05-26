@@ -9,16 +9,141 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const clawixRoot = path.resolve(scriptDir, "..");
 const defaultClawjsRoot = path.resolve(clawixRoot, "..", "..", "clawjs");
 const clawjsRoot = process.env.CLAWJS_ROOT ? path.resolve(process.env.CLAWJS_ROOT) : defaultClawjsRoot;
+const generatorPath = path.join(clawixRoot, "scripts", "generate_macos_ux_trace_fixtures.mjs");
+
+const requiredProfiles = [
+  "smoke",
+  "medium",
+  "dense-sidebar",
+  "dense-chat",
+  "streaming-heavy",
+  "terminal-under-load",
+  "worst-case",
+  "real-equivalent-private",
+];
+
+const requiredScalingDimensions = [
+  "conversationCount",
+  "activeConversationCount",
+  "pinnedConversationCount",
+  "projectCount",
+  "conversationsPerProject",
+  "archivedConversationCount",
+  "titleLengthDistribution",
+  "timestampDistribution",
+  "unreadRunningErrorStates",
+  "messageCountPerConversation",
+  "latestMessageLength",
+  "middleMessageLength",
+  "oldHistoryPageCount",
+  "markdownDensity",
+  "codeBlockDensity",
+  "tableListQuoteDensity",
+  "toolActionWorkSummaryDensity",
+  "streamingDeltaCount",
+  "streamingDeltaByteSize",
+  "attachmentMetadataCount",
+  "imageFilePlaceholderCount",
+  "errorRetryCancelStates",
+  "sidebarRowHeightVariance",
+  "searchVisibleTextVolume",
+  "incrementalMetadataChurn",
+  "databaseRowCount",
+  "bridgePayloadBytes",
+  "idleTimerPressure",
+];
+
+function fail(message) {
+  console.error(`Clawix scale lab fixture check failed: ${message}`);
+  process.exit(1);
+}
+
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+function runNode(args, options = {}) {
+  const result = spawnSync(process.execPath, args, {
+    cwd: clawixRoot,
+    encoding: "utf8",
+    ...options,
+  });
+  if (result.status !== 0) {
+    process.stderr.write(result.stderr);
+    process.stderr.write(result.stdout);
+    process.exit(result.status ?? 1);
+  }
+  return result.stdout;
+}
+
+function assertMacOSFixturePack(profile, outDir) {
+  const manifestPath = path.join(outDir, "manifest.json");
+  const threadsPath = path.join(outDir, "threads.json");
+  for (const file of [
+    manifestPath,
+    threadsPath,
+    path.join(outDir, "pinned-thread-ids.json"),
+    path.join(outDir, "stream-plan.json"),
+    path.join(outDir, "metadata-churn-plan.json"),
+    path.join(outDir, "terminal-output.log"),
+  ]) {
+    if (!fs.existsSync(file)) fail(`generated ${profile} pack is missing ${path.basename(file)}`);
+  }
+  const manifest = readJson(manifestPath);
+  const threads = readJson(threadsPath);
+  if (manifest.program !== "macos-ux-trace-fixture-generator") fail(`${profile} manifest has wrong program`);
+  if (manifest.profile !== profile) fail(`${profile} manifest has wrong profile`);
+  if (manifest.privateBoundary?.privateContentExported !== false) fail(`${profile} manifest must reject private export`);
+  if (manifest.counts?.threads !== threads.length) fail(`${profile} manifest thread count does not match threads.json`);
+  if (manifest.counts?.heavyRollouts < 1) fail(`${profile} pack must contain at least one heavy rollout`);
+  for (const dimension of requiredScalingDimensions) {
+    if (manifest.scalingDimensions?.[dimension] === undefined) fail(`${profile} manifest missing scaling dimension ${dimension}`);
+  }
+  for (const [index, thread] of threads.entries()) {
+    for (const field of ["id", "cwd", "name", "preview", "path", "createdAt", "updatedAt", "archived"]) {
+      if (thread[field] === undefined || thread[field] === null || thread[field] === "") {
+        fail(`${profile} thread ${index} is missing ${field}`);
+      }
+    }
+    if (!String(thread.path).startsWith(outDir)) fail(`${profile} thread ${thread.id} path must stay inside generated pack`);
+    if (!fs.existsSync(thread.path)) fail(`${profile} rollout missing for ${thread.id}`);
+  }
+  const firstRollout = fs.readFileSync(threads[0].path, "utf8").trim().split(/\n/).map((line) => JSON.parse(line));
+  if (firstRollout[0]?.type !== "session_meta") fail(`${profile} first rollout must begin with session_meta`);
+  if (!firstRollout.some((record) => record.type === "event_msg" && record.payload?.type === "user_message")) fail(`${profile} rollout missing user_message`);
+  if (!firstRollout.some((record) => record.type === "event_msg" && record.payload?.type === "agent_message" && record.payload?.phase === "final_answer")) fail(`${profile} rollout missing final assistant message`);
+  if (!firstRollout.some((record) => record.type === "event_msg" && record.payload?.type === "exec_command_end")) fail(`${profile} rollout missing tool/work summary event`);
+  return manifest;
+}
 
 if (!fs.existsSync(path.join(clawjsRoot, "scripts", "scale-lab.ts"))) {
   console.error(`EXTERNAL PENDING scale lab fixture: missing ClawJS scale lab at ${clawjsRoot}`);
   process.exit(2);
+}
+if (!fs.existsSync(generatorPath)) {
+  fail(`missing macOS UX trace fixture generator at ${generatorPath}`);
 }
 
 const scratchRoot = fs.mkdtempSync(path.join(os.tmpdir(), "clawix-scale-lab-fixture-"));
 const reportPath = path.join(scratchRoot, "scale-lab-report.json");
 const lockPath = path.join(scratchRoot, "scale.lock");
 try {
+  const listedProfiles = JSON.parse(runNode([generatorPath, "--list"]));
+  const listedIds = new Set(listedProfiles.map((profile) => profile.id));
+  for (const profile of requiredProfiles) {
+    if (!listedIds.has(profile)) fail(`fixture generator is missing profile ${profile}`);
+  }
+
+  const fixtureA = path.join(scratchRoot, "macos-fixture-a");
+  const fixtureB = path.join(scratchRoot, "macos-fixture-b");
+  runNode([generatorPath, "--profile", "smoke", "--seed", "scale-lab-check", "--out-dir", fixtureA, "--json"]);
+  runNode([generatorPath, "--profile", "smoke", "--seed", "scale-lab-check", "--out-dir", fixtureB, "--json"]);
+  const manifestA = assertMacOSFixturePack("smoke", fixtureA);
+  const manifestB = assertMacOSFixturePack("smoke", fixtureB);
+  if (manifestA.manifestHash !== manifestB.manifestHash) {
+    fail("fixture generator must be deterministic for the same profile and seed");
+  }
+
   const result = spawnSync("npm", [
     "run",
     "scale:lab",
@@ -50,22 +175,25 @@ try {
 
   const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
   if (report.ok !== true) {
-    console.error("Clawix scale lab fixture check failed: report is not ok");
-    process.exit(1);
+    fail("report is not ok");
   }
   if (report.cleanup?.status !== "removed") {
-    console.error("Clawix scale lab fixture check failed: Scale Lab did not clean up its temporary root");
-    process.exit(1);
+    fail("Scale Lab did not clean up its temporary root");
   }
   const workloadNames = new Set((report.workloads ?? []).map((workload) => workload.name));
   if (!workloadNames.has("sessions") || !workloadNames.has("attachments")) {
-    console.error("Clawix scale lab fixture check failed: expected sessions and attachments workloads");
-    process.exit(1);
+    fail("expected sessions and attachments workloads");
   }
   console.log(JSON.stringify({
     ok: true,
     profile: report.profile,
     workloads: [...workloadNames],
+    macosFixtureGenerator: {
+      profiles: [...listedIds],
+      smokeThreads: manifestA.counts.threads,
+      smokeRolloutJsonlLines: manifestA.counts.rolloutJsonlLines,
+      deterministicHash: manifestA.manifestHash,
+    },
     externalPending: report.externalPending,
   }, null, 2));
 } finally {

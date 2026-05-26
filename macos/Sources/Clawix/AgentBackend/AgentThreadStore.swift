@@ -138,6 +138,19 @@ enum AgentThreadStore {
         return (try? JSONDecoder().decode([AgentThreadSummary].self, from: data)) ?? []
     }
 
+    static func fixturePinnedThreadIds() -> [String] {
+        guard
+            let raw = ClawixEnv.value(ClawixEnv.threadPinFixture),
+            !raw.isEmpty
+        else { return [] }
+        let url = URL(fileURLWithPath: (raw as NSString).expandingTildeInPath)
+        guard let data = try? Data(contentsOf: url),
+              let ids = try? JSONDecoder().decode([String].self, from: data)
+        else { return [] }
+        var seen: Set<String> = []
+        return ids.filter { !$0.isEmpty && seen.insert($0).inserted }
+    }
+
     static func codexSessionIndexThreads(
         indexURL: URL = ClawixAgentBackendRoutes.codexDirectory()
             .appendingPathComponent("session_index.jsonl", isDirectory: false),

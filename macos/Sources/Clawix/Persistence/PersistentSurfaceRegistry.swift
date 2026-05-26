@@ -487,6 +487,7 @@ enum ClawixPersistentSurfaceRegistry {
             "CLAWIX_SECRETS_PROXY_PATH",
             "CLAWIX_SWIFT_SURFACE_RUNNER",
             "CLAWIX_THREAD_FIXTURE",
+            "CLAWIX_THREAD_PIN_FIXTURE",
             "CLAWIX_DEFAULTS_SUITE",
             "CLAW_HOST_HOME",
             "CLAW_SYSTEM_TELEMETRY_HOST_COMMAND",

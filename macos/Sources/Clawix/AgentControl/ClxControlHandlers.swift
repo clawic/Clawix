@@ -80,11 +80,14 @@ enum ClxControlHandlers {
 
     static func diagnostics() -> ClxControlResult {
         let fixturePath = ClawixEnv.value(ClawixEnv.threadFixture) ?? ""
+        let pinFixturePath = ClawixEnv.value(ClawixEnv.threadPinFixture) ?? ""
         var out: [String: Any] = [
             "instanceId": ClxAgentInstance.instanceId,
             "isAgent": ClxAgentInstance.isAgent,
             "threadFixture": fixturePath,
+            "threadPinFixture": pinFixturePath,
             "threadFixtureCount": AgentThreadStore.fixtureThreads()?.count as Any,
+            "threadPinFixtureCount": AgentThreadStore.fixturePinnedThreadIds().count,
             "appStateBound": appState != nil,
             "windowCount": NSApp.windows.count,
             "visibleWindowCount": NSApp.windows.filter(\.isVisible).count,

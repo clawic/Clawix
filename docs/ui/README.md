@@ -112,8 +112,16 @@ the public repo.
 - `scripts/run_macos_ux_trace_harness.mjs`: scenario runner that writes
   per-run `run.json`, `events.jsonl`, `metrics.json`, `failures.json`,
   `fixture-manifest.json`, and `baseline-comparison.json` evidence bundles.
-  Use `--dry-run` only to validate harness wiring; it is not performance
-  evidence.
+  Use `--generate-fixture` to attach an exact generated dataset manifest to
+  the run evidence. Use `--suite p0` to execute the P0 scenario matrix into a
+  single suite directory with `suite.json`, `suite-metrics.json`, and
+  `suite-failures.json`. Use `--dry-run` only to validate harness wiring; it is
+  not performance evidence.
+- `scripts/generate_macos_ux_trace_fixtures.mjs`: deterministic macOS fixture
+  materializer for synthetic heavy conversation, sidebar, streaming, terminal,
+  and real-equivalent-private profiles. Generated packs export
+  `threads.json` for `CLAWIX_THREAD_FIXTURE` and `pinned-thread-ids.json` for
+  `CLAWIX_THREAD_PIN_FIXTURE`; they must not contain private conversation text.
 - `pattern-performance.manifest.json`: critical-flow ownership mapping from
   performance budgets back to registry patterns.
 - `private-baselines.manifest.json`: public contract for private visual,
@@ -217,6 +225,10 @@ the public repo.
    `scripts/ui_ux_trace_harness_check.mjs`; P0 UI performance work must preserve
    traceable surfaces, KPI references, scenario coverage, evidence correlation,
    private/public boundaries, and the rule that Computer Use is witness-only.
+28b. Keep macOS UX trace fixture generation current with
+   `scripts/scale_lab_fixture_check.mjs`; required profiles must remain
+   deterministic, public-safe, and materializable as macOS thread/rollout
+   fixtures before dense performance work can claim fixture coverage.
 29. Keep pattern performance ownership current with
    `scripts/ui_pattern_performance_check.mjs`; every critical flow must map to
    registry patterns that declare the same performance contract.

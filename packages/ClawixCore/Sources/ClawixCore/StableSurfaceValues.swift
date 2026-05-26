@@ -45,6 +45,7 @@ public enum ClawixEnv {
     public static let secretsDisable = "CLAWIX_SECRETS_DISABLE"
     public static let secretsProxyPath = "CLAWIX_SECRETS_PROXY_PATH"
     public static let threadFixture = "CLAWIX_THREAD_FIXTURE"
+    public static let threadPinFixture = "CLAWIX_THREAD_PIN_FIXTURE"
 
     public static func value(_ key: String, in environment: [String: String] = ProcessInfo.processInfo.environment) -> String? {
         environment[key]

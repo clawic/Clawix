@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import crypto from "node:crypto";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -8,6 +9,7 @@ const rootDir = path.resolve(new URL("..", import.meta.url).pathname);
 const registryPath = path.join(rootDir, "docs/ui/ux-trace-harness.registry.json");
 const scenarioManifestPath = path.join(rootDir, "docs/ui/ux-trace-scenarios.manifest.json");
 const evidenceSchemaPath = path.join(rootDir, "docs/ui/ux-trace-evidence.schema.json");
+const fixtureGeneratorPath = path.join(rootDir, "scripts/generate_macos_ux_trace_fixtures.mjs");
 
 const defaultTimeoutMs = 5_000;
 const defaultPollMs = 50;
@@ -20,16 +22,24 @@ function usage() {
   return `Usage:
   node scripts/run_macos_ux_trace_harness.mjs --list
   node scripts/run_macos_ux_trace_harness.mjs --self-test
+  node scripts/run_macos_ux_trace_harness.mjs --dry-run --suite p0 [--fixture-profile <id>] [--out-dir <dir>]
   node scripts/run_macos_ux_trace_harness.mjs --dry-run --scenario <id> --fixture-profile <id> [--out-dir <dir>]
+  node scripts/run_macos_ux_trace_harness.mjs --control-url <url> --token <token> --suite p0 --fixture-profile <id> [--out-dir <dir>]
   node scripts/run_macos_ux_trace_harness.mjs --control-url <url> --token <token> --scenario <id> --fixture-profile <id> [--out-dir <dir>]
 
 Options:
+  --suite <id>             Suite id. Currently supports p0.
   --scenario <id>          Scenario id from docs/ui/ux-trace-scenarios.manifest.json.
-  --fixture-profile <id>   Fixture profile declared by the scenario.
+  --fixture-profile <id>   Fixture profile declared by the scenario. With --suite, filters to compatible scenarios.
   --control-url <url>      Agent control bus base URL, for example http://127.0.0.1:24500.
   --token <token>          Owner token for the isolated agent instance.
   --out-dir <dir>          Evidence root. Defaults to a temporary directory.
   --baseline <file>        Optional metrics.json or baseline-comparison source.
+  --write-baseline <file>  Write current measured metrics as a public-safe baseline artifact.
+  --gate p0                Activate P0 baseline gate. Requires baseline and fails P0 regressions.
+  --max-regression-percent <n> Allowed P0 regression percentage for --gate p0. Defaults to 10.
+  --fixture-dir <dir>      Existing generated fixture pack to attach to evidence.
+  --generate-fixture       Generate a fixture pack for the selected profile into the run directory.
   --timeout-ms <n>         Default wait timeout.
   --poll-ms <n>            Default wait poll interval.
   --request-timeout-ms <n> Default HTTP request timeout.
@@ -48,7 +58,7 @@ function parseArgs(argv) {
       continue;
     }
     const key = arg.slice(2);
-    if (["dry-run", "json", "list", "self-test"].includes(key)) {
+    if (["dry-run", "json", "list", "self-test", "generate-fixture"].includes(key)) {
       args[key] = true;
       continue;
     }
@@ -88,6 +98,13 @@ function runIdFor(scenarioId, fixtureProfile) {
   return `uxtrace-${scenarioId}-${fixtureProfile}-${stamp}-${suffix}`;
 }
 
+function suiteIdFor(suiteName, fixtureProfile) {
+  const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+  const suffix = crypto.randomBytes(4).toString("hex");
+  const profilePart = fixtureProfile ? `-${fixtureProfile}` : "";
+  return `uxtrace-suite-${suiteName}${profilePart}-${stamp}-${suffix}`;
+}
+
 function boundedInteger(value, fallback, min, max) {
   const parsed = Number.parseInt(value ?? "", 10);
   if (!Number.isFinite(parsed)) return fallback;
@@ -113,6 +130,12 @@ function mkdirEvidence(root, runId) {
   return runDir;
 }
 
+function mkdirSuiteEvidence(root, suiteId) {
+  const suiteDir = path.resolve(root || path.join(os.tmpdir(), "clawix-ux-trace-runs"), suiteId);
+  fs.mkdirSync(suiteDir, { recursive: true });
+  return suiteDir;
+}
+
 function buildIndexes(registry, manifest) {
   return {
     surfaceIds: new Set((registry.traceSurfaces || []).map((surface) => surface.id)),
@@ -135,6 +158,28 @@ function validateScenarioSelection(args, indexes) {
     throw new Error(`unknown fixture profile: ${fixtureProfile}`);
   }
   return { scenario, scenarioId, fixtureProfile };
+}
+
+function suiteSelections(args, manifest, indexes) {
+  const suiteName = requireString(args.suite, "--suite");
+  if (suiteName !== "p0") {
+    throw new Error(`unknown suite: ${suiteName}`);
+  }
+  const requestedProfile = args["fixture-profile"] || null;
+  const scenarios = (manifest.scenarios || []).filter((scenario) => scenario.priority === "P0");
+  const selections = scenarios
+    .filter((scenario) => !requestedProfile || scenario.fixtureProfiles?.includes(requestedProfile))
+    .map((scenario) => {
+      const fixtureProfile = requestedProfile || scenario.fixtureProfiles?.[0];
+      if (!fixtureProfile) throw new Error(`${scenario.id} does not declare fixture profiles`);
+      if (!indexes.fixtureIds.has(fixtureProfile)) throw new Error(`${scenario.id} references unknown fixture profile ${fixtureProfile}`);
+      return { scenarioId: scenario.id, fixtureProfile };
+    });
+  if (!selections.length) {
+    const suffix = requestedProfile ? ` for fixture profile ${requestedProfile}` : "";
+    throw new Error(`suite ${suiteName} has no runnable scenarios${suffix}`);
+  }
+  return { suiteName, requestedProfile, selections };
 }
 
 function expandScenarioSteps(scenario, indexes, stack = []) {
@@ -364,6 +409,136 @@ function readBaseline(file) {
   return new Map(rows.filter((row) => row?.kpiId).map((row) => [row.kpiId, row]));
 }
 
+function gateOptions(args) {
+  const gate = args.gate || null;
+  if (!gate) return null;
+  if (gate !== "p0") throw new Error(`unknown gate: ${gate}`);
+  return {
+    priority: "P0",
+    maxRegressionPercent: Number.isFinite(Number(args["max-regression-percent"]))
+      ? Number(args["max-regression-percent"])
+      : 10,
+    requireBaseline: true,
+  };
+}
+
+function baselineGateFailures(metrics, gate) {
+  if (!gate) return [];
+  const failures = [];
+  for (const metric of metrics) {
+    if (metric.priority !== gate.priority) continue;
+    if (metric.baseline === null || metric.baseline === undefined) {
+      failures.push({
+        type: "baseline_missing",
+        kpiId: metric.kpiId,
+        surfaceId: metric.surface,
+        message: `${gate.priority} baseline is required for ${metric.kpiId}`,
+      });
+      continue;
+    }
+    if (
+      Number.isFinite(Number(metric.regressionPercent))
+      && Number(metric.regressionPercent) > gate.maxRegressionPercent
+    ) {
+      failures.push({
+        type: "baseline_regression",
+        kpiId: metric.kpiId,
+        surfaceId: metric.surface,
+        regressionPercent: metric.regressionPercent,
+        maxRegressionPercent: gate.maxRegressionPercent,
+        message: `${metric.kpiId} regressed ${metric.regressionPercent.toFixed(2)}% over baseline`,
+      });
+    }
+  }
+  return failures;
+}
+
+function baselineComparisonStatus(comparisons, gate) {
+  if (!gate) {
+    return comparisons.every((comparison) => comparison.baseline !== null) ? "compared" : "baseline_missing";
+  }
+  if (comparisons.some((comparison) => comparison.status === "baseline_regression")) return "gate_failed";
+  if (comparisons.some((comparison) => comparison.status === "baseline_missing")) return "baseline_missing";
+  return "gate_passed";
+}
+
+function writeBaselineArtifact(file, context, metrics) {
+  if (!file) return null;
+  const baseline = {
+    schemaVersion: 1,
+    program: "macos-ux-trace-harness-baseline",
+    generatedAt: isoNow(),
+    platform: "macos",
+    scenarioId: context.scenarioId,
+    fixtureProfile: context.fixtureProfile,
+    suiteId: context.suiteId || null,
+    privateBoundary: {
+      containsPrivateConversationText: false,
+      containsReadablePrivateScreenshots: false,
+      containsCredentials: false,
+      publicSafe: true,
+    },
+    metrics: metrics.map((metric) => ({
+      kpiId: metric.kpiId,
+      priority: metric.priority,
+      surface: metric.surface,
+      unit: metric.unit,
+      p50: metric.p50,
+      p95: metric.p95,
+      p99: metric.p99,
+      value: metric.p95,
+      sampleCount: metric.sampleCount,
+      status: metric.status,
+    })),
+  };
+  const out = path.resolve(file);
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  writeJson(out, baseline);
+  return out;
+}
+
+function fixtureManifestFromPack(fixtureDir) {
+  if (!fixtureDir) return null;
+  const resolved = path.resolve(fixtureDir);
+  const manifestPath = path.join(resolved, "manifest.json");
+  if (!fs.existsSync(manifestPath)) {
+    throw new Error(`fixture pack is missing manifest.json: ${resolved}`);
+  }
+  const manifest = readJson(manifestPath);
+  return {
+    path: resolved,
+    manifestPath,
+    manifest,
+  };
+}
+
+function generateFixturePack(args, runDir, fixtureProfile) {
+  if (!args["generate-fixture"]) return fixtureManifestFromPack(args["fixture-dir"]);
+  if (args["fixture-dir"]) {
+    throw new Error("--generate-fixture and --fixture-dir are mutually exclusive");
+  }
+  const outDir = path.join(runDir, "fixture-pack");
+  const seed = args["fixture-seed"] || "default";
+  const result = spawnSync(process.execPath, [
+    fixtureGeneratorPath,
+    "--profile",
+    fixtureProfile,
+    "--seed",
+    seed,
+    "--out-dir",
+    outDir,
+    "--json",
+  ], {
+    cwd: rootDir,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    const detail = `${result.stderr || ""}${result.stdout || ""}`.trim();
+    throw new Error(`fixture generation failed for ${fixtureProfile}${detail ? `: ${detail}` : ""}`);
+  }
+  return fixtureManifestFromPack(outDir);
+}
+
 async function runScenario(args) {
   const registry = readJson(registryPath);
   const manifest = readJson(scenarioManifestPath);
@@ -376,6 +551,8 @@ async function runScenario(args) {
   const failures = [];
   const kpiSamples = new Map();
   const baseline = readBaseline(args.baseline);
+  const gate = gateOptions(args);
+  const fixturePack = generateFixturePack(args, runDir, fixtureProfile);
   const options = {
     dryRun: Boolean(args["dry-run"]),
     controlUrl: args["control-url"],
@@ -392,6 +569,7 @@ async function runScenario(args) {
 
   const expandedSteps = expandScenarioSteps(scenario, indexes);
   events.write({ eventType: "run.started", stepId: "run", actionId: runId });
+  let skipScenarioSteps = false;
   if (!options.dryRun) {
     events.write({
       eventType: "action.dispatched",
@@ -402,22 +580,52 @@ async function runScenario(args) {
       kpiId: "none",
       controlVerb: "wait-visible",
     });
-    const payload = await waitForControlReady(options);
-    events.write({
-      eventType: "visual.condition.met",
-      stepId: "control-ready",
-      actionId: `${runId}:control-ready`,
-      surfaceId: "app.shell.firstUsableWindow",
-      controlId: "app.shell.firstUsableWindow",
-      kpiId: "none",
-      elapsedMs: payload?.elapsedMs ?? null,
-      payloadHash: stableHash(payload),
-    });
+    try {
+      const payload = await waitForControlReady(options);
+      events.write({
+        eventType: "visual.condition.met",
+        stepId: "control-ready",
+        actionId: `${runId}:control-ready`,
+        surfaceId: "app.shell.firstUsableWindow",
+        controlId: "app.shell.firstUsableWindow",
+        kpiId: "none",
+        elapsedMs: payload?.elapsedMs ?? null,
+        payloadHash: stableHash(payload),
+      });
+    } catch (error) {
+      const failure = {
+        type: "instrumentation_error",
+        stepId: "control-ready",
+        surfaceId: "app.shell.firstUsableWindow",
+        kpiId: "none",
+        message: error.message,
+        payloadHash: error.payload ? stableHash(error.payload) : null,
+      };
+      failures.push(failure);
+      events.write({
+        eventType: "step.failed",
+        stepId: "control-ready",
+        actionId: `${runId}:control-ready`,
+        surfaceId: "app.shell.firstUsableWindow",
+        controlId: "app.shell.firstUsableWindow",
+        kpiId: "none",
+        failure,
+      });
+      skipScenarioSteps = true;
+    }
   }
-  events.write({ eventType: "fixture.loaded", stepId: "fixture", actionId: fixtureProfile });
-  events.write({ eventType: "scenario.started", stepId: scenarioId, actionId: scenarioId });
+  if (!skipScenarioSteps) {
+    events.write({
+      eventType: "fixture.loaded",
+      stepId: "fixture",
+      actionId: fixtureProfile,
+      fixtureManifestHash: fixturePack?.manifest?.manifestHash ?? null,
+      fixtureCounts: fixturePack?.manifest?.counts ?? null,
+    });
+    events.write({ eventType: "scenario.started", stepId: scenarioId, actionId: scenarioId });
+  }
 
-  for (const step of expandedSteps) {
+  for (const step of skipScenarioSteps ? [] : expandedSteps) {
     const actionId = `${runId}:${step.sourceScenarioId || scenarioId}:${step.id}`;
     const surfaceId = stepSurfaceId(step, indexes);
     const kpiId = stepKpiId(step, scenario, indexes);
@@ -531,14 +739,43 @@ async function runScenario(args) {
     }
   }
 
-  events.write({ eventType: "scenario.completed", stepId: scenarioId, actionId: scenarioId });
-  const status = failures.length === 0 ? "PASS" : options.dryRun ? "BLOCKED" : "FAIL";
-  events.write({ eventType: "run.completed", stepId: "run", actionId: runId, status });
-  events.close();
-
+  if (!skipScenarioSteps) {
+    events.write({ eventType: "scenario.completed", stepId: scenarioId, actionId: scenarioId });
+  }
   const metrics = (scenario.kpiRefs || []).map((kpiId) => {
     const kpi = indexes.kpisById.get(kpiId);
     return makeMetric(kpi, kpiSamples.get(kpiId) || [], events.eventRefs, baseline.get(kpiId));
+  });
+  const gateFailures = baselineGateFailures(metrics, gate);
+  for (const failure of gateFailures) {
+    failures.push(failure);
+    events.write({
+      eventType: "step.failed",
+      stepId: "baseline-gate",
+      actionId: `${runId}:baseline-gate`,
+      surfaceId: failure.surfaceId || "app.shell.firstUsableWindow",
+      controlId: failure.surfaceId || "app.shell.firstUsableWindow",
+      kpiId: failure.kpiId || "none",
+      failure,
+    });
+  }
+  const comparisons = metrics.map((metric) => {
+    let comparisonStatus = metric.baseline === null ? "baseline_missing" : "compared";
+    if (
+      gate
+      && metric.priority === gate.priority
+      && Number.isFinite(Number(metric.regressionPercent))
+      && Number(metric.regressionPercent) > gate.maxRegressionPercent
+    ) {
+      comparisonStatus = "baseline_regression";
+    }
+    return {
+      kpiId: metric.kpiId,
+      p95: metric.p95,
+      baseline: metric.baseline,
+      regressionPercent: metric.regressionPercent,
+      status: comparisonStatus,
+    };
   });
   const baselineComparison = {
     schemaVersion: 1,
@@ -546,15 +783,16 @@ async function runScenario(args) {
     scenarioId,
     fixtureProfile,
     baselinePath: args.baseline || null,
-    status: args.baseline ? "compared" : "baseline_missing",
-    comparisons: metrics.map((metric) => ({
-      kpiId: metric.kpiId,
-      p95: metric.p95,
-      baseline: metric.baseline,
-      regressionPercent: metric.regressionPercent,
-      status: metric.baseline === null ? "baseline_missing" : "compared",
-    })),
+    gate: gate ? {
+      priority: gate.priority,
+      maxRegressionPercent: gate.maxRegressionPercent,
+    } : null,
+    status: baselineComparisonStatus(comparisons, gate),
+    comparisons,
   };
+  const status = failures.length === 0 ? "PASS" : options.dryRun && gateFailures.length === 0 ? "BLOCKED" : "FAIL";
+  events.write({ eventType: "run.completed", stepId: "run", actionId: runId, status });
+  events.close();
   const finishedAt = isoNow();
   const run = {
     schemaVersion: 1,
@@ -562,7 +800,7 @@ async function runScenario(args) {
     program: "macos-ux-trace-harness",
     scenarioId,
     fixtureProfile,
-    fixtureSeed: args["fixture-seed"] || "default",
+    fixtureSeed: args["fixture-seed"] || fixturePack?.manifest?.seed || "default",
     harnessVersion: 1,
     appBuild: options.dryRun ? "dry-run" : "control-bus",
     gitSnapshot: {
@@ -608,10 +846,148 @@ async function runScenario(args) {
     scenarioFixtureProfiles: scenario.fixtureProfiles,
     synthetic: true,
     privateContentExported: false,
+    generatedFixture: fixturePack ? {
+      path: fixturePack.path,
+      manifestPath: fixturePack.manifestPath,
+      manifestHash: fixturePack.manifest.manifestHash,
+      generatorVersion: fixturePack.manifest.generatorVersion,
+      counts: fixturePack.manifest.counts,
+      scalingDimensions: fixturePack.manifest.scalingDimensions,
+      privateBoundary: fixturePack.manifest.privateBoundary,
+      materializedArtifacts: fixturePack.manifest.materializedArtifacts,
+    } : null,
   });
   writeJson(path.join(runDir, "baseline-comparison.json"), baselineComparison);
+  const writtenBaselinePath = writeBaselineArtifact(args["write-baseline"], { scenarioId, fixtureProfile }, metrics);
 
-  return { ok: status === "PASS", status, runId, runDir, failures: failures.length, metrics: metrics.length };
+  return { ok: status === "PASS", status, runId, runDir, failures: failures.length, metrics: metrics.length, baselinePath: writtenBaselinePath };
+}
+
+function aggregateSuiteStatus(results, dryRun) {
+  if (results.every((result) => result.status === "PASS")) return "PASS";
+  if (dryRun && results.every((result) => result.status === "BLOCKED")) return "BLOCKED";
+  if (results.some((result) => result.status === "FAIL")) return "FAIL";
+  if (results.some((result) => result.status === "BLOCKED")) return "PARTIAL";
+  return "FAIL";
+}
+
+function readRunArtifact(runDir, file, fallback) {
+  try {
+    return readJson(path.join(runDir, file));
+  } catch {
+    return fallback;
+  }
+}
+
+async function runSuite(args) {
+  if (args.scenario) throw new Error("--suite and --scenario are mutually exclusive");
+  if (args["fixture-dir"] && !args["fixture-profile"]) {
+    throw new Error("--fixture-dir with --suite requires --fixture-profile so one app fixture pack maps to the selected scenarios");
+  }
+  const registry = readJson(registryPath);
+  const manifest = readJson(scenarioManifestPath);
+  const indexes = buildIndexes(registry, manifest);
+  const { suiteName, requestedProfile, selections } = suiteSelections(args, manifest, indexes);
+  const suiteId = args["run-id"] || suiteIdFor(suiteName, requestedProfile);
+  const suiteDir = mkdirSuiteEvidence(args["out-dir"], suiteId);
+  const startedAt = isoNow();
+  const results = [];
+  const metrics = [];
+  const failures = [];
+
+  for (const [index, selection] of selections.entries()) {
+    const scenarioArgs = {
+      ...args,
+      scenario: selection.scenarioId,
+      "fixture-profile": selection.fixtureProfile,
+      "run-id": `${suiteId}-${String(index + 1).padStart(2, "0")}-${selection.scenarioId}`,
+      "out-dir": suiteDir,
+    };
+    delete scenarioArgs.suite;
+    const result = await runScenario(scenarioArgs);
+    results.push(result);
+    const metricArtifact = readRunArtifact(result.runDir, "metrics.json", { metrics: [] });
+    for (const metric of metricArtifact.metrics || []) {
+      metrics.push({
+        ...metric,
+        runId: result.runId,
+        scenarioId: selection.scenarioId,
+        fixtureProfile: selection.fixtureProfile,
+      });
+    }
+    const failureArtifact = readRunArtifact(result.runDir, "failures.json", { failures: [] });
+    for (const failure of failureArtifact.failures || []) {
+      failures.push({
+        ...failure,
+        runId: result.runId,
+        scenarioId: selection.scenarioId,
+        fixtureProfile: selection.fixtureProfile,
+      });
+    }
+  }
+
+  const status = aggregateSuiteStatus(results, Boolean(args["dry-run"]));
+  const finishedAt = isoNow();
+  const suite = {
+    schemaVersion: 1,
+    suiteId,
+    program: "macos-ux-trace-harness",
+    suiteName,
+    platform: "macos",
+    requestedFixtureProfile: requestedProfile,
+    scenarioCount: selections.length,
+    startedAt,
+    finishedAt,
+    status,
+    launchMode: args["dry-run"] ? "dry-run" : "isolated-agent-instance",
+    instrumentationFlags: {
+      controlBus: !args["dry-run"],
+      dryRun: Boolean(args["dry-run"]),
+      computerUseWitness: false,
+      mainDatabaseTraceWrites: false,
+    },
+    privateBoundary: {
+      containsPrivateConversationText: false,
+      containsReadablePrivateScreenshots: false,
+      containsCredentials: false,
+      publicSafe: true,
+    },
+    runs: results.map((result, index) => ({
+      runId: result.runId,
+      scenarioId: selections[index].scenarioId,
+      fixtureProfile: selections[index].fixtureProfile,
+      status: result.status,
+      failures: result.failures,
+      metrics: result.metrics,
+      runDir: path.relative(suiteDir, result.runDir),
+    })),
+    artifactIndex: [
+      "suite.json",
+      "suite-metrics.json",
+      "suite-failures.json",
+      ...results.map((result) => path.relative(suiteDir, result.runDir)),
+    ],
+  };
+  writeJson(path.join(suiteDir, "suite.json"), suite);
+  writeJson(path.join(suiteDir, "suite-metrics.json"), { schemaVersion: 1, suiteId, metrics });
+  writeJson(path.join(suiteDir, "suite-failures.json"), { schemaVersion: 1, suiteId, failures });
+
+  return {
+    ok: status === "PASS",
+    status,
+    suiteId,
+    suiteDir,
+    scenarios: selections.length,
+    failures: failures.length,
+    metrics: metrics.length,
+    runs: results.map((result, index) => ({
+      runId: result.runId,
+      scenarioId: selections[index].scenarioId,
+      fixtureProfile: selections[index].fixtureProfile,
+      status: result.status,
+      runDir: result.runDir,
+    })),
+  };
 }
 
 async function selfTest() {
@@ -630,6 +1006,19 @@ async function selfTest() {
   }
   const run = readJson(path.join(result.runDir, "run.json"));
   if (run.status !== "BLOCKED") throw new Error("dry-run self-test must produce BLOCKED run evidence");
+  const suiteResult = await runSuite({
+    suite: "p0",
+    "fixture-profile": "smoke",
+    "dry-run": true,
+    "out-dir": outDir,
+  });
+  for (const file of ["suite.json", "suite-metrics.json", "suite-failures.json"]) {
+    if (!fs.existsSync(path.join(suiteResult.suiteDir, file))) {
+      throw new Error(`self-test did not create ${file}`);
+    }
+  }
+  const suite = readJson(path.join(suiteResult.suiteDir, "suite.json"));
+  if (suite.status !== "BLOCKED") throw new Error("dry-run suite self-test must produce BLOCKED suite evidence");
   return result;
 }
 
@@ -647,11 +1036,11 @@ async function main() {
     console.log(JSON.stringify(rows, null, 2));
     return;
   }
-  const result = args["self-test"] ? await selfTest() : await runScenario(args);
+  const result = args["self-test"] ? await selfTest() : args.suite ? await runSuite(args) : await runScenario(args);
   if (args.json) {
     console.log(JSON.stringify(result, null, 2));
   } else {
-    console.log(`UX trace harness run ${result.status}: ${result.runDir}`);
+    console.log(`UX trace harness ${args.suite ? "suite" : "run"} ${result.status}: ${result.suiteDir || result.runDir}`);
   }
 }
 

@@ -3875,6 +3875,38 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "generator-scripts-generate-macos-ux-trace-fixtures",
+      "kind": "test-harness",
+      "steward": "clawix",
+      "canonicalSource": "scripts/generate_macos_ux_trace_fixtures.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/ui/ux-trace-harness.registry.json"
+      ],
+      "discoveryTerms": [
+        "generate_macos_ux_trace_fixtures",
+        "macOS UX trace fixture generator",
+        "synthetic heavy Clawix conversation fixtures",
+        "UX trace fixture profiles"
+      ],
+      "searchQueries": [
+        {
+          "query": "generate_macos_ux_trace_fixtures",
+          "expectPath": "scripts/generate_macos_ux_trace_fixtures.mjs"
+        },
+        {
+          "query": "macOS UX trace fixture generator",
+          "expectPath": "scripts/generate_macos_ux_trace_fixtures.mjs"
+        }
+      ],
+      "guard": "scripts/scale_lab_fixture_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
       "id": "runner-scripts-run-macos-ux-trace-harness",
       "kind": "test-harness",
       "steward": "clawix",

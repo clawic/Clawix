@@ -14,6 +14,28 @@
     "fixture-manifest.json",
     "baseline-comparison.json"
   ],
+  "suiteDirectoryShape": [
+    "suite.json",
+    "suite-metrics.json",
+    "suite-failures.json",
+    "<scenario-run-directories>/"
+  ],
+  "suiteRequiredFields": [
+    "schemaVersion",
+    "suiteId",
+    "program",
+    "suiteName",
+    "platform",
+    "scenarioCount",
+    "startedAt",
+    "finishedAt",
+    "status",
+    "launchMode",
+    "instrumentationFlags",
+    "privateBoundary",
+    "runs",
+    "artifactIndex"
+  ],
   "runRequiredFields": [
     "schemaVersion",
     "runId",
