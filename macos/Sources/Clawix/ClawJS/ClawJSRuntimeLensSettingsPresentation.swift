@@ -119,7 +119,14 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
 
     private static func supportSections(snapshot: ClawJSRuntimeLensSnapshot) -> [Section] {
         guard let support = snapshot.support else { return [] }
-        return [supportSection(ClawJSRuntimeLensSupportOverviewPresentation.make(support: support))]
+        return [
+            supportSection(
+                ClawJSRuntimeLensSupportOverviewPresentation.make(
+                    support: support,
+                    officialSnapshot: snapshot.officialSnapshot
+                )
+            )
+        ]
     }
 
     private static func supportAuditSections(audit: ClawJSRuntimeLensSnapshot.SupportAudit?) -> [Section] {
@@ -261,7 +268,12 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                         presentation.ecosystemSupportStage.map { Pill(id: "ecosystem", label: "ecosystem \($0)", tone: ClawJSRuntimeLensStatusTone.ecosystemStage($0)) },
                         presentation.notPromoted ? Pill(id: "not-promoted", label: "not promoted", tone: .warning) : nil
                     ]),
-                    detailLines: optionalLines([presentation.blockingReasonsLabel, presentation.sourceLabel]),
+                    detailLines: optionalLines([
+                        presentation.blockingReasonsLabel,
+                        presentation.sourceLabel,
+                        presentation.officialSnapshotLabel.map { "Official snapshot: \($0)" },
+                        presentation.officialSnapshotDriftPolicy.map { "Drift policy: \($0)" }
+                    ]),
                     accessibilityLabel: presentation.accessibilityLabel
                 )
             ],
