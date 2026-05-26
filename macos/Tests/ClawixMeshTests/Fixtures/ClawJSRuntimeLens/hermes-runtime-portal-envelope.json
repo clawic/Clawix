@@ -7762,6 +7762,40 @@
             "confirmation_or_dry_run_policy",
             "round_trip_native_visibility"
           ],
+          "transportPolicyId": "hermes.tui_gateway.transport_lifecycle_policy",
+          "transportPolicy": {
+            "id": "hermes.tui_gateway.transport_lifecycle_policy",
+            "protocol": "tui_gateway_json_rpc",
+            "fixtureTransport": "loopback_http_json_rpc_fixture",
+            "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+            "lifecycleStatus": "external_user_managed_not_started_by_claw",
+            "lifecycleOwner": "hermes_runtime_or_user",
+            "allowedEndpointClassesWithoutApproval": [
+              "loopback_http_json_rpc_fixture"
+            ],
+            "configuredEndpointClass": "none",
+            "endpointConfigured": false,
+            "loopbackConfigured": false,
+            "confirmationPolicy": "requires_confirm_runtime_write",
+            "startupPolicy": "no_auto_start_stop_or_install_from_runtime_lens",
+            "mutationPolicy": "no_production_gateway_mutation_without_explicit_approval_and_contract",
+            "credentialPolicy": "no_credential_or_token_emission",
+            "safeDefault": "fixture_only_no_production_transport_contact",
+            "supportClaimEffect": "blocks_recommended_production_native_parity",
+            "requiredEvidence": [
+              "production_transport_lifecycle_policy",
+              "approved_native_round_trip_evidence",
+              "non_destructive_fixture",
+              "no_plaintext_credential_token_evidence"
+            ],
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+          },
+          "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "lifecycleStatus": "external_user_managed_not_started_by_claw",
+          "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
+          "doNotRunWithoutApproval": true,
+          "claimBlockedUntil": "production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
+          "requiredEndpoint": "loopback_http_json_rpc",
           "nativeWriteBackContract": {
             "status": "blocked",
             "writesRuntime": false,
@@ -7798,6 +7832,40 @@
             "confirmation_or_dry_run_policy",
             "round_trip_native_visibility"
           ],
+          "transportPolicyId": "hermes.tui_gateway.transport_lifecycle_policy",
+          "transportPolicy": {
+            "id": "hermes.tui_gateway.transport_lifecycle_policy",
+            "protocol": "tui_gateway_json_rpc",
+            "fixtureTransport": "loopback_http_json_rpc_fixture",
+            "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+            "lifecycleStatus": "external_user_managed_not_started_by_claw",
+            "lifecycleOwner": "hermes_runtime_or_user",
+            "allowedEndpointClassesWithoutApproval": [
+              "loopback_http_json_rpc_fixture"
+            ],
+            "configuredEndpointClass": "none",
+            "endpointConfigured": false,
+            "loopbackConfigured": false,
+            "confirmationPolicy": "requires_confirm_runtime_write",
+            "startupPolicy": "no_auto_start_stop_or_install_from_runtime_lens",
+            "mutationPolicy": "no_production_gateway_mutation_without_explicit_approval_and_contract",
+            "credentialPolicy": "no_credential_or_token_emission",
+            "safeDefault": "fixture_only_no_production_transport_contact",
+            "supportClaimEffect": "blocks_recommended_production_native_parity",
+            "requiredEvidence": [
+              "production_transport_lifecycle_policy",
+              "approved_native_round_trip_evidence",
+              "non_destructive_fixture",
+              "no_plaintext_credential_token_evidence"
+            ],
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+          },
+          "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "lifecycleStatus": "external_user_managed_not_started_by_claw",
+          "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
+          "doNotRunWithoutApproval": true,
+          "claimBlockedUntil": "production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
+          "requiredEndpoint": "loopback_http_json_rpc",
           "nativeWriteBackContract": {
             "status": "blocked",
             "writesRuntime": false,
@@ -7834,6 +7902,40 @@
             "confirmation_or_dry_run_policy",
             "round_trip_control_receipt"
           ],
+          "transportPolicyId": "hermes.tui_gateway.transport_lifecycle_policy",
+          "transportPolicy": {
+            "id": "hermes.tui_gateway.transport_lifecycle_policy",
+            "protocol": "tui_gateway_json_rpc",
+            "fixtureTransport": "loopback_http_json_rpc_fixture",
+            "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+            "lifecycleStatus": "external_user_managed_not_started_by_claw",
+            "lifecycleOwner": "hermes_runtime_or_user",
+            "allowedEndpointClassesWithoutApproval": [
+              "loopback_http_json_rpc_fixture"
+            ],
+            "configuredEndpointClass": "none",
+            "endpointConfigured": false,
+            "loopbackConfigured": false,
+            "confirmationPolicy": "requires_confirm_runtime_write",
+            "startupPolicy": "no_auto_start_stop_or_install_from_runtime_lens",
+            "mutationPolicy": "no_production_gateway_mutation_without_explicit_approval_and_contract",
+            "credentialPolicy": "no_credential_or_token_emission",
+            "safeDefault": "fixture_only_no_production_transport_contact",
+            "supportClaimEffect": "blocks_recommended_production_native_parity",
+            "requiredEvidence": [
+              "production_transport_lifecycle_policy",
+              "approved_native_round_trip_evidence",
+              "non_destructive_fixture",
+              "no_plaintext_credential_token_evidence"
+            ],
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+          },
+          "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "lifecycleStatus": "external_user_managed_not_started_by_claw",
+          "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
+          "doNotRunWithoutApproval": true,
+          "claimBlockedUntil": "production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
+          "requiredEndpoint": "loopback_http_json_rpc",
           "nativeWriteBackContract": {
             "status": "blocked",
             "writesRuntime": false,
@@ -7870,6 +7972,40 @@
             "confirmation_or_dry_run_policy",
             "round_trip_native_list_evidence"
           ],
+          "transportPolicyId": "hermes.tui_gateway.transport_lifecycle_policy",
+          "transportPolicy": {
+            "id": "hermes.tui_gateway.transport_lifecycle_policy",
+            "protocol": "tui_gateway_json_rpc",
+            "fixtureTransport": "loopback_http_json_rpc_fixture",
+            "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+            "lifecycleStatus": "external_user_managed_not_started_by_claw",
+            "lifecycleOwner": "hermes_runtime_or_user",
+            "allowedEndpointClassesWithoutApproval": [
+              "loopback_http_json_rpc_fixture"
+            ],
+            "configuredEndpointClass": "none",
+            "endpointConfigured": false,
+            "loopbackConfigured": false,
+            "confirmationPolicy": "requires_confirm_runtime_write",
+            "startupPolicy": "no_auto_start_stop_or_install_from_runtime_lens",
+            "mutationPolicy": "no_production_gateway_mutation_without_explicit_approval_and_contract",
+            "credentialPolicy": "no_credential_or_token_emission",
+            "safeDefault": "fixture_only_no_production_transport_contact",
+            "supportClaimEffect": "blocks_recommended_production_native_parity",
+            "requiredEvidence": [
+              "production_transport_lifecycle_policy",
+              "approved_native_round_trip_evidence",
+              "non_destructive_fixture",
+              "no_plaintext_credential_token_evidence"
+            ],
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+          },
+          "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+          "lifecycleStatus": "external_user_managed_not_started_by_claw",
+          "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
+          "doNotRunWithoutApproval": true,
+          "claimBlockedUntil": "production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
+          "requiredEndpoint": "loopback_http_json_rpc",
           "nativeWriteBackContract": {
             "status": "blocked",
             "writesRuntime": false,

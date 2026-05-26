@@ -610,7 +610,15 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
             row.claimEffect.map { "claim effect \($0)" },
             row.supportResolution.map { "support resolution \($0)" },
             row.evidenceRequirementId.map { "evidence \($0)" },
-            row.requiredEvidenceLabel.map { "required evidence \($0)" }
+            row.requiredEvidenceLabel.map { "required evidence \($0)" },
+            row.transportPolicyId.map { "transport policy \($0)" },
+            row.productionTransportStatus.map { "production transport \($0)" },
+            row.lifecycleStatus.map { "lifecycle \($0)" },
+            row.productionTransportCommandShape.map { "production command \($0)" },
+            row.doNotRunWithoutApproval ? "do not run without approval" : nil,
+            row.claimBlockedUntil.map { "claim blocked until \($0)" },
+            row.requiredEndpoint.map { "required endpoint \($0)" },
+            row.configuredEndpointClass.map { "endpoint class \($0)" }
         ])
     }
 

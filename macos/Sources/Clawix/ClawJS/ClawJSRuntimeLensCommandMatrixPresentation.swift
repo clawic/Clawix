@@ -17,6 +17,14 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
         let supportResolution: String?
         let evidenceRequirementId: String?
         let requiredEvidenceLabel: String?
+        let transportPolicyId: String?
+        let productionTransportStatus: String?
+        let lifecycleStatus: String?
+        let productionTransportCommandShape: String?
+        let doNotRunWithoutApproval: Bool
+        let claimBlockedUntil: String?
+        let requiredEndpoint: String?
+        let configuredEndpointClass: String?
         let argumentCount: Int
         let argsLabel: String?
 
@@ -35,6 +43,14 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
                 supportResolution.map { "support resolution \($0)" },
                 evidenceRequirementId.map { "evidence \($0)" },
                 requiredEvidenceLabel.map { "required evidence \($0)" },
+                transportPolicyId.map { "transport policy \($0)" },
+                productionTransportStatus.map { "production transport \($0)" },
+                lifecycleStatus.map { "lifecycle \($0)" },
+                productionTransportCommandShape.map { "production command \($0)" },
+                doNotRunWithoutApproval ? "do not run without approval" : nil,
+                claimBlockedUntil.map { "claim blocked until \($0)" },
+                requiredEndpoint.map { "required endpoint \($0)" },
+                configuredEndpointClass.map { "endpoint class \($0)" },
                 "arguments \(argumentCount)",
                 argsLabel.map { "args \($0)" },
                 delegatesTo.map { "delegates to \($0)" }
@@ -99,6 +115,14 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
                 supportResolution: command.supportResolution,
                 evidenceRequirementId: command.evidenceRequirementId,
                 requiredEvidenceLabel: listLabel(command.requiredEvidence, limit: 4),
+                transportPolicyId: command.transportPolicyId,
+                productionTransportStatus: command.productionTransportStatus,
+                lifecycleStatus: command.lifecycleStatus,
+                productionTransportCommandShape: command.productionTransportCommandShape,
+                doNotRunWithoutApproval: command.doNotRunWithoutApproval == true,
+                claimBlockedUntil: command.claimBlockedUntil,
+                requiredEndpoint: command.requiredEndpoint,
+                configuredEndpointClass: command.transportPolicy?.configuredEndpointClass,
                 argumentCount: command.args?.count ?? 0,
                 argsLabel: listLabel(command.args, limit: 8)
             )

@@ -867,6 +867,14 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let supportResolution: String?
         let evidenceRequirementId: String?
         let requiredEvidence: [String]?
+        let transportPolicyId: String?
+        let transportPolicy: ClawJSRuntimeLensSnapshot.TransportPolicy?
+        let productionTransportStatus: String?
+        let lifecycleStatus: String?
+        let productionTransportCommandShape: String?
+        let doNotRunWithoutApproval: Bool?
+        let claimBlockedUntil: String?
+        let requiredEndpoint: String?
         let nativeWriteBackContract: NativeWriteBackContract?
         let args: [String]?
 
