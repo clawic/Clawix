@@ -256,6 +256,12 @@ extension ClawJSRuntimeLensSection {
                 if presentation.tuiGatewayBlockedCount > 0 {
                     statusPill(text: "tui gateway \(presentation.tuiGatewayBlockedCount)", color: .orange)
                 }
+                if presentation.tuiGatewayWrapperBlockedCount > 0 {
+                    statusPill(text: "wrapper \(presentation.tuiGatewayWrapperBlockedCount)", color: .orange)
+                }
+                if presentation.tuiGatewayFixtureBackedCount > 0 {
+                    statusPill(text: "fixture \(presentation.tuiGatewayFixtureBackedCount)", color: .green)
+                }
                 if presentation.productionTransportBlockedCount > 0 {
                     statusPill(text: "transport \(presentation.productionTransportBlockedCount)", color: .orange)
                 }
@@ -318,6 +324,20 @@ extension ClawJSRuntimeLensSection {
             }
             if let tuiGatewayIds = presentation.tuiGatewayIdsLabel {
                 Text("TUI Gateway ids: \(tuiGatewayIds)")
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            if let tuiGatewayWrapperIds = presentation.tuiGatewayWrapperIdsLabel {
+                Text("TUI Gateway wrapper ids: \(tuiGatewayWrapperIds)")
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            if let tuiGatewayFixtureIds = presentation.tuiGatewayFixtureBackedIdsLabel {
+                Text("TUI Gateway fixture ids: \(tuiGatewayFixtureIds)")
                     .font(BodyFont.system(size: 10.5))
                     .foregroundColor(Palette.textSecondary.opacity(0.72))
                     .lineLimit(1)

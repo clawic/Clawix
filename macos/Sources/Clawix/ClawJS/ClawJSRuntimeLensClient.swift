@@ -238,6 +238,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let upstreamContractBlockedCount: Int?
             let approvalGateBlockedCount: Int?
             let tuiGatewayBlockedCount: Int?
+            let tuiGatewayWrapperBlockedCount: Int?
+            let tuiGatewayFixtureBackedCount: Int?
             let productionTransportBlockedCount: Int?
             let writeBackContractBlockedCount: Int?
             let productBlockedCount: Int?
@@ -247,6 +249,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let upstreamContractRequirementIds: [String]?
             let approvalGateRequirementIds: [String]?
             let tuiGatewayRequirementIds: [String]?
+            let tuiGatewayWrapperRequirementIds: [String]?
+            let tuiGatewayFixtureBackedRequirementIds: [String]?
             let productionTransportRequirementIds: [String]?
             let writeBackContractRequirementIds: [String]?
             let productBlockedRequirementIds: [String]?

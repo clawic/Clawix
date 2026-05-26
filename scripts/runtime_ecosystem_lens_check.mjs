@@ -200,10 +200,15 @@ if (!exists(hermesFixturePath)) {
     requireEqual(readiness.upstreamContractBlockedCount, 16, "Hermes fixture upstream-contract blocked count");
     requireEqual(readiness.approvalGateBlockedCount, 2, "Hermes fixture approval-gate blocked count");
     requireEqual(readiness.tuiGatewayBlockedCount, 4, "Hermes fixture TUI Gateway blocked count");
+    requireEqual(readiness.tuiGatewayWrapperBlockedCount, 4, "Hermes fixture TUI Gateway wrapper blocked count");
+    requireEqual(readiness.tuiGatewayFixtureBackedCount, 0, "Hermes fixture TUI Gateway fixture-backed count");
     requireEqual(readiness.productionTransportBlockedCount, 4, "Hermes fixture production transport blocked count");
     requireEqual(readiness.writeBackContractBlockedCount, 12, "Hermes fixture write-back contract blocked count");
     requireEqual(readiness.productBlockedCount, 18, "Hermes fixture product-blocked count");
-    requireEqual(readiness.safeDefaultCounts?.keep_unpromoted_and_do_not_synthesize_runtime_state, 14, "Hermes fixture generic unpromoted safe-default count");
+    requireEqual(readiness.safeDefaultCounts?.keep_read_projection_only_until_official_runtime_write_back_contract_exists, 10, "Hermes fixture read-projection safe-default count");
+    requireEqual(readiness.safeDefaultCounts?.do_not_run_without_explicit_approval_and_redaction, 4, "Hermes fixture external live safe-default count");
+    requireEqual(readiness.safeDefaultCounts?.do_not_run_without_approval_gate_fixture, 2, "Hermes fixture approval-gate safe-default count");
+    requireEqual(readiness.safeDefaultCounts?.keep_unpromoted_and_do_not_synthesize_runtime_state, 4, "Hermes fixture generic unpromoted safe-default count");
     requireEqual(readiness.safeDefaultCounts?.keep_local_overlay_and_do_not_write_runtime_pin_state, 2, "Hermes fixture local overlay pin safe-default count");
     requireEqual(supportAudit?.syncPolicySummary?.writeBackPolicyCounts?.[hermesWriteBackPolicy], 10, "Hermes fixture precise official write-back policy count");
     requireEqual(supportAudit?.syncPolicySummary?.writeBackPolicyCounts?.blocked_until_fixture_coverage, undefined, "Hermes fixture does not use generic fixture-coverage write-back policy");
@@ -218,6 +223,13 @@ if (!exists(hermesFixturePath)) {
       "hermes.sessions.abort.action_contract",
       "hermes.sessions.create.action_contract"
     ], "Hermes fixture TUI Gateway requirement ids");
+    requireArrayEquals(readiness.tuiGatewayWrapperRequirementIds, [
+      "hermes.sessions.send.action_contract",
+      "hermes.sessions.inject.action_contract",
+      "hermes.sessions.abort.action_contract",
+      "hermes.sessions.create.action_contract"
+    ], "Hermes fixture TUI Gateway wrapper requirement ids");
+    requireArrayEquals(readiness.tuiGatewayFixtureBackedRequirementIds, [], "Hermes fixture TUI Gateway fixture-backed requirement ids");
     requireArrayEquals(readiness.productionTransportRequirementIds, [
       "hermes.sessions.send.action_contract",
       "hermes.sessions.inject.action_contract",
@@ -376,10 +388,14 @@ for (const snippet of [
   "upstreamContractBlockedCount: Int?",
   "approvalGateBlockedCount: Int?",
   "tuiGatewayBlockedCount: Int?",
+  "tuiGatewayWrapperBlockedCount: Int?",
+  "tuiGatewayFixtureBackedCount: Int?",
   "productionTransportBlockedCount: Int?",
   "writeBackContractBlockedCount: Int?",
   "approvalGateRequirementIds: [String]?",
   "tuiGatewayRequirementIds: [String]?",
+  "tuiGatewayWrapperRequirementIds: [String]?",
+  "tuiGatewayFixtureBackedRequirementIds: [String]?",
   "productionTransportRequirementIds: [String]?",
   "writeBackContractRequirementIds: [String]?",
   "runtimeCapabilityStatus: String?",
@@ -1098,7 +1114,11 @@ for (const snippet of [
   "snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateBlockedCount",
   "snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateRequirementIds",
   "snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayBlockedCount",
+  "snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayWrapperBlockedCount",
+  "snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayFixtureBackedCount",
   "snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayRequirementIds",
+  "snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayWrapperRequirementIds",
+  "snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayFixtureBackedRequirementIds",
   "snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportBlockedCount",
   "snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportRequirementIds",
   "snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractBlockedCount",
@@ -1108,6 +1128,10 @@ for (const snippet of [
   "snapshot.supportAudit?.evidenceReadinessSummary?.externalPendingRequirementIds",
   "snapshot.supportAudit?.evidenceReadinessSummary?.productBlockedRequirementIds",
   "readinessPresentation.blockerClassLabel",
+  "readinessPresentation.tuiGatewayWrapperBlockedCount",
+  "readinessPresentation.tuiGatewayFixtureBackedCount",
+  "readinessPresentation.tuiGatewayWrapperIdsLabel",
+  "readinessPresentation.tuiGatewayFixtureBackedIdsLabel",
   "readinessPresentation.productBlockedIdsLabel",
   "readProjectionStatus",
   "projectionDisposition",

@@ -75,6 +75,8 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
         let upstreamContractBlockedCount: Int
         let approvalGateBlockedCount: Int
         let tuiGatewayBlockedCount: Int
+        let tuiGatewayWrapperBlockedCount: Int
+        let tuiGatewayFixtureBackedCount: Int
         let productionTransportBlockedCount: Int
         let writeBackContractBlockedCount: Int
         let productBlockedCount: Int
@@ -87,6 +89,8 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
         let upstreamContractIdsLabel: String?
         let approvalGateIdsLabel: String?
         let tuiGatewayIdsLabel: String?
+        let tuiGatewayWrapperIdsLabel: String?
+        let tuiGatewayFixtureBackedIdsLabel: String?
         let productionTransportIdsLabel: String?
         let writeBackContractIdsLabel: String?
         let productBlockedIdsLabel: String?
@@ -104,6 +108,8 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
                 "upstream contract blocked \(upstreamContractBlockedCount)",
                 "approval gate blocked \(approvalGateBlockedCount)",
                 "tui gateway blocked \(tuiGatewayBlockedCount)",
+                "tui gateway wrapper blocked \(tuiGatewayWrapperBlockedCount)",
+                "tui gateway fixture backed \(tuiGatewayFixtureBackedCount)",
                 "production transport blocked \(productionTransportBlockedCount)",
                 "write back contract blocked \(writeBackContractBlockedCount)",
                 "product blocked \(productBlockedCount)",
@@ -116,6 +122,8 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
                 upstreamContractIdsLabel.map { "upstream contract ids \($0)" },
                 approvalGateIdsLabel.map { "approval gate ids \($0)" },
                 tuiGatewayIdsLabel.map { "tui gateway ids \($0)" },
+                tuiGatewayWrapperIdsLabel.map { "tui gateway wrapper ids \($0)" },
+                tuiGatewayFixtureBackedIdsLabel.map { "tui gateway fixture ids \($0)" },
                 productionTransportIdsLabel.map { "production transport ids \($0)" },
                 writeBackContractIdsLabel.map { "write back contract ids \($0)" },
                 productBlockedIdsLabel.map { "product blocked ids \($0)" },
@@ -175,6 +183,8 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
             upstreamContractBlockedCount: summary.upstreamContractBlockedCount ?? 0,
             approvalGateBlockedCount: summary.approvalGateBlockedCount ?? 0,
             tuiGatewayBlockedCount: summary.tuiGatewayBlockedCount ?? 0,
+            tuiGatewayWrapperBlockedCount: summary.tuiGatewayWrapperBlockedCount ?? 0,
+            tuiGatewayFixtureBackedCount: summary.tuiGatewayFixtureBackedCount ?? 0,
             productionTransportBlockedCount: summary.productionTransportBlockedCount ?? 0,
             writeBackContractBlockedCount: summary.writeBackContractBlockedCount ?? 0,
             productBlockedCount: summary.productBlockedCount ?? 0,
@@ -187,6 +197,8 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
             upstreamContractIdsLabel: listLabel(summary.upstreamContractRequirementIds, limit: 3),
             approvalGateIdsLabel: listLabel(summary.approvalGateRequirementIds, limit: 3),
             tuiGatewayIdsLabel: listLabel(summary.tuiGatewayRequirementIds, limit: 3),
+            tuiGatewayWrapperIdsLabel: listLabel(summary.tuiGatewayWrapperRequirementIds, limit: 3),
+            tuiGatewayFixtureBackedIdsLabel: listLabel(summary.tuiGatewayFixtureBackedRequirementIds, limit: 3),
             productionTransportIdsLabel: listLabel(summary.productionTransportRequirementIds, limit: 3),
             writeBackContractIdsLabel: listLabel(summary.writeBackContractRequirementIds, limit: 3),
             productBlockedIdsLabel: listLabel(summary.productBlockedRequirementIds, limit: 3),

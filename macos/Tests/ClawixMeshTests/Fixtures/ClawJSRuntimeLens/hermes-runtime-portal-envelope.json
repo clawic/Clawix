@@ -11276,9 +11276,10 @@
           "external_pending": 4
         },
         "safeDefaultCounts": {
-          "keep_unpromoted_and_do_not_synthesize_runtime_state": 14,
+          "keep_read_projection_only_until_official_runtime_write_back_contract_exists": 10,
           "do_not_run_without_explicit_approval_and_redaction": 4,
           "do_not_run_without_approval_gate_fixture": 2,
+          "keep_unpromoted_and_do_not_synthesize_runtime_state": 4,
           "keep_local_overlay_and_do_not_write_runtime_pin_state": 2
         },
         "totalRequirementCount": 22,
@@ -11287,6 +11288,8 @@
         "upstreamContractBlockedCount": 16,
         "approvalGateBlockedCount": 2,
         "tuiGatewayBlockedCount": 4,
+        "tuiGatewayWrapperBlockedCount": 4,
+        "tuiGatewayFixtureBackedCount": 0,
         "productionTransportBlockedCount": 4,
         "writeBackContractBlockedCount": 12,
         "productBlockedCount": 18,
@@ -11333,6 +11336,13 @@
           "hermes.sessions.abort.action_contract",
           "hermes.sessions.create.action_contract"
         ],
+        "tuiGatewayWrapperRequirementIds": [
+          "hermes.sessions.send.action_contract",
+          "hermes.sessions.inject.action_contract",
+          "hermes.sessions.abort.action_contract",
+          "hermes.sessions.create.action_contract"
+        ],
+        "tuiGatewayFixtureBackedRequirementIds": [],
         "productionTransportRequirementIds": [
           "hermes.sessions.send.action_contract",
           "hermes.sessions.inject.action_contract",

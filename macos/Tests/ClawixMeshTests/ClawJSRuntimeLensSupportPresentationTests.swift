@@ -13,6 +13,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
             upstreamContractBlockedCount: 0,
             approvalGateBlockedCount: 0,
             tuiGatewayBlockedCount: 4,
+            tuiGatewayWrapperBlockedCount: 4,
+            tuiGatewayFixtureBackedCount: 0,
             productionTransportBlockedCount: 4,
             writeBackContractBlockedCount: 8,
             productBlockedCount: 16,
@@ -27,6 +29,13 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
                 "hermes.sessions.abort.action_contract",
                 "hermes.sessions.create.action_contract"
             ],
+            tuiGatewayWrapperRequirementIds: [
+                "hermes.sessions.send.action_contract",
+                "hermes.sessions.inject.action_contract",
+                "hermes.sessions.abort.action_contract",
+                "hermes.sessions.create.action_contract"
+            ],
+            tuiGatewayFixtureBackedRequirementIds: [],
             productionTransportRequirementIds: [
                 "hermes.sessions.send.action_contract",
                 "hermes.sessions.inject.action_contract",
@@ -67,6 +76,11 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
             presentation.tuiGatewayIdsLabel,
             "hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, hermes.sessions.abort.action_contract, +1 more"
         )
+        XCTAssertEqual(
+            presentation.tuiGatewayWrapperIdsLabel,
+            "hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, hermes.sessions.abort.action_contract, +1 more"
+        )
+        XCTAssertNil(presentation.tuiGatewayFixtureBackedIdsLabel)
         XCTAssertEqual(
             presentation.productionTransportIdsLabel,
             "hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, hermes.sessions.abort.action_contract, +1 more"
@@ -273,6 +287,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(readinessPresentation.upstreamContractBlockedCount, 1)
         XCTAssertEqual(readinessPresentation.approvalGateBlockedCount, 1)
         XCTAssertEqual(readinessPresentation.tuiGatewayBlockedCount, 1)
+        XCTAssertEqual(readinessPresentation.tuiGatewayWrapperBlockedCount, 0)
+        XCTAssertEqual(readinessPresentation.tuiGatewayFixtureBackedCount, 0)
         XCTAssertEqual(readinessPresentation.productionTransportBlockedCount, 1)
         XCTAssertEqual(readinessPresentation.writeBackContractBlockedCount, 1)
         XCTAssertEqual(readinessPresentation.statusLabel, "approval_required 1, blocked_until_approval_gate_fixture 1, blocked_until_upstream_contract 1")
@@ -283,6 +299,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(readinessPresentation.upstreamContractIdsLabel, "example.sessions.create.action_contract")
         XCTAssertEqual(readinessPresentation.approvalGateIdsLabel, "example.sandboxPermissions.approval_gate_evidence")
         XCTAssertEqual(readinessPresentation.tuiGatewayIdsLabel, "example.sessions.create.action_contract")
+        XCTAssertNil(readinessPresentation.tuiGatewayWrapperIdsLabel)
+        XCTAssertNil(readinessPresentation.tuiGatewayFixtureBackedIdsLabel)
         XCTAssertEqual(readinessPresentation.productionTransportIdsLabel, "example.sessions.create.action_contract")
         XCTAssertEqual(readinessPresentation.writeBackContractIdsLabel, "example.sessions.pin.native_write_back_contract")
         XCTAssertEqual(readinessPresentation.productBlockedIdsLabel, "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract, example.sandboxPermissions.approval_gate_evidence")
@@ -291,6 +309,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("Runtime evidence readiness summary"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("approval gate blocked 1"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("tui gateway blocked 1"))
+        XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("tui gateway wrapper blocked 0"))
+        XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("tui gateway fixture backed 0"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("production transport blocked 1"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("write back contract blocked 1"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("blocker classes direct_blocker 1"))

@@ -124,9 +124,14 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.production, false)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateBlockedCount, 2)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayBlockedCount, 4)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayWrapperBlockedCount, 4)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayFixtureBackedCount, 0)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportBlockedCount, 4)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractBlockedCount, 12)
-        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_unpromoted_and_do_not_synthesize_runtime_state"], 14)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_read_projection_only_until_official_runtime_write_back_contract_exists"], 10)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["do_not_run_without_explicit_approval_and_redaction"], 4)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["do_not_run_without_approval_gate_fixture"], 2)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_unpromoted_and_do_not_synthesize_runtime_state"], 4)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_local_overlay_and_do_not_write_runtime_pin_state"], 2)
         let hermesWriteBackPolicy = "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence"
         XCTAssertEqual(snapshot.supportAudit?.syncPolicySummary?.writeBackPolicyCounts?[hermesWriteBackPolicy], 10)
@@ -140,6 +145,13 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
             "hermes.sessions.abort.action_contract",
             "hermes.sessions.create.action_contract"
         ])
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayWrapperRequirementIds, [
+            "hermes.sessions.send.action_contract",
+            "hermes.sessions.inject.action_contract",
+            "hermes.sessions.abort.action_contract",
+            "hermes.sessions.create.action_contract"
+        ])
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayFixtureBackedRequirementIds, [])
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportRequirementIds, [
             "hermes.sessions.send.action_contract",
             "hermes.sessions.inject.action_contract",
@@ -389,11 +401,15 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.upstreamContractBlockedCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateBlockedCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayBlockedCount, 1)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayWrapperBlockedCount, nil)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayFixtureBackedCount, nil)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportBlockedCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractBlockedCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.blockerClassCounts?["external_pending"], 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateRequirementIds, ["example.sandboxPermissions.approval_gate_evidence"])
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayRequirementIds, ["example.sessions.create.action_contract"])
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayWrapperRequirementIds, nil)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayFixtureBackedRequirementIds, nil)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportRequirementIds, ["example.sessions.create.action_contract"])
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds, ["example.sessions.pin.native_write_back_contract"])
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_unpromoted_and_do_not_synthesize_runtime_state"], 1)

@@ -32,6 +32,8 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
     let evidenceUpstreamContractBlockedCount: Int
     let evidenceApprovalGateBlockedCount: Int
     let evidenceTuiGatewayBlockedCount: Int
+    let evidenceTuiGatewayWrapperBlockedCount: Int
+    let evidenceTuiGatewayFixtureBackedCount: Int
     let evidenceProductionTransportBlockedCount: Int
     let evidenceWriteBackContractBlockedCount: Int
     let evidenceUnresolvedNativeRequirementCount: Int
@@ -68,6 +70,8 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
             "upstream contract blocked \(evidenceUpstreamContractBlockedCount)",
             "approval gate blocked \(evidenceApprovalGateBlockedCount)",
             "tui gateway blocked \(evidenceTuiGatewayBlockedCount)",
+            "tui gateway wrapper blocked \(evidenceTuiGatewayWrapperBlockedCount)",
+            "tui gateway fixture backed \(evidenceTuiGatewayFixtureBackedCount)",
             "production transport blocked \(evidenceProductionTransportBlockedCount)",
             "write back contract blocked \(evidenceWriteBackContractBlockedCount)",
             "unresolved native \(evidenceUnresolvedNativeRequirementCount)",
@@ -145,6 +149,8 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
             evidenceUpstreamContractBlockedCount: evidenceReadinessSummary?.upstreamContractBlockedCount ?? 0,
             evidenceApprovalGateBlockedCount: evidenceReadinessSummary?.approvalGateBlockedCount ?? 0,
             evidenceTuiGatewayBlockedCount: evidenceReadinessSummary?.tuiGatewayBlockedCount ?? 0,
+            evidenceTuiGatewayWrapperBlockedCount: evidenceReadinessSummary?.tuiGatewayWrapperBlockedCount ?? 0,
+            evidenceTuiGatewayFixtureBackedCount: evidenceReadinessSummary?.tuiGatewayFixtureBackedCount ?? 0,
             evidenceProductionTransportBlockedCount: evidenceReadinessSummary?.productionTransportBlockedCount ?? 0,
             evidenceWriteBackContractBlockedCount: evidenceReadinessSummary?.writeBackContractBlockedCount ?? 0,
             evidenceUnresolvedNativeRequirementCount: evidenceReadinessSummary?.unresolvedNativeRequirementCount ?? 0,
