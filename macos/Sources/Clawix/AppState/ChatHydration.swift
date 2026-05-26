@@ -473,7 +473,7 @@ extension AppState {
     }
 
     func applyDaemonChats(_ wireChats: [WireSession]) {
-        let uniqueWireChats = deduplicatedWireSessions(wireChats)
+        let uniqueWireChats = boundedSidebarWireSessions(deduplicatedWireSessions(wireChats))
         if uniqueWireChats.isEmpty, shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() {
             return
         }

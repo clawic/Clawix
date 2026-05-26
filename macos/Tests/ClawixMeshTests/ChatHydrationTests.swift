@@ -127,6 +127,73 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.clawixThreadId, "thread-dup")
     }
 
+    func testApplyDaemonChatsBoundsSidebarSnapshot() {
+        let state = AppState()
+        let baseDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let activeCount = AppState.sidebarBootstrapRecentLimit + 150
+        let pinnedCount = AppState.startupPinnedSessionLimit + 50
+        let archivedCount = AppState.archivedSidebarLimit + 20
+
+        let active = (0..<activeCount).map { index in
+            let date = baseDate.addingTimeInterval(TimeInterval(index))
+            return WireSession(
+                id: UUID().uuidString,
+                title: "Thread \(index)",
+                createdAt: date,
+                isPinned: index < pinnedCount,
+                lastMessageAt: date,
+                threadId: "thread-\(index)"
+            )
+        }
+        let archived = (0..<archivedCount).map { index in
+            let date = baseDate.addingTimeInterval(TimeInterval(activeCount + index))
+            return WireSession(
+                id: UUID().uuidString,
+                title: "Archived \(index)",
+                createdAt: date,
+                isArchived: true,
+                lastMessageAt: date,
+                threadId: "archived-\(index)"
+            )
+        }
+
+        state.applyDaemonChats(active + archived)
+
+        XCTAssertEqual(state.chats.count, AppState.sidebarBootstrapRecentLimit)
+        XCTAssertEqual(state.chats.filter(\.isPinned).count, AppState.startupPinnedSessionLimit)
+        XCTAssertEqual(state.archivedChats.count, AppState.archivedSidebarLimit)
+        XCTAssertEqual(
+            state.cachedWireSessions.count,
+            AppState.sidebarBootstrapRecentLimit + AppState.archivedSidebarLimit
+        )
+        XCTAssertTrue(state.chats.contains { $0.clawixThreadId == "thread-\(activeCount - 1)" })
+    }
+
+    func testApplyThreadsBoundsRuntimeSidebarSnapshot() {
+        let state = AppState()
+        let activeCount = AppState.sidebarBootstrapRecentLimit + 150
+        let pinnedCount = AppState.startupPinnedSessionLimit + 50
+        let active = (0..<activeCount).map { index in
+            AgentThreadSummary(
+                id: "thread-\(index)",
+                cwd: "/tmp",
+                name: "Thread \(index)",
+                preview: "",
+                path: nil,
+                createdAt: 1_710_000_000 + Int64(index),
+                updatedAt: 1_710_000_000 + Int64(index),
+                archived: false
+            )
+        }
+        let pinned = (0..<pinnedCount).map { "thread-\($0)" }
+
+        state.applyThreads(active, extraPinnedThreadIds: pinned)
+
+        XCTAssertEqual(state.chats.count, AppState.sidebarBootstrapRecentLimit)
+        XCTAssertEqual(state.chats.filter(\.isPinned).count, AppState.startupPinnedSessionLimit)
+        XCTAssertTrue(state.chats.contains { $0.clawixThreadId == "thread-\(activeCount - 1)" })
+    }
+
     func testEmptyClawJSSessionHistoryFallsBackToCodexRollout() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [SessionsHistoryURLProtocol.self]

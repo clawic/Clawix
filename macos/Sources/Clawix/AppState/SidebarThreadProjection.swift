@@ -208,13 +208,14 @@ extension AppState {
         let pinIds = pinsRepo.orderedThreadIds()
         let orderedPinIds = pinIds + extraPinnedThreadIds.filter { !pinIds.contains($0) }
         let pinnedSet = Set(orderedPinIds)
+        let boundedThreads = boundedSidebarThreads(threads, pinnedThreadIds: orderedPinIds)
 
-        reconcileArchivesFromRuntime(threads)
+        reconcileArchivesFromRuntime(boundedThreads)
 
         let oldByThread = chatByThreadId(chats)
         let oldArchivedByThread = chatByThreadId(archivedChats)
 
-        let sorted = threads.sorted { $0.updatedAt > $1.updatedAt }
+        let sorted = boundedThreads.sorted { $0.updatedAt > $1.updatedAt }
         let selectedSnapshotChat: Chat?
         if case let .chat(id) = currentRoute,
            let selected = chat(byId: id),
