@@ -103,7 +103,10 @@ ecosystem manifest:
   individual reentry packets. It also renders blocker-class counts,
   safe-default counts, and bounded requirement-id groups for approval,
   external-pending, upstream-contract, product-blocked, and unresolved-native
-  evidence so promotion blockers are visible without raw JSON inspection.
+  evidence so promotion blockers are visible without raw JSON inspection. TUI
+  Gateway readiness must keep wrapper-blocked, fixture-backed, and production
+  transport blockers as separate visible counts so a configured loopback
+  gateway fixture is not mistaken for production native transport support.
 - individual `evidenceRequirements` are rendered through a tested presentation
   model wherever they appear so blocker class, approval requirement, command
   shape, current behavior, product decision, support resolution, and promotion

@@ -142,6 +142,11 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(channelContract.detailLines.contains("official commands hermes gateway, hermes gateway setup, hermes gateway run, hermes gateway start, +10 more"))
         XCTAssertTrue(channelContract.detailLines.contains("evidence hermes.channels.live_evidence"))
 
+        let evidenceReadiness = try XCTUnwrap(presentation.sections.first { $0.id == "evidence-readiness" })
+        let evidenceReadinessRow = try XCTUnwrap(evidenceReadiness.rows.first)
+        XCTAssertTrue(evidenceReadinessRow.pills.contains { $0.id == "tui-wrapper" && $0.label == "gateway wrapper 4" && $0.tone == .warning })
+        XCTAssertTrue(evidenceReadinessRow.pills.contains { $0.id == "tui-fixture" && $0.label == "gateway fixture 0" && $0.tone == .muted })
+
         let closure = try XCTUnwrap(presentation.sections.first { $0.id == "closure-checklist" })
         let sessionClosure = try XCTUnwrap(closure.rows.first { $0.label == "sessions" })
         XCTAssertTrue(sessionClosure.detailLines.contains("hermes.sessions.write_back_contract, hermes.sessions.preview.action_contract, hermes.sessions.resolve.action_contract, +7 more"))

@@ -345,10 +345,10 @@ extension ClawJSRuntimeLensSection {
                     statusPill(text: "tui gateway \(presentation.tuiGatewayBlockedCount)", color: .orange)
                 }
                 if presentation.tuiGatewayWrapperBlockedCount > 0 {
-                    statusPill(text: "wrapper \(presentation.tuiGatewayWrapperBlockedCount)", color: .orange)
+                    statusPill(text: "gateway wrapper \(presentation.tuiGatewayWrapperBlockedCount)", color: .orange)
                 }
                 if presentation.tuiGatewayFixtureBackedCount > 0 {
-                    statusPill(text: "fixture \(presentation.tuiGatewayFixtureBackedCount)", color: .green)
+                    statusPill(text: "gateway fixture \(presentation.tuiGatewayFixtureBackedCount)", color: .green)
                 }
                 if presentation.productionTransportBlockedCount > 0 {
                     statusPill(text: "transport \(presentation.productionTransportBlockedCount)", color: .orange)

@@ -100,6 +100,81 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertTrue(presentation.accessibilityLabel.contains("+1 more"))
     }
 
+    func testEvidenceReadinessPresentationDistinguishesGatewayFixtureBackedTransportBlockers() {
+        let summary = ClawJSRuntimeLensSnapshot.SupportAudit.EvidenceReadinessSummary(
+            statusCounts: [
+                "blocked_until_production_transport_lifecycle": 4,
+                "blocked_until_upstream_contract": 15
+            ],
+            blockerClassCounts: nil,
+            safeDefaultCounts: nil,
+            totalRequirementCount: 25,
+            approvalRequiredCount: 4,
+            externalPendingCount: 0,
+            upstreamContractBlockedCount: 15,
+            approvalGateBlockedCount: 2,
+            tuiGatewayBlockedCount: 4,
+            tuiGatewayWrapperBlockedCount: 0,
+            tuiGatewayFixtureBackedCount: 4,
+            productionTransportBlockedCount: 4,
+            writeBackContractBlockedCount: 12,
+            productBlockedCount: 21,
+            unresolvedNativeRequirementCount: 0,
+            approvalRequiredRequirementIds: nil,
+            externalPendingRequirementIds: nil,
+            upstreamContractRequirementIds: nil,
+            approvalGateRequirementIds: nil,
+            tuiGatewayRequirementIds: [
+                "hermes.sessions.send.action_contract",
+                "hermes.sessions.inject.action_contract",
+                "hermes.sessions.abort.action_contract",
+                "hermes.sessions.create.action_contract"
+            ],
+            tuiGatewayWrapperRequirementIds: [],
+            tuiGatewayFixtureBackedRequirementIds: [
+                "hermes.sessions.send.action_contract",
+                "hermes.sessions.inject.action_contract",
+                "hermes.sessions.abort.action_contract",
+                "hermes.sessions.create.action_contract"
+            ],
+            productionTransportRequirementIds: [
+                "hermes.sessions.send.action_contract",
+                "hermes.sessions.inject.action_contract",
+                "hermes.sessions.abort.action_contract",
+                "hermes.sessions.create.action_contract"
+            ],
+            writeBackContractRequirementIds: nil,
+            productBlockedRequirementIds: nil,
+            unresolvedNativeRequirementIds: [],
+            nextRequiredActions: [
+                "production_transport_lifecycle_policy_and_native_round_trip_evidence",
+                "official_runtime_write_back_contract_fixture"
+            ],
+            reentryPolicy: "use_evidence_reentry_packets_before_claim_promotion",
+            safeDefault: "keep_unpromoted_and_follow_exact_reentry_packets"
+        )
+
+        let presentation = ClawJSRuntimeLensSupportSummaryPresentation.make(
+            evidenceReadiness: summary
+        )
+
+        XCTAssertEqual(presentation.tuiGatewayWrapperBlockedCount, 0)
+        XCTAssertEqual(presentation.tuiGatewayFixtureBackedCount, 4)
+        XCTAssertNil(presentation.tuiGatewayWrapperIdsLabel)
+        XCTAssertEqual(
+            presentation.tuiGatewayFixtureBackedIdsLabel,
+            "hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, hermes.sessions.abort.action_contract, +1 more"
+        )
+        XCTAssertEqual(
+            presentation.statusLabel,
+            "blocked_until_production_transport_lifecycle 4, blocked_until_upstream_contract 15"
+        )
+        XCTAssertTrue(presentation.accessibilityLabel.contains("tui gateway wrapper blocked 0"))
+        XCTAssertTrue(presentation.accessibilityLabel.contains("tui gateway fixture backed 4"))
+        XCTAssertTrue(presentation.accessibilityLabel.contains("production transport blocked 4"))
+        XCTAssertTrue(presentation.accessibilityLabel.contains("tui gateway fixture ids hermes.sessions.send.action_contract"))
+    }
+
     func testRuntimeLensSupportAuditEvidenceAndPromotionPresentations() async throws {
         let snapshot = try await ClawJSRuntimeLensTestFixtures.degradedRuntimePortalSnapshot()
 
