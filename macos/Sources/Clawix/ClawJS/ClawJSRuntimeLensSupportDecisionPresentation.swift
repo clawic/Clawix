@@ -97,7 +97,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
             productBlockedIdsLabel: listLabel(review.productBlockedRequirementIds, limit: 4),
             externalPendingIdsLabel: listLabel(review.externalPendingRequirementIds, limit: 4),
             unresolvedNativeIdsLabel: listLabel(review.unresolvedNativeRequirementIds, limit: 4),
-            requiredForPromotionLabel: review.requiredForPromotion?.prefix(4).joined(separator: ", "),
+            requiredForPromotionLabel: review.requiredForPromotion?.prefix(5).joined(separator: ", "),
             userVisibleStatus: review.userVisibleStatus
         )
     }
@@ -119,7 +119,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
             productBlockedIdsLabel: listLabel(decision.productBlockedRequirementIds, limit: 4),
             externalPendingIdsLabel: listLabel(decision.externalPendingRequirementIds, limit: 4),
             unresolvedNativeIdsLabel: listLabel(decision.unresolvedNativeRequirementIds, limit: 4),
-            promotionEvidenceRequiredLabel: listLabel(decision.promotionEvidenceRequired, limit: 4),
+            promotionEvidenceRequiredLabel: listLabel(decision.promotionEvidenceRequired, limit: 5),
             reentryPolicy: decision.reentryPolicy,
             safeDefault: decision.safeDefault,
             userVisibleStatus: decision.userVisibleStatus

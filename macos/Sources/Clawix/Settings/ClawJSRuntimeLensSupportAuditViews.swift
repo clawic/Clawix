@@ -253,6 +253,12 @@ extension ClawJSRuntimeLensSection {
                 if presentation.approvalGateBlockedCount > 0 {
                     statusPill(text: "approval gate \(presentation.approvalGateBlockedCount)", color: .orange)
                 }
+                if presentation.tuiGatewayBlockedCount > 0 {
+                    statusPill(text: "tui gateway \(presentation.tuiGatewayBlockedCount)", color: .orange)
+                }
+                if presentation.productionTransportBlockedCount > 0 {
+                    statusPill(text: "transport \(presentation.productionTransportBlockedCount)", color: .orange)
+                }
                 if presentation.unresolvedNativeRequirementCount > 0 {
                     statusPill(text: "unresolved \(presentation.unresolvedNativeRequirementCount)", color: .red)
                 }
@@ -302,6 +308,20 @@ extension ClawJSRuntimeLensSection {
             }
             if let approvalGateIds = presentation.approvalGateIdsLabel {
                 Text("Approval gate ids: \(approvalGateIds)")
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            if let tuiGatewayIds = presentation.tuiGatewayIdsLabel {
+                Text("TUI Gateway ids: \(tuiGatewayIds)")
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            if let transportIds = presentation.productionTransportIdsLabel {
+                Text("Transport ids: \(transportIds)")
                     .font(BodyFont.system(size: 10.5))
                     .foregroundColor(Palette.textSecondary.opacity(0.72))
                     .lineLimit(1)

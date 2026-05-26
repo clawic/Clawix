@@ -367,7 +367,9 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                         Pill(id: "requirements", label: "requirements \(presentation.totalRequirementCount)", tone: presentation.totalRequirementCount == 0 ? .success : .warning),
                         Pill(id: "approval", label: "approval \(presentation.approvalRequiredCount)", tone: presentation.approvalRequiredCount > 0 ? .warning : .muted),
                         Pill(id: "upstream", label: "upstream \(presentation.upstreamContractBlockedCount)", tone: presentation.upstreamContractBlockedCount > 0 ? .warning : .muted),
-                        Pill(id: "approval-gate", label: "approval gate \(presentation.approvalGateBlockedCount)", tone: presentation.approvalGateBlockedCount > 0 ? .warning : .muted)
+                        Pill(id: "approval-gate", label: "approval gate \(presentation.approvalGateBlockedCount)", tone: presentation.approvalGateBlockedCount > 0 ? .warning : .muted),
+                        Pill(id: "tui-gateway", label: "tui gateway \(presentation.tuiGatewayBlockedCount)", tone: presentation.tuiGatewayBlockedCount > 0 ? .warning : .muted),
+                        Pill(id: "transport", label: "transport \(presentation.productionTransportBlockedCount)", tone: presentation.productionTransportBlockedCount > 0 ? .warning : .muted)
                     ],
                     detailLines: optionalLines([
                         presentation.blockerClassLabel,
@@ -376,6 +378,8 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                         presentation.externalPendingIdsLabel,
                         presentation.upstreamContractIdsLabel,
                         presentation.approvalGateIdsLabel,
+                        presentation.tuiGatewayIdsLabel,
+                        presentation.productionTransportIdsLabel,
                         presentation.productBlockedIdsLabel,
                         presentation.unresolvedNativeIdsLabel,
                         presentation.safeDefault

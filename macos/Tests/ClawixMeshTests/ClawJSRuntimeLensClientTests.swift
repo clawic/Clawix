@@ -169,7 +169,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
             decision: try XCTUnwrap(audit.finalSupportClaimDecision)
         )
         XCTAssertEqual(finalDecisionPresentation.blockerClassesLabel, "external_pending, direct_blocker")
-        XCTAssertEqual(finalDecisionPresentation.promotionEvidenceRequiredLabel, "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, keep_lowered_claim_until_upstream_native_contracts_exist")
+        XCTAssertEqual(finalDecisionPresentation.promotionEvidenceRequiredLabel, "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, tui_gateway_wrapper_fixture_and_round_trip_evidence, production_transport_lifecycle_policy_and_native_round_trip_evidence, keep_lowered_claim_until_upstream_native_contracts_exist")
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("Runtime final support claim decision"))
 
         let projectionPresentation = ClawJSRuntimeLensSupportSummaryPresentation.make(
@@ -197,7 +197,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         let validationSummary = ClawJSRuntimeLensValidationSummary.make(snapshot: snapshot)
         XCTAssertEqual(validationSummary.syncFreshnessLabel, "degraded_snapshot 1, snapshot 1")
         XCTAssertEqual(validationSummary.finalDecisionBlockerClassesLabel, "external_pending, direct_blocker")
-        XCTAssertEqual(validationSummary.finalDecisionPromotionEvidenceLabel, "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, keep_lowered_claim_until_upstream_native_contracts_exist")
+        XCTAssertEqual(validationSummary.finalDecisionPromotionEvidenceLabel, "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, tui_gateway_wrapper_fixture_and_round_trip_evidence, production_transport_lifecycle_policy_and_native_round_trip_evidence, keep_lowered_claim_until_upstream_native_contracts_exist")
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("Runtime lens validation"))
 
         XCTAssertEqual(snapshot.supportAudit?.closureChecklist?.first?.readProjectionStatus, "projected")
@@ -212,8 +212,12 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalRequiredCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.upstreamContractBlockedCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateBlockedCount, 1)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayBlockedCount, 1)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportBlockedCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.blockerClassCounts?["external_pending"], 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateRequirementIds, ["example.sandboxPermissions.approval_gate_evidence"])
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayRequirementIds, ["example.sessions.create.action_contract"])
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportRequirementIds, ["example.sessions.create.action_contract"])
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts?["keep_unpromoted_and_do_not_synthesize_runtime_state"], 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.externalPendingRequirementIds, ["example.channels.live_evidence"])
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productBlockedRequirementIds?.count, 3)

@@ -31,6 +31,8 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
     let evidenceApprovalRequiredCount: Int
     let evidenceUpstreamContractBlockedCount: Int
     let evidenceApprovalGateBlockedCount: Int
+    let evidenceTuiGatewayBlockedCount: Int
+    let evidenceProductionTransportBlockedCount: Int
     let evidenceUnresolvedNativeRequirementCount: Int
     let checklistTotal: Int
     let evidenceReentryPacketCount: Int
@@ -64,6 +66,8 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
             "approval required \(evidenceApprovalRequiredCount)",
             "upstream contract blocked \(evidenceUpstreamContractBlockedCount)",
             "approval gate blocked \(evidenceApprovalGateBlockedCount)",
+            "tui gateway blocked \(evidenceTuiGatewayBlockedCount)",
+            "production transport blocked \(evidenceProductionTransportBlockedCount)",
             "unresolved native \(evidenceUnresolvedNativeRequirementCount)",
             "external \(externalPendingRequirementCount)",
             "product blocked \(productBlockedRequirementCount)",
@@ -125,7 +129,7 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
             finalDecisionProductBlockedIdsLabel: listLabel(finalDecision?.productBlockedRequirementIds, limit: 4),
             finalDecisionExternalPendingIdsLabel: listLabel(finalDecision?.externalPendingRequirementIds, limit: 4),
             finalDecisionUnresolvedNativeIdsLabel: listLabel(finalDecision?.unresolvedNativeRequirementIds, limit: 4),
-            finalDecisionPromotionEvidenceLabel: listLabel(finalDecision?.promotionEvidenceRequired, limit: 4),
+            finalDecisionPromotionEvidenceLabel: listLabel(finalDecision?.promotionEvidenceRequired, limit: 5),
             externalPendingRequirementCount: externalPendingCount,
             productBlockedRequirementCount: productBlockedCount,
             projectedDomainCount: projectionSummary?.projectedDomainCount ?? 0,
@@ -138,6 +142,8 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
             evidenceApprovalRequiredCount: evidenceReadinessSummary?.approvalRequiredCount ?? 0,
             evidenceUpstreamContractBlockedCount: evidenceReadinessSummary?.upstreamContractBlockedCount ?? 0,
             evidenceApprovalGateBlockedCount: evidenceReadinessSummary?.approvalGateBlockedCount ?? 0,
+            evidenceTuiGatewayBlockedCount: evidenceReadinessSummary?.tuiGatewayBlockedCount ?? 0,
+            evidenceProductionTransportBlockedCount: evidenceReadinessSummary?.productionTransportBlockedCount ?? 0,
             evidenceUnresolvedNativeRequirementCount: evidenceReadinessSummary?.unresolvedNativeRequirementCount ?? 0,
             checklistTotal: checklist.count,
             evidenceReentryPacketCount: audit?.evidenceReentryPackets?.count ?? 0

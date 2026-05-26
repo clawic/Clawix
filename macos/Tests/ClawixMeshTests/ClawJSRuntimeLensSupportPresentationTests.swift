@@ -126,6 +126,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.externalPendingCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.upstreamContractBlockedCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateBlockedCount, 1)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayBlockedCount, 1)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportBlockedCount, 1)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productBlockedCount, 3)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.unresolvedNativeRequirementCount, 0)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.blockerClassCounts?["direct_blocker"], 1)
@@ -135,9 +137,13 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.externalPendingRequirementIds?.contains("example.channels.live_evidence"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.upstreamContractRequirementIds?.contains("example.sessions.create.action_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateRequirementIds?.contains("example.sandboxPermissions.approval_gate_evidence"), true)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayRequirementIds, ["example.sessions.create.action_contract"])
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportRequirementIds, ["example.sessions.create.action_contract"])
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productBlockedRequirementIds?.contains("example.sessions.pin.native_write_back_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.unresolvedNativeRequirementIds, [])
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.nextRequiredActions?.contains("approval_gate_fixture_and_redacted_receipt"), true)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.nextRequiredActions?.contains("tui_gateway_wrapper_fixture_and_round_trip_evidence"), true)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.nextRequiredActions?.contains("production_transport_lifecycle_policy_and_native_round_trip_evidence"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.nextRequiredActions?.contains("official_runtime_native_contract_fixture"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.reentryPolicy, "use_evidence_reentry_packets_before_claim_promotion")
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.safeDefault, "keep_unpromoted_and_follow_exact_reentry_packets")
@@ -179,6 +185,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(readinessPresentation.approvalRequiredCount, 1)
         XCTAssertEqual(readinessPresentation.upstreamContractBlockedCount, 1)
         XCTAssertEqual(readinessPresentation.approvalGateBlockedCount, 1)
+        XCTAssertEqual(readinessPresentation.tuiGatewayBlockedCount, 1)
+        XCTAssertEqual(readinessPresentation.productionTransportBlockedCount, 1)
         XCTAssertEqual(readinessPresentation.statusLabel, "approval_required 1, blocked_until_approval_gate_fixture 1, blocked_until_upstream_contract 1")
         XCTAssertEqual(readinessPresentation.blockerClassLabel, "direct_blocker 1, external_pending 1")
         XCTAssertEqual(readinessPresentation.safeDefaultLabel, "do_not_run_without_approval_gate_fixture 1, do_not_run_without_explicit_approval_and_redaction 1, keep_unpromoted_and_do_not_synthesize_runtime_state 1")
@@ -186,13 +194,19 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(readinessPresentation.externalPendingIdsLabel, "example.channels.live_evidence")
         XCTAssertEqual(readinessPresentation.upstreamContractIdsLabel, "example.sessions.create.action_contract")
         XCTAssertEqual(readinessPresentation.approvalGateIdsLabel, "example.sandboxPermissions.approval_gate_evidence")
+        XCTAssertEqual(readinessPresentation.tuiGatewayIdsLabel, "example.sessions.create.action_contract")
+        XCTAssertEqual(readinessPresentation.productionTransportIdsLabel, "example.sessions.create.action_contract")
         XCTAssertEqual(readinessPresentation.productBlockedIdsLabel, "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract, example.sandboxPermissions.approval_gate_evidence")
         XCTAssertNil(readinessPresentation.unresolvedNativeIdsLabel)
-        XCTAssertEqual(readinessPresentation.nextRequiredActionsLabel, "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, official_runtime_native_contract_fixture")
+        XCTAssertEqual(readinessPresentation.nextRequiredActionsLabel, "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, tui_gateway_wrapper_fixture_and_round_trip_evidence, production_transport_lifecycle_policy_and_native_round_trip_evidence, official_runtime_native_contract_fixture")
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("Runtime evidence readiness summary"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("approval gate blocked 1"))
+        XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("tui gateway blocked 1"))
+        XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("production transport blocked 1"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("blocker classes direct_blocker 1"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("approval gate ids example.sandboxPermissions.approval_gate_evidence"))
+        XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("tui gateway ids example.sessions.create.action_contract"))
+        XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("production transport ids example.sessions.create.action_contract"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("product blocked ids example.sessions.create.action_contract"))
         XCTAssertTrue(readinessPresentation.accessibilityLabel.contains("safe default keep_unpromoted_and_follow_exact_reentry_packets"))
         let closurePresentation = ClawJSRuntimeLensClosureChecklistPresentation.make(
@@ -235,6 +249,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(validationSummary.evidenceApprovalRequiredCount, 1)
         XCTAssertEqual(validationSummary.evidenceUpstreamContractBlockedCount, 1)
         XCTAssertEqual(validationSummary.evidenceApprovalGateBlockedCount, 1)
+        XCTAssertEqual(validationSummary.evidenceTuiGatewayBlockedCount, 1)
+        XCTAssertEqual(validationSummary.evidenceProductionTransportBlockedCount, 1)
         XCTAssertEqual(validationSummary.evidenceUnresolvedNativeRequirementCount, 0)
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("projected domains 2"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("product blocked but projected 1"))
@@ -242,6 +258,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("local overlay domains 1"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("freshness degraded_snapshot 1, snapshot 1"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("upstream contract blocked 1"))
+        XCTAssertTrue(validationSummary.accessibilityLabel.contains("tui gateway blocked 1"))
+        XCTAssertTrue(validationSummary.accessibilityLabel.contains("production transport blocked 1"))
         XCTAssertEqual(validationSummary.externalPendingRequirementCount, 1)
         XCTAssertEqual(validationSummary.productBlockedRequirementCount, 3)
         XCTAssertEqual(validationSummary.finalDecisionId, "keep_current_lowered_runtime_ecosystem_claim")
@@ -249,7 +267,7 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertFalse(validationSummary.production)
         XCTAssertEqual(validationSummary.uiParityClaim, "partial_template_only")
         XCTAssertEqual(validationSummary.uiParityDisposition, "partial_lens_validated_not_full_native_parity")
-        XCTAssertEqual(validationSummary.blockedPromotionClaims, ["recommended", "production", "native_parity", "write_back", "approval_gate_fixture"])
+        XCTAssertEqual(validationSummary.blockedPromotionClaims, ["recommended", "production", "native_parity", "write_back", "approval_gate_fixture", "tui_gateway_wrapper_fixture", "production_transport_lifecycle"])
         XCTAssertEqual(validationSummary.finalDecisionBlockerClassesLabel, "external_pending, direct_blocker")
         XCTAssertEqual(
             validationSummary.finalDecisionProductBlockedIdsLabel,
@@ -259,13 +277,13 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertNil(validationSummary.finalDecisionUnresolvedNativeIdsLabel)
         XCTAssertEqual(
             validationSummary.finalDecisionPromotionEvidenceLabel,
-            "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, keep_lowered_claim_until_upstream_native_contracts_exist"
+            "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, tui_gateway_wrapper_fixture_and_round_trip_evidence, production_transport_lifecycle_policy_and_native_round_trip_evidence, keep_lowered_claim_until_upstream_native_contracts_exist"
         )
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("all domains accounted"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("decision id keep_current_lowered_runtime_ecosystem_claim"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("recommended false"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("ui parity claim partial_template_only"))
-        XCTAssertTrue(validationSummary.accessibilityLabel.contains("blocked claims recommended, production, native_parity, write_back, approval_gate_fixture"))
+        XCTAssertTrue(validationSummary.accessibilityLabel.contains("blocked claims recommended, production, native_parity, write_back, approval_gate_fixture, tui_gateway_wrapper_fixture, production_transport_lifecycle"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("final blocker classes external_pending, direct_blocker"))
         XCTAssertTrue(validationSummary.accessibilityLabel.contains("final promotion evidence approved_redacted_live_evidence"))
         XCTAssertEqual(snapshot.supportAudit?.finalPromotionReview?.status, "unpromoted")
@@ -294,7 +312,7 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertNil(promotionReviewPresentation.unresolvedNativeIdsLabel)
         XCTAssertEqual(
             promotionReviewPresentation.requiredForPromotionLabel,
-            "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, keep_lowered_claim_until_upstream_native_contracts_exist, ecosystem_production_claim"
+            "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, tui_gateway_wrapper_fixture_and_round_trip_evidence, production_transport_lifecycle_policy_and_native_round_trip_evidence, keep_lowered_claim_until_upstream_native_contracts_exist"
         )
         XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("Runtime final promotion review"))
         XCTAssertTrue(promotionReviewPresentation.accessibilityLabel.contains("product blocked 3"))
@@ -326,7 +344,7 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(finalDecisionPresentation.uiParityClaim, "partial_template_only")
         XCTAssertEqual(finalDecisionPresentation.uiParityDisposition, "partial_lens_validated_not_full_native_parity")
         XCTAssertEqual(finalDecisionPresentation.claimDisposition, "unpromoted_product_blocked_and_external_pending")
-        XCTAssertEqual(finalDecisionPresentation.blockedPromotionClaimsLabel, "recommended, production, native_parity, write_back, approval_gate_fixture")
+        XCTAssertEqual(finalDecisionPresentation.blockedPromotionClaimsLabel, "recommended, production, native_parity, write_back, approval_gate_fixture, tui_gateway_wrapper_fixture, production_transport_lifecycle")
         XCTAssertEqual(finalDecisionPresentation.blockerClassesLabel, "external_pending, direct_blocker")
         XCTAssertEqual(
             finalDecisionPresentation.productBlockedIdsLabel,
@@ -336,11 +354,11 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertNil(finalDecisionPresentation.unresolvedNativeIdsLabel)
         XCTAssertEqual(
             finalDecisionPresentation.promotionEvidenceRequiredLabel,
-            "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, keep_lowered_claim_until_upstream_native_contracts_exist"
+            "approved_redacted_live_evidence, approval_gate_fixture_and_redacted_receipt, tui_gateway_wrapper_fixture_and_round_trip_evidence, production_transport_lifecycle_policy_and_native_round_trip_evidence, keep_lowered_claim_until_upstream_native_contracts_exist"
         )
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("Runtime final support claim decision"))
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("decision keep_current_lowered_runtime_ecosystem_claim"))
-        XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("blocked claims recommended, production, native_parity, write_back, approval_gate_fixture"))
+        XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("blocked claims recommended, production, native_parity, write_back, approval_gate_fixture, tui_gateway_wrapper_fixture, production_transport_lifecycle"))
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("blocker classes external_pending, direct_blocker"))
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("promotion evidence approved_redacted_live_evidence"))
         XCTAssertTrue(finalDecisionPresentation.accessibilityLabel.contains("safe default keep_unpromoted_until_evidence_or_upstream_contract_changes"))

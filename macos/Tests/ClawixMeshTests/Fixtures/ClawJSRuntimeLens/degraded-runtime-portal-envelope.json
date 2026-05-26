@@ -303,6 +303,8 @@
         "externalPendingCount": 1,
         "upstreamContractBlockedCount": 1,
         "approvalGateBlockedCount": 1,
+        "tuiGatewayBlockedCount": 1,
+        "productionTransportBlockedCount": 1,
         "productBlockedCount": 3,
         "unresolvedNativeRequirementCount": 0,
         "approvalRequiredRequirementIds": [
@@ -317,6 +319,12 @@
         "approvalGateRequirementIds": [
           "example.sandboxPermissions.approval_gate_evidence"
         ],
+        "tuiGatewayRequirementIds": [
+          "example.sessions.create.action_contract"
+        ],
+        "productionTransportRequirementIds": [
+          "example.sessions.create.action_contract"
+        ],
         "productBlockedRequirementIds": [
           "example.sessions.create.action_contract",
           "example.sessions.pin.native_write_back_contract",
@@ -326,6 +334,8 @@
         "nextRequiredActions": [
           "approved_redacted_live_evidence",
           "approval_gate_fixture_and_redacted_receipt",
+          "tui_gateway_wrapper_fixture_and_round_trip_evidence",
+          "production_transport_lifecycle_policy_and_native_round_trip_evidence",
           "official_runtime_native_contract_fixture"
         ],
         "reentryPolicy": "use_evidence_reentry_packets_before_claim_promotion",
@@ -350,6 +360,8 @@
         "requiredForPromotion": [
           "approved_redacted_live_evidence",
           "approval_gate_fixture_and_redacted_receipt",
+          "tui_gateway_wrapper_fixture_and_round_trip_evidence",
+          "production_transport_lifecycle_policy_and_native_round_trip_evidence",
           "keep_lowered_claim_until_upstream_native_contracts_exist",
           "ecosystem_production_claim",
           "ecosystem_recommended_claim"
@@ -370,7 +382,9 @@
           "production",
           "native_parity",
           "write_back",
-          "approval_gate_fixture"
+          "approval_gate_fixture",
+          "tui_gateway_wrapper_fixture",
+          "production_transport_lifecycle"
         ],
         "blockerClasses": [
           "external_pending",
@@ -388,6 +402,8 @@
         "promotionEvidenceRequired": [
           "approved_redacted_live_evidence",
           "approval_gate_fixture_and_redacted_receipt",
+          "tui_gateway_wrapper_fixture_and_round_trip_evidence",
+          "production_transport_lifecycle_policy_and_native_round_trip_evidence",
           "keep_lowered_claim_until_upstream_native_contracts_exist"
         ],
         "reentryPolicy": "use_evidenceReentryPackets_exactly_before_revisiting_claim",
