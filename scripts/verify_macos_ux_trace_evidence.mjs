@@ -962,7 +962,14 @@ function validateSuite(suiteDir, schema) {
   });
   if (!Array.isArray(suiteBaselineObject.childRuns)) {
     fail(failures, "suite-baseline-comparison.json.childRuns must be an array");
-  } else if (suiteBaselineObject.childRuns.length !== (suite.runs || []).length) {
+  }
+  const suiteRuns = requireArrayField(failures, suite, "suite.json", "runs");
+  if (!Number.isInteger(suite.scenarioCount) || suite.scenarioCount < 0) {
+    fail(failures, "suite.json.scenarioCount must be a non-negative integer");
+  } else if (suite.scenarioCount !== suiteRuns.length) {
+    fail(failures, "suite.json.scenarioCount must match suite.json.runs.length");
+  }
+  if (Array.isArray(suiteBaselineObject.childRuns) && suiteBaselineObject.childRuns.length !== suiteRuns.length) {
     fail(failures, "suite-baseline-comparison.json.childRuns must match suite runs");
   }
 
@@ -989,17 +996,28 @@ function validateSuite(suiteDir, schema) {
     "evidenceEventRefs",
   ];
   const failureAggregateFields = ["runId", "scenarioId", "fixtureProfile", "type", "message", "stepId", "actionId", "surfaceId", "controlId", "kpiId", "finalUIStateHash", "finalUIStateRef"];
-  for (const [index, row] of (suite.runs || []).entries()) {
+  for (const [index, row] of suiteRuns.entries()) {
     requireFields(failures, row, `suite.json.runs[${index}]`, ["runId", "scenarioId", "fixtureProfile", "status", "runDir"]);
-    if (!isRelativeSafe(row.runDir)) fail(failures, `suite.json.runs[${index}].runDir must be relative and safe`);
+    if (!isRelativeSafe(row?.runDir)) {
+      fail(failures, `suite.json.runs[${index}].runDir must be relative and safe`);
+      continue;
+    }
     if (!suiteArtifactIndex.includes(row.runDir)) fail(failures, `suite.json.artifactIndex is missing child run directory ${row.runDir}`);
     const runDir = path.join(suiteDir, row.runDir);
     const runResult = validateRun(runDir, schema, { allowStatusMismatch: false });
+    runResults.push(runResult);
     if (Number.isFinite(runResult.startedAtMs) && Number.isFinite(suiteTimeRange.startedAtMs) && runResult.startedAtMs < suiteTimeRange.startedAtMs) {
       fail(failures, `suite.json.runs[${index}] child startedAt must not be before suite.json.startedAt`);
     }
     if (Number.isFinite(runResult.finishedAtMs) && Number.isFinite(suiteTimeRange.finishedAtMs) && runResult.finishedAtMs > suiteTimeRange.finishedAtMs) {
       fail(failures, `suite.json.runs[${index}] child finishedAt must not be after suite.json.finishedAt`);
+    }
+    if (!runResult.ok) {
+      fail(failures, `suite run ${row.runId} failed evidence validation`);
+      for (const runFailure of runResult.validationFailures || runResult.failures || []) {
+        fail(failures, `  ${row.runId}: ${runFailure}`);
+      }
+      continue;
     }
     const childMetrics = readJson(path.join(runDir, "metrics.json"));
     const childFailures = readJson(path.join(runDir, "failures.json"));
@@ -1019,17 +1037,10 @@ function validateSuite(suiteDir, schema) {
         fixtureProfile: row.fixtureProfile,
       }));
     }
-    runResults.push(runResult);
-    if (!runResult.ok) {
-      fail(failures, `suite run ${row.runId} failed evidence validation`);
-      for (const runFailure of runResult.validationFailures || runResult.failures || []) {
-        fail(failures, `  ${row.runId}: ${runFailure}`);
-      }
-    }
     if (runResult.runId && runResult.runId !== row.runId) fail(failures, `suite.json.runs[${index}].runId must match child run`);
     if (runResult.status && runResult.status !== row.status) fail(failures, `suite.json.runs[${index}].status must match child run`);
   }
-  const suiteRunDirs = (suite.runs || []).map((row) => row.runDir);
+  const suiteRunDirs = suiteRuns.map((row) => row?.runDir);
   const uniqueSuiteRunDirs = new Set(suiteRunDirs);
   if (uniqueSuiteRunDirs.size !== suiteRunDirs.length) fail(failures, "suite.json.runs.runDir values must be unique");
   const traceChildRunDirs = suite.traceIsolation?.childRunDirectories;
@@ -1075,7 +1086,7 @@ function validateSuite(suiteDir, schema) {
         }
       }
     }
-    const suiteRun = (suite.runs || [])[index];
+    const suiteRun = suiteRuns[index];
     if (suiteRun) {
       if (row.runId !== suiteRun.runId) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].runId must match suite run`);
       if (row.scenarioId !== suiteRun.scenarioId) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].scenarioId must match suite run`);
@@ -1083,8 +1094,7 @@ function validateSuite(suiteDir, schema) {
       if (row.runDir !== suiteRun.runDir) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].runDir must match suite run`);
     }
   }
-  if (suite.scenarioCount !== (suite.runs || []).length) fail(failures, "suite.json.scenarioCount must match runs.length");
-  if (runResults.length === (suite.runs || []).length) {
+  if (runResults.length === suiteRuns.length) {
     const expectedStatus = expectedSuiteStatus(runResults.map((result) => result.status), suite.launchMode);
     if (suite.status !== expectedStatus) fail(failures, `suite.json.status must be ${expectedStatus} for child run statuses`);
   }

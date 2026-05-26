@@ -337,7 +337,9 @@ write redacted `logs/failure-ui-states.jsonl` rows that are referenced from
 duplicate `step.failed` events or duplicate `failures.json` rows for the same
 step/action/surface/control/KPI identity invalidate the evidence. Run and suite `artifactIndex`
 values must be arrays of public-safe paths that exist; suite indexes must also
-include every required suite artifact and every child run directory. Metrics
+include every required suite artifact and every child run directory. `suite.json.runs`
+must be an array, `scenarioCount` must match its length, and invalid child
+`runDir` rows fail without letting the verifier read unsafe paths. Metrics
 and failures artifacts must declare `schemaVersion: 1` and expose row arrays,
 so malformed aggregate JSON is rejected before it can support closure. Metric
 rows in run, suite, and baseline artifacts must also reference declared KPI IDs

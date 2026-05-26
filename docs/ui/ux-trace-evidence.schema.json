@@ -254,6 +254,16 @@
       "suite child runs"
     ]
   },
+  "suiteRunsContract": {
+    "policy": "suite.json.runs must be an array. suite.json.scenarioCount must be a non-negative integer equal to suite.json.runs.length. Invalid child runDir rows must fail evidence validation without crashing the verifier or reading unsafe paths.",
+    "requiredRunFields": [
+      "runId",
+      "scenarioId",
+      "fixtureProfile",
+      "status",
+      "runDir"
+    ]
+  },
   "eventRequiredFields": [
     "schemaVersion",
     "runId",

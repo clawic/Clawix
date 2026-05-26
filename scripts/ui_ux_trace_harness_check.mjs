@@ -776,6 +776,15 @@ if (evidenceSchema) {
     fail(`${evidenceSchemaPath}.timeRangeContract.policy must bind run, suite, event, and child-run timestamps`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.timeRangeContract?.appliesTo, `${evidenceSchemaPath}.timeRangeContract.appliesTo`), `${evidenceSchemaPath}.timeRangeContract.appliesTo`, ["run.json", "suite.json", "events.jsonl", "suite child runs"]);
+  requireFields(evidenceSchema.suiteRunsContract, `${evidenceSchemaPath}.suiteRunsContract`, ["policy", "requiredRunFields"]);
+  if (
+    !String(evidenceSchema.suiteRunsContract?.policy ?? "").includes("suite.json.runs must be an array")
+    || !String(evidenceSchema.suiteRunsContract?.policy ?? "").includes("scenarioCount must be a non-negative integer")
+    || !String(evidenceSchema.suiteRunsContract?.policy ?? "").includes("without crashing")
+  ) {
+    fail(`${evidenceSchemaPath}.suiteRunsContract.policy must bind suite run shape and count safely`);
+  }
+  requireUniqueStringArray(requireArray(evidenceSchema.suiteRunsContract?.requiredRunFields, `${evidenceSchemaPath}.suiteRunsContract.requiredRunFields`), `${evidenceSchemaPath}.suiteRunsContract.requiredRunFields`, ["runId", "scenarioId", "fixtureProfile", "status", "runDir"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceSourcesRequiredFields, `${evidenceSchemaPath}.evidenceSourcesRequiredFields`), `${evidenceSchemaPath}.evidenceSourcesRequiredFields`, ["registry", "scenarioManifest", "evidenceSchema", "fixtureGenerator", "evidenceVerifier"]);
   requireFields(evidenceSchema.evidenceSourcesContract, `${evidenceSchemaPath}.evidenceSourcesContract`, ["pathPolicy", "hashPolicy", "keyIdentityPolicy", "requiredSources", "requiredSourceIds"]);
   if (!String(evidenceSchema.evidenceSourcesContract?.keyIdentityPolicy ?? "").includes("not interchangeable")) {
@@ -1148,6 +1157,9 @@ if (evidenceVerifierSource) {
     "timestampWallClock must not be after run.json.finishedAt",
     "child startedAt must not be before suite.json.startedAt",
     "child finishedAt must not be after suite.json.finishedAt",
+    "requireArrayField(failures, suite, \"suite.json\", \"runs\")",
+    "suite.json.scenarioCount must be a non-negative integer",
+    "suite.json.scenarioCount must match suite.json.runs.length",
     "validateTraceIsolation(",
     "validateEvidenceSources(",
     "requiredSources",
