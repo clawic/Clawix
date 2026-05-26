@@ -62,6 +62,7 @@ enum ClxControlHandlers {
         case "measure-action": return await measureAction(args)
         case "flow": return await flow(args)
         case "capture":   return capture(args)
+        case "assert-ready": return assertReady(args)
         case "close":     return closeWindow(args)
         case "quit":      return quitApp()
         default:          return ClxControlResult(status: 404, json: ["error": "unknown verb: \(verb)"])
@@ -1561,6 +1562,91 @@ enum ClxControlHandlers {
         } catch {
             return ClxControlResult(status: 500, json: ["error": "write failed: \(error.localizedDescription)"])
         }
+    }
+
+    /// Single-shot "is the instance actually ready to be measured" diagnostic.
+    /// Captures the key window, lists every modal sheet still attached, and
+    /// reports whether the target control id (if supplied) is currently
+    /// visible in the registry. Returns ok only when the optional target is
+    /// present AND every attached sheet is in the caller-supplied allow-list.
+    /// The intent is that any perf or behavioural measurement against this
+    /// instance runs `assert-ready` first and refuses to record numbers if
+    /// the result is not ok, so latent first-run popups can never silently
+    /// contaminate a long measurement campaign.
+    static func assertReady(_ args: [String: Any]) -> ClxControlResult {
+        let controlId = args["id"] as? String
+        let allowedSheets = Set((args["allowSheets"] as? [String]) ?? [])
+
+        var controlPresent = true
+        var controlPayload: [String: Any]? = nil
+        if let id = controlId {
+            if let observed = ClxControlRegistry.shared.observedViewState(id) {
+                controlPresent = observed.visible
+                controlPayload = [
+                    "id": id,
+                    "visible": observed.visible,
+                    "frame": framePayload(observed.frame),
+                ]
+            } else {
+                controlPresent = false
+                controlPayload = ["id": id, "visible": false, "frame": NSNull()]
+            }
+        }
+
+        var sheets: [[String: Any]] = []
+        var unexpected: [[String: Any]] = []
+        for window in NSApp.windows {
+            var current: NSWindow? = window.attachedSheet
+            while let sheet = current {
+                let title = sheet.title
+                let contentClass = sheet.contentViewController.map { String(describing: type(of: $0)) }
+                    ?? String(describing: type(of: sheet))
+                let payload: [String: Any] = [
+                    "windowTitle": title,
+                    "contentClass": contentClass,
+                    "frame": [
+                        "x": sheet.frame.origin.x,
+                        "y": sheet.frame.origin.y,
+                        "width": sheet.frame.size.width,
+                        "height": sheet.frame.size.height,
+                    ],
+                    "parentTitle": window.title,
+                ]
+                sheets.append(payload)
+                if !(allowedSheets.contains(title) || allowedSheets.contains(contentClass)) {
+                    unexpected.append(payload)
+                }
+                current = sheet.attachedSheet
+            }
+        }
+
+        let captureData = ClxWindowCapture.capturePNG(windowNumber: nil, controlId: controlId)
+        var capturePath: String? = nil
+        if let data = captureData {
+            let outURL: URL
+            if let path = args["path"] as? String, !path.isEmpty {
+                outURL = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+            } else {
+                let dir = ClawixPersistentSurfacePaths.homeChild("captures")
+                outURL = dir.appendingPathComponent("ready-\(Int(Date().timeIntervalSince1970 * 1000)).png")
+            }
+            try? FileManager.default.createDirectory(at: outURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if (try? data.write(to: outURL)) != nil {
+                capturePath = outURL.path
+            }
+        }
+
+        let ok = controlPresent && unexpected.isEmpty
+        var out: [String: Any] = [
+            "ok": ok,
+            "controlPresent": controlPresent,
+            "sheets": sheets,
+            "unexpectedSheets": unexpected,
+            "instanceId": ClxAgentInstance.instanceId,
+        ]
+        if let controlPayload { out["control"] = controlPayload }
+        if let capturePath { out["capturePath"] = capturePath }
+        return ClxControlResult(status: ok ? 200 : 409, json: out)
     }
 
     static func closeWindow(_ args: [String: Any]) -> ClxControlResult {
