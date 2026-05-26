@@ -904,6 +904,7 @@ async function runSuite(args) {
       "out-dir": suiteDir,
     };
     delete scenarioArgs.suite;
+    delete scenarioArgs["write-baseline"];
     const result = await runScenario(scenarioArgs);
     results.push(result);
     const metricArtifact = readRunArtifact(result.runDir, "metrics.json", { metrics: [] });
@@ -971,6 +972,7 @@ async function runSuite(args) {
   writeJson(path.join(suiteDir, "suite.json"), suite);
   writeJson(path.join(suiteDir, "suite-metrics.json"), { schemaVersion: 1, suiteId, metrics });
   writeJson(path.join(suiteDir, "suite-failures.json"), { schemaVersion: 1, suiteId, failures });
+  const writtenBaselinePath = writeBaselineArtifact(args["write-baseline"], { suiteId, scenarioId: null, fixtureProfile: requestedProfile || "mixed" }, metrics);
 
   return {
     ok: status === "PASS",
@@ -980,6 +982,7 @@ async function runSuite(args) {
     scenarios: selections.length,
     failures: failures.length,
     metrics: metrics.length,
+    baselinePath: writtenBaselinePath,
     runs: results.map((result, index) => ({
       runId: result.runId,
       scenarioId: selections[index].scenarioId,
