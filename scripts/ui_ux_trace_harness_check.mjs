@@ -15,6 +15,7 @@ const fixtureVerificationPath = "scripts/scale_lab_fixture_check.mjs";
 const clxControlModifierPath = "macos/Sources/Clawix/AgentControl/ClxControlModifier.swift";
 const clxControlRegistryPath = "macos/Sources/Clawix/AgentControl/ClxControlRegistry.swift";
 const clxAgentInstancePath = "macos/Sources/Clawix/AgentControl/ClxAgentInstance.swift";
+const clxControlHandlersPath = "macos/Sources/Clawix/AgentControl/ClxControlHandlers.swift";
 const errors = [];
 const runnerSource = fs.existsSync(path.join(rootDir, runnerPath))
   ? fs.readFileSync(path.join(rootDir, runnerPath), "utf8")
@@ -27,6 +28,9 @@ const clxControlRegistrySource = fs.existsSync(path.join(rootDir, clxControlRegi
   : "";
 const clxAgentInstanceSource = fs.existsSync(path.join(rootDir, clxAgentInstancePath))
   ? fs.readFileSync(path.join(rootDir, clxAgentInstancePath), "utf8")
+  : "";
+const clxControlHandlersSource = fs.existsSync(path.join(rootDir, clxControlHandlersPath))
+  ? fs.readFileSync(path.join(rootDir, clxControlHandlersPath), "utf8")
   : "";
 const uiReadmeSource = fs.existsSync(path.join(rootDir, uiReadmePath))
   ? fs.readFileSync(path.join(rootDir, uiReadmePath), "utf8")
@@ -655,6 +659,12 @@ if (scenarios) {
     if (scenarios.runnerContract?.[field] !== true) fail(`${scenariosPath}.runnerContract.${field} must be true`);
   }
   requireUniqueStringArray(requireArray(scenarios.requiredControlBusCapabilities, `${scenariosPath}.requiredControlBusCapabilities`, expectedControlBusCapabilities.length), `${scenariosPath}.requiredControlBusCapabilities`, expectedControlBusCapabilities);
+  if (!clxControlHandlersSource) fail(`${clxControlHandlersPath} must exist for control-bus verb verification`);
+  for (const capability of expectedControlBusCapabilities) {
+    if (!clxControlHandlersSource.includes(`case "${capability}"`)) {
+      fail(`${clxControlHandlersPath} must implement declared control-bus capability ${capability}`);
+    }
+  }
   const scenarioRecords = requireArray(scenarios.scenarios, `${scenariosPath}.scenarios`, expectedScenarios.length);
   const scenarioIds = requireRecordIds(scenarioRecords, `${scenariosPath}.scenarios`, expectedScenarios);
   const registryKpiIds = new Set((registry?.kpis ?? []).map((kpi) => kpi.id));

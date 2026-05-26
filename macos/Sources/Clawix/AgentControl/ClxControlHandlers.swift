@@ -33,6 +33,7 @@ enum ClxControlHandlers {
         case "mock-send": return mockSend(args)
         case "mock-bridge-stream": return mockBridgeStream(args)
         case "inventory": return inventory(args)
+        case "snapshot":  return snapshot(args)
         case "click":     return click(args)
         case "hover":     return hover(args)
         case "mark":      return mark(args)
@@ -705,6 +706,14 @@ enum ClxControlHandlers {
             controls.append(["id": descriptor.id, "role": descriptor.role, "title": descriptor.label, "source": "registry"])
         }
         return ok(["instanceId": ClxAgentInstance.instanceId, "count": controls.count, "controls": controls])
+    }
+
+    static func snapshot(_ args: [String: Any]) -> ClxControlResult {
+        var snapshotArgs = args
+        if snapshotArgs["includeFrames"] == nil {
+            snapshotArgs["includeFrames"] = true
+        }
+        return inventory(snapshotArgs)
     }
 
     static func click(_ args: [String: Any]) -> ClxControlResult {
