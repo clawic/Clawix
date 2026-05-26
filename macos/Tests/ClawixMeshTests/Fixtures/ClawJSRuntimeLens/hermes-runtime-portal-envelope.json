@@ -9598,6 +9598,7 @@
           "evidenceDisposition": "blocked_until_official_runtime_contract",
           "currentBehavior": "read_only_projection_or_local_overlay_only",
           "fallbackPolicy": "do_not_synthesize_native_write_back",
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
@@ -9640,6 +9641,7 @@
           "evidenceDisposition": "blocked_until_official_runtime_contract",
           "currentBehavior": "read_only_projection_or_local_overlay_only",
           "fallbackPolicy": "do_not_synthesize_native_write_back",
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
@@ -9682,6 +9684,7 @@
           "evidenceDisposition": "blocked_until_official_runtime_contract",
           "currentBehavior": "read_only_projection_or_local_overlay_only",
           "fallbackPolicy": "do_not_synthesize_native_write_back",
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
@@ -9727,6 +9730,7 @@
           "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
           "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
           "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
+          "safeDefault": "do_not_run_without_explicit_approval_and_redaction",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "approve_and_run_runtime_hermes_domain_channels_read_only_evidence",
           "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
@@ -9772,6 +9776,7 @@
           "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
           "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
           "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
+          "safeDefault": "do_not_run_without_explicit_approval_and_redaction",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "approve_and_run_runtime_hermes_domain_providers_read_only_evidence",
           "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
@@ -9814,6 +9819,7 @@
           "evidenceDisposition": "blocked_until_official_runtime_contract",
           "currentBehavior": "read_only_projection_or_local_overlay_only",
           "fallbackPolicy": "do_not_synthesize_native_write_back",
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
@@ -9859,6 +9865,7 @@
           "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
           "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
           "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
+          "safeDefault": "do_not_run_without_explicit_approval_and_redaction",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "approve_and_run_runtime_hermes_domain_auth_read_only_evidence",
           "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
@@ -9901,6 +9908,7 @@
           "evidenceDisposition": "blocked_until_official_runtime_contract",
           "currentBehavior": "read_only_projection_or_local_overlay_only",
           "fallbackPolicy": "do_not_synthesize_native_write_back",
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
@@ -9946,6 +9954,7 @@
           "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
           "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
           "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
+          "safeDefault": "do_not_run_without_explicit_approval_and_redaction",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "approve_and_run_runtime_hermes_domain_models_read_only_evidence",
           "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
@@ -9988,6 +9997,7 @@
           "evidenceDisposition": "blocked_until_official_runtime_contract",
           "currentBehavior": "read_only_projection_or_local_overlay_only",
           "fallbackPolicy": "do_not_synthesize_native_write_back",
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
@@ -10030,6 +10040,7 @@
           "evidenceDisposition": "blocked_until_official_runtime_contract",
           "currentBehavior": "read_only_projection_or_local_overlay_only",
           "fallbackPolicy": "do_not_synthesize_native_write_back",
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
@@ -10072,6 +10083,7 @@
           "evidenceDisposition": "blocked_until_official_runtime_contract",
           "currentBehavior": "read_only_projection_or_local_overlay_only",
           "fallbackPolicy": "do_not_synthesize_native_write_back",
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
@@ -10114,6 +10126,7 @@
           "evidenceDisposition": "blocked_until_official_runtime_contract",
           "currentBehavior": "read_only_projection_or_local_overlay_only",
           "fallbackPolicy": "do_not_synthesize_native_write_back",
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
@@ -10160,6 +10173,7 @@
           "evidenceDisposition": "blocked_until_approval_gate_fixture",
           "currentBehavior": "read_only_projection_only_no_repair_or_permission_mutation",
           "fallbackPolicy": "do_not_execute_repair_or_permission_mutation_without_approval_gate_fixture",
+          "safeDefault": "do_not_run_without_approval_gate_fixture",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_doctorCompat_approval_gate_fixture_and_redacted_receipt",
           "productDecision": "approval_gated_runtime_or_host_action_unpromoted_until_fixture_exists",
@@ -10206,6 +10220,7 @@
           "evidenceDisposition": "blocked_until_approval_gate_fixture",
           "currentBehavior": "read_only_projection_only_no_repair_or_permission_mutation",
           "fallbackPolicy": "do_not_execute_repair_or_permission_mutation_without_approval_gate_fixture",
+          "safeDefault": "do_not_run_without_approval_gate_fixture",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_sandboxPermissions_approval_gate_fixture_and_redacted_receipt",
           "productDecision": "approval_gated_runtime_or_host_action_unpromoted_until_fixture_exists",
@@ -10248,6 +10263,7 @@
           "evidenceDisposition": "blocked_until_official_runtime_contract",
           "currentBehavior": "read_only_projection_or_local_overlay_only",
           "fallbackPolicy": "do_not_synthesize_native_write_back",
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists",
           "claimEffect": "blocks_recommended_production_native_parity",
           "reentryCondition": "add_official_runtime_contract_fixture_and_round_trip_evidence",
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
@@ -10340,7 +10356,7 @@
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
-          "claimBlockedUntil": "tui_gateway_wrapper_fixture_and_round_trip_evidence_attached",
+          "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
           "doNotRunWithoutApproval": true
         },
         {
@@ -10426,7 +10442,7 @@
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
-          "claimBlockedUntil": "tui_gateway_wrapper_fixture_and_round_trip_evidence_attached",
+          "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
           "doNotRunWithoutApproval": true
         },
         {
@@ -10512,7 +10528,7 @@
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
-          "claimBlockedUntil": "tui_gateway_wrapper_fixture_and_round_trip_evidence_attached",
+          "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
           "doNotRunWithoutApproval": true
         },
         {
@@ -10598,7 +10614,7 @@
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
           "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
-          "claimBlockedUntil": "tui_gateway_wrapper_fixture_and_round_trip_evidence_attached",
+          "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
           "doNotRunWithoutApproval": true
         },
         {
@@ -12112,7 +12128,7 @@
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
           "userVisibleContract": "read_only_projection_or_local_overlay_only",
           "doNotRunWithoutApproval": false,
-          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
           "id": "hermes.skills.write_back_contract.reentry",
@@ -12154,7 +12170,7 @@
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
           "userVisibleContract": "read_only_projection_or_local_overlay_only",
           "doNotRunWithoutApproval": false,
-          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
           "id": "hermes.memory.write_back_contract.reentry",
@@ -12196,7 +12212,7 @@
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
           "userVisibleContract": "read_only_projection_or_local_overlay_only",
           "doNotRunWithoutApproval": false,
-          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
           "id": "hermes.channels.live_evidence.reentry",
@@ -12328,7 +12344,7 @@
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
           "userVisibleContract": "read_only_projection_or_local_overlay_only",
           "doNotRunWithoutApproval": false,
-          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
           "id": "hermes.auth.live_evidence.reentry",
@@ -12415,7 +12431,7 @@
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
           "userVisibleContract": "read_only_projection_or_local_overlay_only",
           "doNotRunWithoutApproval": false,
-          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
           "id": "hermes.models.live_evidence.reentry",
@@ -12502,7 +12518,7 @@
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
           "userVisibleContract": "read_only_projection_or_local_overlay_only",
           "doNotRunWithoutApproval": false,
-          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
           "id": "hermes.scheduler.write_back_contract.reentry",
@@ -12544,7 +12560,7 @@
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
           "userVisibleContract": "read_only_projection_or_local_overlay_only",
           "doNotRunWithoutApproval": false,
-          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
           "id": "hermes.plugins.write_back_contract.reentry",
@@ -12586,7 +12602,7 @@
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
           "userVisibleContract": "read_only_projection_or_local_overlay_only",
           "doNotRunWithoutApproval": false,
-          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
           "id": "hermes.gateway.write_back_contract.reentry",
@@ -12628,7 +12644,7 @@
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
           "userVisibleContract": "read_only_projection_or_local_overlay_only",
           "doNotRunWithoutApproval": false,
-          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
           "id": "hermes.doctorCompat.approval_gate_evidence.reentry",
@@ -12762,13 +12778,13 @@
           "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
           "userVisibleContract": "read_only_projection_or_local_overlay_only",
           "doNotRunWithoutApproval": false,
-          "safeDefault": "keep_unpromoted_and_do_not_synthesize_runtime_state"
+          "safeDefault": "keep_read_projection_only_until_official_runtime_write_back_contract_exists"
         },
         {
           "id": "hermes.sessions.send.action_contract.reentry",
           "requirementId": "hermes.sessions.send.action_contract",
           "blockerClass": "direct_blocker",
-          "status": "blocked_until_upstream_contract",
+          "status": "blocked_until_tui_gateway_wrapper_fixture",
           "approvalRequired": false,
           "commandShape": "not_executable_until_tui_gateway_send_wrapper_fixture_exists",
           "exactCommand": "claw runtime hermes sessions send --session-key <approved-session-id> --message <approved-message> --confirm-runtime-write --gateway-url <approved-loopback-fixture-url> --json",
@@ -12808,7 +12824,7 @@
           "reentryCondition": "add_tui_gateway_json_rpc_wrapper_fixture_and_round_trip_evidence",
           "fallbackPolicy": "do_not_synthesize_native_runtime_action",
           "claimEffect": "blocks_recommended_production_native_parity",
-          "claimBlockedUntil": "tui_gateway_wrapper_fixture_and_round_trip_evidence_attached",
+          "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
           "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "userVisibleContract": "non_executable_until_tui_gateway_wrapper_fixture_exists",
@@ -12826,7 +12842,7 @@
           "id": "hermes.sessions.inject.action_contract.reentry",
           "requirementId": "hermes.sessions.inject.action_contract",
           "blockerClass": "direct_blocker",
-          "status": "blocked_until_upstream_contract",
+          "status": "blocked_until_tui_gateway_wrapper_fixture",
           "approvalRequired": false,
           "commandShape": "not_executable_until_tui_gateway_inject_wrapper_fixture_exists",
           "exactCommand": "claw runtime hermes sessions inject --session-key <approved-session-id> --message <approved-message> --confirm-runtime-write --gateway-url <approved-loopback-fixture-url> --json",
@@ -12866,7 +12882,7 @@
           "reentryCondition": "add_tui_gateway_json_rpc_wrapper_fixture_and_round_trip_evidence",
           "fallbackPolicy": "do_not_synthesize_native_runtime_action",
           "claimEffect": "blocks_recommended_production_native_parity",
-          "claimBlockedUntil": "tui_gateway_wrapper_fixture_and_round_trip_evidence_attached",
+          "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
           "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "userVisibleContract": "non_executable_until_tui_gateway_wrapper_fixture_exists",
@@ -12884,7 +12900,7 @@
           "id": "hermes.sessions.abort.action_contract.reentry",
           "requirementId": "hermes.sessions.abort.action_contract",
           "blockerClass": "direct_blocker",
-          "status": "blocked_until_upstream_contract",
+          "status": "blocked_until_tui_gateway_wrapper_fixture",
           "approvalRequired": false,
           "commandShape": "not_executable_until_tui_gateway_abort_wrapper_fixture_exists",
           "exactCommand": "claw runtime hermes sessions abort --session-key <approved-session-id> --confirm-runtime-write --gateway-url <approved-loopback-fixture-url> --json",
@@ -12924,7 +12940,7 @@
           "reentryCondition": "add_tui_gateway_json_rpc_wrapper_fixture_and_round_trip_evidence",
           "fallbackPolicy": "do_not_synthesize_native_runtime_action",
           "claimEffect": "blocks_recommended_production_native_parity",
-          "claimBlockedUntil": "tui_gateway_wrapper_fixture_and_round_trip_evidence_attached",
+          "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
           "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "userVisibleContract": "non_executable_until_tui_gateway_wrapper_fixture_exists",
@@ -12942,7 +12958,7 @@
           "id": "hermes.sessions.create.action_contract.reentry",
           "requirementId": "hermes.sessions.create.action_contract",
           "blockerClass": "direct_blocker",
-          "status": "blocked_until_upstream_contract",
+          "status": "blocked_until_tui_gateway_wrapper_fixture",
           "approvalRequired": false,
           "commandShape": "not_executable_until_tui_gateway_create_wrapper_fixture_exists",
           "exactCommand": "claw runtime hermes sessions create --title <approved-title> --confirm-runtime-write --gateway-url <approved-loopback-fixture-url> --json",
@@ -12982,7 +12998,7 @@
           "reentryCondition": "add_tui_gateway_json_rpc_wrapper_fixture_and_round_trip_evidence",
           "fallbackPolicy": "do_not_synthesize_native_runtime_action",
           "claimEffect": "blocks_recommended_production_native_parity",
-          "claimBlockedUntil": "tui_gateway_wrapper_fixture_and_round_trip_evidence_attached",
+          "claimBlockedUntil": "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
           "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
           "productDecision": "native_session_action_unimplemented_until_tui_gateway_wrapper_fixture",
           "userVisibleContract": "non_executable_until_tui_gateway_wrapper_fixture_exists",

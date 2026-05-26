@@ -236,6 +236,28 @@ if (!exists(hermesFixturePath)) {
       "hermes.sessions.abort.action_contract",
       "hermes.sessions.create.action_contract"
     ], "Hermes fixture production transport requirement ids");
+    const gatewayReentryPackets = (supportAudit?.evidenceReentryPackets ?? [])
+      .filter((packet) => String(packet.requirementId ?? "").startsWith("hermes.sessions.")
+        && String(packet.requirementId ?? "").endsWith(".action_contract"));
+    requireArrayEquals(gatewayReentryPackets.map((packet) => packet.requirementId), [
+      "hermes.sessions.send.action_contract",
+      "hermes.sessions.inject.action_contract",
+      "hermes.sessions.abort.action_contract",
+      "hermes.sessions.create.action_contract"
+    ], "Hermes fixture TUI Gateway reentry packet ids");
+    for (const packet of gatewayReentryPackets) {
+      requireEqual(
+        packet.claimBlockedUntil,
+        "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
+        `Hermes fixture ${packet.requirementId} claim blocker`
+      );
+      requireEqual(
+        packet.productionTransportCommandShape,
+        "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
+        `Hermes fixture ${packet.requirementId} production command shape`
+      );
+      requireEqual(packet.doNotRunWithoutApproval, true, `Hermes fixture ${packet.requirementId} approval guard`);
+    }
     requireArrayEquals(readiness.writeBackContractRequirementIds, [
       "hermes.sessions.write_back_contract",
       "hermes.skills.write_back_contract",
@@ -1149,6 +1171,7 @@ for (const snippet of [
   "snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportRequirementIds",
   "snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractBlockedCount",
   "snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds",
+  "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached",
   "snapshot.supportAudit?.evidenceReadinessSummary?.blockerClassCounts",
   "snapshot.supportAudit?.evidenceReadinessSummary?.safeDefaultCounts",
   "snapshot.supportAudit?.evidenceReadinessSummary?.externalPendingRequirementIds",

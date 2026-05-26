@@ -161,6 +161,23 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
             "hermes.sessions.abort.action_contract",
             "hermes.sessions.create.action_contract"
         ])
+        let hermesGatewayReentryPackets = snapshot.supportAudit?.evidenceReentryPackets?.filter {
+            $0.requirementId?.hasPrefix("hermes.sessions.") == true
+                && $0.requirementId?.hasSuffix(".action_contract") == true
+        } ?? []
+        XCTAssertEqual(hermesGatewayReentryPackets.map { $0.requirementId }, [
+            "hermes.sessions.send.action_contract",
+            "hermes.sessions.inject.action_contract",
+            "hermes.sessions.abort.action_contract",
+            "hermes.sessions.create.action_contract"
+        ])
+        XCTAssertTrue(hermesGatewayReentryPackets.allSatisfy {
+            $0.claimBlockedUntil == "tui_gateway_wrapper_fixture_production_transport_lifecycle_policy_and_native_round_trip_evidence_attached"
+        })
+        XCTAssertTrue(hermesGatewayReentryPackets.allSatisfy {
+            $0.productionTransportCommandShape == "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval"
+        })
+        XCTAssertTrue(hermesGatewayReentryPackets.allSatisfy { $0.doNotRunWithoutApproval == true })
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds?.contains("hermes.sessions.pin.native_write_back_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds?.contains("hermes.sessions.unpin.native_write_back_contract"), true)
         XCTAssertEqual(snapshot.status.capabilityMap?["configuration"]?.status, "ready")
