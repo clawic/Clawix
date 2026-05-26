@@ -84,5 +84,20 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(details.contains("Official snapshot: captured 2026-05-26, source snapshot 2026-05-26, sources 8"))
         XCTAssertTrue(details.contains("Drift policy: hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete"))
         XCTAssertTrue(support.accessibilityLabel.contains("official snapshot 2026-05-26"))
+
+        let commands = try XCTUnwrap(presentation.sections.first { $0.id == "commands" })
+        let sendCommand = try XCTUnwrap(commands.rows.first {
+            $0.label == "runtime hermes sessions send --session-key <id> --message <text> --confirm-runtime-write"
+        })
+        XCTAssertTrue(sendCommand.detailLines.contains("blocker direct_blocker"))
+        XCTAssertTrue(sendCommand.detailLines.contains("native write-back blocked_until_tui_gateway_wrapper_fixture"))
+        XCTAssertTrue(sendCommand.detailLines.contains("fixture required true"))
+        XCTAssertTrue(sendCommand.detailLines.contains("native safe default keep_unpromoted_and_do_not_synthesize_runtime_state"))
+        XCTAssertTrue(sendCommand.detailLines.contains("safe default keep_unpromoted_and_do_not_synthesize_runtime_state"))
+        XCTAssertTrue(sendCommand.detailLines.contains("user visible contract non_executable_until_tui_gateway_wrapper_fixture_exists"))
+        XCTAssertTrue(sendCommand.detailLines.contains("claim effect blocks_recommended_production_native_parity"))
+        XCTAssertTrue(sendCommand.detailLines.contains("support resolution explicitly_product_blocked_not_a_silent_gap"))
+        XCTAssertTrue(sendCommand.detailLines.contains("evidence hermes.sessions.send.action_contract"))
+        XCTAssertTrue(sendCommand.detailLines.contains("required evidence tui_gateway_prompt_submit_fixture, non_destructive_fixture, confirmation_or_dry_run_policy, round_trip_native_visibility"))
     }
 }

@@ -560,8 +560,25 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
         ] + presentation.rows.map {
             Row(id: $0.id, label: $0.command, value: $0.argsLabel, pills: [
                 Pill(id: "write", label: $0.writeDisposition, tone: ClawJSRuntimeLensStatusTone.commandDisposition($0.writeDisposition))
-            ] + ($0.argumentCount > 0 ? [Pill(id: "args", label: "args \($0.argumentCount)", tone: .muted)] : []), detailLines: optionalLines([$0.delegatesTo]), accessibilityLabel: $0.accessibilityLabel)
+            ] + ($0.argumentCount > 0 ? [Pill(id: "args", label: "args \($0.argumentCount)", tone: .muted)] : []), detailLines: commandDetailLines($0), accessibilityLabel: $0.accessibilityLabel)
         }, accessibilityLabel: presentation.accessibilityLabel)
+    }
+
+    private static func commandDetailLines(_ row: ClawJSRuntimeLensCommandMatrixPresentation.Row) -> [String] {
+        optionalLines([
+            row.delegatesTo,
+            row.blockerClass.map { "blocker \($0)" },
+            row.nativeWriteBackStatus.map { "native write-back \($0)" },
+            row.nativeWriteBackBlockerClass.map { "native blocker \($0)" },
+            row.nativeWriteBackFixtureRequired.map { "fixture required \($0)" },
+            row.nativeWriteBackSafeDefault.map { "native safe default \($0)" },
+            row.safeDefault.map { "safe default \($0)" },
+            row.userVisibleContract.map { "user visible contract \($0)" },
+            row.claimEffect.map { "claim effect \($0)" },
+            row.supportResolution.map { "support resolution \($0)" },
+            row.evidenceRequirementId.map { "evidence \($0)" },
+            row.requiredEvidenceLabel.map { "required evidence \($0)" }
+        ])
     }
 
     private static func missingDomainSection(_ presentation: ClawJSRuntimeLensMissingDomainPresentation) -> Section {
