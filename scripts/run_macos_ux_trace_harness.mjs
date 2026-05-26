@@ -19,6 +19,10 @@ const defaultControlReadyTimeoutMs = 10_000;
 const maxIncludeDepth = 8;
 const maxEvidenceEventsPerRun = 100_000;
 const maxEvidenceEventBytesPerRun = 32 * 1024 * 1024;
+const maxFailureUIStateControls = 200;
+const maxFailureUIStateArrayItems = 240;
+const maxFailureUIStateDepth = 8;
+const maxFailureUIStateBytesPerRun = 16 * 1024 * 1024;
 
 function usage() {
   return `Usage:
@@ -92,6 +96,100 @@ function monotonicNs() {
 
 function stableHash(value) {
   return `sha256:${crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex")}`;
+}
+
+function redactedString(value) {
+  return {
+    redacted: true,
+    length: value.length,
+    hash: stableHash(value),
+  };
+}
+
+function publicSafeIdentifier(value, indexes) {
+  if (typeof value !== "string") return value;
+  if (indexes.surfaceIds.has(value)) return value;
+  return redactedString(value);
+}
+
+function sanitizeFailureUIState(value, indexes, key = "", depth = 0) {
+  if (value === null || value === undefined) return value ?? null;
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    if (["role", "source", "axRole", "failureReason", "condition", "action"].includes(key)) return value;
+    if (["id", "resolvedId", "controlId", "surfaceId", "target", "waitTarget"].includes(key)) {
+      return publicSafeIdentifier(value, indexes);
+    }
+    return redactedString(value);
+  }
+  if (depth >= maxFailureUIStateDepth) {
+    return { truncated: true, reason: "max-depth", valueHash: stableHash(value) };
+  }
+  if (Array.isArray(value)) {
+    const limit = Math.min(value.length, key === "controls" ? maxFailureUIStateControls : maxFailureUIStateArrayItems);
+    const items = value.slice(0, limit).map((item) => sanitizeFailureUIState(item, indexes, key, depth + 1));
+    if (value.length > limit) {
+      return {
+        count: value.length,
+        truncated: true,
+        items,
+      };
+    }
+    return items;
+  }
+  if (typeof value === "object") {
+    const out = {};
+    for (const [childKey, childValue] of Object.entries(value)) {
+      out[childKey] = sanitizeFailureUIState(childValue, indexes, childKey, depth + 1);
+    }
+    return out;
+  }
+  return null;
+}
+
+function failureUIStateWriter(file, common, indexes) {
+  fs.writeFileSync(file, "");
+  let sequence = 0;
+  let bytesWritten = 0;
+  const refs = [];
+  return {
+    write(fields) {
+      if (!fields.finalUIState) return null;
+      sequence += 1;
+      const finalUIStateHash = stableHash(fields.finalUIState);
+      const row = {
+        schemaVersion: 1,
+        runId: common.runId,
+        scenarioId: common.scenarioId,
+        fixtureProfile: common.fixtureProfile,
+        sequence,
+        stepId: fields.stepId,
+        actionId: fields.actionId,
+        surfaceId: fields.surfaceId,
+        controlId: fields.controlId,
+        kpiId: fields.kpiId,
+        finalUIStateHash,
+        redactedState: sanitizeFailureUIState(fields.finalUIState, indexes),
+        privateBoundary: {
+          containsPrivateConversationText: false,
+          containsReadablePrivateScreenshots: false,
+          containsCredentials: false,
+          publicSafe: true,
+          stringContentPolicy: "raw strings are replaced with length and sha256 hash unless they are stable trace surface identifiers or enum-like control metadata",
+        },
+      };
+      const line = `${JSON.stringify(row)}\n`;
+      bytesWritten += Buffer.byteLength(line, "utf8");
+      if (bytesWritten > maxFailureUIStateBytesPerRun) {
+        throw new Error(`UX trace failure UI state writer exceeded ${maxFailureUIStateBytesPerRun} bytes for ${common.runId}`);
+      }
+      fs.appendFileSync(file, line);
+      const ref = `logs/failure-ui-states.jsonl#${sequence}`;
+      refs.push(ref);
+      return { ref, hash: finalUIStateHash };
+    },
+    refs,
+  };
 }
 
 function runIdFor(scenarioId, fixtureProfile) {
@@ -584,6 +682,11 @@ async function runScenario(args) {
   const runDir = mkdirEvidence(args["out-dir"], runId);
   const startedAt = isoNow();
   const events = eventWriter(path.join(runDir, "events.jsonl"), { runId, scenarioId, fixtureProfile });
+  const failureUIStates = failureUIStateWriter(
+    path.join(runDir, "logs/failure-ui-states.jsonl"),
+    { runId, scenarioId, fixtureProfile },
+    indexes
+  );
   const failures = [];
   const kpiSamples = new Map();
   const baseline = readBaseline(args.baseline);
@@ -745,16 +848,59 @@ async function runScenario(args) {
         elapsedMs,
       });
       if (!conditionMet) {
+        const finalUIStateRef = failureUIStates.write({
+          stepId: step.id,
+          actionId,
+          surfaceId,
+          controlId: step.target,
+          kpiId,
+          finalUIState: payload?.finalUIState,
+        });
+        if (finalUIStateRef) {
+          events.write({
+            eventType: "capture.written",
+            stepId: step.id,
+            actionId,
+            surfaceId,
+            controlId: step.target,
+            kpiId,
+            artifactPath: finalUIStateRef.ref,
+            artifactKind: "redacted-final-ui-state",
+            artifactHash: finalUIStateRef.hash,
+          });
+        }
         failures.push({
           type: options.dryRun ? "external_pending" : "condition_timeout",
           stepId: step.id,
           surfaceId,
           kpiId,
           message: options.dryRun ? "dry-run evidence only" : `condition did not complete for ${step.wait}`,
-          finalUIStateHash: payload?.finalUIState ? stableHash(payload.finalUIState) : null,
+          finalUIStateHash: finalUIStateRef?.hash ?? null,
+          finalUIStateRef: finalUIStateRef?.ref ?? null,
         });
       }
     } catch (error) {
+      const finalUIStateRef = failureUIStates.write({
+        stepId: step.id,
+        actionId,
+        surfaceId,
+        controlId: step.target,
+        kpiId,
+        finalUIState: error.payload?.finalUIState,
+      });
+      if (finalUIStateRef) {
+        events.write({
+          eventType: "capture.written",
+          stepId: step.id,
+          actionId,
+          surfaceId,
+          controlId: step.target,
+          kpiId,
+          artifactPath: finalUIStateRef.ref,
+          artifactKind: "redacted-final-ui-state",
+          artifactHash: finalUIStateRef.hash,
+        });
+      }
       const failure = {
         type: "instrumentation_error",
         stepId: step.id,
@@ -762,6 +908,8 @@ async function runScenario(args) {
         kpiId,
         message: error.message,
         payloadHash: error.payload ? stableHash(error.payload) : null,
+        finalUIStateHash: finalUIStateRef?.hash ?? null,
+        finalUIStateRef: finalUIStateRef?.ref ?? null,
       };
       failures.push(failure);
       events.write({
@@ -867,6 +1015,7 @@ async function runScenario(args) {
       "events.jsonl",
       "metrics.json",
       "failures.json",
+      "logs/failure-ui-states.jsonl",
       "fixture-manifest.json",
       "baseline-comparison.json",
     ],

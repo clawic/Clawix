@@ -8,6 +8,7 @@
     "events.jsonl",
     "metrics.json",
     "failures.json",
+    "logs/failure-ui-states.jsonl",
     "captures/",
     "logs/",
     "traces/",
@@ -133,6 +134,13 @@
     "external_pending",
     "preexisting_unrelated"
   ],
+  "failureStateSidecar": {
+    "path": "logs/failure-ui-states.jsonl",
+    "requiredWhenFinalUIStateExists": true,
+    "maxControlsPerState": 200,
+    "maxBytesPerRun": 16777216,
+    "contentPolicy": "Public artifacts must store redacted UI state only: stable trace surface IDs, enum-like roles/sources, geometry, scroll/resource numbers, booleans, and hashes/lengths for readable strings or dynamic identifiers."
+  },
   "privacyRequirements": {
     "publicEvidenceMayContain": [
       "stable IDs",

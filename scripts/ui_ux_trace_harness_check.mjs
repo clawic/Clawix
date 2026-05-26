@@ -585,6 +585,7 @@ if (evidenceSchema) {
     "eventTypes",
     "metricRequiredFields",
     "failureTypes",
+    "failureStateSidecar",
     "privacyRequirements",
     "correlationRequirements",
   ]);
@@ -592,10 +593,27 @@ if (evidenceSchema) {
   if (evidenceSchema.program !== "macos-ux-trace-harness") fail(`${evidenceSchemaPath}.program must be macos-ux-trace-harness`);
   requireUniqueStringArray(requireArray(evidenceSchema.eventTypes, `${evidenceSchemaPath}.eventTypes`, expectedEventTypes.length), `${evidenceSchemaPath}.eventTypes`, expectedEventTypes);
   requireUniqueStringArray(requireArray(evidenceSchema.suiteDirectoryShape, `${evidenceSchemaPath}.suiteDirectoryShape`), `${evidenceSchemaPath}.suiteDirectoryShape`, ["suite.json", "suite-metrics.json", "suite-failures.json"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.evidenceDirectoryShape, `${evidenceSchemaPath}.evidenceDirectoryShape`), `${evidenceSchemaPath}.evidenceDirectoryShape`, ["logs/failure-ui-states.jsonl"]);
   requireUniqueStringArray(requireArray(evidenceSchema.suiteRequiredFields, `${evidenceSchemaPath}.suiteRequiredFields`), `${evidenceSchemaPath}.suiteRequiredFields`, ["suiteId", "suiteName", "scenarioCount", "runs", "artifactIndex"]);
   requireUniqueStringArray(requireArray(evidenceSchema.runRequiredFields, `${evidenceSchemaPath}.runRequiredFields`), `${evidenceSchemaPath}.runRequiredFields`, ["runId", "scenarioId", "fixtureProfile", "artifactIndex"]);
   requireUniqueStringArray(requireArray(evidenceSchema.eventRequiredFields, `${evidenceSchemaPath}.eventRequiredFields`), `${evidenceSchemaPath}.eventRequiredFields`, ["runId", "actionId", "surfaceId", "controlId", "kpiId", "timestampMonotonicNs"]);
   requireUniqueStringArray(requireArray(evidenceSchema.metricRequiredFields, `${evidenceSchemaPath}.metricRequiredFields`), `${evidenceSchemaPath}.metricRequiredFields`, ["kpiId", "p50", "p95", "p99", "baseline", "evidenceEventRefs"]);
+  requireFields(evidenceSchema.failureStateSidecar, `${evidenceSchemaPath}.failureStateSidecar`, ["path", "requiredWhenFinalUIStateExists", "maxControlsPerState", "maxBytesPerRun", "contentPolicy"]);
+  if (evidenceSchema.failureStateSidecar?.path !== "logs/failure-ui-states.jsonl") {
+    fail(`${evidenceSchemaPath}.failureStateSidecar.path must be logs/failure-ui-states.jsonl`);
+  }
+  if (evidenceSchema.failureStateSidecar?.requiredWhenFinalUIStateExists !== true) {
+    fail(`${evidenceSchemaPath}.failureStateSidecar.requiredWhenFinalUIStateExists must be true`);
+  }
+  if (evidenceSchema.failureStateSidecar?.maxControlsPerState !== 200) {
+    fail(`${evidenceSchemaPath}.failureStateSidecar.maxControlsPerState must be 200`);
+  }
+  if (evidenceSchema.failureStateSidecar?.maxBytesPerRun !== 16777216) {
+    fail(`${evidenceSchemaPath}.failureStateSidecar.maxBytesPerRun must be 16777216`);
+  }
+  if (!String(evidenceSchema.failureStateSidecar?.contentPolicy ?? "").includes("hashes/lengths")) {
+    fail(`${evidenceSchemaPath}.failureStateSidecar.contentPolicy must require hashes/lengths for readable strings`);
+  }
   if (evidenceSchema.correlationRequirements?.dispatchSuccessIsNotVisualSuccess !== true) {
     fail(`${evidenceSchemaPath}.correlationRequirements.dispatchSuccessIsNotVisualSuccess must be true`);
   }
@@ -797,7 +815,12 @@ if (runnerSource) {
     "path.join(os.tmpdir(), \"clawix-ux-trace-runs\")",
     "mainDatabaseTraceWrites: false",
     "body.minVisibleMessages = step.minVisibleMessages",
-    "finalUIStateHash: payload?.finalUIState ? stableHash(payload.finalUIState) : null",
+    "const maxFailureUIStateBytesPerRun = 16 * 1024 * 1024",
+    "function sanitizeFailureUIState(",
+    "logs/failure-ui-states.jsonl",
+    "artifactKind: \"redacted-final-ui-state\"",
+    "finalUIStateHash: finalUIStateRef?.hash ?? null",
+    "finalUIStateRef: finalUIStateRef?.ref ?? null",
   ]) {
     requireSnippet(runnerSource, runnerPath, snippet);
   }
