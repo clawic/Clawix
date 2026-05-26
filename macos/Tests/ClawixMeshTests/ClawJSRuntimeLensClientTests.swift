@@ -375,6 +375,30 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(row.accessibilityLabel.contains("receipt fixture-doctor-denial"))
     }
 
+    func testRuntimeLensDecodesLiveEvidenceFixtureReceipts() async throws {
+        let data = Self.hermesFixtureDataWithLiveEvidenceReceipt()
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            XCTAssertEqual(args, ["runtime", "hermes", "domains", "--json"])
+            return .init(data: data, exitCode: 2)
+        })
+
+        let snapshot = try await client.load(runtime: .hermes)
+        let contract = try XCTUnwrap(snapshot.domainData?.channels?.supportContract)
+        XCTAssertEqual(contract.liveEvidenceFixtureStatus, "attached")
+        XCTAssertEqual(contract.liveEvidenceFixtureReceipt?.receiptId, "fixture-channels-live-evidence")
+        XCTAssertEqual(contract.liveEvidenceFixtureReceipt?.readOnly, true)
+        XCTAssertEqual(contract.liveEvidenceFixtureReceipt?.supportContractMatchesManifest, true)
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.liveEvidenceFixtureStatus, "attached")
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "channels" }?.liveEvidenceFixtureReceipt?.plaintextSecretLeak, false)
+        XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "channels" }?.liveEvidenceFixtureStatus, "attached")
+        XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "channels" }?.liveEvidenceFixtureReceipt?.source, "live-evidence-fixture")
+
+        let supportContracts = ClawJSRuntimeLensSupportContractPresentation.make(snapshot: snapshot)
+        let row = try XCTUnwrap(supportContracts.rows.first { $0.domain == "channels" })
+        XCTAssertEqual(row.liveEvidenceFixtureLabel, "attached, receipt fixture-channels-live-evidence, status approved_redacted_live_evidence, redacted true, read only true")
+        XCTAssertTrue(row.accessibilityLabel.contains("live evidence receipt attached"))
+    }
+
     func testRuntimeLensPresentationsExposeParityEvidenceAndClosureState() async throws {
         let snapshot = try await ClawJSRuntimeLensTestFixtures.degradedRuntimePortalSnapshot()
         let audit = try XCTUnwrap(snapshot.supportAudit)
@@ -705,6 +729,92 @@ private extension ClawJSRuntimeLensClientTests {
                         "redacted": true,
                         "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
                         "source": "approval-gate-fixture"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+            """.utf8
+        )
+    }
+
+    static func hermesFixtureDataWithLiveEvidenceReceipt() -> Data {
+        Data(
+            """
+            {
+              "data": {
+                "runtimeId": "hermes",
+                "runtimeName": "Hermes Agent",
+                "status": {},
+                "domains": [
+                  {
+                    "domain": "channels",
+                    "liveEvidenceFixtureStatus": "attached",
+                    "liveEvidenceFixtureReceipt": {
+                      "domain": "channels",
+                      "receiptId": "fixture-channels-live-evidence",
+                      "receiptType": "external_live_evidence_receipt",
+                      "status": "approved_redacted_live_evidence",
+                      "command": "claw runtime hermes domain channels --json",
+                      "approved": true,
+                      "readOnly": true,
+                      "mutationPerformed": false,
+                      "plaintextSecretLeak": false,
+                      "redacted": true,
+                      "supportContractMatchesManifest": true,
+                      "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+                      "source": "live-evidence-fixture"
+                    }
+                  }
+                ],
+                "domainData": {
+                  "channels": {
+                    "supportContract": {
+                      "claim": "dev_only",
+                      "authority": "runtime_adapter",
+                      "writeBackPolicy": "blocked_until_live_channel_evidence",
+                      "writeBackAllowed": false,
+                      "liveEvidenceFixtureStatus": "attached",
+                      "liveEvidenceFixtureReceipt": {
+                        "domain": "channels",
+                        "receiptId": "fixture-channels-live-evidence",
+                        "receiptType": "external_live_evidence_receipt",
+                        "status": "approved_redacted_live_evidence",
+                        "command": "claw runtime hermes domain channels --json",
+                        "approved": true,
+                        "readOnly": true,
+                        "mutationPerformed": false,
+                        "plaintextSecretLeak": false,
+                        "redacted": true,
+                        "supportContractMatchesManifest": true,
+                        "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+                        "source": "live-evidence-fixture"
+                      },
+                      "validation": "external_pending",
+                      "externalPending": true
+                    }
+                  }
+                },
+                "supportAudit": {
+                  "domains": [
+                    {
+                      "domain": "channels",
+                      "liveEvidenceFixtureStatus": "attached",
+                      "liveEvidenceFixtureReceipt": {
+                        "domain": "channels",
+                        "receiptId": "fixture-channels-live-evidence",
+                        "receiptType": "external_live_evidence_receipt",
+                        "status": "approved_redacted_live_evidence",
+                        "command": "claw runtime hermes domain channels --json",
+                        "approved": true,
+                        "readOnly": true,
+                        "mutationPerformed": false,
+                        "plaintextSecretLeak": false,
+                        "redacted": true,
+                        "supportContractMatchesManifest": true,
+                        "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+                        "source": "live-evidence-fixture"
                       }
                     }
                   ]

@@ -166,6 +166,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let writeBackApprovalGated: Bool?
             let approvalGateFixtureStatus: String?
             let approvalGateFixtureReceipt: ApprovalGateFixtureReceipt?
+            let liveEvidenceFixtureStatus: String?
+            let liveEvidenceFixtureReceipt: LiveEvidenceFixtureReceipt?
             let validation: String?
             let externalPending: Bool?
             let persistence: String?
@@ -481,6 +483,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let writeBackApprovalGated: Bool?
         let approvalGateFixtureStatus: String?
         let approvalGateFixtureReceipt: ApprovalGateFixtureReceipt?
+        let liveEvidenceFixtureStatus: String?
+        let liveEvidenceFixtureReceipt: LiveEvidenceFixtureReceipt?
         let validation: String?
         let externalPending: Bool?
         let freshness: String?
@@ -767,6 +771,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let writeBackApprovalGated: Bool?
         let approvalGateFixtureStatus: String?
         let approvalGateFixtureReceipt: ApprovalGateFixtureReceipt?
+        let liveEvidenceFixtureStatus: String?
+        let liveEvidenceFixtureReceipt: LiveEvidenceFixtureReceipt?
         let validation: String?
         let externalPending: Bool?
         let freshness: String?
@@ -800,6 +806,38 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
                 && lhs.mutationWithoutApproval == rhs.mutationWithoutApproval
                 && lhs.plaintextSecretLeak == rhs.plaintextSecretLeak
                 && lhs.redacted == rhs.redacted
+                && lhs.evidenceSafetyPolicy == rhs.evidenceSafetyPolicy
+                && lhs.source == rhs.source
+        }
+    }
+
+    final class LiveEvidenceFixtureReceipt: Decodable, Equatable {
+        let domain: String?
+        let receiptId: String?
+        let receiptType: String?
+        let status: String?
+        let command: String?
+        let approved: Bool?
+        let readOnly: Bool?
+        let mutationPerformed: Bool?
+        let plaintextSecretLeak: Bool?
+        let redacted: Bool?
+        let supportContractMatchesManifest: Bool?
+        let evidenceSafetyPolicy: String?
+        let source: String?
+
+        static func == (lhs: LiveEvidenceFixtureReceipt, rhs: LiveEvidenceFixtureReceipt) -> Bool {
+            lhs.domain == rhs.domain
+                && lhs.receiptId == rhs.receiptId
+                && lhs.receiptType == rhs.receiptType
+                && lhs.status == rhs.status
+                && lhs.command == rhs.command
+                && lhs.approved == rhs.approved
+                && lhs.readOnly == rhs.readOnly
+                && lhs.mutationPerformed == rhs.mutationPerformed
+                && lhs.plaintextSecretLeak == rhs.plaintextSecretLeak
+                && lhs.redacted == rhs.redacted
+                && lhs.supportContractMatchesManifest == rhs.supportContractMatchesManifest
                 && lhs.evidenceSafetyPolicy == rhs.evidenceSafetyPolicy
                 && lhs.source == rhs.source
         }
@@ -1813,6 +1851,7 @@ struct ClawJSRuntimeLensClient {
         configPath: String? = nil,
         authStore: String? = nil,
         approvalGateFixture: String? = nil,
+        liveEvidenceFixture: String? = nil,
         gatewayURL: String? = nil
     ) async throws -> ClawJSRuntimeLensSnapshot {
         var args = ["runtime", runtime.rawValue, "domains"]
@@ -1823,6 +1862,7 @@ struct ClawJSRuntimeLensClient {
             configPath: configPath,
             authStore: authStore,
             approvalGateFixture: approvalGateFixture,
+            liveEvidenceFixture: liveEvidenceFixture,
             gatewayURL: gatewayURL
         )
         args.append("--json")
@@ -1883,6 +1923,7 @@ struct ClawJSRuntimeLensClient {
         configPath: String? = nil,
         authStore: String? = nil,
         approvalGateFixture: String? = nil,
+        liveEvidenceFixture: String? = nil,
         confirmRuntimeWrite: Bool = false
     ) async throws -> SessionNativeActionResult {
         var args = [
@@ -1907,6 +1948,7 @@ struct ClawJSRuntimeLensClient {
             configPath: configPath,
             authStore: authStore,
             approvalGateFixture: approvalGateFixture,
+            liveEvidenceFixture: liveEvidenceFixture,
             gatewayURL: gatewayURL
         )
         if confirmRuntimeWrite {
@@ -1937,6 +1979,7 @@ struct ClawJSRuntimeLensClient {
         configPath: String?,
         authStore: String?,
         approvalGateFixture: String?,
+        liveEvidenceFixture: String?,
         gatewayURL: String?
     ) {
         if let homeDir, !homeDir.isEmpty {
@@ -1953,6 +1996,9 @@ struct ClawJSRuntimeLensClient {
         }
         if let approvalGateFixture, !approvalGateFixture.isEmpty {
             args.append(contentsOf: ["--approval-gate-fixture", approvalGateFixture])
+        }
+        if let liveEvidenceFixture, !liveEvidenceFixture.isEmpty {
+            args.append(contentsOf: ["--live-evidence-fixture", liveEvidenceFixture])
         }
         if let gatewayURL, !gatewayURL.isEmpty {
             args.append(contentsOf: ["--gateway-url", gatewayURL])

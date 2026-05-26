@@ -85,6 +85,8 @@ final class ClawJSRuntimeLensClientBoundaryTests: XCTestCase {
                 "/tmp/hermes-auth.json",
                 "--approval-gate-fixture",
                 "/tmp/hermes-approval-gate.json",
+                "--live-evidence-fixture",
+                "/tmp/hermes-live-evidence.json",
                 "--gateway-url",
                 "http://127.0.0.1:18789",
                 "--json"
@@ -102,6 +104,7 @@ final class ClawJSRuntimeLensClientBoundaryTests: XCTestCase {
             configPath: "/tmp/hermes-config.yaml",
             authStore: "/tmp/hermes-auth.json",
             approvalGateFixture: "/tmp/hermes-approval-gate.json",
+            liveEvidenceFixture: "/tmp/hermes-live-evidence.json",
             gatewayURL: "http://127.0.0.1:18789"
         )
 

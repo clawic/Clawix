@@ -18,6 +18,7 @@ struct ClawJSRuntimeLensSection: View {
     @State var runtimeLensConfigPath = ""
     @State var runtimeLensAuthStore = ""
     @State var runtimeLensApprovalGateFixture = ""
+    @State var runtimeLensLiveEvidenceFixture = ""
     @State var runtimeLensPendingConfirmedAction: String?
     @State var runtimeLensSessionActionsInFlight: Set<String> = []
     @State var runtimeLensPages: [ClawJSRuntimeLensPageKey: Int] = [:]
@@ -118,6 +119,7 @@ struct ClawJSRuntimeLensSection: View {
                     configPath: trimmedRuntimeLensInput(runtimeLensConfigPath),
                     authStore: trimmedRuntimeLensInput(runtimeLensAuthStore),
                     approvalGateFixture: trimmedRuntimeLensInput(runtimeLensApprovalGateFixture),
+                    liveEvidenceFixture: trimmedRuntimeLensInput(runtimeLensLiveEvidenceFixture),
                     gatewayURL: trimmedRuntimeLensInput(runtimeLensActionGatewayURL)
                 )
             } catch {
@@ -164,6 +166,7 @@ struct ClawJSRuntimeLensSection: View {
                 configPath: trimmedRuntimeLensInput(runtimeLensConfigPath),
                 authStore: trimmedRuntimeLensInput(runtimeLensAuthStore),
                 approvalGateFixture: trimmedRuntimeLensInput(runtimeLensApprovalGateFixture),
+                liveEvidenceFixture: trimmedRuntimeLensInput(runtimeLensLiveEvidenceFixture),
                 confirmRuntimeWrite: confirmRuntimeWrite
             )
             runtimeLensActionResult = runtimeLensSessionActionResultLabel(result)

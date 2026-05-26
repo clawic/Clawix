@@ -107,6 +107,12 @@ extension ClawJSRuntimeLensSection {
                 .clxControl("runtime-lens-approval-gate-fixture", role: "input", label: "Runtime lens approval gate fixture") { value in
                     runtimeLensApprovalGateFixture = value
                 }
+            TextField("Live evidence fixture path", text: $runtimeLensLiveEvidenceFixture)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .clxControl("runtime-lens-live-evidence-fixture", role: "input", label: "Runtime lens live evidence fixture") { value in
+                    runtimeLensLiveEvidenceFixture = value
+                }
             TextField("Loopback gateway URL", text: $runtimeLensActionGatewayURL)
                 .textFieldStyle(.roundedBorder)
                 .font(BodyFont.system(size: 11.5))

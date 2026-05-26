@@ -15,6 +15,7 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
         let writeBackPolicy: String?
         let writeBackAllowed: Bool
         let approvalGateFixtureLabel: String?
+        let liveEvidenceFixtureLabel: String?
         let validation: String?
         let externalPending: Bool
         let freshness: String?
@@ -88,6 +89,7 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
                 writeBackPolicy.map { "write back \($0)" },
                 "write back allowed \(writeBackAllowed)",
                 approvalGateFixtureLabel.map { "approval gate receipt \($0)" },
+                liveEvidenceFixtureLabel.map { "live evidence receipt \($0)" },
                 validation.map { "validation \($0)" },
                 "external pending \(externalPending)",
                 freshness.map { "freshness \($0)" },
@@ -199,7 +201,7 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
         to rows: inout [Row]
     ) {
         guard let contract else { return }
-        let metadata = approvalGateMetadata(for: domain, domains: domains)
+        let metadata = fixtureMetadata(for: domain, domains: domains)
         rows.append(Row(
             id: domain,
             domain: domain,
@@ -214,8 +216,12 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
             writeBackPolicy: contract.writeBackPolicy,
             writeBackAllowed: contract.writeBackAllowed == true,
             approvalGateFixtureLabel: approvalGateFixtureLabel(
-                status: metadata.status,
-                receipt: metadata.receipt
+                status: metadata.approvalGateStatus,
+                receipt: metadata.approvalGateReceipt
+            ),
+            liveEvidenceFixtureLabel: liveEvidenceFixtureLabel(
+                status: metadata.liveEvidenceStatus,
+                receipt: metadata.liveEvidenceReceipt
             ),
             validation: contract.validation,
             externalPending: contract.externalPending == true,
@@ -228,17 +234,25 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
         ))
     }
 
-    private static func approvalGateMetadata(
+    private static func fixtureMetadata(
         for domain: String,
         domains: [ClawJSRuntimeLensSnapshot.Domain]
-    ) -> (writeBackApprovalGated: Bool, status: String?, receipt: ClawJSRuntimeLensSnapshot.ApprovalGateFixtureReceipt?) {
+    ) -> (
+        writeBackApprovalGated: Bool,
+        approvalGateStatus: String?,
+        approvalGateReceipt: ClawJSRuntimeLensSnapshot.ApprovalGateFixtureReceipt?,
+        liveEvidenceStatus: String?,
+        liveEvidenceReceipt: ClawJSRuntimeLensSnapshot.LiveEvidenceFixtureReceipt?
+    ) {
         guard let metadata = domains.first(where: { $0.domain == domain }) else {
-            return (false, nil, nil)
+            return (false, nil, nil, nil, nil)
         }
         return (
             metadata.writeBackApprovalGated == true,
             metadata.approvalGateFixtureStatus,
-            metadata.approvalGateFixtureReceipt
+            metadata.approvalGateFixtureReceipt,
+            metadata.liveEvidenceFixtureStatus,
+            metadata.liveEvidenceFixtureReceipt
         )
     }
 
@@ -272,6 +286,22 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
             receipt?.receiptId.map { "receipt \($0)" },
             receipt?.status.map { "status \($0)" },
             receipt?.redacted.map { "redacted \($0)" }
+        ]
+        .compactMap { $0 }
+        return values.joined(separator: ", ")
+    }
+
+    private static func liveEvidenceFixtureLabel(
+        status: String?,
+        receipt: ClawJSRuntimeLensSnapshot.LiveEvidenceFixtureReceipt?
+    ) -> String? {
+        guard let status else { return nil }
+        let values = [
+            status,
+            receipt?.receiptId.map { "receipt \($0)" },
+            receipt?.status.map { "status \($0)" },
+            receipt?.redacted.map { "redacted \($0)" },
+            receipt?.readOnly.map { "read only \($0)" }
         ]
         .compactMap { $0 }
         return values.joined(separator: ", ")

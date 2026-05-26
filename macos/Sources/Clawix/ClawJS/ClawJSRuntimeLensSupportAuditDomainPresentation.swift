@@ -11,6 +11,7 @@ struct ClawJSRuntimeLensSupportAuditDomainPresentation: Equatable {
         let writeBackAllowed: Bool
         let writeBackApprovalGated: Bool
         let approvalGateFixtureStatus: String?
+        let liveEvidenceFixtureStatus: String?
         let authorityLabel: String?
         let policyLabel: String?
         let relationshipLabel: String?
@@ -31,6 +32,7 @@ struct ClawJSRuntimeLensSupportAuditDomainPresentation: Equatable {
                 "write back allowed \(writeBackAllowed)",
                 "write back approval gated \(writeBackApprovalGated)",
                 approvalGateFixtureStatus.map { "approval gate fixture \($0)" },
+                liveEvidenceFixtureStatus.map { "live evidence fixture \($0)" },
                 authorityLabel.map { "authority \($0)" },
                 policyLabel.map { "policy \($0)" },
                 relationshipLabel.map { "relationship \($0)" },
@@ -87,6 +89,7 @@ struct ClawJSRuntimeLensSupportAuditDomainPresentation: Equatable {
                 writeBackAllowed: domain.writeBackAllowed == true,
                 writeBackApprovalGated: domain.writeBackApprovalGated == true,
                 approvalGateFixtureStatus: domain.approvalGateFixtureStatus,
+                liveEvidenceFixtureStatus: domain.liveEvidenceFixtureStatus,
                 authorityLabel: listLabel([domain.canonicalAuthority, domain.nativeAuthority].compactMap { $0 }, limit: 2),
                 policyLabel: listLabel([domain.writeBackPolicy, domain.validation, domain.freshness].compactMap { $0 }, limit: 3),
                 relationshipLabel: listLabel([domain.persistence, domain.relation, domain.lossPolicy].compactMap { $0 }, limit: 3),
