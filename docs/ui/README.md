@@ -394,7 +394,10 @@ code 1 so scripts can enforce P0 regression gates.
 They also include `overheadCalibration`: a bounded writer summary plus either
 a hash-only harness-disabled control comparison supplied with
 `--overhead-control <file>` or an explicit `external_pending_control_run`
-status. Private baselines, raw captures, readable screenshots, local private
+status. `compared` overhead evidence must prove the control artifact was
+available, hash-referenced, harness-disabled, measured, and numerically
+comparable; pending overhead evidence must keep `controlRun.available=false`
+and `measured=false`. Private baselines, raw captures, readable screenshots, local private
 paths, and aggregate real-mode evidence stay outside the public repo. In the
 normal app, `.clxControl` must remain an
 `accessibilityIdentifier`-only marker; frame probes, registry writes, fixture

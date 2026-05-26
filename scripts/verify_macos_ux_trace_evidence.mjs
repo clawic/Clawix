@@ -160,6 +160,33 @@ function validateOverheadCalibration(failures, overhead, label, schema) {
   if (estimate?.status !== overhead?.status) {
     fail(failures, `${label}.overheadCalibration.instrumentationOverheadEstimate.status must match overheadCalibration.status`);
   }
+  if (overhead?.status === "external_pending_control_run") {
+    if (overhead.controlRun?.available !== false) fail(failures, `${label}.overheadCalibration.controlRun.available must be false when status is external_pending_control_run`);
+    if (estimate?.measured !== false) fail(failures, `${label}.overheadCalibration.instrumentationOverheadEstimate.measured must be false when status is external_pending_control_run`);
+  }
+  if (overhead?.status === "compared") {
+    if (overhead.controlRun?.available !== true) fail(failures, `${label}.overheadCalibration.controlRun.available must be true when status is compared`);
+    if (overhead.controlRun?.highCardinalityInstrumentation !== false) fail(failures, `${label}.overheadCalibration.controlRun.highCardinalityInstrumentation must be false for harness-disabled controls`);
+    for (const hashField of ["artifactHash", "pathHash"]) {
+      if (typeof overhead.controlRun?.[hashField] !== "string" || !overhead.controlRun[hashField].startsWith("sha256:")) {
+        fail(failures, `${label}.overheadCalibration.controlRun.${hashField} must be a sha256 hash when status is compared`);
+      }
+    }
+    if (estimate?.measured !== true) fail(failures, `${label}.overheadCalibration.instrumentationOverheadEstimate.measured must be true when status is compared`);
+    for (const numberField of ["currentTotalP95", "controlTotalP95", "delta"]) {
+      if (!Number.isFinite(Number(estimate?.[numberField]))) {
+        fail(failures, `${label}.overheadCalibration.instrumentationOverheadEstimate.${numberField} must be numeric when status is compared`);
+      }
+    }
+    if (estimate?.percentDelta !== null && !Number.isFinite(Number(estimate?.percentDelta))) {
+      fail(failures, `${label}.overheadCalibration.instrumentationOverheadEstimate.percentDelta must be numeric or null when status is compared`);
+    }
+  }
+  if (overhead?.status === "control_artifact_without_comparable_metrics") {
+    if (overhead.controlRun?.available !== true) fail(failures, `${label}.overheadCalibration.controlRun.available must be true when a control artifact is present`);
+    if (overhead.controlRun?.highCardinalityInstrumentation !== false) fail(failures, `${label}.overheadCalibration.controlRun.highCardinalityInstrumentation must be false for harness-disabled controls`);
+    if (estimate?.measured !== false) fail(failures, `${label}.overheadCalibration.instrumentationOverheadEstimate.measured must be false when control metrics are not comparable`);
+  }
   const writer = overhead?.traceWriter;
   requireFields(failures, writer, `${label}.overheadCalibration.traceWriter`, [
     "eventCount",

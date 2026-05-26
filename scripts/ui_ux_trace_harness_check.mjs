@@ -798,13 +798,20 @@ if (evidenceSchema) {
     fail(`${evidenceSchemaPath}.traceIsolationContract.externalPaths must require hash-only external paths`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.overheadCalibrationRequiredFields, `${evidenceSchemaPath}.overheadCalibrationRequiredFields`), `${evidenceSchemaPath}.overheadCalibrationRequiredFields`, ["status", "controlRun", "instrumentationOverheadEstimate", "traceWriter"]);
-  requireFields(evidenceSchema.overheadCalibrationContract, `${evidenceSchemaPath}.overheadCalibrationContract`, ["statusValues", "requiredWhenNoControlRun", "controlRunPrivacy", "traceWriterBounds"]);
+  requireFields(evidenceSchema.overheadCalibrationContract, `${evidenceSchemaPath}.overheadCalibrationContract`, ["statusValues", "requiredWhenNoControlRun", "controlRunPrivacy", "statusConsistency", "traceWriterBounds"]);
   requireUniqueStringArray(requireArray(evidenceSchema.overheadCalibrationContract?.statusValues, `${evidenceSchemaPath}.overheadCalibrationContract.statusValues`), `${evidenceSchemaPath}.overheadCalibrationContract.statusValues`, ["compared", "external_pending_control_run", "control_artifact_without_comparable_metrics"]);
   if (!String(evidenceSchema.overheadCalibrationContract?.requiredWhenNoControlRun ?? "").includes("external_pending_control_run")) {
     fail(`${evidenceSchemaPath}.overheadCalibrationContract.requiredWhenNoControlRun must require external_pending_control_run`);
   }
   if (!String(evidenceSchema.overheadCalibrationContract?.controlRunPrivacy ?? "").includes("must not be written")) {
     fail(`${evidenceSchemaPath}.overheadCalibrationContract.controlRunPrivacy must forbid public local control paths`);
+  }
+  if (
+    !String(evidenceSchema.overheadCalibrationContract?.statusConsistency ?? "").includes("external_pending_control_run requires controlRun.available=false")
+    || !String(evidenceSchema.overheadCalibrationContract?.statusConsistency ?? "").includes("compared requires controlRun.available=true")
+    || !String(evidenceSchema.overheadCalibrationContract?.statusConsistency ?? "").includes("highCardinalityInstrumentation=false")
+  ) {
+    fail(`${evidenceSchemaPath}.overheadCalibrationContract.statusConsistency must bind overhead status to control artifact state`);
   }
   if (evidenceSchema.overheadCalibrationContract?.traceWriterBounds?.maxEventsPerRun !== 100000) {
     fail(`${evidenceSchemaPath}.overheadCalibrationContract.traceWriterBounds.maxEventsPerRun must be 100000`);
@@ -1194,6 +1201,10 @@ if (evidenceVerifierSource) {
     "artifactIndex is missing child run directory",
     "validateOverheadCalibration(",
     "overheadCalibration.controlRun must not include a local path",
+    "controlRun.available must be false when status is external_pending_control_run",
+    "controlRun.available must be true when status is compared",
+    "highCardinalityInstrumentation must be false for harness-disabled controls",
+    "instrumentationOverheadEstimate.${numberField} must be numeric when status is compared",
     "overheadCalibration.traceWriter.bounded must be true",
     "validatePathReference(",
     "must not include an external local path",

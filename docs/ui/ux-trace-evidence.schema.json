@@ -109,6 +109,7 @@
     ],
     "requiredWhenNoControlRun": "Evidence must explicitly record external_pending_control_run instead of silently omitting the harness-disabled comparison.",
     "controlRunPrivacy": "Control artifact paths must not be written to public evidence; only artifact/path hashes and public-safe metadata are allowed.",
+    "statusConsistency": "external_pending_control_run requires controlRun.available=false and measured=false. compared requires controlRun.available=true, sha256 artifact/path hashes, measured=true, numeric total P95 fields, and highCardinalityInstrumentation=false. control_artifact_without_comparable_metrics requires a present harness-disabled control artifact with measured=false.",
     "traceWriterBounds": {
       "maxEventsPerRun": 100000,
       "maxEventBytesPerRun": 33554432,
