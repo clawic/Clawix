@@ -307,6 +307,7 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(snapshot.resources(for: "configuration").first { $0.id == "configuration-diagnostics" }?.summary, "config drift in fixture")
     }
 
+    @MainActor
     func testRuntimeLensClientAppliesRuntimeSessionLocalOverlayActions() async throws {
         var requested: [[String]] = []
         let client = ClawJSRuntimeLensClient(runner: .init { args in
@@ -358,6 +359,32 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         XCTAssertEqual(result.nativeWriteBackContract?.evidenceRequirementId, "hermes.sessions.pin.native_write_back_contract")
         XCTAssertEqual(result.result.overlayThreadId, "runtime:hermes:sessions:2026%2F05%2F21%2Fruntime-session")
         XCTAssertEqual(result.result.receipt?.hostId, "runtime-portal")
+
+        let section = ClawJSRuntimeLensSection()
+        XCTAssertEqual(section.runtimeLensSessionOverlayActionResultLabel(result), "pin local_overlay_applied 2026/05/21/runtime-session pinned true")
+        let details = section.runtimeLensSessionOverlayActionResultDetails(result)
+        XCTAssertTrue(details.contains {
+            $0.contains("overlay action runtime hermes")
+                && $0.contains("writes runtime false")
+                && $0.contains("writes local overlay true")
+                && $0.contains("native write back blocked_until_official_runtime_write_back_contract")
+                && $0.contains("official runtime write back contract required true")
+                && $0.contains("official runtime write back contract known false")
+        })
+        XCTAssertTrue(details.contains {
+            $0.contains("native write back safe default keep_local_overlay_and_do_not_write_runtime_pin_state")
+                && $0.contains("user visible contract local_overlay_only_until_official_runtime_pin_api_exists")
+                && $0.contains("claim effect blocks_native_write_back_parity_not_local_overlay")
+                && $0.contains("evidence hermes.sessions.pin.native_write_back_contract")
+                && $0.contains("risk controls no_silent_runtime_write, no_direct_runtime_store_mutation, local_overlay_only_until_official_runtime_pin_api_exists")
+        })
+        XCTAssertTrue(details.contains(
+            "native write-back contract status blocked, writes runtime false, would write runtime false, official contract required true, official contract known false, fixture required true, safe default keep_local_overlay_and_do_not_write_runtime_pin_state, user visible contract local_overlay_only_until_official_runtime_pin_api_exists, claim effect blocks_native_write_back_parity_not_local_overlay, evidence hermes.sessions.pin.native_write_back_contract"
+        ))
+        XCTAssertTrue(details.contains(
+            "overlay result id 2026/05/21/runtime-session, overlay thread runtime:hermes:sessions:2026%2F05%2F21%2Fruntime-session, pinned true"
+        ))
+        XCTAssertTrue(details.contains("overlay receipt host runtime-portal, request appstate-test, status applied"))
     }
 
     func testRuntimeLensClientRunsHermesGatewaySessionActionsWithExplicitConfirmation() async throws {

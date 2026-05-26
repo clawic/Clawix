@@ -353,4 +353,78 @@ struct ClawJSRuntimeLensSection: View {
         return details
     }
 
+    func runtimeLensSessionOverlayActionResultLabel(_ result: ClawJSRuntimeLensClient.SessionOverlayActionResult) -> String {
+        [
+            result.action,
+            result.status,
+            result.result.id,
+            result.result.pinned ? "pinned true" : "pinned false"
+        ]
+        .joined(separator: " ")
+    }
+
+    func runtimeLensSessionOverlayActionResultDetails(_ result: ClawJSRuntimeLensClient.SessionOverlayActionResult) -> [String] {
+        var details: [String] = []
+        let actionFields = [
+            "runtime \(result.runtimeId)",
+            "domain \(result.domain)",
+            result.authority.map { "authority \($0)" },
+            "writes runtime \(result.writesRuntime)",
+            result.wouldWriteRuntime.map { "would write runtime \($0)" },
+            result.writesLocalOverlay.map { "writes local overlay \($0)" },
+            result.writeBackStatus.map { "write back \($0)" },
+            result.nativeWriteBackStatus.map { "native write back \($0)" },
+            result.nativeWriteBackBlockerClass.map { "native write back blocker \($0)" },
+            result.officialRuntimeWriteBackContractRequired.map { "official runtime write back contract required \($0)" },
+            result.officialRuntimeWriteBackContractKnown.map { "official runtime write back contract known \($0)" },
+            result.nativeWriteBackFixtureRequired.map { "native write back fixture required \($0)" }
+        ].compactMap { $0 }
+        if !actionFields.isEmpty {
+            details.append("overlay action " + actionFields.joined(separator: ", "))
+        }
+
+        let policyFields = [
+            result.nativeWriteBackSafeDefault.map { "native write back safe default \($0)" },
+            result.userVisibleContract.map { "user visible contract \($0)" },
+            result.claimEffect.map { "claim effect \($0)" },
+            result.supportResolution.map { "support resolution \($0)" },
+            result.evidenceRequirementId.map { "evidence \($0)" },
+            result.riskControls.map { "risk controls \($0.joined(separator: ", "))" }
+        ].compactMap { $0 }
+        if !policyFields.isEmpty {
+            details.append("overlay policy " + policyFields.joined(separator: ", "))
+        }
+
+        if let contract = result.nativeWriteBackContract {
+            let contractFields = [
+                contract.status.map { "status \($0)" },
+                contract.writesRuntime.map { "writes runtime \($0)" },
+                contract.wouldWriteRuntime.map { "would write runtime \($0)" },
+                contract.officialContractRequired.map { "official contract required \($0)" },
+                contract.officialContractKnown.map { "official contract known \($0)" },
+                contract.fixtureRequired.map { "fixture required \($0)" },
+                contract.safeDefault.map { "safe default \($0)" },
+                contract.userVisibleContract.map { "user visible contract \($0)" },
+                contract.claimEffect.map { "claim effect \($0)" },
+                contract.evidenceRequirementId.map { "evidence \($0)" }
+            ].compactMap { $0 }
+            if !contractFields.isEmpty {
+                details.append("native write-back contract " + contractFields.joined(separator: ", "))
+            }
+        }
+
+        details.append("overlay result id \(result.result.id), overlay thread \(result.result.overlayThreadId), pinned \(result.result.pinned)")
+        if let receipt = result.result.receipt {
+            let receiptFields = [
+                receipt.hostId.map { "host \($0)" },
+                receipt.requestId.map { "request \($0)" },
+                receipt.status.map { "status \($0)" }
+            ].compactMap { $0 }
+            if !receiptFields.isEmpty {
+                details.append("overlay receipt " + receiptFields.joined(separator: ", "))
+            }
+        }
+        return details
+    }
+
 }

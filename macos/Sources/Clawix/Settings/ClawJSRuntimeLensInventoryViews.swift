@@ -171,6 +171,8 @@ extension ClawJSRuntimeLensSection {
                 runtimeLensActionError = "Runtime session overlay unexpectedly reported a runtime write."
                 return
             }
+            runtimeLensActionResult = runtimeLensSessionOverlayActionResultLabel(result)
+            runtimeLensActionResultDetails = runtimeLensSessionOverlayActionResultDetails(result)
             await refreshRuntimeLens(runtime)
         } catch {
             runtimeLensActionError = SettingsUtilities.failureMessage(for: error, surface: "settings.runtimeLens.action")
