@@ -516,6 +516,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
 
         struct AuthBucket: Decodable, Equatable {
             let auth: [String: AuthState]?
+            let resources: [RuntimeResource]?
             let supportContract: SupportContract?
 
             struct AuthState: Decodable, Equatable {
@@ -906,11 +907,14 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
     }
 
     private func authResources() -> [RuntimeResource] {
+        let portalResources = resourcesWithCommonAttributes(domainData?.auth?.resources ?? [])
         let authStates = domainData?.auth?.auth ?? runtimeResources?.auth ?? [:]
-        return authStates
+        let portalResourceIds = Set(portalResources.map(\.id))
+        let synthesizedResources: [RuntimeResource] = authStates
             .keys
             .sorted()
             .compactMap { provider in
+                guard !portalResourceIds.contains(provider) else { return nil }
                 guard let state = authStates[provider] else { return nil }
                 return RuntimeResource(
                     id: provider,
@@ -955,6 +959,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
                     localOverlay: nil
                 )
             }
+        return portalResources + synthesizedResources
     }
 
     private static func authAttributes(_ state: DomainData.AuthBucket.AuthState) -> [String] {

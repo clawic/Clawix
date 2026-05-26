@@ -5589,6 +5589,786 @@
               "domain": "auth",
               "path": "/Users/tester/.hermes/auth.json"
             }
+          },
+          {
+            "id": "ai-gateway",
+            "label": "ai-gateway",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "alibaba",
+            "label": "alibaba",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "anthropic",
+            "label": "anthropic",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "arcee",
+            "label": "arcee",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "azure-foundry",
+            "label": "azure-foundry",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "bedrock",
+            "label": "bedrock",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "deepseek",
+            "label": "deepseek",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "gemini",
+            "label": "gemini",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "gmi",
+            "label": "gmi",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "google-gemini-cli",
+            "label": "google-gemini-cli",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "huggingface",
+            "label": "huggingface",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "kilocode",
+            "label": "kilocode",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "kimi-coding",
+            "label": "kimi-coding",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "lmstudio",
+            "label": "lmstudio",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "minimax",
+            "label": "minimax",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "nous",
+            "label": "nous",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "novita",
+            "label": "novita",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "nvidia",
+            "label": "nvidia",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "ollama-cloud",
+            "label": "ollama-cloud",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "openai",
+            "label": "openai",
+            "status": "configured",
+            "kind": "api_key",
+            "path": "/Users/tester/.hermes/config.yaml",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/config.yaml"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: config",
+              "subscription: false",
+              "api key: true",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": true,
+            "summary": "********************7890"
+          },
+          {
+            "id": "opencode-go",
+            "label": "opencode-go",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "opencode-zen",
+            "label": "opencode-zen",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "openrouter",
+            "label": "openrouter",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "stepfun",
+            "label": "stepfun",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "tencent-tokenhub",
+            "label": "tencent-tokenhub",
+            "status": "redacted",
+            "kind": "redacted_auth_state",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "auth scalar: redacted_value"
+            ]
+          },
+          {
+            "id": "xai",
+            "label": "xai",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "xiaomi",
+            "label": "xiaomi",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
+          },
+          {
+            "id": "zai",
+            "label": "zai",
+            "status": "missing",
+            "kind": "auth",
+            "path": "/Users/tester/.hermes/auth.json",
+            "nativeIdentifier": {
+              "name": "authProviderId"
+            },
+            "provenance": {
+              "source": "hermes-runtime-adapter",
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "path": "/Users/tester/.hermes/auth.json"
+            },
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: secret_guard_and_external_pending_live_credentials"
+            ],
+            "attributes": [
+              "source: missing",
+              "subscription: false",
+              "api key: false",
+              "profile key: false",
+              "env key: false"
+            ],
+            "enabled": false
           }
         ],
         "supportContract": {
