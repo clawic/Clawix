@@ -41,6 +41,8 @@ const requiredSkills = [
 ];
 
 const clawixLocalSkills = new Set([
+  "canonical-catalog-expansion",
+  "surface-route-work",
   "ui-canon-review",
   "ui-implementation",
   "visual-regression",
