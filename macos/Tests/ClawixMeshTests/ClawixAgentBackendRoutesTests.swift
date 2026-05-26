@@ -2,6 +2,31 @@ import XCTest
 @testable import Clawix
 
 final class ClawixAgentBackendRoutesTests: XCTestCase {
+    func testCodexRolloutLocatorChecksUuidV7DayDirectoryBeforeGlobalScan() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let threadId = "019e643b-920c-7112-9276-f49441fe8b7d"
+        let dayDirectory = root
+            .appendingPathComponent("2026", isDirectory: true)
+            .appendingPathComponent("05", isDirectory: true)
+            .appendingPathComponent("26", isDirectory: true)
+        try FileManager.default.createDirectory(at: dayDirectory, withIntermediateDirectories: true)
+        let expected = dayDirectory.appendingPathComponent(
+            "rollout-2026-05-26T14-21-26-\(threadId).jsonl"
+        )
+        try "{}\n".write(to: expected, atomically: true, encoding: .utf8)
+
+        XCTAssertEqual(
+            CodexRolloutLocator.find(
+                threadId: threadId,
+                sessionsRoot: root
+            )?.resolvingSymlinksInPath(),
+            expected.resolvingSymlinksInPath()
+        )
+    }
+
     func testAgentBackendRoutesCentralizeExecutableLookupPaths() throws {
         let routesSource = try readSource("AgentBackend/ClawixAgentBackendRoutes.swift")
         let titleGeneratorSource = try readSource("AgentBackend/TitleGenerator.swift")
