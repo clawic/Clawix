@@ -16,6 +16,7 @@ const simulationFlags = [
   "--simulate-missing-implementation-guard",
   "--simulate-missing-private-visual-command",
   "--simulate-missing-performance-flow",
+  "--simulate-missing-ux-trace-flow",
   "--simulate-missing-agents-skill",
   "--simulate-missing-sync-skill",
   "--simulate-duplicate-skill-name",
@@ -66,6 +67,9 @@ function read(relativePath) {
   }
   if (args.has("--simulate-missing-performance-flow") && relativePath === "skills/ui-performance-budget/SKILL.md") {
     content = content.replace("sidebar lag", "sidebar responsiveness");
+  }
+  if (args.has("--simulate-missing-ux-trace-flow") && relativePath === "skills/macos-ux-trace-harness/SKILL.md") {
+    content = content.replace("Computer Use can be witness evidence only", "Computer Use can be primary evidence");
   }
   if (args.has("--simulate-missing-agents-skill") && relativePath === "AGENTS.md") {
     content = content.replace("visual-regression", "visual-check");
@@ -122,7 +126,13 @@ function requireExactStringSet(values, label, expectedValues) {
   return seen;
 }
 
-const expectedSkillNames = ["ui-canon-review", "ui-implementation", "visual-regression", "ui-performance-budget"];
+const expectedSkillNames = [
+  "ui-canon-review",
+  "ui-implementation",
+  "visual-regression",
+  "ui-performance-budget",
+  "macos-ux-trace-harness",
+];
 
 const skillContracts = [
   {
@@ -183,6 +193,22 @@ const skillContracts = [
       "EXTERNAL PENDING",
     ],
   },
+  {
+    file: "skills/macos-ux-trace-harness/SKILL.md",
+    name: "macos-ux-trace-harness",
+    snippets: [
+      "docs/adr/0040-macos-ux-trace-harness.md",
+      "docs/ui/ux-trace-harness.registry.json",
+      "docs/ui/ux-trace-scenarios.manifest.json",
+      "docs/ui/ux-trace-evidence.schema.json",
+      "docs/ui/ux-trace-calibration.manifest.json",
+      "Computer Use can be witness evidence only",
+      "node scripts/generate_macos_ux_trace_fixtures.mjs --profile <profile>",
+      "node scripts/run_macos_ux_trace_harness.mjs --suite p0",
+      "node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>",
+      "EXTERNAL PENDING",
+    ],
+  },
 ];
 
 if (args.has("--simulate-duplicate-skill-name")) {
@@ -237,6 +263,7 @@ if (errors.length === 0 && !isSelfTest && rawArgs.length === 0) {
       "skills/visual-regression/SKILL.md must include node scripts/ui_private_visual_verify.mjs --require-approved",
     ],
     ["--simulate-missing-performance-flow", "skills/ui-performance-budget/SKILL.md must include sidebar lag"],
+    ["--simulate-missing-ux-trace-flow", "skills/macos-ux-trace-harness/SKILL.md must include Computer Use can be witness evidence only"],
     ["--simulate-missing-agents-skill", "AGENTS.md must include visual-regression"],
     ["--simulate-missing-sync-skill", "scripts/check-clawjs-skills-sync.mjs must include \"ui-performance-budget\""],
     ["--simulate-duplicate-skill-name", "UI skill contract names duplicates ui-canon-review"],

@@ -1,0 +1,1 @@
+../../../skills/macos-ux-trace-harness/SKILL.md

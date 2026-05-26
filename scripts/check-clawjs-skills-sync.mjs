@@ -37,6 +37,7 @@ const requiredSkills = [
   "ui-implementation",
   "visual-regression",
   "ui-performance-budget",
+  "macos-ux-trace-harness",
 ];
 
 const clawixLocalSkills = new Set([
@@ -44,6 +45,7 @@ const clawixLocalSkills = new Set([
   "ui-implementation",
   "visual-regression",
   "ui-performance-budget",
+  "macos-ux-trace-harness",
   "accessibility-governance",
 ]);
 

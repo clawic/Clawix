@@ -97,8 +97,8 @@ Read the relevant canon before changing its surface:
 
 Use `skills/<id>/SKILL.md` for task procedures instead of expanding this file.
 Clawix projected skill categories, including `ui-canon-review`,
-`ui-implementation`, `visual-regression`, and `ui-performance-budget`, live in
-`docs/agent-rules/index.md`.
+`ui-implementation`, `visual-regression`, `ui-performance-budget`, and
+`macos-ux-trace-harness`, live in `docs/agent-rules/index.md`.
 
 Use focused checks during iteration:
 

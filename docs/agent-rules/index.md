@@ -103,7 +103,8 @@ domains are assistive only.
   `docs/adr/0036-performance-governance.md`. For macOS P0 UI latency, use
   `docs/ui/ux-trace-harness.registry.json` and
   `docs/ui/ux-trace-scenarios.manifest.json`; validate runner wiring with
-  `node scripts/run_macos_ux_trace_harness.mjs --self-test`. Computer Use is
+  `node scripts/run_macos_ux_trace_harness.mjs --self-test`, and use the
+  `macos-ux-trace-harness` skill for runtime evidence. Computer Use is
   witness-only, not primary measurement evidence.
 
 ## Skill Routing
@@ -132,8 +133,8 @@ Use relevant skills instead of pasting long procedures into context:
   `code-hygiene-audit`, `code-hygiene-cleanup`, `code-review-risk`,
   `commit-hygiene-public`.
 - Interface governance: `ui-canon-review`, `ui-implementation`,
-  `visual-regression`, `ui-performance-budget`, `accessibility-governance`,
-  `adoption-canonicity-review`.
+  `visual-regression`, `ui-performance-budget`, `macos-ux-trace-harness`,
+  `accessibility-governance`, `adoption-canonicity-review`.
 
 ## Invariants
 

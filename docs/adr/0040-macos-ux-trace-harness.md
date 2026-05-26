@@ -97,7 +97,8 @@ hash-referenced, harness-disabled, measured, and numerically comparable.
 ## Surface Parity
 
 - **Human surface**: `macos/PERF.md`, `docs/ui/README.md`, and the
-  `ui-performance-budget` skill route agents to the harness.
+  `ui-performance-budget` and `macos-ux-trace-harness` skills route agents to
+  the harness.
 - **Programmatic surface**: `scripts/ui_ux_trace_harness_check.mjs` validates
   the registry, evidence schema, and scenario manifest.
   `scripts/verify_macos_ux_trace_evidence.mjs` validates generated run/suite

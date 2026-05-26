@@ -136,6 +136,10 @@ the public repo.
   and real-equivalent-private profiles. Generated packs export
   `threads.json` for `CLAWIX_THREAD_FIXTURE` and `pinned-thread-ids.json` for
   `CLAWIX_THREAD_PIN_FIXTURE`; they must not contain private conversation text.
+- `skills/macos-ux-trace-harness/SKILL.md`: task procedure for running or
+  changing the macOS UX trace harness. Agents use it when work touches
+  action-to-visual-completion latency, latest-message visibility, scroll
+  anchoring, streaming responsiveness, fixture pressure, or baseline evidence.
 - `ux-trace-calibration.manifest.json`: public-safe calibration state for UX
   trace fixture profiles. It records which synthetic profiles have live
   baselines, which remain approval-pending, and why private real-mode aggregate
@@ -299,6 +303,8 @@ primary timing source.
 
 - Contract self-test:
   `node scripts/run_macos_ux_trace_harness.mjs --self-test`
+- Task procedure:
+  `skills/macos-ux-trace-harness/SKILL.md`
 - Generate a fixture:
   `node scripts/generate_macos_ux_trace_fixtures.mjs --profile smoke --out-dir <fixture-dir> --json`
 - Quick smoke evidence:

@@ -9,6 +9,7 @@ const scenariosPath = "docs/ui/ux-trace-scenarios.manifest.json";
 const calibrationPath = "docs/ui/ux-trace-calibration.manifest.json";
 const uiReadmePath = "docs/ui/README.md";
 const uiPerformanceSkillPath = "skills/ui-performance-budget/SKILL.md";
+const macosUxTraceSkillPath = "skills/macos-ux-trace-harness/SKILL.md";
 const runnerPath = "scripts/run_macos_ux_trace_harness.mjs";
 const evidenceVerifierPath = "scripts/verify_macos_ux_trace_evidence.mjs";
 const fixtureGeneratorPath = "scripts/generate_macos_ux_trace_fixtures.mjs";
@@ -47,6 +48,9 @@ const uiReadmeSource = fs.existsSync(path.join(rootDir, uiReadmePath))
   : "";
 const uiPerformanceSkillSource = fs.existsSync(path.join(rootDir, uiPerformanceSkillPath))
   ? fs.readFileSync(path.join(rootDir, uiPerformanceSkillPath), "utf8")
+  : "";
+const macosUxTraceSkillSource = fs.existsSync(path.join(rootDir, macosUxTraceSkillPath))
+  ? fs.readFileSync(path.join(rootDir, macosUxTraceSkillPath), "utf8")
   : "";
 
 const privatePathPattern = /(?:\/Users\/|\.signing\.env|Team ID|signing identity|bundle id|source session|rollout-|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b)/iu;
@@ -1405,6 +1409,7 @@ if (fixtureVerificationSource) {
 for (const [relativePath, source] of [
   [uiReadmePath, uiReadmeSource],
   [uiPerformanceSkillPath, uiPerformanceSkillSource],
+  [macosUxTraceSkillPath, macosUxTraceSkillSource],
 ]) {
   if (!source) {
     fail(`${relativePath} must exist`);
@@ -1419,6 +1424,17 @@ for (const [relativePath, source] of [
     "Computer Use",
   ]) {
     requireSnippet(source, relativePath, snippet);
+  }
+}
+
+if (macosUxTraceSkillSource) {
+  for (const snippet of [
+    "Computer Use can be witness evidence only",
+    "node scripts/generate_macos_ux_trace_fixtures.mjs --profile <profile>",
+    "node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>",
+    "Do not write trace evidence to the main app database",
+  ]) {
+    requireSnippet(macosUxTraceSkillSource, macosUxTraceSkillPath, snippet);
   }
 }
 
