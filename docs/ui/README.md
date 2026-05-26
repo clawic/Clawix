@@ -343,7 +343,11 @@ so malformed aggregate JSON is rejected before it can support closure. Metric
 rows in run, suite, and baseline artifacts must also reference declared KPI IDs
 and keep `priority` and `surface` synchronized with
 `ux-trace-harness.registry.json`; evidence cannot reclassify a P0 KPI as a
-lower-priority or different-surface metric. Run metric rows must include
+lower-priority or different-surface metric. Metric values must also be
+internally consistent: `measured` rows require positive sample counts and
+ordered numeric percentiles; generated baseline metric rows use compact
+`value` in place of `worstSample`, while `missing_sample` rows require zero
+samples and null percentile fields. Run metric rows must include
 non-empty `evidenceEventRefs` and at least one referenced timeline event must
 carry the same KPI ID, keeping aggregate numbers tied to action and visual
 condition evidence. Lifecycle events are strict: each run timeline has one

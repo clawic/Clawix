@@ -225,6 +225,18 @@
       "baseline metrics"
     ]
   },
+  "metricValueContract": {
+    "policy": "Metric rows must keep sampleCount, status, percentile, baseline, and regression fields internally consistent. measured run and suite rows require sampleCount > 0, numeric p50/p95/p99/worstSample, and ordered p50 <= p95 <= p99 <= worstSample. Baseline metric rows use compact value in place of worstSample and require p50 <= p95 <= p99 <= value. missing_sample rows require sampleCount = 0 and null percentile fields.",
+    "allowedStatuses": [
+      "measured",
+      "missing_sample"
+    ],
+    "appliesTo": [
+      "metrics.json",
+      "suite-metrics.json",
+      "baseline metrics"
+    ]
+  },
   "metricEventReferenceContract": {
     "policy": "Every run metric row must include at least one evidenceEventRefs entry, every reference must point to an event in events.jsonl, and at least one referenced event must carry the same KPI id as the metric row.",
     "purpose": "Metric rows must remain auditable back to action/visual-condition timeline evidence instead of only reporting aggregate numbers."

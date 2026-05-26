@@ -740,6 +740,17 @@ if (evidenceSchema) {
     fail(`${evidenceSchemaPath}.metricRegistryContract.policy must bind metric rows to KPI registry priority and surface`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.metricRegistryContract?.appliesTo, `${evidenceSchemaPath}.metricRegistryContract.appliesTo`), `${evidenceSchemaPath}.metricRegistryContract.appliesTo`, ["metrics.json", "suite-metrics.json", "baseline metrics"]);
+  requireFields(evidenceSchema.metricValueContract, `${evidenceSchemaPath}.metricValueContract`, ["policy", "allowedStatuses", "appliesTo"]);
+  if (
+    !String(evidenceSchema.metricValueContract?.policy ?? "").includes("sampleCount > 0")
+    || !String(evidenceSchema.metricValueContract?.policy ?? "").includes("p50 <= p95 <= p99 <= worstSample")
+    || !String(evidenceSchema.metricValueContract?.policy ?? "").includes("p50 <= p95 <= p99 <= value")
+    || !String(evidenceSchema.metricValueContract?.policy ?? "").includes("missing_sample rows require sampleCount = 0")
+  ) {
+    fail(`${evidenceSchemaPath}.metricValueContract.policy must require internally consistent metric values`);
+  }
+  requireUniqueStringArray(requireArray(evidenceSchema.metricValueContract?.allowedStatuses, `${evidenceSchemaPath}.metricValueContract.allowedStatuses`), `${evidenceSchemaPath}.metricValueContract.allowedStatuses`, ["measured", "missing_sample"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.metricValueContract?.appliesTo, `${evidenceSchemaPath}.metricValueContract.appliesTo`), `${evidenceSchemaPath}.metricValueContract.appliesTo`, ["metrics.json", "suite-metrics.json", "baseline metrics"]);
   requireFields(evidenceSchema.metricEventReferenceContract, `${evidenceSchemaPath}.metricEventReferenceContract`, ["policy", "purpose"]);
   if (
     !String(evidenceSchema.metricEventReferenceContract?.policy ?? "").includes("same KPI id")
@@ -1139,8 +1150,12 @@ if (evidenceVerifierSource) {
     "compareMultisets(",
     "requireArrayField(",
     "validateMetricsAgainstRegistry(",
+    "validateMetricValueShape(",
     "must match KPI registry",
     "is not declared in ux-trace-harness.registry.json",
+    "sampleCount must be greater than zero when status is measured",
+    "percentile values must be ordered p50 <= p95 <= p99 <= ${percentileFields[3]}",
+    "sampleCount must be 0 when status is missing_sample",
     "evidenceEventRefs must include at least one event ref",
     "evidenceEventRefs must include an event for the same KPI",
     "run.completed status must match run.json.status",

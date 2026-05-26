@@ -374,6 +374,44 @@ function validateMetricsAgainstRegistry(failures, metrics, label) {
   }
 }
 
+function validateMetricValueShape(failures, metrics, label, options = {}) {
+  const allowedStatuses = new Set(["measured", "missing_sample"]);
+  const percentileFields = options.baselineCompact ? ["p50", "p95", "p99", "value"] : ["p50", "p95", "p99", "worstSample"];
+  const nullableFields = options.baselineCompact
+    ? ["p50", "p95", "p99", "value"]
+    : ["p50", "p95", "p99", "worstSample", "baseline", "regressionPercent"];
+  for (const [index, metric] of metrics.entries()) {
+    const rowLabel = `${label}[${index}]`;
+    if (!allowedStatuses.has(metric?.status)) {
+      fail(failures, `${rowLabel}.status must be measured or missing_sample`);
+    }
+    if (!Number.isInteger(metric?.sampleCount) || metric.sampleCount < 0) {
+      fail(failures, `${rowLabel}.sampleCount must be a non-negative integer`);
+    }
+    for (const field of nullableFields) {
+      if (metric?.[field] !== null && !Number.isFinite(Number(metric?.[field]))) {
+        fail(failures, `${rowLabel}.${field} must be numeric or null`);
+      }
+    }
+    if (metric?.status === "measured") {
+      if (metric.sampleCount <= 0) fail(failures, `${rowLabel}.sampleCount must be greater than zero when status is measured`);
+      for (const field of percentileFields) {
+        if (!Number.isFinite(Number(metric?.[field]))) fail(failures, `${rowLabel}.${field} must be numeric when status is measured`);
+      }
+      const values = percentileFields.map((field) => Number(metric?.[field]));
+      if (values.every(Number.isFinite) && !(values[0] <= values[1] && values[1] <= values[2] && values[2] <= values[3])) {
+        fail(failures, `${rowLabel} percentile values must be ordered p50 <= p95 <= p99 <= ${percentileFields[3]}`);
+      }
+    }
+    if (metric?.status === "missing_sample") {
+      if (metric.sampleCount !== 0) fail(failures, `${rowLabel}.sampleCount must be 0 when status is missing_sample`);
+      for (const field of percentileFields) {
+        if (metric?.[field] !== null) fail(failures, `${rowLabel}.${field} must be null when status is missing_sample`);
+      }
+    }
+  }
+}
+
 function comparisonValueMatchesMetric(rowValue, metricValue) {
   if (rowValue === null || metricValue === null || rowValue === undefined || metricValue === undefined) {
     return rowValue === metricValue;
@@ -542,6 +580,7 @@ function validateRun(runDir, schema, options = {}) {
   if (metricsArtifact.schemaVersion !== 1) fail(failures, "metrics.json.schemaVersion must be 1");
   if (failuresArtifact.schemaVersion !== 1) fail(failures, "failures.json.schemaVersion must be 1");
   validateMetricsAgainstRegistry(failures, metricList, "metrics.json.metrics");
+  validateMetricValueShape(failures, metricList, "metrics.json.metrics");
   if (run.program !== "macos-ux-trace-harness") fail(failures, "run.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(run.status)) fail(failures, `run.json.status ${run.status} is not allowed`);
   validatePrivateBoundary(failures, run.privateBoundary, "run.json");
@@ -855,6 +894,7 @@ function validateSuite(suiteDir, schema) {
   if (suiteMetrics.schemaVersion !== 1) fail(failures, "suite-metrics.json.schemaVersion must be 1");
   if (suiteFailures.schemaVersion !== 1) fail(failures, "suite-failures.json.schemaVersion must be 1");
   validateMetricsAgainstRegistry(failures, suiteMetricList, "suite-metrics.json.metrics");
+  validateMetricValueShape(failures, suiteMetricList, "suite-metrics.json.metrics");
   if (suite.program !== "macos-ux-trace-harness") fail(failures, "suite.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(suite.status)) fail(failures, `suite.json.status ${suite.status} is not allowed`);
   validatePrivateBoundary(failures, suite.privateBoundary, "suite.json");
@@ -1119,6 +1159,7 @@ function validateBaselineArtifact(file, schema) {
     }
   }
   validateMetricsAgainstRegistry(failures, baseline.metrics || [], "baseline.metrics");
+  validateMetricValueShape(failures, baseline.metrics || [], "baseline.metrics", { baselineCompact: true });
   return {
     ok: failures.length === 0,
     kind: "baseline",
