@@ -25,6 +25,8 @@
     "runnerCommand": "node scripts/run_macos_ux_trace_harness.mjs",
     "runnerSelfTestCommand": "node scripts/run_macos_ux_trace_harness.mjs --self-test",
     "suiteRunnerCommand": "node scripts/run_macos_ux_trace_harness.mjs --suite p0",
+    "baselineCaptureCommand": "node scripts/run_macos_ux_trace_harness.mjs --write-baseline <file>",
+    "p0GateCommand": "node scripts/run_macos_ux_trace_harness.mjs --baseline <file> --gate p0",
     "fixtureGeneratorCommand": "node scripts/generate_macos_ux_trace_fixtures.mjs",
     "fixtureVerificationCommand": "node scripts/scale_lab_fixture_check.mjs",
     "verificationCommand": "node scripts/ui_ux_trace_harness_check.mjs"

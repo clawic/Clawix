@@ -115,8 +115,10 @@ the public repo.
   Use `--generate-fixture` to attach an exact generated dataset manifest to
   the run evidence. Use `--suite p0` to execute the P0 scenario matrix into a
   single suite directory with `suite.json`, `suite-metrics.json`, and
-  `suite-failures.json`. Use `--dry-run` only to validate harness wiring; it is
-  not performance evidence.
+  `suite-failures.json`. Use `--write-baseline <file>` after an approved
+  measured run, and use `--baseline <file> --gate p0` to make P0 baseline
+  regressions fail. Use `--dry-run` only to validate harness wiring; it is not
+  performance evidence.
 - `scripts/generate_macos_ux_trace_fixtures.mjs`: deterministic macOS fixture
   materializer for synthetic heavy conversation, sidebar, streaming, terminal,
   and real-equivalent-private profiles. Generated packs export

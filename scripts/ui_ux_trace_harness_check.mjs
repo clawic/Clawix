@@ -331,6 +331,8 @@ if (registry) {
   if (registry.requiredArtifacts?.runnerCommand !== `node ${runnerPath}`) fail(`${registryPath}.requiredArtifacts.runnerCommand must be node ${runnerPath}`);
   if (registry.requiredArtifacts?.runnerSelfTestCommand !== `node ${runnerPath} --self-test`) fail(`${registryPath}.requiredArtifacts.runnerSelfTestCommand must be node ${runnerPath} --self-test`);
   if (registry.requiredArtifacts?.suiteRunnerCommand !== `node ${runnerPath} --suite p0`) fail(`${registryPath}.requiredArtifacts.suiteRunnerCommand must be node ${runnerPath} --suite p0`);
+  if (registry.requiredArtifacts?.baselineCaptureCommand !== `node ${runnerPath} --write-baseline <file>`) fail(`${registryPath}.requiredArtifacts.baselineCaptureCommand must be node ${runnerPath} --write-baseline <file>`);
+  if (registry.requiredArtifacts?.p0GateCommand !== `node ${runnerPath} --baseline <file> --gate p0`) fail(`${registryPath}.requiredArtifacts.p0GateCommand must be node ${runnerPath} --baseline <file> --gate p0`);
   if (registry.requiredArtifacts?.fixtureGeneratorCommand !== `node ${fixtureGeneratorPath}`) fail(`${registryPath}.requiredArtifacts.fixtureGeneratorCommand must be node ${fixtureGeneratorPath}`);
   if (registry.requiredArtifacts?.fixtureVerificationCommand !== `node ${fixtureVerificationPath}`) fail(`${registryPath}.requiredArtifacts.fixtureVerificationCommand must be node ${fixtureVerificationPath}`);
   if (registry.requiredArtifacts?.verificationCommand !== "node scripts/ui_ux_trace_harness_check.mjs") fail(`${registryPath}.requiredArtifacts.verificationCommand must be node scripts/ui_ux_trace_harness_check.mjs`);
