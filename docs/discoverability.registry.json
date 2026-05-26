@@ -3938,6 +3938,40 @@
       "reviewDate": "2026-08-18"
     },
     {
+      "id": "ui-ux-trace-calibration-manifest",
+      "kind": "ui-governance",
+      "steward": "clawix",
+      "canonicalSource": "docs/ui/ux-trace-calibration.manifest.json",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/ui/README.md",
+        "docs/ui/ux-trace-harness.registry.json"
+      ],
+      "discoveryTerms": [
+        "ux-trace-calibration",
+        "macOS UX trace calibration",
+        "UX trace real-equivalent calibration",
+        "private real-mode aggregate comparison",
+        "UX trace external pending calibration"
+      ],
+      "searchQueries": [
+        {
+          "query": "ux-trace-calibration",
+          "expectPath": "docs/ui/ux-trace-calibration.manifest.json"
+        },
+        {
+          "query": "UX trace real-equivalent calibration",
+          "expectPath": "docs/ui/ux-trace-calibration.manifest.json"
+        }
+      ],
+      "guard": "scripts/ui_ux_trace_harness_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-26"
+    },
+    {
       "id": "guard-scripts-ui-ux-trace-harness-check",
       "kind": "test-harness",
       "steward": "clawix",
