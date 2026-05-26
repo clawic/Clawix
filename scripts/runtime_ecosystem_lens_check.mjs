@@ -80,6 +80,7 @@ const runtimeLensTestFiles = [
   "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensClientTests.swift",
   "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensClientBoundaryTests.swift",
   "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensInventoryPresentationTests.swift",
+  "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensSessionActionRunPresentationTests.swift",
   "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensSessionActionTests.swift",
   "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensSettingsPresentationTests.swift",
   "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensSupportPresentationTests.swift"
@@ -932,6 +933,8 @@ for (const snippet of [
   "action contract ",
   "result.requiredFlag.map { \"required flag \\($0)\" }",
   "result.officialProtocol.map { \"protocol \\($0)\" }",
+  ".help(presentation.checkGateHelp)",
+  ".help(presentation.confirmedRunHelp)",
   "runtime-lens-section-",
   "runtime-lens-presentation-row-",
   "viewStateSection(viewState)",
@@ -1022,6 +1025,19 @@ for (const snippet of [
   "ClawJSRuntimeLensRefreshPlan(runtimes: [runtime])"
 ]) {
   requireSnippet("macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensRefreshPlan.swift", snippet);
+}
+
+for (const snippet of [
+  "struct ClawJSRuntimeLensSessionActionRunPresentation",
+  "canCheckGate",
+  "canRunConfirmedFixture",
+  "disabledReason",
+  "checkGateHelp",
+  "confirmedRunHelp",
+  "canCheckGate ? \"Check confirmation gate\"",
+  "canRunConfirmedFixture ? \"Run confirmed loopback fixture\""
+]) {
+  requireSnippet("macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensSessionActionRunPresentation.swift", snippet);
 }
 
 for (const snippet of [
@@ -1179,6 +1195,9 @@ for (const snippet of [
   "XCTAssertTrue(pinContract.detailLines.contains(\"claim effect blocks_native_write_back_parity_not_local_overlay\"))",
   "action contract runtime hermes, domain sessions, authority runtime, writes runtime false, would write runtime true, writes local overlay false, required flag --confirm-runtime-write, protocol tui_gateway_json_rpc, method session.create",
   "action contract runtime hermes, domain sessions, authority runtime, writes runtime true, would write runtime true, writes local overlay false, protocol tui_gateway_json_rpc, method session.interrupt",
+  "XCTAssertEqual(readyForGateCheck.checkGateHelp, \"Check confirmation gate\")",
+  "XCTAssertEqual(readyForGateCheck.confirmedRunHelp, \"confirmed run requires loopback gateway URL\")",
+  "XCTAssertEqual(loopbackGateway.confirmedRunHelp, \"Run confirmed loopback fixture\")",
   "XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 6)",
   "XCTAssertEqual(commandPresentation.rows.first?.blockerClass, \"direct_blocker\")",
   "XCTAssertEqual(commandPresentation.rows.first?.nativeWriteBackFixtureRequired, true)",

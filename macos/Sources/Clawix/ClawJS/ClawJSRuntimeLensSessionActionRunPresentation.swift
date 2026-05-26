@@ -12,6 +12,8 @@ struct ClawJSRuntimeLensSessionActionRunPresentation: Equatable {
     let canCheckGate: Bool
     let canRunConfirmedFixture: Bool
     let disabledReason: String?
+    let checkGateHelp: String
+    let confirmedRunHelp: String
     let inFlight: Bool
     let actionKey: String
     let accessibilityIdentifier: String
@@ -28,6 +30,8 @@ struct ClawJSRuntimeLensSessionActionRunPresentation: Equatable {
             "loopback gateway \(hasLoopbackGateway)",
             "can check gate \(canCheckGate)",
             "can run confirmed fixture \(canRunConfirmedFixture)",
+            "check help \(checkGateHelp)",
+            "run help \(confirmedRunHelp)",
             "in flight \(inFlight)",
             disabledReason.map { "disabled \($0)" }
         ]
@@ -57,6 +61,12 @@ struct ClawJSRuntimeLensSessionActionRunPresentation: Equatable {
         let inFlight = inFlightKeys.contains(actionKey)
         let canCheckGate = supportsGatewayFixture && hasRequiredInput && !inFlight
         let canRunConfirmedFixture = canCheckGate && hasLoopbackGateway
+        let disabledReason = disabledReason(
+            supportsGatewayFixture: supportsGatewayFixture,
+            hasRequiredInput: hasRequiredInput,
+            hasLoopbackGateway: hasLoopbackGateway,
+            inFlight: inFlight
+        )
 
         return ClawJSRuntimeLensSessionActionRunPresentation(
             runtime: runtime,
@@ -69,12 +79,9 @@ struct ClawJSRuntimeLensSessionActionRunPresentation: Equatable {
             hasLoopbackGateway: hasLoopbackGateway,
             canCheckGate: canCheckGate,
             canRunConfirmedFixture: canRunConfirmedFixture,
-            disabledReason: disabledReason(
-                supportsGatewayFixture: supportsGatewayFixture,
-                hasRequiredInput: hasRequiredInput,
-                hasLoopbackGateway: hasLoopbackGateway,
-                inFlight: inFlight
-            ),
+            disabledReason: disabledReason,
+            checkGateHelp: canCheckGate ? "Check confirmation gate" : disabledReason ?? "Check confirmation gate",
+            confirmedRunHelp: canRunConfirmedFixture ? "Run confirmed loopback fixture" : disabledReason ?? "Run confirmed loopback fixture",
             inFlight: inFlight,
             actionKey: actionKey,
             accessibilityIdentifier: "runtime-lens-session-action-run-\(runtime.rawValue)-\(stableId(normalizedAction))"

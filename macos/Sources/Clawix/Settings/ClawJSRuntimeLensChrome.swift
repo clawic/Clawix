@@ -223,7 +223,7 @@ extension ClawJSRuntimeLensSection {
             }
             .buttonStyle(.plain)
             .foregroundColor(presentation.canCheckGate ? Palette.textPrimary : Palette.textSecondary.opacity(0.45))
-            .help(presentation.disabledReason ?? "Check confirmation gate")
+            .help(presentation.checkGateHelp)
             .disabled(!presentation.canCheckGate)
             .accessibilityIdentifier("\(presentation.accessibilityIdentifier)-check")
             .accessibilityLabel(Text("\(presentation.accessibilityLabel), check confirmation gate"))
@@ -236,7 +236,7 @@ extension ClawJSRuntimeLensSection {
             }
             .buttonStyle(.plain)
             .foregroundColor(presentation.canRunConfirmedFixture ? .orange : Palette.textSecondary.opacity(0.45))
-            .help(presentation.disabledReason ?? "Run confirmed loopback fixture")
+            .help(presentation.confirmedRunHelp)
             .disabled(!presentation.canRunConfirmedFixture)
             .accessibilityIdentifier("\(presentation.accessibilityIdentifier)-run")
             .accessibilityLabel(Text("\(presentation.accessibilityLabel), run confirmed loopback fixture"))

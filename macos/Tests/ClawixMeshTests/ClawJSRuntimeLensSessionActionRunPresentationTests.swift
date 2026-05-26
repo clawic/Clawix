@@ -34,7 +34,10 @@ final class ClawJSRuntimeLensSessionActionRunPresentationTests: XCTestCase {
         XCTAssertTrue(readyForGateCheck.canCheckGate)
         XCTAssertFalse(readyForGateCheck.canRunConfirmedFixture)
         XCTAssertEqual(readyForGateCheck.disabledReason, "confirmed run requires loopback gateway URL")
+        XCTAssertEqual(readyForGateCheck.checkGateHelp, "Check confirmation gate")
+        XCTAssertEqual(readyForGateCheck.confirmedRunHelp, "confirmed run requires loopback gateway URL")
         XCTAssertTrue(readyForGateCheck.accessibilityLabel.contains("can check gate true"))
+        XCTAssertTrue(readyForGateCheck.accessibilityLabel.contains("check help Check confirmation gate"))
     }
 
     func testHermesConfirmedFixtureRunRequiresLoopbackGateway() {
@@ -65,6 +68,8 @@ final class ClawJSRuntimeLensSessionActionRunPresentationTests: XCTestCase {
         XCTAssertTrue(loopbackGateway.hasLoopbackGateway)
         XCTAssertTrue(loopbackGateway.canRunConfirmedFixture)
         XCTAssertNil(loopbackGateway.disabledReason)
+        XCTAssertEqual(loopbackGateway.checkGateHelp, "Check confirmation gate")
+        XCTAssertEqual(loopbackGateway.confirmedRunHelp, "Run confirmed loopback fixture")
         XCTAssertEqual(loopbackGateway.actionKey, "hermes::session-action::inject")
         XCTAssertEqual(loopbackGateway.accessibilityIdentifier, "runtime-lens-session-action-run-hermes-inject")
     }
@@ -102,6 +107,8 @@ final class ClawJSRuntimeLensSessionActionRunPresentationTests: XCTestCase {
         XCTAssertFalse(openClaw.canCheckGate)
         XCTAssertFalse(openClaw.canRunConfirmedFixture)
         XCTAssertEqual(openClaw.disabledReason, "no fixture-backed gateway action")
+        XCTAssertEqual(openClaw.checkGateHelp, "no fixture-backed gateway action")
+        XCTAssertEqual(openClaw.confirmedRunHelp, "no fixture-backed gateway action")
 
         let inFlight = ClawJSRuntimeLensSessionActionRunPresentation.make(
             runtime: .hermes,
