@@ -4071,6 +4071,40 @@
       "reviewDate": "2026-08-26"
     },
     {
+      "id": "ui-ux-trace-kpi-coverage-manifest",
+      "kind": "ui-governance",
+      "steward": "clawix",
+      "canonicalSource": "docs/ui/ux-trace-kpi-coverage.manifest.json",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md",
+        "docs/ui/README.md",
+        "docs/ui/ux-trace-harness.registry.json"
+      ],
+      "discoveryTerms": [
+        "ux-trace-kpi-coverage",
+        "macOS UX trace KPI coverage",
+        "UX trace P1 P2 KPI gaps",
+        "UX trace coverage ledger",
+        "UX trace scenario coverage accounting"
+      ],
+      "searchQueries": [
+        {
+          "query": "ux-trace-kpi-coverage",
+          "expectPath": "docs/ui/ux-trace-kpi-coverage.manifest.json"
+        },
+        {
+          "query": "UX trace P1 P2 KPI gaps",
+          "expectPath": "docs/ui/ux-trace-kpi-coverage.manifest.json"
+        }
+      ],
+      "guard": "scripts/ui_ux_trace_harness_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-26"
+    },
+    {
       "id": "guard-scripts-ui-approval-authority-check",
       "kind": "ui-governance",
       "steward": "clawix",

@@ -144,6 +144,11 @@ the public repo.
   trace fixture profiles. It records which synthetic profiles have live
   baselines, which remain approval-pending, and why private real-mode aggregate
   comparison is `EXTERNAL PENDING` until approved aggregate evidence exists.
+- `ux-trace-kpi-coverage.manifest.json`: public-safe coverage ledger for the
+  UX trace KPI registry. P0 KPIs must be scenario-covered; every P1/P2 KPI
+  without a live scenario must be listed with owner, reason, promotion trigger,
+  and closure condition so lower-priority gaps are intentional rather than
+  forgotten.
 - `pattern-performance.manifest.json`: critical-flow ownership mapping from
   performance budgets back to registry patterns.
 - `private-baselines.manifest.json`: public contract for private visual,

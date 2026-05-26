@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "program": "macos-ux-trace-kpi-coverage",
+  "status": "p0-covered-p1-warning-p2-tracked",
+  "platform": "macos",
+  "policy": {
+    "p0": "Every P0 KPI must be referenced by at least one control-bus scenario.",
+    "p1": "P1 KPIs may warn before live scenario promotion only when each gap has an owner, reason, promotion trigger, and closure condition.",
+    "p2": "P2 KPIs may remain tracked-only only when each gap is intentional and visible to the public contract."
+  },
+  "sources": {
+    "registry": "docs/ui/ux-trace-harness.registry.json",
+    "scenarioManifest": "docs/ui/ux-trace-scenarios.manifest.json",
+    "verification": "node scripts/ui_ux_trace_harness_check.mjs"
+  },
+  "explicitGaps": [
+    {
+      "kpiId": "p1.dropdown.open_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "core-ux",
+      "reason": "Dropdown surfaces need one reusable control-bus action for menu opening before per-dropdown scenarios are useful.",
+      "promotionTrigger": "Any dropdown performance bug, visual regression, or new dropdown-heavy workflow.",
+      "closureCondition": "Add a live P1 scenario that opens a representative dropdown and waits for geometry-stable dropdown visibility."
+    },
+    {
+      "kpiId": "p1.rightSidebar.open_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "core-ux",
+      "reason": "Right-sidebar routes are lower frequency than chat/sidebar P0 and need stable representative fixture content before gating.",
+      "promotionTrigger": "Right sidebar becomes part of a core agent-monitoring workflow or regresses perceptibly.",
+      "closureCondition": "Add a live P1 scenario that opens the right sidebar under medium fixture load and records geometry samples."
+    },
+    {
+      "kpiId": "p1.rightSidebar.switch_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "core-ux",
+      "reason": "Switching right-sidebar items needs stable target ids before the runner can measure a representative item switch.",
+      "promotionTrigger": "Multiple right-sidebar items become regularly used during agent monitoring.",
+      "closureCondition": "Add a live P1 scenario that switches between two right-sidebar items and waits for the target item frame to stabilize."
+    },
+    {
+      "kpiId": "p1.browserPanel.open_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "core-ux",
+      "reason": "Browser panel opening is not on the P0 agent-conversation path but must remain visible as a warning KPI.",
+      "promotionTrigger": "Browser panel becomes part of a frequent agent inspection workflow.",
+      "closureCondition": "Add a live P1 scenario that opens the browser panel with a public-safe fixture and waits for panel visibility."
+    },
+    {
+      "kpiId": "p1.browserPanel.switch_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "core-ux",
+      "reason": "Browser panel switching needs stable panel route targets before live coverage is meaningful.",
+      "promotionTrigger": "Browser panel switching becomes common in multi-agent workflows.",
+      "closureCondition": "Add a live P1 scenario that switches browser-panel content and records frame-stable completion."
+    },
+    {
+      "kpiId": "p1.workSummary.expand_collapse_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "chat-ux",
+      "reason": "Work-summary expansion requires fixture rows with work summaries and stable expansion control ids.",
+      "promotionTrigger": "Work summaries are edited, virtualized, or reported as slow in dense transcripts.",
+      "closureCondition": "Add a dense-chat or streaming-heavy P1 scenario that expands and collapses a work summary row."
+    },
+    {
+      "kpiId": "p1.toolActionDetail.expand_collapse_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "chat-ux",
+      "reason": "Tool/action detail expansion requires fixture rows with tool detail controls and stable row anchors.",
+      "promotionTrigger": "Tool/action detail UI changes or dense transcript tool rows become a target workflow.",
+      "closureCondition": "Add a dense-chat or streaming-heavy P1 scenario that expands and collapses tool/action detail."
+    },
+    {
+      "kpiId": "p1.attachment.preview_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "composer-ux",
+      "reason": "Attachment preview needs a public-safe fixture attachment and a no-service staging path before live measurement.",
+      "promotionTrigger": "Attachment preview is touched, reported slow, or added to normal agent workflows.",
+      "closureCondition": "Add a medium-fixture P1 scenario that stages a public-safe attachment and waits for preview visibility."
+    },
+    {
+      "kpiId": "p1.search.open_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "navigation-ux",
+      "reason": "Search opening is lower priority than P0 chat/sidebar but must be promoted before search optimization work.",
+      "promotionTrigger": "Search UI changes, search is optimized, or search becomes a frequent agent navigation path.",
+      "closureCondition": "Add a medium or dense-sidebar P1 scenario that opens search and waits for input visibility."
+    },
+    {
+      "kpiId": "p1.search.results_first_paint_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "navigation-ux",
+      "reason": "Search result paint requires deterministic public-safe searchable fixture content.",
+      "promotionTrigger": "Search indexing, result rendering, or sidebar filtering changes.",
+      "closureCondition": "Add a medium or dense-sidebar P1 scenario that opens search, types a deterministic query, and waits for first result paint."
+    },
+    {
+      "kpiId": "p1.project.switch_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "navigation-ux",
+      "reason": "Project switching needs deterministic project fixture data in the macOS fixture pack.",
+      "promotionTrigger": "Project navigation changes or project-heavy workflows become central to agent monitoring.",
+      "closureCondition": "Add a dense-sidebar P1 scenario that switches to a fixture project and waits for project conversation list stability."
+    },
+    {
+      "kpiId": "p1.pinnedView.switch_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "navigation-ux",
+      "reason": "Pinned view has fixture data but still needs a dedicated control-bus route action before scenario coverage.",
+      "promotionTrigger": "Pinned view changes, pinning performance work, or frequent pinned workflow usage.",
+      "closureCondition": "Add a dense-sidebar P1 scenario that switches to pinned view and waits for pinned list stability."
+    },
+    {
+      "kpiId": "p1.chatFilter.switch_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "navigation-ux",
+      "reason": "Archived/all filter switching needs stable filter controls and deterministic archived fixture rows.",
+      "promotionTrigger": "Chat filter UI changes or filtering becomes part of core monitoring workflows.",
+      "closureCondition": "Add a dense-sidebar P1 scenario that switches filters and waits for filtered list stability."
+    },
+    {
+      "kpiId": "p1.state.transition_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "core-ux",
+      "reason": "Empty, loading, and error states need explicit fixture toggles so scenarios do not depend on real failures.",
+      "promotionTrigger": "State surfaces are redesigned or a bug involves loading, empty, or error transitions.",
+      "closureCondition": "Add a smoke P1 scenario that triggers a synthetic state transition and waits for target state visibility."
+    },
+    {
+      "kpiId": "p1.window.resize_frame_stability_px",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "windowing-ux",
+      "reason": "Resize measurement needs a control-bus resize primitive that does not use the shared cursor.",
+      "promotionTrigger": "Window layout work, resize regressions, or multi-window performance work.",
+      "closureCondition": "Add a medium P1 scenario that resizes the agent window and records primary-frame stability."
+    },
+    {
+      "kpiId": "p1.multiWindow.instance_switch_latency_ms",
+      "priority": "P1",
+      "status": "warning-until-scenario",
+      "owner": "windowing-ux",
+      "reason": "Multi-window switching requires a runner-level two-instance orchestration path.",
+      "promotionTrigger": "Multi-window agent workflows are optimized or reported slow.",
+      "closureCondition": "Add a P1 suite scenario that provisions two agent instances and measures target-window readiness."
+    },
+    {
+      "kpiId": "p2.settings.rare_pane_open_latency_ms",
+      "priority": "P2",
+      "status": "tracked-only",
+      "owner": "settings-ux",
+      "reason": "Rare settings panes are intentionally tracked but not part of normal agent-monitoring performance gates.",
+      "promotionTrigger": "A rare settings pane becomes high-traffic or is directly edited.",
+      "closureCondition": "Add a tracked or warning scenario for the specific pane being changed."
+    },
+    {
+      "kpiId": "p2.integration.deep_panel_open_latency_ms",
+      "priority": "P2",
+      "status": "tracked-only",
+      "owner": "integration-ux",
+      "reason": "Deep integration panels are intentionally tracked without live coverage until an integration panel is changed.",
+      "promotionTrigger": "A deep integration panel becomes part of a frequent workflow or receives performance work.",
+      "closureCondition": "Add a tracked scenario for the integration panel being changed."
+    },
+    {
+      "kpiId": "p2.provider.secondary_surface_latency_ms",
+      "priority": "P2",
+      "status": "tracked-only",
+      "owner": "provider-ux",
+      "reason": "Secondary provider surfaces are low-frequency and may involve provider-specific setup that must stay out of public fixtures.",
+      "promotionTrigger": "A secondary provider surface is changed or becomes user-visible in common flows.",
+      "closureCondition": "Add a public-safe tracked scenario or mark provider prerequisites as external pending."
+    },
+    {
+      "kpiId": "p2.diagnostics.panel_open_latency_ms",
+      "priority": "P2",
+      "status": "tracked-only",
+      "owner": "diagnostics-ux",
+      "reason": "Diagnostics panels are explicit support surfaces and must not block P0 monitoring work.",
+      "promotionTrigger": "Diagnostics UI receives performance work or becomes a common debugging workflow.",
+      "closureCondition": "Add a tracked scenario that opens diagnostics from a public-safe fixture state."
+    },
+    {
+      "kpiId": "p2.maintenance.flow_open_latency_ms",
+      "priority": "P2",
+      "status": "tracked-only",
+      "owner": "maintenance-ux",
+      "reason": "Maintenance flows are rare, support-like paths and should remain tracked unless directly changed.",
+      "promotionTrigger": "A maintenance flow becomes frequent or receives UI/runtime changes.",
+      "closureCondition": "Add a tracked scenario for the specific maintenance flow being changed."
+    },
+    {
+      "kpiId": "p2.infoPanel.visible_latency_ms",
+      "priority": "P2",
+      "status": "tracked-only",
+      "owner": "core-ux",
+      "reason": "Visual information panels are low-frequency explanatory surfaces.",
+      "promotionTrigger": "An information panel is redesigned, reported slow, or becomes part of a frequent workflow.",
+      "closureCondition": "Add a tracked scenario that opens the relevant panel and waits for stable visibility."
+    }
+  ]
+}

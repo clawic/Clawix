@@ -53,6 +53,7 @@
     "evidenceSchema": "docs/ui/ux-trace-evidence.schema.json",
     "scenarioManifest": "docs/ui/ux-trace-scenarios.manifest.json",
     "calibrationManifest": "docs/ui/ux-trace-calibration.manifest.json",
+    "kpiCoverageManifest": "docs/ui/ux-trace-kpi-coverage.manifest.json",
     "runnerCommand": "node scripts/run_macos_ux_trace_harness.mjs",
     "runnerSelfTestCommand": "node scripts/run_macos_ux_trace_harness.mjs --self-test",
     "suiteRunnerCommand": "node scripts/run_macos_ux_trace_harness.mjs --suite p0",

@@ -7,6 +7,7 @@ const registryPath = "docs/ui/ux-trace-harness.registry.json";
 const evidenceSchemaPath = "docs/ui/ux-trace-evidence.schema.json";
 const scenariosPath = "docs/ui/ux-trace-scenarios.manifest.json";
 const calibrationPath = "docs/ui/ux-trace-calibration.manifest.json";
+const kpiCoveragePath = "docs/ui/ux-trace-kpi-coverage.manifest.json";
 const uiReadmePath = "docs/ui/README.md";
 const uiPerformanceSkillPath = "skills/ui-performance-budget/SKILL.md";
 const macosUxTraceSkillPath = "skills/macos-ux-trace-harness/SKILL.md";
@@ -469,12 +470,14 @@ const registry = readJson(registryPath);
 const evidenceSchema = readJson(evidenceSchemaPath);
 const scenarios = readJson(scenariosPath);
 const calibration = readJson(calibrationPath);
+const kpiCoverage = readJson(kpiCoveragePath);
 
 for (const [relativePath, value] of [
   [registryPath, registry],
   [evidenceSchemaPath, evidenceSchema],
   [scenariosPath, scenarios],
   [calibrationPath, calibration],
+  [kpiCoveragePath, kpiCoverage],
 ]) {
   if (value) rejectPrivateText(relativePath, value);
 }
@@ -556,6 +559,7 @@ if (registry) {
   if (registry.requiredArtifacts?.evidenceSchema !== evidenceSchemaPath) fail(`${registryPath}.requiredArtifacts.evidenceSchema must point to ${evidenceSchemaPath}`);
   if (registry.requiredArtifacts?.scenarioManifest !== scenariosPath) fail(`${registryPath}.requiredArtifacts.scenarioManifest must point to ${scenariosPath}`);
   if (registry.requiredArtifacts?.calibrationManifest !== calibrationPath) fail(`${registryPath}.requiredArtifacts.calibrationManifest must point to ${calibrationPath}`);
+  if (registry.requiredArtifacts?.kpiCoverageManifest !== kpiCoveragePath) fail(`${registryPath}.requiredArtifacts.kpiCoverageManifest must point to ${kpiCoveragePath}`);
   if (registry.requiredArtifacts?.runnerCommand !== `node ${runnerPath}`) fail(`${registryPath}.requiredArtifacts.runnerCommand must be node ${runnerPath}`);
   if (registry.requiredArtifacts?.runnerSelfTestCommand !== `node ${runnerPath} --self-test`) fail(`${registryPath}.requiredArtifacts.runnerSelfTestCommand must be node ${runnerPath} --self-test`);
   if (registry.requiredArtifacts?.suiteRunnerCommand !== `node ${runnerPath} --suite p0`) fail(`${registryPath}.requiredArtifacts.suiteRunnerCommand must be node ${runnerPath} --suite p0`);
@@ -1106,6 +1110,77 @@ if (scenarios) {
       ) {
         fail(`${scenariosPath}.scenarios.${scenario.id}.steps.${step.id}.action ${step.action} has no runner verb contract`);
       }
+    }
+  }
+}
+
+if (kpiCoverage) {
+  requireFields(kpiCoverage, kpiCoveragePath, [
+    "schemaVersion",
+    "program",
+    "status",
+    "platform",
+    "policy",
+    "sources",
+    "explicitGaps",
+  ]);
+  if (kpiCoverage.schemaVersion !== 1) fail(`${kpiCoveragePath}.schemaVersion must be 1`);
+  if (kpiCoverage.program !== "macos-ux-trace-kpi-coverage") fail(`${kpiCoveragePath}.program must be macos-ux-trace-kpi-coverage`);
+  if (kpiCoverage.platform !== "macos") fail(`${kpiCoveragePath}.platform must be macos`);
+  if (kpiCoverage.sources?.registry !== registryPath) fail(`${kpiCoveragePath}.sources.registry must point to ${registryPath}`);
+  if (kpiCoverage.sources?.scenarioManifest !== scenariosPath) fail(`${kpiCoveragePath}.sources.scenarioManifest must point to ${scenariosPath}`);
+  if (kpiCoverage.sources?.verification !== "node scripts/ui_ux_trace_harness_check.mjs") fail(`${kpiCoveragePath}.sources.verification must be node scripts/ui_ux_trace_harness_check.mjs`);
+}
+
+if (registry && scenarios && kpiCoverage) {
+  const registryKpis = new Map((registry.kpis ?? []).map((kpi) => [kpi.id, kpi]));
+  const scenarioKpiRefs = new Set((scenarios.scenarios ?? []).flatMap((scenario) => scenario.kpiRefs ?? []));
+  const missingByPriority = new Map();
+  for (const kpi of registryKpis.values()) {
+    if (!scenarioKpiRefs.has(kpi.id)) {
+      const list = missingByPriority.get(kpi.priority) ?? [];
+      list.push(kpi.id);
+      missingByPriority.set(kpi.priority, list);
+    }
+  }
+  const explicitGaps = requireArray(kpiCoverage.explicitGaps, `${kpiCoveragePath}.explicitGaps`, 1);
+  const gapIds = requireUniqueStringArray(explicitGaps.map((gap) => gap?.kpiId).filter(Boolean), `${kpiCoveragePath}.explicitGaps.kpiId`);
+  for (const gap of explicitGaps) {
+    requireFields(gap, `${kpiCoveragePath}.explicitGaps.${gap?.kpiId ?? "unknown"}`, [
+      "kpiId",
+      "priority",
+      "status",
+      "owner",
+      "reason",
+      "promotionTrigger",
+      "closureCondition",
+    ]);
+    const registryKpi = registryKpis.get(gap.kpiId);
+    if (!registryKpi) {
+      fail(`${kpiCoveragePath}.explicitGaps.${gap.kpiId} is not declared in ${registryPath}`);
+      continue;
+    }
+    if (scenarioKpiRefs.has(gap.kpiId)) fail(`${kpiCoveragePath}.explicitGaps.${gap.kpiId} is already scenario-covered`);
+    if (gap.priority !== registryKpi.priority) fail(`${kpiCoveragePath}.explicitGaps.${gap.kpiId}.priority must match ${registryPath}`);
+    if (gap.priority === "P0") fail(`${kpiCoveragePath}.explicitGaps.${gap.kpiId} cannot declare a P0 scenario gap`);
+    if (gap.priority === "P1" && gap.status !== "warning-until-scenario") {
+      fail(`${kpiCoveragePath}.explicitGaps.${gap.kpiId}.status must be warning-until-scenario for P1`);
+    }
+    if (gap.priority === "P2" && gap.status !== "tracked-only") {
+      fail(`${kpiCoveragePath}.explicitGaps.${gap.kpiId}.status must be tracked-only for P2`);
+    }
+  }
+  for (const [priority, missing] of missingByPriority.entries()) {
+    if (priority === "P0" && missing.length) fail(`${kpiCoveragePath} cannot leave P0 KPIs without scenario coverage: ${missing.join(", ")}`);
+    for (const kpiId of missing) {
+      if (priority !== "P0" && !gapIds.has(kpiId)) {
+        fail(`${kpiCoveragePath} must explicitly declare non-P0 KPI gap ${kpiId}`);
+      }
+    }
+  }
+  for (const gapId of gapIds) {
+    if (!missingByPriority.get(registryKpis.get(gapId)?.priority)?.includes(gapId)) {
+      fail(`${kpiCoveragePath}.explicitGaps.${gapId} must correspond to a currently uncovered KPI`);
     }
   }
 }
