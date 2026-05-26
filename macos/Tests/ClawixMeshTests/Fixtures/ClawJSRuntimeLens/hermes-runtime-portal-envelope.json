@@ -879,7 +879,7 @@
         },
         "memory": {
           "supported": true,
-          "status": "ready",
+          "status": "degraded",
           "strategy": "bridge"
         },
         "skills": {
@@ -8331,12 +8331,12 @@
       {
         "domain": "memory",
         "supported": true,
-        "status": "ready",
-        "runtimeCapabilityStatus": "ready",
+        "status": "degraded",
+        "runtimeCapabilityStatus": "degraded",
         "runtimeCapabilitySupported": true,
         "strategy": "bridge",
         "runtimeCapabilityStrategy": "bridge",
-        "readProjectionStatus": "projected",
+        "readProjectionStatus": "degraded_projection",
         "count": 1,
         "authority": "runtime_adapter",
         "claim": "inventoried",
@@ -10817,7 +10817,7 @@
         {
           "domain": "memory",
           "claim": "inventoried",
-          "status": "ready",
+          "status": "degraded",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
           "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
@@ -10843,12 +10843,12 @@
           "evidenceRequirementIds": [
             "hermes.memory.write_back_contract"
           ],
-          "readProjectionStatus": "projected",
+          "readProjectionStatus": "degraded_projection",
           "implementedFacets": [
             "manifest_domain_contract",
             "claw_cli_resource_surface",
             "read_projection_contract",
-            "ready_runtime_projection"
+            "degraded_runtime_projection"
           ],
           "blockingFacets": [
             "native_write_back_contract",
@@ -11391,8 +11391,8 @@
       },
       "projectionSummary": {
         "byReadProjectionStatus": {
-          "projected": 3,
-          "degraded_projection": 10
+          "projected": 2,
+          "degraded_projection": 11
         },
         "implementedFacetCounts": {
           "manifest_domain_contract": 13,
@@ -11403,8 +11403,8 @@
           "session_resolve_action": 1,
           "session_history_action": 1,
           "local_overlay_reconciliation_policy": 1,
-          "degraded_runtime_projection": 10,
-          "ready_runtime_projection": 2
+          "degraded_runtime_projection": 11,
+          "ready_runtime_projection": 1
         },
         "blockingFacetCounts": {
           "native_write_back_contract": 10,
@@ -11622,13 +11622,13 @@
           "domain": "memory",
           "closureStatus": "product_blocked",
           "claim": "inventoried",
-          "status": "ready",
-          "readProjectionStatus": "projected",
+          "status": "degraded",
+          "readProjectionStatus": "degraded_projection",
           "implementedFacets": [
             "manifest_domain_contract",
             "claw_cli_resource_surface",
             "read_projection_contract",
-            "ready_runtime_projection"
+            "degraded_runtime_projection"
           ],
           "blockingFacets": [
             "native_write_back_contract",

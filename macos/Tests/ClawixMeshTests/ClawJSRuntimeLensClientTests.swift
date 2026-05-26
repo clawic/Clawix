@@ -180,6 +180,8 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(hermesGatewayReentryPackets.allSatisfy { $0.doNotRunWithoutApproval == true })
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds?.contains("hermes.sessions.pin.native_write_back_contract"), true)
         XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds?.contains("hermes.sessions.unpin.native_write_back_contract"), true)
+        XCTAssertEqual(snapshot.status.capabilityMap?["memory"]?.status, "degraded")
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "memory" }?.status, "degraded")
         XCTAssertEqual(snapshot.status.capabilityMap?["doctor"]?.status, "degraded")
         XCTAssertEqual(snapshot.status.capabilityMap?["compat"]?.status, "degraded")
         XCTAssertEqual(snapshot.domainData?.doctorCompat?.capability?.status, "degraded")
