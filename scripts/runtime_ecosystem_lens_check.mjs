@@ -61,6 +61,7 @@ const runtimeLensSettingsFiles = [
 const runtimeLensTestFiles = [
   "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensClientTests.swift",
   "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensClientBoundaryTests.swift",
+  "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensInventoryPresentationTests.swift",
   "macos/Tests/ClawixMeshTests/ClawJSRuntimeLensSessionActionTests.swift"
 ];
 
@@ -903,6 +904,12 @@ for (const snippet of [
   "channelInventory.rows.first { $0.id == \"telegram\" }?.attributesLabel",
   "providerInventory.rows.first { $0.id == \"openai\" }?.attributesLabel",
   "sessionInventory.accessibilityLabel",
+  "XCTAssertEqual(hermesSessionResource.pinAuthority, \"none\")",
+  "XCTAssertEqual(hermesSessionResource.divergence, \"none\")",
+  "XCTAssertEqual(hermesSessionResource.localOverlay?.writesRuntime, false)",
+  "XCTAssertTrue(sessionInventory.rows.first?.attributes.contains(\"overlay pinned: false\") == true)",
+  "XCTAssertEqual(hermesOverlayActionPresentation.action, \"pin\")",
+  "XCTAssertEqual(hermesOverlayActionPresentation.targetPinned, true)",
   "channelInventory.statusLabel",
   "configurationInventory.statusLabel",
   "managed-file-1",

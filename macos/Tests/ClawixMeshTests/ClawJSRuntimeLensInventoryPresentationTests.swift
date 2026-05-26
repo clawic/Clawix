@@ -302,7 +302,13 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
             sessionInventory.rows.first?.provenanceLabel,
             "runtime-session-sqlite, runtime hermes, /Users/tester/.hermes/state.db"
         )
+        XCTAssertEqual(sessionInventory.rows.first?.pinned, false)
         XCTAssertEqual(sessionInventory.rows.first?.attributeCount, 18)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("pin authority: none") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("divergence: none") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("overlay authority: clawix_local_overlay") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("overlay writes runtime: false") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("overlay pinned: false") == true)
         XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("parent session: parent-session") == true)
         XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("input tokens: 11") == true)
         XCTAssertTrue(sessionInventory.rows.first?.attributes.contains("output tokens: 23") == true)
@@ -318,6 +324,23 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("native identifier sessionId") == true)
         XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("provenance source runtime-session-sqlite") == true)
         XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("attributes 18") == true)
+        XCTAssertTrue(sessionInventory.rows.first?.accessibilityLabel.contains("pin authority: none") == true)
+        let hermesSessionResource = try XCTUnwrap(sessionInventory.rows.first?.resource)
+        let hermesOverlayActionPresentation = ClawJSRuntimeLensSessionOverlayActionPresentation.make(
+            snapshot: snapshot,
+            resource: hermesSessionResource,
+            inFlightKeys: []
+        )
+        XCTAssertEqual(hermesOverlayActionPresentation.action, "pin")
+        XCTAssertEqual(hermesOverlayActionPresentation.buttonTitle, "Pin")
+        XCTAssertEqual(hermesOverlayActionPresentation.systemImage, "pin")
+        XCTAssertEqual(hermesOverlayActionPresentation.currentPinned, false)
+        XCTAssertEqual(hermesOverlayActionPresentation.targetPinned, true)
+        XCTAssertEqual(hermesOverlayActionPresentation.authority, "clawix_local_overlay")
+        XCTAssertEqual(hermesOverlayActionPresentation.writesRuntime, false)
+        XCTAssertFalse(hermesOverlayActionPresentation.disabled)
+        XCTAssertTrue(hermesOverlayActionPresentation.accessibilityLabel.contains("runtime session overlay action pin"))
+        XCTAssertTrue(hermesOverlayActionPresentation.accessibilityLabel.contains("target pinned true"))
 
         let skillsInventory = try XCTUnwrap(inventory.sections.first { $0.domain == "skills" })
         XCTAssertEqual(skillsInventory.totalResourceCount, 1)
