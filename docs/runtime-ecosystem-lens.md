@@ -111,6 +111,11 @@ ecosystem manifest:
   path, auth store, approval-gate fixture path, and loopback gateway URL. These
   controls are forwarded to ClawJS portal refreshes so approval-gate receipts
   and gateway fixture state can be validated inside an isolated runtime scope.
+  For Hermes, a loopback TUI Gateway URL can also materialize read-only session
+  list/preview/resolve/history through `session.list`, `session.history`, and
+  `session.status`; the lens must keep those reads `writesRuntime: false`, must
+  rely on ClawJS redaction before rendering content, and must not treat this as
+  production transport evidence.
 - individual `evidenceRequirements` are rendered through a tested presentation
   model wherever they appear so blocker class, approval requirement, command
   shape, current behavior, product decision, support resolution, and promotion
@@ -228,7 +233,8 @@ than silently rendering aggregate or stale state from another runtime.
 
 The lens may pass explicit runtime scope overrides to the ClawJS portal when a
 user needs to inspect an isolated runtime store: runtime home, runtime
-workspace, config path, auth store, and an approved loopback gateway URL.
+workspace, config path, auth store, approval-gate fixture path, and an approved
+loopback gateway URL.
 Empty override fields preserve the default runtime scope. Overrides must be
 forwarded to both the selected runtime snapshot refresh and scoped session
 actions so UI validation can target the same runtime store and gateway fixture
