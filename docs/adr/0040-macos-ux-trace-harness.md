@@ -66,9 +66,10 @@ other.
   are not required for this ADR.
 - **Tradeoffs accepted**: P1 and P2 KPIs may start as warnings or tracked-only
   records until baselines and runner support are approved.
-- **Debt or pending evidence**: full runner implementation, private baseline
-  capture, and real-equivalent calibration remain incomplete until the harness
-  can execute the scenario manifest and compare approved private evidence.
+- **Debt or pending evidence**: the live P0 runner, fixture scenarios, baseline
+  capture, and P0 gate comparison are implemented. Baseline approval, strict
+  threshold promotion, and real-equivalent aggregate calibration remain pending
+  until the user approves the private evidence.
 
 ## Surface Parity
 

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "program": "macos-ux-trace-harness",
-  "status": "contract-defined-pending-implementation",
+  "status": "live-p0-runner-available-pending-baseline-approval",
   "platform": "macos",
   "policy": "P0 Clawix macOS UX work must be measurable from agent-control-bus actions to visual completion, geometry, scroll stability, hitches, resources, and approved baseline comparison. Computer Use may witness but must not be the primary measurement dependency.",
   "activationPolicy": {

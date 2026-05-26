@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "program": "macos-ux-trace-harness",
-  "status": "runner-available-pending-live-fixtures",
+  "status": "live-p0-scenarios-passing-pending-baseline-approval",
   "platform": "macos",
   "runnerContract": {
     "primaryMeasurementSurface": "agent-control-bus",
