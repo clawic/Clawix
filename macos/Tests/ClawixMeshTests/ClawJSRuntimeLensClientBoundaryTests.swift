@@ -69,16 +69,35 @@ final class ClawJSRuntimeLensClientBoundaryTests: XCTestCase {
         XCTAssertEqual(snapshot.resources(for: "configuration").first { $0.id == "managed-file-1" }?.path, "/tmp/workspace/AGENTS.md")
     }
 
-    func testRuntimeLensPassesHomeDirOverrideToDomainsCommand() async throws {
+    func testRuntimeLensPassesScopeOverridesToDomainsCommand() async throws {
         let client = ClawJSRuntimeLensClient(runner: .init { args in
-            XCTAssertEqual(args, ["runtime", "hermes", "domains", "--home-dir", "/tmp/hermes-home", "--json"])
+            XCTAssertEqual(args, [
+                "runtime",
+                "hermes",
+                "domains",
+                "--home-dir",
+                "/tmp/hermes-home",
+                "--runtime-workspace",
+                "/tmp/hermes-workspace",
+                "--config-path",
+                "/tmp/hermes-config.yaml",
+                "--auth-store",
+                "/tmp/hermes-auth.json",
+                "--json"
+            ])
             return .init(
                 data: try ClawJSRuntimeLensTestFixtures.data(named: "degraded-runtime-portal-envelope"),
                 exitCode: 2
             )
         })
 
-        let snapshot = try await client.load(runtime: .hermes, homeDir: "/tmp/hermes-home")
+        let snapshot = try await client.load(
+            runtime: .hermes,
+            homeDir: "/tmp/hermes-home",
+            runtimeWorkspace: "/tmp/hermes-workspace",
+            configPath: "/tmp/hermes-config.yaml",
+            authStore: "/tmp/hermes-auth.json"
+        )
 
         XCTAssertEqual(snapshot.runtimeId, "example")
     }

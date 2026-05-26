@@ -768,7 +768,7 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
         })
     }
 
-    func testRuntimeLensClientPassesHomeDirOverrideToSessionActions() async throws {
+    func testRuntimeLensClientPassesScopeOverridesToSessionActions() async throws {
         var requested: [[String]] = []
         let client = ClawJSRuntimeLensClient(runner: .init { args in
             requested.append(args)
@@ -799,7 +799,10 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
             runtime: .hermes,
             action: "history",
             sessionId: "2026/05/21/runtime-session",
-            homeDir: "/tmp/hermes-home"
+            homeDir: "/tmp/hermes-home",
+            runtimeWorkspace: "/tmp/hermes-workspace",
+            configPath: "/tmp/hermes-config.yaml",
+            authStore: "/tmp/hermes-auth.json"
         )
 
         XCTAssertEqual(requested, [[
@@ -811,6 +814,12 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
             "2026/05/21/runtime-session",
             "--home-dir",
             "/tmp/hermes-home",
+            "--runtime-workspace",
+            "/tmp/hermes-workspace",
+            "--config-path",
+            "/tmp/hermes-config.yaml",
+            "--auth-store",
+            "/tmp/hermes-auth.json",
             "--json"
         ]])
         XCTAssertEqual(result.status, "ok")

@@ -76,12 +76,32 @@ struct ClawJSRuntimeLensPager<Row>: View {
 
 extension ClawJSRuntimeLensSection {
     func runtimeLensScopeControls() -> some View {
-        TextField("Runtime home override", text: $runtimeLensHomeDir)
-            .textFieldStyle(.roundedBorder)
-            .font(BodyFont.system(size: 11.5))
-            .clxControl("runtime-lens-home-dir", role: "input", label: "Runtime lens home directory") { value in
-                runtimeLensHomeDir = value
-            }
+        VStack(spacing: 8) {
+            TextField("Runtime home override", text: $runtimeLensHomeDir)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .clxControl("runtime-lens-home-dir", role: "input", label: "Runtime lens home directory") { value in
+                    runtimeLensHomeDir = value
+                }
+            TextField("Runtime workspace override", text: $runtimeLensRuntimeWorkspace)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .clxControl("runtime-lens-runtime-workspace", role: "input", label: "Runtime lens runtime workspace") { value in
+                    runtimeLensRuntimeWorkspace = value
+                }
+            TextField("Runtime config path override", text: $runtimeLensConfigPath)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .clxControl("runtime-lens-config-path", role: "input", label: "Runtime lens config path") { value in
+                    runtimeLensConfigPath = value
+                }
+            TextField("Runtime auth store override", text: $runtimeLensAuthStore)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .clxControl("runtime-lens-auth-store", role: "input", label: "Runtime lens auth store") { value in
+                    runtimeLensAuthStore = value
+                }
+        }
     }
 
     func page<C: Collection>(_ rows: C, key: ClawJSRuntimeLensPageKey) -> ClawJSRuntimeLensPageSlice<C.Element> {

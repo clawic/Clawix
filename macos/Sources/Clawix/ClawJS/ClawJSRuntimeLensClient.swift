@@ -1808,12 +1808,19 @@ struct ClawJSRuntimeLensClient {
 
     func load(
         runtime: ClawJSRuntimeLensID,
-        homeDir: String? = nil
+        homeDir: String? = nil,
+        runtimeWorkspace: String? = nil,
+        configPath: String? = nil,
+        authStore: String? = nil
     ) async throws -> ClawJSRuntimeLensSnapshot {
         var args = ["runtime", runtime.rawValue, "domains"]
-        if let homeDir, !homeDir.isEmpty {
-            args.append(contentsOf: ["--home-dir", homeDir])
-        }
+        appendRuntimeScopeArgs(
+            to: &args,
+            homeDir: homeDir,
+            runtimeWorkspace: runtimeWorkspace,
+            configPath: configPath,
+            authStore: authStore
+        )
         args.append("--json")
         let result = try await runner.run(args)
         guard result.exitCode == 0 || result.exitCode == 2 else {
@@ -1868,6 +1875,9 @@ struct ClawJSRuntimeLensClient {
         title: String? = nil,
         gatewayURL: String? = nil,
         homeDir: String? = nil,
+        runtimeWorkspace: String? = nil,
+        configPath: String? = nil,
+        authStore: String? = nil,
         confirmRuntimeWrite: Bool = false
     ) async throws -> SessionNativeActionResult {
         var args = [
@@ -1885,9 +1895,13 @@ struct ClawJSRuntimeLensClient {
         if let title, !title.isEmpty {
             args.append(contentsOf: ["--title", title])
         }
-        if let homeDir, !homeDir.isEmpty {
-            args.append(contentsOf: ["--home-dir", homeDir])
-        }
+        appendRuntimeScopeArgs(
+            to: &args,
+            homeDir: homeDir,
+            runtimeWorkspace: runtimeWorkspace,
+            configPath: configPath,
+            authStore: authStore
+        )
         if let gatewayURL, !gatewayURL.isEmpty {
             args.append(contentsOf: ["--gateway-url", gatewayURL])
         }
@@ -1910,6 +1924,27 @@ struct ClawJSRuntimeLensClient {
         }
         // hot-path-ok maxBytes=1048576 reason=session action command returns one bounded envelope
         return try JSONDecoder().decode(SessionNativeActionEnvelope.self, from: result.data).data
+    }
+
+    private func appendRuntimeScopeArgs(
+        to args: inout [String],
+        homeDir: String?,
+        runtimeWorkspace: String?,
+        configPath: String?,
+        authStore: String?
+    ) {
+        if let homeDir, !homeDir.isEmpty {
+            args.append(contentsOf: ["--home-dir", homeDir])
+        }
+        if let runtimeWorkspace, !runtimeWorkspace.isEmpty {
+            args.append(contentsOf: ["--runtime-workspace", runtimeWorkspace])
+        }
+        if let configPath, !configPath.isEmpty {
+            args.append(contentsOf: ["--config-path", configPath])
+        }
+        if let authStore, !authStore.isEmpty {
+            args.append(contentsOf: ["--auth-store", authStore])
+        }
     }
 
     private static func runClawJS(args: [String]) async throws -> CommandResult {

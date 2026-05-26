@@ -219,11 +219,12 @@ explicit future all-runtime operation is declared. If the selected runtime does
 not have a snapshot yet, the lens shows a selected-runtime empty state rather
 than silently rendering aggregate or stale state from another runtime.
 
-The lens may pass an explicit runtime home override to the ClawJS portal when a
-user needs to inspect an isolated runtime store. An empty override preserves the
-default runtime home. The override must be forwarded to both the selected
-runtime snapshot refresh and scoped session actions so UI validation can target
-the same runtime store as CLI evidence without changing global machine state.
+The lens may pass explicit runtime scope overrides to the ClawJS portal when a
+user needs to inspect an isolated runtime store: runtime home, runtime
+workspace, config path, and auth store. Empty override fields preserve the
+default runtime scope. Overrides must be forwarded to both the selected runtime
+snapshot refresh and scoped session actions so UI validation can target the
+same runtime store as CLI evidence without changing global machine state.
 Loading, load-error, action-error, and empty-snapshot UI states are rendered
 through a tested presentation model so transient runtime failures remain scoped
 to the selected lens and expose stable accessibility labels for validation.
