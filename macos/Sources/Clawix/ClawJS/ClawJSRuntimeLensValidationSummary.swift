@@ -33,6 +33,7 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
     let evidenceApprovalGateBlockedCount: Int
     let evidenceTuiGatewayBlockedCount: Int
     let evidenceProductionTransportBlockedCount: Int
+    let evidenceWriteBackContractBlockedCount: Int
     let evidenceUnresolvedNativeRequirementCount: Int
     let checklistTotal: Int
     let evidenceReentryPacketCount: Int
@@ -68,6 +69,7 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
             "approval gate blocked \(evidenceApprovalGateBlockedCount)",
             "tui gateway blocked \(evidenceTuiGatewayBlockedCount)",
             "production transport blocked \(evidenceProductionTransportBlockedCount)",
+            "write back contract blocked \(evidenceWriteBackContractBlockedCount)",
             "unresolved native \(evidenceUnresolvedNativeRequirementCount)",
             "external \(externalPendingRequirementCount)",
             "product blocked \(productBlockedRequirementCount)",
@@ -144,6 +146,7 @@ struct ClawJSRuntimeLensValidationSummary: Equatable {
             evidenceApprovalGateBlockedCount: evidenceReadinessSummary?.approvalGateBlockedCount ?? 0,
             evidenceTuiGatewayBlockedCount: evidenceReadinessSummary?.tuiGatewayBlockedCount ?? 0,
             evidenceProductionTransportBlockedCount: evidenceReadinessSummary?.productionTransportBlockedCount ?? 0,
+            evidenceWriteBackContractBlockedCount: evidenceReadinessSummary?.writeBackContractBlockedCount ?? 0,
             evidenceUnresolvedNativeRequirementCount: evidenceReadinessSummary?.unresolvedNativeRequirementCount ?? 0,
             checklistTotal: checklist.count,
             evidenceReentryPacketCount: audit?.evidenceReentryPackets?.count ?? 0

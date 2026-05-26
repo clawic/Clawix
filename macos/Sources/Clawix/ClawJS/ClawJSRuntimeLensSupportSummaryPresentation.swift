@@ -76,6 +76,7 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
         let approvalGateBlockedCount: Int
         let tuiGatewayBlockedCount: Int
         let productionTransportBlockedCount: Int
+        let writeBackContractBlockedCount: Int
         let productBlockedCount: Int
         let unresolvedNativeRequirementCount: Int
         let statusLabel: String?
@@ -87,6 +88,7 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
         let approvalGateIdsLabel: String?
         let tuiGatewayIdsLabel: String?
         let productionTransportIdsLabel: String?
+        let writeBackContractIdsLabel: String?
         let productBlockedIdsLabel: String?
         let unresolvedNativeIdsLabel: String?
         let nextRequiredActionsLabel: String?
@@ -103,6 +105,7 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
                 "approval gate blocked \(approvalGateBlockedCount)",
                 "tui gateway blocked \(tuiGatewayBlockedCount)",
                 "production transport blocked \(productionTransportBlockedCount)",
+                "write back contract blocked \(writeBackContractBlockedCount)",
                 "product blocked \(productBlockedCount)",
                 "unresolved native \(unresolvedNativeRequirementCount)",
                 statusLabel.map { "statuses \($0)" },
@@ -114,6 +117,7 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
                 approvalGateIdsLabel.map { "approval gate ids \($0)" },
                 tuiGatewayIdsLabel.map { "tui gateway ids \($0)" },
                 productionTransportIdsLabel.map { "production transport ids \($0)" },
+                writeBackContractIdsLabel.map { "write back contract ids \($0)" },
                 productBlockedIdsLabel.map { "product blocked ids \($0)" },
                 unresolvedNativeIdsLabel.map { "unresolved native ids \($0)" },
                 reentryPolicy.map { "reentry policy \($0)" },
@@ -172,6 +176,7 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
             approvalGateBlockedCount: summary.approvalGateBlockedCount ?? 0,
             tuiGatewayBlockedCount: summary.tuiGatewayBlockedCount ?? 0,
             productionTransportBlockedCount: summary.productionTransportBlockedCount ?? 0,
+            writeBackContractBlockedCount: summary.writeBackContractBlockedCount ?? 0,
             productBlockedCount: summary.productBlockedCount ?? 0,
             unresolvedNativeRequirementCount: summary.unresolvedNativeRequirementCount ?? 0,
             statusLabel: countLabel(summary.statusCounts),
@@ -183,9 +188,10 @@ enum ClawJSRuntimeLensSupportSummaryPresentation {
             approvalGateIdsLabel: listLabel(summary.approvalGateRequirementIds, limit: 3),
             tuiGatewayIdsLabel: listLabel(summary.tuiGatewayRequirementIds, limit: 3),
             productionTransportIdsLabel: listLabel(summary.productionTransportRequirementIds, limit: 3),
+            writeBackContractIdsLabel: listLabel(summary.writeBackContractRequirementIds, limit: 3),
             productBlockedIdsLabel: listLabel(summary.productBlockedRequirementIds, limit: 3),
             unresolvedNativeIdsLabel: listLabel(summary.unresolvedNativeRequirementIds, limit: 3),
-            nextRequiredActionsLabel: listLabel(summary.nextRequiredActions, limit: 5),
+            nextRequiredActionsLabel: listLabel(summary.nextRequiredActions, limit: 6),
             reentryPolicy: summary.reentryPolicy,
             safeDefault: summary.safeDefault
         )

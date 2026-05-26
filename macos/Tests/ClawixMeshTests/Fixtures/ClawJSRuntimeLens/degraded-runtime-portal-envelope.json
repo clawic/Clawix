@@ -305,6 +305,7 @@
         "approvalGateBlockedCount": 1,
         "tuiGatewayBlockedCount": 1,
         "productionTransportBlockedCount": 1,
+        "writeBackContractBlockedCount": 1,
         "productBlockedCount": 3,
         "unresolvedNativeRequirementCount": 0,
         "approvalRequiredRequirementIds": [
@@ -325,6 +326,9 @@
         "productionTransportRequirementIds": [
           "example.sessions.create.action_contract"
         ],
+        "writeBackContractRequirementIds": [
+          "example.sessions.pin.native_write_back_contract"
+        ],
         "productBlockedRequirementIds": [
           "example.sessions.create.action_contract",
           "example.sessions.pin.native_write_back_contract",
@@ -336,6 +340,7 @@
           "approval_gate_fixture_and_redacted_receipt",
           "tui_gateway_wrapper_fixture_and_round_trip_evidence",
           "production_transport_lifecycle_policy_and_native_round_trip_evidence",
+          "official_runtime_write_back_contract_fixture",
           "official_runtime_native_contract_fixture"
         ],
         "reentryPolicy": "use_evidence_reentry_packets_before_claim_promotion",

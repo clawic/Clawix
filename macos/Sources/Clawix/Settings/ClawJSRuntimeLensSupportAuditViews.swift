@@ -259,6 +259,9 @@ extension ClawJSRuntimeLensSection {
                 if presentation.productionTransportBlockedCount > 0 {
                     statusPill(text: "transport \(presentation.productionTransportBlockedCount)", color: .orange)
                 }
+                if presentation.writeBackContractBlockedCount > 0 {
+                    statusPill(text: "write back \(presentation.writeBackContractBlockedCount)", color: .orange)
+                }
                 if presentation.unresolvedNativeRequirementCount > 0 {
                     statusPill(text: "unresolved \(presentation.unresolvedNativeRequirementCount)", color: .red)
                 }
@@ -322,6 +325,13 @@ extension ClawJSRuntimeLensSection {
             }
             if let transportIds = presentation.productionTransportIdsLabel {
                 Text("Transport ids: \(transportIds)")
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            if let writeBackIds = presentation.writeBackContractIdsLabel {
+                Text("Write-back ids: \(writeBackIds)")
                     .font(BodyFont.system(size: 10.5))
                     .foregroundColor(Palette.textSecondary.opacity(0.72))
                     .lineLimit(1)
