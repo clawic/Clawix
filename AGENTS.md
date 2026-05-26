@@ -35,15 +35,20 @@ open-standard trust, or platform launch behavior.
 ## Agent Discovery
 
 For non-trivial framework, contract, storage, CLI, schema, permission, grant,
-approval, audit, naming, route, protocol, or Clawix/ClawJS work, start with `claw` discovery:
+approval, audit, naming, route, protocol, or Clawix/ClawJS work, start with `claw` discovery in this order:
 
 ```bash
-claw search <topic> --json
+claw about                                   # what Claw is and what it owns (read first)
+claw router <one or more terms> --json       # map your intent to the right dedicated command
+claw help <command>                          # rich help for the chosen command
 claw inspect commands|why|database|schemas|storage|codebase --json
+claw search query <topic> --json             # content/data search (not command discovery)
 claw collections list --json
 claw collections <collection> schema --json
-claw db <collection> list|query --json
+claw db <collection> list|query --json       # fallback for collections without a dedicated command
 ```
+
+`claw router` is the right entry point when you do not know which command to type. Prefer dedicated commands (`claw tasks`, `claw notes`, `claw decisions`, `claw inbox`, `claw agenda`, ...) over `claw db` for everyday productivity work; use `claw db` only when there is no dedicated command or for schema/migration access.
 
 Treat source files as evidence after the CLI/registry map; if `claw` is unavailable, say so and use direct docs/source reads.
 
