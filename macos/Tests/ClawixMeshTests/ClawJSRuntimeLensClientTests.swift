@@ -37,6 +37,28 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.uiParityClaim, "partial_runtime_lens")
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.recommended, false)
         XCTAssertEqual(snapshot.supportAudit?.finalSupportClaimDecision?.production, false)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateBlockedCount, 2)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayBlockedCount, 4)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportBlockedCount, 4)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractBlockedCount, 12)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.approvalGateRequirementIds, [
+            "hermes.doctorCompat.approval_gate_evidence",
+            "hermes.sandboxPermissions.approval_gate_evidence"
+        ])
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.tuiGatewayRequirementIds, [
+            "hermes.sessions.send.action_contract",
+            "hermes.sessions.inject.action_contract",
+            "hermes.sessions.abort.action_contract",
+            "hermes.sessions.create.action_contract"
+        ])
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.productionTransportRequirementIds, [
+            "hermes.sessions.send.action_contract",
+            "hermes.sessions.inject.action_contract",
+            "hermes.sessions.abort.action_contract",
+            "hermes.sessions.create.action_contract"
+        ])
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds?.contains("hermes.sessions.pin.native_write_back_contract"), true)
+        XCTAssertEqual(snapshot.supportAudit?.evidenceReadinessSummary?.writeBackContractRequirementIds?.contains("hermes.sessions.unpin.native_write_back_contract"), true)
         XCTAssertEqual(snapshot.status.capabilityMap?["configuration"]?.status, "ready")
         XCTAssertEqual(snapshot.domainData?.configuration?.capability?.strategy, "config")
         XCTAssertEqual(snapshot.domainData?.configuration?.redactedConfigSnapshot?.valuePolicy, "keys_and_value_kinds_only_no_plaintext_values")

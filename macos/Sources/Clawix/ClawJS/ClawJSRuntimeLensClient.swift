@@ -434,7 +434,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         }
     }
 
-    struct DomainData: Decodable, Equatable {
+    final class DomainData: Decodable, Equatable {
         let sessions: SessionBucket?
         let skills: Bucket?
         let memory: Bucket?
@@ -448,6 +448,22 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let doctorCompat: OperationalBucket?
         let sandboxPermissions: OperationalBucket?
         let configuration: ConfigurationBucket?
+
+        static func == (lhs: DomainData, rhs: DomainData) -> Bool {
+            lhs.sessions == rhs.sessions
+                && lhs.skills == rhs.skills
+                && lhs.memory == rhs.memory
+                && lhs.channels == rhs.channels
+                && lhs.providers == rhs.providers
+                && lhs.auth == rhs.auth
+                && lhs.models == rhs.models
+                && lhs.scheduler == rhs.scheduler
+                && lhs.plugins == rhs.plugins
+                && lhs.gateway == rhs.gateway
+                && lhs.doctorCompat == rhs.doctorCompat
+                && lhs.sandboxPermissions == rhs.sandboxPermissions
+                && lhs.configuration == rhs.configuration
+        }
 
         struct Bucket: Decodable, Equatable {
             let skills: [RuntimeResource]?
