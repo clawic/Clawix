@@ -335,11 +335,13 @@ enum ClxControlHandlers {
         if hasExplicitChatTarget {
             return ensureTraceChatId(args, appState: appState)
         }
-        if let current = appState.currentChatId,
-           let chat = appState.chat(byId: current),
-           chat.rolloutPath == nil,
-           chat.historyHydrated {
-            return ensureTraceChatId(["id": current.uuidString], appState: appState)
+        if (args["useCurrent"] as? Bool) == true {
+            if let current = appState.currentChatId,
+               let chat = appState.chat(byId: current),
+               chat.rolloutPath == nil,
+               chat.historyHydrated {
+                return ensureTraceChatId(["id": current.uuidString], appState: appState)
+            }
         }
         let chat = Chat(
             title: "UX Trace Mock Chat",
