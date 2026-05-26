@@ -364,6 +364,7 @@ function stepSurfaceId(step, indexes) {
 
 function stepKpiId(step, scenario, indexes) {
   const explicit = step.kpi || step.kpiId;
+  if (explicit === "none") return "none";
   if (explicit && indexes.kpisById.has(explicit)) return explicit;
   return (scenario.kpiRefs || []).find((kpiId) => indexes.kpisById.has(kpiId)) || "none";
 }

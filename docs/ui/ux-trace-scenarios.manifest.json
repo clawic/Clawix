@@ -72,15 +72,18 @@
         "p0.sidebar.selected_row_stability_px"
       ],
       "steps": [
-        { "id": "wait-list", "action": "observe", "wait": "wait-visible", "target": "sidebar.conversationList" },
-        { "id": "scroll-down", "action": "scroll", "wait": "wait-scroll-stable", "target": "sidebar.conversationList" },
-        { "id": "scroll-up", "action": "scroll", "wait": "wait-scroll-stable", "target": "sidebar.conversationList" },
-        { "id": "hover-row", "action": "hover", "wait": "wait-frame-stable", "target": "sidebar.hoverTarget" },
-        { "id": "click-all-chats", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.allChats.entry" },
-        { "id": "click-pinned", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.pinned.entry" },
-        { "id": "click-projects", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.projects.entry" },
-        { "id": "click-conversation-row", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.selectedRow" },
-        { "id": "single-row-update", "action": "fixture-metadata-update", "wait": "wait-frame-stable", "target": "sidebar.selectedRow" }
+        { "id": "wait-list", "action": "observe", "wait": "wait-visible", "target": "sidebar.conversationList", "kpi": "p0.sidebar.first_paint_ready_ms" },
+        { "id": "scroll-down", "action": "scroll", "wait": "wait-scroll-stable", "target": "sidebar.conversationList", "kpi": "p0.sidebar.scroll_frame_p95_ms" },
+        { "id": "scroll-up", "action": "scroll", "wait": "wait-scroll-stable", "target": "sidebar.conversationList", "kpi": "p0.sidebar.scroll_hitch_count" },
+        { "id": "hover-row", "action": "hover", "wait": "wait-frame-stable", "target": "sidebar.hoverTarget", "kpi": "p0.sidebar.hover_to_highlight_ms" },
+        { "id": "click-all-chats", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.allChats.entry", "kpi": "none" },
+        { "id": "click-pinned", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.pinned.entry", "kpi": "none" },
+        { "id": "click-projects", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.projects.entry", "kpi": "none" },
+        { "id": "click-conversation-row", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.selectedRow", "kpi": "p0.sidebar.click_to_selection_visible_ms" },
+        { "id": "verify-chat-route-started", "action": "observe", "wait": "wait-visible", "target": "chat.route.container", "kpi": "p0.sidebar.click_to_chat_route_started_ms" },
+        { "id": "single-row-update", "action": "fixture-metadata-update", "wait": "wait-frame-stable", "target": "sidebar.selectedRow", "kpi": "p0.sidebar.metadata_update_invalidated_rows_count" },
+        { "id": "verify-list-not-rebuilt", "action": "observe", "wait": "wait-scroll-stable", "target": "sidebar.conversationList", "kpi": "p0.sidebar.no_full_list_rebuild_on_single_row_update" },
+        { "id": "verify-selected-row-stable", "action": "observe", "wait": "wait-frame-stable", "target": "sidebar.selectedRow", "kpi": "p0.sidebar.selected_row_stability_px" }
       ]
     },
     {
@@ -101,13 +104,19 @@
         "p0.chat.open_bridge_payload_bytes"
       ],
       "steps": [
-        { "id": "click-heavy-chat", "action": "measure-action", "wait": "wait-route", "target": "sidebar.conversation.row", "route": "chat" },
-        { "id": "wait-chat-container", "action": "observe", "wait": "wait-visible", "target": "chat.route.container" },
-        { "id": "wait-transcript", "action": "observe", "wait": "wait-visible", "target": "chat.transcript.scroll" },
-        { "id": "wait-final-window", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest" },
-        { "id": "verify-latest-message", "action": "observe", "wait": "wait-visible", "target": "chat.message.assistant" },
-        { "id": "verify-bottom-anchor", "action": "observe", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll" },
-        { "id": "verify-coherent-paint", "action": "analyze-events", "wait": "wait-frame-stable", "target": "chat.visibleWindow.latest" }
+        { "id": "click-heavy-chat", "action": "measure-action", "wait": "wait-route", "target": "sidebar.conversation.row", "route": "chat", "kpi": "p0.chat.open_click_to_route_selected_ms" },
+        { "id": "wait-chat-container", "action": "observe", "wait": "wait-visible", "target": "chat.route.container", "kpi": "none" },
+        { "id": "wait-transcript", "action": "observe", "wait": "wait-visible", "target": "chat.transcript.scroll", "kpi": "p0.chat.open_click_to_transcript_visible_ms" },
+        { "id": "wait-final-window", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "kpi": "p0.chat.open_click_to_final_visible_window_ms" },
+        { "id": "verify-latest-message", "action": "observe", "wait": "wait-visible", "target": "chat.message.assistant", "kpi": "p0.chat.latest_message_visible_ms" },
+        { "id": "verify-visible-window-count", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "kpi": "p0.chat.visible_latest_window_count" },
+        { "id": "verify-bottom-anchor", "action": "observe", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll", "kpi": "none" },
+        { "id": "verify-coherent-paint", "action": "analyze-events", "wait": "wait-frame-stable", "target": "chat.visibleWindow.latest", "kpi": "p0.chat.visible_window_no_row_by_row_buildup" },
+        { "id": "sample-open-hitches", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "durationMs": 100, "kpi": "p0.chat.open_hitch_count" },
+        { "id": "sample-open-frame", "action": "sample", "wait": "wait-frame-stable", "target": "chat.visibleWindow.latest", "kpi": "p0.chat.open_frame_p95_ms" },
+        { "id": "sample-open-memory", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "durationMs": 100, "kpi": "p0.chat.open_memory_delta_mb" },
+        { "id": "sample-open-query-count", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "durationMs": 100, "kpi": "p0.chat.open_database_query_count" },
+        { "id": "sample-open-bridge-payload", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "durationMs": 100, "kpi": "p0.chat.open_bridge_payload_bytes" }
       ]
     },
     {
@@ -128,15 +137,16 @@
       ],
       "steps": [
         { "id": "open-heavy-chat", "action": "include-scenario", "wait": "wait-chat-final-window", "target": "open-heavy-chat-latest-window" },
-        { "id": "record-anchor", "action": "snapshot", "wait": "wait-frame-stable", "target": "chat.message.row" },
-        { "id": "load-old-page-1", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll" },
-        { "id": "measure-anchor-1", "action": "measure-anchor-delta", "wait": "wait-frame-stable", "target": "chat.message.row" },
-        { "id": "load-old-page-2", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll" },
-        { "id": "measure-anchor-2", "action": "measure-anchor-delta", "wait": "wait-frame-stable", "target": "chat.message.row" },
-        { "id": "load-old-page-3", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll" },
-        { "id": "measure-anchor-3", "action": "measure-anchor-delta", "wait": "wait-frame-stable", "target": "chat.message.row" },
-        { "id": "scroll-bottom", "action": "scroll-to-bottom", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll" },
-        { "id": "verify-latest-returned", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest" }
+        { "id": "record-anchor", "action": "snapshot", "wait": "wait-frame-stable", "target": "chat.message.row", "kpi": "p0.chat.scrollbar_position_consistency_px" },
+        { "id": "load-old-page-1", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll", "kpi": "p0.chat.scroll_frame_p95_ms" },
+        { "id": "measure-scroll-hitches", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "durationMs": 100, "kpi": "p0.chat.scroll_hitch_count" },
+        { "id": "measure-anchor-1", "action": "measure-anchor-delta", "wait": "wait-frame-stable", "target": "chat.message.row", "kpi": "p0.chat.old_page_insert_anchor_delta_px" },
+        { "id": "load-old-page-2", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll", "kpi": "p0.chat.old_page_load_request_to_visible_ms" },
+        { "id": "measure-anchor-2", "action": "measure-anchor-delta", "wait": "wait-frame-stable", "target": "chat.message.row", "kpi": "p0.chat.old_page_insert_hitch_count" },
+        { "id": "load-old-page-3", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll", "kpi": "p0.chat.no_scroll_jump_during_prepend" },
+        { "id": "measure-anchor-3", "action": "measure-anchor-delta", "wait": "wait-frame-stable", "target": "chat.message.row", "kpi": "p0.chat.bottom_anchor_stability_px" },
+        { "id": "scroll-bottom", "action": "scroll-to-bottom", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll", "kpi": "p0.chat.scroll_to_bottom_ms" },
+        { "id": "verify-latest-returned", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "kpi": "p0.chat.no_lost_latest_message_after_scroll" }
       ]
     },
     {
@@ -154,12 +164,14 @@
         "p0.stream.no_freeze_under_many_active_runs"
       ],
       "steps": [
-        { "id": "start-mock-stream", "action": "mock-stream", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget", "intervalMs": 80, "chunkWords": 2, "text": "Primera respuesta visible con muchas palabras para mantener el streaming activo durante la medicion de deltas y anclaje inferior.", "reasoning": "Preparando contexto local y validando batches de streaming bajo carga pesada." },
-        { "id": "wait-first-delta", "action": "observe", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget" },
-        { "id": "measure-delta-batches", "action": "observe", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget" },
-        { "id": "verify-bottom-follow", "action": "observe", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll" },
-        { "id": "verify-no-forced-jump", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll" },
-        { "id": "complete-stream", "action": "mock-stream-complete", "wait": "wait-visible", "target": "chat.message.assistant" }
+        { "id": "start-mock-stream", "action": "mock-stream", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget", "intervalMs": 80, "chunkWords": 2, "text": "Primera respuesta visible con muchas palabras para mantener el streaming activo durante la medicion de deltas y anclaje inferior.", "reasoning": "Preparando contexto local y validando batches de streaming bajo carga pesada.", "kpi": "p0.stream.user_message_visible_ms" },
+        { "id": "wait-placeholder", "action": "observe", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget", "kpi": "p0.stream.assistant_placeholder_visible_ms" },
+        { "id": "wait-first-delta", "action": "observe", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget", "kpi": "p0.stream.first_delta_received_to_visible_ms" },
+        { "id": "measure-delta-batches", "action": "observe", "wait": "wait-stream-delta", "target": "chat.streaming.deltaTarget", "kpi": "p0.stream.delta_batch_to_visible_p95_ms" },
+        { "id": "verify-bottom-follow", "action": "observe", "wait": "wait-bottom-anchored", "target": "chat.transcript.scroll", "kpi": "p0.stream.scroll_bottom_follow_stability_px" },
+        { "id": "verify-no-forced-jump", "action": "scroll", "wait": "wait-scroll-stable", "target": "chat.transcript.scroll", "kpi": "p0.stream.unrelated_invalidations_count" },
+        { "id": "verify-responsive-during-stream", "action": "observe", "wait": "wait-frame-stable", "target": "chat.visibleWindow.latest", "kpi": "p0.stream.no_freeze_under_many_active_runs" },
+        { "id": "complete-stream", "action": "mock-stream-complete", "wait": "wait-visible", "target": "chat.message.assistant", "kpi": "p0.stream.completion_to_final_visible_ms" }
       ]
     },
     {
@@ -174,11 +186,12 @@
         "p0.composer.no_typing_hitches"
       ],
       "steps": [
-        { "id": "focus-composer", "action": "measure-action", "wait": "wait-enabled", "target": "composer.input" },
-        { "id": "type-text", "action": "type", "wait": "wait-text", "target": "composer.input", "text": "reply OK" },
-        { "id": "send-mock", "action": "mock-send", "wait": "wait-visible", "target": "chat.message.user" },
-        { "id": "verify-input-cleared", "action": "observe", "wait": "wait-text", "target": "composer.input", "text": "" },
-        { "id": "verify-placeholder", "action": "observe", "wait": "wait-visible", "target": "chat.streaming.placeholder" }
+        { "id": "focus-composer", "action": "measure-action", "wait": "wait-enabled", "target": "composer.input", "kpi": "p0.composer.focus_to_caret_visible_ms" },
+        { "id": "type-text", "action": "type", "wait": "wait-text", "target": "composer.input", "text": "reply OK", "kpi": "p0.composer.keystroke_to_text_visible_ms" },
+        { "id": "sample-typing-hitches", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "durationMs": 100, "kpi": "p0.composer.no_typing_hitches" },
+        { "id": "send-mock", "action": "mock-send", "wait": "wait-visible", "target": "chat.message.user", "kpi": "p0.composer.send_click_to_user_message_visible_ms" },
+        { "id": "verify-input-cleared", "action": "observe", "wait": "wait-text", "target": "composer.input", "text": "", "kpi": "p0.composer.send_click_to_input_cleared_ms" },
+        { "id": "verify-placeholder", "action": "observe", "wait": "wait-visible", "target": "chat.streaming.placeholder", "kpi": "none" }
       ]
     },
     {
@@ -192,10 +205,10 @@
         "p0.terminal.no_main_chat_freeze"
       ],
       "steps": [
-        { "id": "open-terminal", "action": "measure-action", "wait": "wait-visible", "target": "terminal.panel" },
-        { "id": "switch-back-chat", "action": "measure-action", "wait": "wait-visible", "target": "chat.route.container" },
-        { "id": "scroll-terminal", "action": "scroll", "wait": "wait-scroll-stable", "target": "terminal.panel", "direction": "up" },
-        { "id": "verify-chat-responsive", "action": "measure-action", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest" }
+        { "id": "open-terminal", "action": "measure-action", "wait": "wait-visible", "target": "terminal.panel", "kpi": "p0.terminal.open_under_load_ms" },
+        { "id": "switch-back-chat", "action": "measure-action", "wait": "wait-visible", "target": "chat.route.container", "kpi": "p0.terminal.switch_back_to_chat_ms" },
+        { "id": "scroll-terminal", "action": "scroll", "wait": "wait-scroll-stable", "target": "terminal.panel", "direction": "up", "kpi": "p0.terminal.output_scroll_frame_p95_ms" },
+        { "id": "verify-chat-responsive", "action": "measure-action", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "kpi": "p0.terminal.no_main_chat_freeze" }
       ]
     },
     {
@@ -210,9 +223,11 @@
         "p0.idle.no_unbounded_log_growth"
       ],
       "steps": [
-        { "id": "wait-initial-idle", "action": "observe", "wait": "wait-idle", "target": "app.shell.firstUsableWindow" },
-        { "id": "sample-idle-resources", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow" },
-        { "id": "verify-bounded-trace-growth", "action": "analyze-events", "wait": "wait-idle", "target": "app.shell.firstUsableWindow" }
+        { "id": "wait-initial-idle", "action": "observe", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "kpi": "p0.idle.no_hang" },
+        { "id": "sample-idle-resources", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "kpi": "p0.idle.cpu_percent" },
+        { "id": "sample-idle-memory-slope", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "kpi": "p0.idle.memory_slope_mb_per_min" },
+        { "id": "sample-idle-wakeups", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "kpi": "p0.idle.timer_wakeups" },
+        { "id": "verify-bounded-trace-growth", "action": "analyze-events", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "kpi": "p0.idle.no_unbounded_log_growth" }
       ]
     }
   ]
