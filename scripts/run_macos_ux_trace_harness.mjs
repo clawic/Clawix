@@ -391,6 +391,20 @@ function expandScenarioSteps(scenario, indexes, stack = []) {
   return expanded;
 }
 
+function metricKpiRefsForScenario(scenario, expandedSteps) {
+  const refs = [];
+  const seen = new Set();
+  for (const kpiId of [
+    ...(scenario.kpiRefs || []),
+    ...expandedSteps.map((step) => step.kpi),
+  ]) {
+    if (!kpiId || kpiId === "none" || seen.has(kpiId)) continue;
+    seen.add(kpiId);
+    refs.push(kpiId);
+  }
+  return refs;
+}
+
 function eventWriter(file, common) {
   fs.writeFileSync(file, "");
   let sequence = 0;
@@ -843,6 +857,27 @@ function baselineComparisonStatus(comparisons, gate) {
   if (comparisons.some((comparison) => comparison.status === "baseline_regression")) return "gate_failed";
   if (comparisons.some((comparison) => comparison.status === "baseline_missing")) return "baseline_missing";
   return "gate_passed";
+}
+
+function baselineComparisonsFromMetrics(metrics, gate) {
+  return metrics.map((metric) => {
+    let comparisonStatus = metric.baseline === null ? "baseline_missing" : "compared";
+    if (
+      gate
+      && metric.priority === gate.priority
+      && Number.isFinite(Number(metric.regressionPercent))
+      && Number(metric.regressionPercent) > gate.maxRegressionPercent
+    ) {
+      comparisonStatus = "baseline_regression";
+    }
+    return {
+      kpiId: metric.kpiId,
+      p95: metric.p95,
+      baseline: metric.baseline,
+      regressionPercent: metric.regressionPercent,
+      status: comparisonStatus,
+    };
+  });
 }
 
 function exitPolicyForRun(args, status) {
@@ -1359,7 +1394,7 @@ async function runScenario(args) {
   if (!skipScenarioSteps) {
     events.write({ eventType: "scenario.completed", stepId: scenarioId, actionId: scenarioId });
   }
-  const metrics = (scenario.kpiRefs || []).map((kpiId) => {
+  const metrics = metricKpiRefsForScenario(scenario, expandedSteps).map((kpiId) => {
     const kpi = indexes.kpisById.get(kpiId);
     return makeMetric(kpi, kpiSamples.get(kpiId) || [], events.eventRefs, baseline.get(kpiId));
   });
@@ -1376,24 +1411,7 @@ async function runScenario(args) {
       failure,
     });
   }
-  const comparisons = metrics.map((metric) => {
-    let comparisonStatus = metric.baseline === null ? "baseline_missing" : "compared";
-    if (
-      gate
-      && metric.priority === gate.priority
-      && Number.isFinite(Number(metric.regressionPercent))
-      && Number(metric.regressionPercent) > gate.maxRegressionPercent
-    ) {
-      comparisonStatus = "baseline_regression";
-    }
-    return {
-      kpiId: metric.kpiId,
-      p95: metric.p95,
-      baseline: metric.baseline,
-      regressionPercent: metric.regressionPercent,
-      status: comparisonStatus,
-    };
-  });
+  const comparisons = baselineComparisonsFromMetrics(metrics, gate);
   const baselineComparison = {
     schemaVersion: 1,
     runId,
@@ -1566,6 +1584,28 @@ async function runSuite(args) {
   const status = aggregateSuiteStatus(results, Boolean(args["dry-run"]));
   const finishedAt = isoNow();
   const suiteRunDirs = results.map((result) => path.relative(suiteDir, result.runDir));
+  const gate = gateOptions(args);
+  const comparisons = baselineComparisonsFromMetrics(metrics, gate);
+  const suiteBaselineComparison = {
+    schemaVersion: 1,
+    suiteId,
+    suiteName,
+    requestedFixtureProfile: requestedProfile,
+    baselineReference: baselineReferenceForRun(suiteDir, args.baseline),
+    gate: gate ? {
+      priority: gate.priority,
+      maxRegressionPercent: gate.maxRegressionPercent,
+    } : null,
+    status: baselineComparisonStatus(comparisons, gate),
+    comparisons,
+    childRuns: results.map((result, index) => ({
+      runId: result.runId,
+      scenarioId: selections[index].scenarioId,
+      fixtureProfile: selections[index].fixtureProfile,
+      runDir: suiteRunDirs[index],
+      baselineComparisonPath: path.join(suiteRunDirs[index], "baseline-comparison.json"),
+    })),
+  };
   const overheadCalibration = overheadCalibrationForSuite(results);
   const exitPolicy = exitPolicyForRun(args, status);
   const suite = {
@@ -1609,12 +1649,14 @@ async function runSuite(args) {
       "suite.json",
       "suite-metrics.json",
       "suite-failures.json",
+      "suite-baseline-comparison.json",
       ...suiteRunDirs,
     ],
   };
   writeJson(path.join(suiteDir, "suite.json"), suite);
   writeJson(path.join(suiteDir, "suite-metrics.json"), { schemaVersion: 1, suiteId, metrics });
   writeJson(path.join(suiteDir, "suite-failures.json"), { schemaVersion: 1, suiteId, failures });
+  writeJson(path.join(suiteDir, "suite-baseline-comparison.json"), suiteBaselineComparison);
   const writtenBaselinePath = writeBaselineArtifact(args["write-baseline"], { suiteId, scenarioId: null, fixtureProfile: requestedProfile || "mixed", status }, metrics);
 
   return {
@@ -1660,7 +1702,7 @@ async function selfTest() {
     "dry-run": true,
     "out-dir": outDir,
   });
-  for (const file of ["suite.json", "suite-metrics.json", "suite-failures.json"]) {
+  for (const file of ["suite.json", "suite-metrics.json", "suite-failures.json", "suite-baseline-comparison.json"]) {
     if (!fs.existsSync(path.join(suiteResult.suiteDir, file))) {
       throw new Error(`self-test did not create ${file}`);
     }

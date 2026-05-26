@@ -19,6 +19,7 @@
     "suite.json",
     "suite-metrics.json",
     "suite-failures.json",
+    "suite-baseline-comparison.json",
     "<scenario-run-directories>/"
   ],
   "suiteRequiredFields": [
@@ -149,6 +150,7 @@
   },
   "baselineComparisonContract": {
     "baselineReferencePolicy": "baseline-comparison.json must not store raw external baseline paths; external baselines are represented by sha256 path hashes, while generated in-run baselines may be relative references.",
+    "suiteAggregationPolicy": "suite-baseline-comparison.json must aggregate one comparison row per suite metric and link every child run to its baseline-comparison.json artifact with public-safe relative paths.",
     "allowedReferenceKinds": [
       "relative-to-run",
       "external-hash-only"

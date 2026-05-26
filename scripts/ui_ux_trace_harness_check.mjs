@@ -618,7 +618,7 @@ if (evidenceSchema) {
   if (evidenceSchema.schemaVersion !== 1) fail(`${evidenceSchemaPath}.schemaVersion must be 1`);
   if (evidenceSchema.program !== "macos-ux-trace-harness") fail(`${evidenceSchemaPath}.program must be macos-ux-trace-harness`);
   requireUniqueStringArray(requireArray(evidenceSchema.eventTypes, `${evidenceSchemaPath}.eventTypes`, expectedEventTypes.length), `${evidenceSchemaPath}.eventTypes`, expectedEventTypes);
-  requireUniqueStringArray(requireArray(evidenceSchema.suiteDirectoryShape, `${evidenceSchemaPath}.suiteDirectoryShape`), `${evidenceSchemaPath}.suiteDirectoryShape`, ["suite.json", "suite-metrics.json", "suite-failures.json"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.suiteDirectoryShape, `${evidenceSchemaPath}.suiteDirectoryShape`), `${evidenceSchemaPath}.suiteDirectoryShape`, ["suite.json", "suite-metrics.json", "suite-failures.json", "suite-baseline-comparison.json"]);
   requireUniqueStringArray(requireArray(evidenceSchema.evidenceDirectoryShape, `${evidenceSchemaPath}.evidenceDirectoryShape`), `${evidenceSchemaPath}.evidenceDirectoryShape`, ["logs/failure-ui-states.jsonl"]);
   requireUniqueStringArray(requireArray(evidenceSchema.suiteRequiredFields, `${evidenceSchemaPath}.suiteRequiredFields`), `${evidenceSchemaPath}.suiteRequiredFields`, ["suiteId", "suiteName", "scenarioCount", "runs", "artifactIndex", "exitPolicy", "evidenceSources", "traceIsolation", "overheadCalibration"]);
   requireUniqueStringArray(requireArray(evidenceSchema.runRequiredFields, `${evidenceSchemaPath}.runRequiredFields`), `${evidenceSchemaPath}.runRequiredFields`, ["runId", "scenarioId", "fixtureProfile", "artifactIndex", "exitPolicy", "evidenceSources", "traceIsolation", "overheadCalibration"]);
@@ -628,9 +628,12 @@ if (evidenceSchema) {
   if (!String(evidenceSchema.exitPolicyContract?.p0Gate ?? "").includes("exit code 1")) {
     fail(`${evidenceSchemaPath}.exitPolicyContract.p0Gate must require exit code 1`);
   }
-  requireFields(evidenceSchema.baselineComparisonContract, `${evidenceSchemaPath}.baselineComparisonContract`, ["baselineReferencePolicy", "allowedReferenceKinds"]);
+  requireFields(evidenceSchema.baselineComparisonContract, `${evidenceSchemaPath}.baselineComparisonContract`, ["baselineReferencePolicy", "suiteAggregationPolicy", "allowedReferenceKinds"]);
   if (!String(evidenceSchema.baselineComparisonContract?.baselineReferencePolicy ?? "").includes("must not store raw external baseline paths")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.baselineReferencePolicy must forbid raw external baseline paths`);
+  }
+  if (!String(evidenceSchema.baselineComparisonContract?.suiteAggregationPolicy ?? "").includes("one comparison row per suite metric")) {
+    fail(`${evidenceSchemaPath}.baselineComparisonContract.suiteAggregationPolicy must require suite-level metric comparison coverage`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedReferenceKinds, `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`), `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`, ["relative-to-run", "external-hash-only"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineArtifactRequiredFields, `${evidenceSchemaPath}.baselineArtifactRequiredFields`), `${evidenceSchemaPath}.baselineArtifactRequiredFields`, ["baselineVersion", "sourceEvidence", "approval", "promotionPolicy", "evidenceSources", "privateBoundary", "metrics"]);
@@ -923,7 +926,10 @@ if (runnerSource) {
     "function evidenceSourceReferences(",
     "function exitPolicyForRun(",
     "function baselineReferenceForRun(",
+    "function baselineComparisonsFromMetrics(",
     "baselineReference: baselineReferenceForRun(runDir, args.baseline)",
+    "writeJson(path.join(suiteDir, \"suite-baseline-comparison.json\"), suiteBaselineComparison)",
+    "baselineComparisonPath: path.join(suiteRunDirs[index], \"baseline-comparison.json\")",
     "verifyEvidencePath(baselinePath)",
     "approval: {",
     "status: \"pending-user-approval\"",
@@ -967,6 +973,9 @@ if (evidenceVerifierSource) {
     "validateExitPolicy(",
     "validateBaselineComparison(",
     "validateBaselineArtifact(",
+    "suite-baseline-comparison.json",
+    "suiteBaselineComparison",
+    "baselineComparisonPath",
     "is not a UX trace run, suite, or baseline artifact",
     "baseline-comparison.json must not include raw baselinePath",
     "exitPolicy.computedExitCode must be",

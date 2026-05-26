@@ -474,7 +474,7 @@ function validateRun(runDir, schema, options = {}) {
 
 function validateSuite(suiteDir, schema) {
   const failures = [];
-  for (const relativePath of ["suite.json", "suite-metrics.json", "suite-failures.json"]) {
+  for (const relativePath of ["suite.json", "suite-metrics.json", "suite-failures.json", "suite-baseline-comparison.json"]) {
     requireFile(failures, suiteDir, relativePath);
   }
   if (failures.length) return { ok: false, kind: "suite", path: suiteDir, failures };
@@ -482,6 +482,10 @@ function validateSuite(suiteDir, schema) {
   const suite = readJson(path.join(suiteDir, "suite.json"));
   const suiteMetrics = readJson(path.join(suiteDir, "suite-metrics.json"));
   const suiteFailures = readJson(path.join(suiteDir, "suite-failures.json"));
+  const suiteBaselineComparison = readJson(path.join(suiteDir, "suite-baseline-comparison.json"));
+  const suiteBaselineObject = suiteBaselineComparison && typeof suiteBaselineComparison === "object"
+    ? suiteBaselineComparison
+    : {};
   requireFields(failures, suite, "suite.json", schema.suiteRequiredFields);
   if (suite.program !== "macos-ux-trace-harness") fail(failures, "suite.json.program must be macos-ux-trace-harness");
   if (!schema.allowedRunStatuses.includes(suite.status)) fail(failures, `suite.json.status ${suite.status} is not allowed`);
@@ -492,8 +496,28 @@ function validateSuite(suiteDir, schema) {
   if (suite.traceIsolation?.suiteDirectoryMatchesSuiteId !== true) fail(failures, "suite.json.traceIsolation.suiteDirectoryMatchesSuiteId must be true");
   validateOverheadCalibration(failures, suite.overheadCalibration, "suite.json", schema);
   validateArtifactIndex(failures, suite.artifactIndex, "suite.json");
+  if (!suite.artifactIndex?.includes("suite-baseline-comparison.json")) {
+    fail(failures, "suite.json.artifactIndex is missing suite-baseline-comparison.json");
+  }
   if (suiteMetrics.suiteId !== suite.suiteId) fail(failures, "suite-metrics.json suiteId must match suite.json");
   if (suiteFailures.suiteId !== suite.suiteId) fail(failures, "suite-failures.json suiteId must match suite.json");
+  if (suiteBaselineObject.suiteId !== suite.suiteId) {
+    fail(failures, "suite-baseline-comparison.json suiteId must match suite.json");
+  }
+  validateBaselineComparison(failures, suiteBaselineComparison);
+  if (!["gate_passed", "gate_failed", "baseline_missing", "compared"].includes(suiteBaselineObject.status)) {
+    fail(failures, `suite-baseline-comparison.json.status ${suiteBaselineObject.status} is not allowed`);
+  }
+  if (!Array.isArray(suiteBaselineObject.comparisons)) {
+    fail(failures, "suite-baseline-comparison.json.comparisons must be an array");
+  } else if (suiteBaselineObject.comparisons.length !== (suiteMetrics.metrics || []).length) {
+    fail(failures, "suite-baseline-comparison.json.comparisons must include one row per suite metric");
+  }
+  if (!Array.isArray(suiteBaselineObject.childRuns)) {
+    fail(failures, "suite-baseline-comparison.json.childRuns must be an array");
+  } else if (suiteBaselineObject.childRuns.length !== (suite.runs || []).length) {
+    fail(failures, "suite-baseline-comparison.json.childRuns must match suite runs");
+  }
 
   const runResults = [];
   for (const [index, row] of (suite.runs || []).entries()) {
@@ -510,6 +534,20 @@ function validateSuite(suiteDir, schema) {
     }
     if (runResult.runId && runResult.runId !== row.runId) fail(failures, `suite.json.runs[${index}].runId must match child run`);
     if (runResult.status && runResult.status !== row.status) fail(failures, `suite.json.runs[${index}].status must match child run`);
+  }
+  for (const [index, row] of (suiteBaselineObject.childRuns || []).entries()) {
+    requireFields(failures, row, `suite-baseline-comparison.json.childRuns[${index}]`, ["runId", "scenarioId", "fixtureProfile", "runDir", "baselineComparisonPath"]);
+    if (!isRelativeSafe(row.runDir)) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].runDir must be relative and safe`);
+    if (!isRelativeSafe(row.baselineComparisonPath)) {
+      fail(failures, `suite-baseline-comparison.json.childRuns[${index}].baselineComparisonPath must be relative and safe`);
+    } else if (!fs.existsSync(path.join(suiteDir, row.baselineComparisonPath))) {
+      fail(failures, `suite-baseline-comparison.json.childRuns[${index}].baselineComparisonPath must exist`);
+    }
+    const suiteRun = (suite.runs || [])[index];
+    if (suiteRun) {
+      if (row.runId !== suiteRun.runId) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].runId must match suite run`);
+      if (row.runDir !== suiteRun.runDir) fail(failures, `suite-baseline-comparison.json.childRuns[${index}].runDir must match suite run`);
+    }
   }
   if (suite.scenarioCount !== (suite.runs || []).length) fail(failures, "suite.json.scenarioCount must match runs.length");
   if ((suiteMetrics.metrics || []).length < runResults.reduce((sum, result) => sum + (result.metrics || 0), 0)) {
