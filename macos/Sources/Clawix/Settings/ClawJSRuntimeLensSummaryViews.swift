@@ -29,7 +29,7 @@ extension ClawJSRuntimeLensSection {
             }
             if let support = snapshot.support {
                 Divider().background(Color.overlay(0.07))
-                runtimeLensSupport(support)
+                runtimeLensSupport(support, officialSnapshot: snapshot.officialSnapshot)
             }
             if let supportAudit = snapshot.supportAudit {
                 Divider().background(Color.overlay(0.07))

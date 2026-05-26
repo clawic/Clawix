@@ -216,6 +216,35 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(sessionActionPresentation.accessibilityLabel.contains("Runtime session actions"))
     }
 
+    func testRuntimeLensSupportOverviewFallsBackToTopLevelOfficialSnapshot() async throws {
+        let fixtureData = try ClawJSRuntimeLensTestFixtures.data(named: "hermes-runtime-portal-envelope")
+        var envelope = try XCTUnwrap(JSONSerialization.jsonObject(with: fixtureData) as? [String: Any])
+        var payload = try XCTUnwrap(envelope["data"] as? [String: Any])
+        var support = try XCTUnwrap(payload["support"] as? [String: Any])
+        var ecosystem = try XCTUnwrap(support["ecosystem"] as? [String: Any])
+        ecosystem.removeValue(forKey: "officialSnapshot")
+        support["ecosystem"] = ecosystem
+        payload["support"] = support
+        envelope["data"] = payload
+        let modifiedData = try JSONSerialization.data(withJSONObject: envelope)
+
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            XCTAssertEqual(args, ["runtime", "hermes", "domains", "--json"])
+            return .init(data: modifiedData, exitCode: 2)
+        })
+        let snapshot = try await client.load(runtime: .hermes)
+        let presentation = ClawJSRuntimeLensSupportOverviewPresentation.make(
+            support: try XCTUnwrap(snapshot.support),
+            officialSnapshot: snapshot.officialSnapshot
+        )
+
+        XCTAssertNil(snapshot.support?.ecosystem?.officialSnapshot)
+        XCTAssertEqual(snapshot.officialSnapshot?.capturedAt, "2026-05-26")
+        XCTAssertEqual(presentation.officialSnapshotLabel, "captured 2026-05-26, source snapshot 2026-05-26, sources 8")
+        XCTAssertEqual(presentation.officialSnapshotDriftPolicy, "hermes_remains_dev_only_until_snapshot_total_and_write_policy_are_complete")
+        XCTAssertTrue(presentation.accessibilityLabel.contains("official snapshot 2026-05-26"))
+    }
+
     func testRuntimeLensDecodesApprovalGateFixtureReceipts() async throws {
         let data = Self.hermesFixtureDataWithApprovalGateReceipt()
         let client = ClawJSRuntimeLensClient(runner: .init { args in

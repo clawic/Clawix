@@ -1,8 +1,14 @@
 import SwiftUI
 
 extension ClawJSRuntimeLensSection {
-    func runtimeLensSupport(_ support: ClawJSRuntimeLensSnapshot.Support) -> some View {
-        let presentation = ClawJSRuntimeLensSupportOverviewPresentation.make(support: support)
+    func runtimeLensSupport(
+        _ support: ClawJSRuntimeLensSnapshot.Support,
+        officialSnapshot: ClawJSRuntimeLensSnapshot.OfficialSnapshot? = nil
+    ) -> some View {
+        let presentation = ClawJSRuntimeLensSupportOverviewPresentation.make(
+            support: support,
+            officialSnapshot: officialSnapshot
+        )
 
         return VStack(alignment: .leading, spacing: 6) {
             row(label: "Support") {
