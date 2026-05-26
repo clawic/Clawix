@@ -137,6 +137,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let evidenceReadinessSummary: EvidenceReadinessSummary?
         let closureChecklist: [ClosureChecklistItem]?
         let closureChecklistSummary: [String: Int]?
+        let commandCoverageSummary: CommandCoverageSummary?
         let promotionGate: String?
         let finalPromotionReview: FinalPromotionReview?
         let finalSupportClaimDecision: FinalSupportClaimDecision?
@@ -260,9 +261,32 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let safeDefault: String?
         }
 
+        struct CommandCoverageSummary: Decodable, Equatable {
+            let status: String?
+            let runtimeId: String?
+            let exactCommand: String?
+            let totalCommandCount: Int?
+            let topLevelCommandCount: Int?
+            let domainCommandCount: Int?
+            let resourceCommandCount: Int?
+            let scopedReadCommandCount: Int?
+            let sessionActionCommandCount: Int?
+            let manifestDomainCount: Int?
+            let sessionActions: [String]?
+            let includesAllManifestDomains: Bool?
+            let includesAllDocumentedSessionActions: Bool?
+            let executableMatrixCommandCount: Int?
+            let promotionSignal: Bool?
+            let supportClaim: String?
+            let supportStage: String?
+            let supportImpact: String?
+            let safeDefault: String?
+        }
+
         struct FinalPromotionReview: Decodable, Equatable {
             let status: String?
             let finalPromotionAllowed: Bool?
+            let commandCoverageSummary: CommandCoverageSummary?
             let claimDisposition: String?
             let productBlockedByDecisionCount: Int?
             let externalPendingCount: Int?
@@ -281,6 +305,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let recommended: Bool?
             let production: Bool?
             let uiParityClaim: String?
+            let commandCoverageSummary: CommandCoverageSummary?
             let uiParityDisposition: String?
             let claimDisposition: String?
             let blockedPromotionClaims: [String]?

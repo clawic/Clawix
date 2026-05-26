@@ -529,8 +529,12 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                     pills: [
                         Pill(id: "status", label: presentation.status, tone: presentation.finalPromotionAllowed ? .success : .warning),
                         Pill(id: "claim", label: presentation.claimDisposition, tone: presentation.finalPromotionAllowed ? .success : .warning)
-                    ],
+                    ] + optionalPills([
+                        presentation.commandCoverageLabel.map { Pill(id: "commands", label: "commands \($0)", tone: .info) },
+                        presentation.commandCoveragePromotionSignal == false ? Pill(id: "command-promotion", label: "no command promotion", tone: .muted) : nil
+                    ]),
                     detailLines: optionalLines([
+                        presentation.commandCoverageSafeDefault,
                         presentation.productBlockedIdsLabel,
                         presentation.externalPendingIdsLabel,
                         presentation.unresolvedNativeIdsLabel,
@@ -556,8 +560,12 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                         Pill(id: "status", label: presentation.status, tone: presentation.status == "promoted" ? .success : .warning),
                         Pill(id: "claim", label: "claim \(presentation.effectiveSupportStage)", tone: ClawJSRuntimeLensStatusTone.supportClaim(presentation.effectiveSupportStage)),
                         Pill(id: "disposition", label: presentation.claimDisposition, tone: presentation.claimDisposition == "all_claims_supported_by_current_evidence" ? .success : .warning)
-                    ],
+                    ] + optionalPills([
+                        presentation.commandCoverageLabel.map { Pill(id: "commands", label: "commands \($0)", tone: .info) },
+                        presentation.commandCoveragePromotionSignal == false ? Pill(id: "command-promotion", label: "no command promotion", tone: .muted) : nil
+                    ]),
                     detailLines: optionalLines([
+                        presentation.commandCoverageSafeDefault,
                         presentation.uiParityClaim,
                         presentation.claimDisposition,
                         presentation.blockedPromotionClaimsLabel,

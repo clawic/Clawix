@@ -111,6 +111,18 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(commands.accessibilityLabel.contains("json portal commands 44"))
         XCTAssertTrue(commands.accessibilityLabel.contains("promotion signal false"))
         XCTAssertTrue(commands.accessibilityLabel.contains("safe default guarded_command_coverage_does_not_promote_support"))
+        let promotionReview = try XCTUnwrap(presentation.sections.first { $0.id == "final-promotion-review" })
+        XCTAssertTrue(promotionReview.accessibilityLabel.contains("command coverage guarded 44"))
+        XCTAssertTrue(promotionReview.accessibilityLabel.contains("command coverage promotion false"))
+        XCTAssertTrue(promotionReview.accessibilityLabel.contains("command coverage safe default guarded_command_coverage_does_not_promote_support"))
+        XCTAssertTrue(promotionReview.rows.first?.pills.contains { $0.label == "commands guarded 44" } == true)
+        XCTAssertTrue(promotionReview.rows.first?.pills.contains { $0.label == "no command promotion" } == true)
+        XCTAssertTrue(promotionReview.rows.first?.detailLines.contains("guarded_command_coverage_does_not_promote_support") == true)
+        let finalDecision = try XCTUnwrap(presentation.sections.first { $0.id == "final-support-claim-decision" })
+        XCTAssertTrue(finalDecision.accessibilityLabel.contains("command coverage guarded 44"))
+        XCTAssertTrue(finalDecision.accessibilityLabel.contains("command coverage promotion false"))
+        XCTAssertTrue(finalDecision.rows.first?.pills.contains { $0.label == "commands guarded 44" } == true)
+        XCTAssertTrue(finalDecision.rows.first?.pills.contains { $0.label == "no command promotion" } == true)
         let sendCommand = try XCTUnwrap(commands.rows.first {
             $0.label == "runtime hermes sessions send --session-key <id> --message <text> --confirm-runtime-write"
         })

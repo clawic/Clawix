@@ -8,6 +8,9 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
         let productBlockedCount: Int
         let externalPendingCount: Int
         let unresolvedNativeRequirementCount: Int
+        let commandCoverageLabel: String?
+        let commandCoveragePromotionSignal: Bool?
+        let commandCoverageSafeDefault: String?
         let productBlockedIdsLabel: String?
         let externalPendingIdsLabel: String?
         let unresolvedNativeIdsLabel: String?
@@ -23,6 +26,9 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
                 "product blocked \(productBlockedCount)",
                 "external pending \(externalPendingCount)",
                 "unresolved native \(unresolvedNativeRequirementCount)",
+                commandCoverageLabel.map { "command coverage \($0)" },
+                commandCoveragePromotionSignal.map { "command coverage promotion \($0)" },
+                commandCoverageSafeDefault.map { "command coverage safe default \($0)" },
                 productBlockedIdsLabel.map { "product blocked ids \($0)" },
                 externalPendingIdsLabel.map { "external pending ids \($0)" },
                 unresolvedNativeIdsLabel.map { "unresolved native ids \($0)" },
@@ -43,6 +49,9 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
         let uiParityClaim: String?
         let uiParityDisposition: String?
         let claimDisposition: String
+        let commandCoverageLabel: String?
+        let commandCoveragePromotionSignal: Bool?
+        let commandCoverageSafeDefault: String?
         let blockedPromotionClaims: [String]
         let blockerClassesLabel: String?
         let productBlockedIdsLabel: String?
@@ -69,6 +78,9 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
                 uiParityClaim.map { "ui parity claim \($0)" },
                 uiParityDisposition.map { "ui parity \($0)" },
                 "disposition \(claimDisposition)",
+                commandCoverageLabel.map { "command coverage \($0)" },
+                commandCoveragePromotionSignal.map { "command coverage promotion \($0)" },
+                commandCoverageSafeDefault.map { "command coverage safe default \($0)" },
                 blockedPromotionClaimsLabel.map { "blocked claims \($0)" },
                 blockerClassesLabel.map { "blocker classes \($0)" },
                 productBlockedIdsLabel.map { "product blocked ids \($0)" },
@@ -94,6 +106,9 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
             productBlockedCount: review.productBlockedByDecisionCount ?? review.productBlockedRequirementIds?.count ?? 0,
             externalPendingCount: review.externalPendingCount ?? review.externalPendingRequirementIds?.count ?? 0,
             unresolvedNativeRequirementCount: review.unresolvedNativeRequirementCount ?? review.unresolvedNativeRequirementIds?.count ?? 0,
+            commandCoverageLabel: commandCoverageLabel(review.commandCoverageSummary),
+            commandCoveragePromotionSignal: review.commandCoverageSummary?.promotionSignal,
+            commandCoverageSafeDefault: review.commandCoverageSummary?.safeDefault,
             productBlockedIdsLabel: listLabel(review.productBlockedRequirementIds, limit: 4),
             externalPendingIdsLabel: listLabel(review.externalPendingRequirementIds, limit: 4),
             unresolvedNativeIdsLabel: listLabel(review.unresolvedNativeRequirementIds, limit: 4),
@@ -114,6 +129,9 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
             uiParityClaim: decision.uiParityClaim,
             uiParityDisposition: decision.uiParityDisposition,
             claimDisposition: decision.claimDisposition ?? "unknown",
+            commandCoverageLabel: commandCoverageLabel(decision.commandCoverageSummary),
+            commandCoveragePromotionSignal: decision.commandCoverageSummary?.promotionSignal,
+            commandCoverageSafeDefault: decision.commandCoverageSummary?.safeDefault,
             blockedPromotionClaims: decision.blockedPromotionClaims ?? [],
             blockerClassesLabel: listLabel(decision.blockerClasses, limit: 4),
             productBlockedIdsLabel: listLabel(decision.productBlockedRequirementIds, limit: 4),
@@ -129,5 +147,13 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
     private static func listLabel(_ values: [String]?, limit: Int) -> String? {
         guard let values, !values.isEmpty else { return nil }
         return values.prefix(limit).joined(separator: ", ")
+    }
+
+    private static func commandCoverageLabel(
+        _ summary: ClawJSRuntimeLensSnapshot.SupportAudit.CommandCoverageSummary?
+    ) -> String? {
+        guard let summary, let count = summary.totalCommandCount else { return nil }
+        let status = summary.status ?? "unknown"
+        return "\(status) \(count)"
     }
 }

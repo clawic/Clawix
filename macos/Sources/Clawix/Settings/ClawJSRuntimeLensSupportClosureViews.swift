@@ -160,7 +160,20 @@ extension ClawJSRuntimeLensSection {
                 if presentation.unresolvedNativeRequirementCount > 0 {
                     statusPill(text: "unresolved \(presentation.unresolvedNativeRequirementCount)", color: .red)
                 }
+                if let coverage = presentation.commandCoverageLabel {
+                    statusPill(text: "commands \(coverage)", color: .blue)
+                }
+                if presentation.commandCoveragePromotionSignal == false {
+                    statusPill(text: "no command promotion", color: Color.overlay(0.35))
+                }
                 Spacer()
+            }
+            if let safeDefault = presentation.commandCoverageSafeDefault {
+                Text(safeDefault)
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
             if let required = presentation.requiredForPromotionLabel, !required.isEmpty {
                 Text("Promotion needs: \(required)")
@@ -214,7 +227,20 @@ extension ClawJSRuntimeLensSection {
                 if let parity = presentation.uiParityDisposition {
                     statusPill(text: parity, color: parity == "ui_parity_promoted" ? .green : .orange)
                 }
+                if let coverage = presentation.commandCoverageLabel {
+                    statusPill(text: "commands \(coverage)", color: .blue)
+                }
+                if presentation.commandCoveragePromotionSignal == false {
+                    statusPill(text: "no command promotion", color: Color.overlay(0.35))
+                }
                 Spacer()
+            }
+            if let safeDefault = presentation.commandCoverageSafeDefault {
+                Text(safeDefault)
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
             if let decision = presentation.decision {
                 Text("Decision: \(decision)")

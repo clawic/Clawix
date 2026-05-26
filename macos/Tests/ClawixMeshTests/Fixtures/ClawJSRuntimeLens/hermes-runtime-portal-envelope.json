@@ -12048,7 +12048,40 @@
           "ecosystem_production_claim",
           "ecosystem_recommended_claim"
         ],
-        "userVisibleStatus": "runtime_ecosystem_available_with_product_blocked_or_external_pending_claims"
+        "userVisibleStatus": "runtime_ecosystem_available_with_product_blocked_or_external_pending_claims",
+        "commandCoverageSummary": {
+          "status": "guarded",
+          "runtimeId": "hermes",
+          "exactCommand": "claw runtime hermes commands --json",
+          "totalCommandCount": 44,
+          "topLevelCommandCount": 5,
+          "domainCommandCount": 13,
+          "resourceCommandCount": 13,
+          "scopedReadCommandCount": 2,
+          "sessionActionCommandCount": 11,
+          "manifestDomainCount": 13,
+          "sessionActions": [
+            "list",
+            "preview",
+            "resolve",
+            "history",
+            "send",
+            "inject",
+            "abort",
+            "create",
+            "pin",
+            "unpin",
+            "conflicts"
+          ],
+          "includesAllManifestDomains": true,
+          "includesAllDocumentedSessionActions": true,
+          "executableMatrixCommandCount": 22,
+          "promotionSignal": false,
+          "supportClaim": "partial_runtime_lens",
+          "supportStage": "dev_only",
+          "supportImpact": "guarded_command_coverage_does_not_promote_support",
+          "safeDefault": "guarded_command_coverage_does_not_promote_support"
+        }
       },
       "finalSupportClaimDecision": {
         "status": "not_promoted",
@@ -12115,7 +12148,40 @@
         ],
         "reentryPolicy": "use_evidenceReentryPackets_exactly_before_revisiting_claim",
         "safeDefault": "keep_unpromoted_until_evidence_or_upstream_contract_changes",
-        "userVisibleStatus": "runtime_ecosystem_available_but_not_recommended_or_production"
+        "userVisibleStatus": "runtime_ecosystem_available_but_not_recommended_or_production",
+        "commandCoverageSummary": {
+          "status": "guarded",
+          "runtimeId": "hermes",
+          "exactCommand": "claw runtime hermes commands --json",
+          "totalCommandCount": 44,
+          "topLevelCommandCount": 5,
+          "domainCommandCount": 13,
+          "resourceCommandCount": 13,
+          "scopedReadCommandCount": 2,
+          "sessionActionCommandCount": 11,
+          "manifestDomainCount": 13,
+          "sessionActions": [
+            "list",
+            "preview",
+            "resolve",
+            "history",
+            "send",
+            "inject",
+            "abort",
+            "create",
+            "pin",
+            "unpin",
+            "conflicts"
+          ],
+          "includesAllManifestDomains": true,
+          "includesAllDocumentedSessionActions": true,
+          "executableMatrixCommandCount": 22,
+          "promotionSignal": false,
+          "supportClaim": "partial_runtime_lens",
+          "supportStage": "dev_only",
+          "supportImpact": "guarded_command_coverage_does_not_promote_support",
+          "safeDefault": "guarded_command_coverage_does_not_promote_support"
+        }
       },
       "evidenceReentryPackets": [
         {
@@ -13146,6 +13212,39 @@
         "runtimeId": "hermes",
         "officialSnapshotSource": "docs/runtime-ecosystem-integration.manifest.json",
         "sourceSnapshotDate": "2026-05-26"
+      },
+      "commandCoverageSummary": {
+        "status": "guarded",
+        "runtimeId": "hermes",
+        "exactCommand": "claw runtime hermes commands --json",
+        "totalCommandCount": 44,
+        "topLevelCommandCount": 5,
+        "domainCommandCount": 13,
+        "resourceCommandCount": 13,
+        "scopedReadCommandCount": 2,
+        "sessionActionCommandCount": 11,
+        "manifestDomainCount": 13,
+        "sessionActions": [
+          "list",
+          "preview",
+          "resolve",
+          "history",
+          "send",
+          "inject",
+          "abort",
+          "create",
+          "pin",
+          "unpin",
+          "conflicts"
+        ],
+        "includesAllManifestDomains": true,
+        "includesAllDocumentedSessionActions": true,
+        "executableMatrixCommandCount": 22,
+        "promotionSignal": false,
+        "supportClaim": "partial_runtime_lens",
+        "supportStage": "dev_only",
+        "supportImpact": "guarded_command_coverage_does_not_promote_support",
+        "safeDefault": "guarded_command_coverage_does_not_promote_support"
       }
     }
   },

@@ -175,6 +175,12 @@ if (!exists(hermesFixturePath)) {
   requireEqual(supportAudit?.officialSnapshot?.capturedAt, "2026-05-26", "Hermes fixture support audit official snapshot");
   requireEqual(supportAudit?.provenance?.officialSnapshotSource, "docs/runtime-ecosystem-integration.manifest.json", "Hermes fixture support audit snapshot provenance");
   requireEqual(supportAudit?.provenance?.sourceSnapshotDate, "2026-05-26", "Hermes fixture support audit source snapshot date");
+  requireEqual(supportAudit?.commandCoverageSummary?.status, "guarded", "Hermes fixture support audit command coverage status");
+  requireEqual(supportAudit?.commandCoverageSummary?.totalCommandCount, 44, "Hermes fixture support audit command coverage count");
+  requireEqual(supportAudit?.commandCoverageSummary?.promotionSignal, false, "Hermes fixture support audit command coverage promotion signal");
+  requireEqual(supportAudit?.commandCoverageSummary?.supportImpact, "guarded_command_coverage_does_not_promote_support", "Hermes fixture support audit command coverage support impact");
+  requireEqual(supportAudit?.finalPromotionReview?.commandCoverageSummary?.totalCommandCount, 44, "Hermes fixture promotion review command coverage count");
+  requireEqual(supportAudit?.finalSupportClaimDecision?.commandCoverageSummary?.totalCommandCount, 44, "Hermes fixture final decision command coverage count");
   requireEqual(fixture?.data?.status?.capabilityMap?.memory?.status, "degraded", "Hermes fixture memory capability degrades when CLI is unavailable");
   requireEqual(fixture?.data?.domains?.find((entry) => entry.domain === "memory")?.status, "degraded", "Hermes fixture memory domain degrades when CLI is unavailable");
   requireEqual(fixture?.data?.status?.capabilityMap?.doctor?.status, "degraded", "Hermes fixture doctor capability degrades when CLI is unavailable");
@@ -437,6 +443,8 @@ for (const snippet of [
   "struct Workspace",
   "struct RuntimeResources",
   "struct SupportAudit",
+  "commandCoverageSummary: CommandCoverageSummary?",
+  "struct CommandCoverageSummary",
   "claimSource: String?",
   "finalPromotionReview: FinalPromotionReview?",
   "struct FinalPromotionReview",
@@ -1189,9 +1197,11 @@ for (const snippet of [
   "snapshot.supportAudit?.evidenceRequirements?.first?.fallbackPolicy",
   "snapshot.supportAudit?.evidenceRequirements?.first?.supportResolution",
   "snapshot.supportAudit?.finalPromotionReview?.claimDisposition",
+  "snapshot.supportAudit?.finalPromotionReview?.commandCoverageSummary?.totalCommandCount",
   "snapshot.supportAudit?.finalPromotionReview?.productBlockedRequirementIds",
   "snapshot.supportAudit?.finalPromotionReview?.externalPendingRequirementIds",
   "snapshot.supportAudit?.finalSupportClaimDecision?.safeDefault",
+  "snapshot.supportAudit?.finalSupportClaimDecision?.commandCoverageSummary?.safeDefault",
   "snapshot.supportAudit?.finalSupportClaimDecision?.claimDisposition",
   "snapshot.supportAudit?.finalSupportClaimDecision?.blockerClasses",
   "snapshot.supportAudit?.finalSupportClaimDecision?.promotionEvidenceRequired",
@@ -1391,6 +1401,22 @@ for (const snippet of [
   "setSessionPinned"
 ]) {
   requireSnippetInFiles(runtimeLensTestFiles, snippet);
+}
+
+for (const snippet of [
+  "snapshot.supportAudit?.commandCoverageSummary?.totalCommandCount",
+  "snapshot.supportAudit?.finalPromotionReview?.commandCoverageSummary?.totalCommandCount",
+  "snapshot.supportAudit?.finalSupportClaimDecision?.commandCoverageSummary?.safeDefault"
+]) {
+  requireSnippet("macos/Tests/ClawixMeshTests/ClawJSRuntimeLensClientTests.swift", snippet);
+}
+
+for (const snippet of [
+  "command coverage guarded 44",
+  "no command promotion",
+  "commands guarded 44"
+]) {
+  requireSnippet("macos/Tests/ClawixMeshTests/ClawJSRuntimeLensSettingsPresentationTests.swift", snippet);
 }
 
 if (errors.length > 0) {
