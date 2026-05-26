@@ -713,7 +713,25 @@ function validateSuite(suiteDir, schema) {
   const runResults = [];
   const expectedSuiteMetricRows = new Map();
   const expectedSuiteFailureRows = new Map();
-  const metricAggregateFields = ["runId", "scenarioId", "fixtureProfile", "kpiId", "priority", "surface", "sampleCount", "unit", "p50", "p95", "p99", "baseline", "regressionPercent", "status"];
+  const metricAggregateFields = [
+    "runId",
+    "scenarioId",
+    "fixtureProfile",
+    "kpiId",
+    "priority",
+    "surface",
+    "sampleCount",
+    "unit",
+    "p50",
+    "p95",
+    "p99",
+    "worstSample",
+    "budget",
+    "baseline",
+    "regressionPercent",
+    "status",
+    "evidenceEventRefs",
+  ];
   const failureAggregateFields = ["runId", "scenarioId", "fixtureProfile", "type", "message", "stepId", "actionId", "surfaceId", "controlId", "kpiId", "finalUIStateHash", "finalUIStateRef"];
   for (const [index, row] of (suite.runs || []).entries()) {
     requireFields(failures, row, `suite.json.runs[${index}]`, ["runId", "scenarioId", "fixtureProfile", "status", "runDir"]);

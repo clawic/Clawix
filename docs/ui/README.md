@@ -338,7 +338,10 @@ and active gate, so stale or contradictory gate summaries cannot support
 closure. When a gate is active, gated-priority `baseline_missing` and
 `baseline_regression` comparison rows must also have matching structured failure
 rows, so a gate failure is visible both in the comparison artifact and in
-`failures.json`. Every failure row must also carry the same step/action/surface
+`failures.json`. Suite metric aggregation is exact across the full required
+metric evidence payload, including `worstSample`, `budget`, and
+`evidenceEventRefs`; a suite cannot rewrite those fields while preserving the
+same top-line latency values. Every failure row must also carry the same step/action/surface
 identity as a `step.failed` timeline event, keeping `failures.json` correlated
 with `events.jsonl`; every `step.failed` event must likewise include a failure
 object and a matching `failures.json` row. `run.json` and `suite.json` include `evidenceSources`

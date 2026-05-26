@@ -150,7 +150,7 @@
   },
   "baselineComparisonContract": {
     "baselineReferencePolicy": "baseline-comparison.json must not store raw external baseline paths; external baselines are represented by sha256 path hashes, while generated in-run baselines may be relative references.",
-    "suiteAggregationPolicy": "suite-baseline-comparison.json must aggregate one comparison row per suite metric and link every child run to its baseline-comparison.json artifact with public-safe relative paths. suite-metrics.json and suite-failures.json must be exact aggregations of child run metrics/failures, with no extra rows and no missing rows.",
+    "suiteAggregationPolicy": "suite-baseline-comparison.json must aggregate one comparison row per suite metric and link every child run to its baseline-comparison.json artifact with public-safe relative paths. suite-metrics.json and suite-failures.json must be exact aggregations of child run metrics/failures, with no extra rows, no missing rows, and no drift in required metric evidence fields such as worstSample, budget, or evidenceEventRefs.",
     "rowPolicy": "Every baseline comparison row must reference an emitted KPI metric, including priority, surface, p95, baseline, regressionPercent, and run/scenario/fixture context when present, and these copied metric fields must match the emitted metric row.",
     "statusConsistencyPolicy": "The top-level comparison status must be derived from row statuses and the active gate: missing baselines report baseline_missing, gated regressions report gate_failed, fully compared gated runs report gate_passed, and ungated complete comparisons report compared.",
     "gatePolicy": "A non-null gate must carry priority P0/P1/P2 and numeric maxRegressionPercent.",
