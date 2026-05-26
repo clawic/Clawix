@@ -836,7 +836,7 @@
           "status": "degraded",
           "strategy": "config",
           "limitations": [
-            "Hermes auth state may come from ~/.hermes/auth.json and environment-backed secrets."
+            "Hermes auth state may come from the configured Hermes auth store and environment-backed secrets."
           ]
         },
         "models": {
@@ -8739,7 +8739,7 @@
           "domain": "providers"
         },
         "limitations": [
-          "Hermes auth state may come from ~/.hermes/auth.json and environment-backed secrets."
+          "Hermes auth state may come from the configured Hermes auth store and environment-backed secrets."
         ]
       },
       {
@@ -8876,7 +8876,7 @@
           "domain": "auth"
         },
         "limitations": [
-          "Hermes auth state may come from ~/.hermes/auth.json and environment-backed secrets."
+          "Hermes auth state may come from the configured Hermes auth store and environment-backed secrets."
         ]
       },
       {
