@@ -5,6 +5,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
         let status: String
         let claimDisposition: String
         let finalPromotionAllowed: Bool
+        let supportCompletionMode: String?
         let productBlockedCount: Int
         let externalPendingCount: Int
         let unresolvedNativeRequirementCount: Int
@@ -23,6 +24,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
                 "status \(status)",
                 "disposition \(claimDisposition)",
                 "allowed \(finalPromotionAllowed)",
+                supportCompletionMode.map { "completion mode \($0)" },
                 "product blocked \(productBlockedCount)",
                 "external pending \(externalPendingCount)",
                 "unresolved native \(unresolvedNativeRequirementCount)",
@@ -49,6 +51,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
         let uiParityClaim: String?
         let uiParityDisposition: String?
         let claimDisposition: String
+        let supportCompletionMode: String?
         let commandCoverageLabel: String?
         let commandCoveragePromotionSignal: Bool?
         let commandCoverageSafeDefault: String?
@@ -78,6 +81,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
                 uiParityClaim.map { "ui parity claim \($0)" },
                 uiParityDisposition.map { "ui parity \($0)" },
                 "disposition \(claimDisposition)",
+                supportCompletionMode.map { "completion mode \($0)" },
                 commandCoverageLabel.map { "command coverage \($0)" },
                 commandCoveragePromotionSignal.map { "command coverage promotion \($0)" },
                 commandCoverageSafeDefault.map { "command coverage safe default \($0)" },
@@ -103,6 +107,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
             status: review.status ?? "unknown",
             claimDisposition: review.claimDisposition ?? "unknown",
             finalPromotionAllowed: review.finalPromotionAllowed == true,
+            supportCompletionMode: review.supportCompletionMode,
             productBlockedCount: review.productBlockedByDecisionCount ?? review.productBlockedRequirementIds?.count ?? 0,
             externalPendingCount: review.externalPendingCount ?? review.externalPendingRequirementIds?.count ?? 0,
             unresolvedNativeRequirementCount: review.unresolvedNativeRequirementCount ?? review.unresolvedNativeRequirementIds?.count ?? 0,
@@ -129,6 +134,7 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
             uiParityClaim: decision.uiParityClaim,
             uiParityDisposition: decision.uiParityDisposition,
             claimDisposition: decision.claimDisposition ?? "unknown",
+            supportCompletionMode: decision.supportCompletionMode,
             commandCoverageLabel: commandCoverageLabel(decision.commandCoverageSummary),
             commandCoveragePromotionSignal: decision.commandCoverageSummary?.promotionSignal,
             commandCoverageSafeDefault: decision.commandCoverageSummary?.safeDefault,
@@ -147,6 +153,15 @@ enum ClawJSRuntimeLensSupportDecisionPresentation {
     private static func listLabel(_ values: [String]?, limit: Int) -> String? {
         guard let values, !values.isEmpty else { return nil }
         return values.prefix(limit).joined(separator: ", ")
+    }
+
+    static func isPositiveDisposition(_ disposition: String) -> Bool {
+        disposition == "all_claims_supported_by_current_evidence"
+            || disposition == "operable_non_default_complete"
+    }
+
+    static func isPositiveStatus(_ status: String) -> Bool {
+        status == "promoted" || status == "operable_non_default_complete"
     }
 
     private static func commandCoverageLabel(

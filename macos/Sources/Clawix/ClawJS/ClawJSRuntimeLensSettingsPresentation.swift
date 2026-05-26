@@ -530,7 +530,7 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                     value: presentation.requiredForPromotionLabel,
                     pills: [
                         Pill(id: "status", label: presentation.status, tone: presentation.finalPromotionAllowed ? .success : .warning),
-                        Pill(id: "claim", label: presentation.claimDisposition, tone: presentation.finalPromotionAllowed ? .success : .warning)
+                        Pill(id: "claim", label: presentation.claimDisposition, tone: ClawJSRuntimeLensSupportDecisionPresentation.isPositiveDisposition(presentation.claimDisposition) ? .success : .warning)
                     ] + optionalPills([
                         presentation.commandCoverageLabel.map { Pill(id: "commands", label: "commands \($0)", tone: .info) },
                         presentation.commandCoveragePromotionSignal == false ? Pill(id: "command-promotion", label: "no command promotion", tone: .muted) : nil
@@ -559,9 +559,9 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                     label: "Final support claim",
                     value: presentation.decision,
                     pills: [
-                        Pill(id: "status", label: presentation.status, tone: presentation.status == "promoted" ? .success : .warning),
+                        Pill(id: "status", label: presentation.status, tone: ClawJSRuntimeLensSupportDecisionPresentation.isPositiveStatus(presentation.status) ? .success : .warning),
                         Pill(id: "claim", label: "claim \(presentation.effectiveSupportStage)", tone: ClawJSRuntimeLensStatusTone.supportClaim(presentation.effectiveSupportStage)),
-                        Pill(id: "disposition", label: presentation.claimDisposition, tone: presentation.claimDisposition == "all_claims_supported_by_current_evidence" ? .success : .warning)
+                        Pill(id: "disposition", label: presentation.claimDisposition, tone: ClawJSRuntimeLensSupportDecisionPresentation.isPositiveDisposition(presentation.claimDisposition) ? .success : .warning)
                     ] + optionalPills([
                         presentation.commandCoverageLabel.map { Pill(id: "commands", label: "commands \($0)", tone: .info) },
                         presentation.commandCoveragePromotionSignal == false ? Pill(id: "command-promotion", label: "no command promotion", tone: .muted) : nil
@@ -570,6 +570,7 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                         presentation.commandCoverageSafeDefault,
                         presentation.uiParityClaim,
                         presentation.claimDisposition,
+                        presentation.supportCompletionMode,
                         presentation.blockedPromotionClaimsLabel,
                         presentation.blockerClassesLabel,
                         presentation.productBlockedIdsLabel,

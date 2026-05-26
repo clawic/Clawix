@@ -308,6 +308,7 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
             commandCoverageSummary: nil,
             uiParityDisposition: "partial_lens_validated_not_full_native_parity",
             claimDisposition: "unpromoted_product_blocked_and_external_pending",
+            supportCompletionMode: nil,
             blockedPromotionClaims: [
                 "recommended",
                 "production",
@@ -363,6 +364,35 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertTrue(finalDecision.accessibilityLabel.contains("blocked claims recommended, production, native_parity, write_back"))
         XCTAssertTrue(finalDecision.accessibilityLabel.contains("external_live_evidence"))
         XCTAssertTrue(finalDecision.accessibilityLabel.contains("production_transport_lifecycle"))
+
+        let completeDecision = ClawJSRuntimeLensSnapshot.SupportAudit.FinalSupportClaimDecision(
+            status: "operable_non_default_complete",
+            decision: "keep_operable_non_default_runtime_claim",
+            effectiveSupportStage: "operable",
+            recommended: false,
+            production: false,
+            uiParityClaim: "partial_runtime_lens",
+            commandCoverageSummary: nil,
+            uiParityDisposition: "partial_lens_operable_non_default_complete",
+            claimDisposition: "operable_non_default_complete",
+            supportCompletionMode: "operable_non_default",
+            blockedPromotionClaims: [],
+            blockerClasses: [],
+            productBlockedRequirementIds: [],
+            externalPendingRequirementIds: [],
+            unresolvedNativeRequirementIds: [],
+            promotionEvidenceRequired: [],
+            reentryPolicy: "no_reentry_packets_required_for_current_claim",
+            safeDefault: "operable_non_default_claim_is_current_policy",
+            userVisibleStatus: "runtime_ecosystem_operable_non_default_complete"
+        )
+        let completePresentation = ClawJSRuntimeLensSupportDecisionPresentation.make(decision: completeDecision)
+        XCTAssertEqual(completePresentation.supportCompletionMode, "operable_non_default")
+        XCTAssertNil(completePresentation.blockedPromotionClaimsLabel)
+        XCTAssertNil(completePresentation.promotionEvidenceRequiredLabel)
+        XCTAssertTrue(completePresentation.accessibilityLabel.contains("completion mode operable_non_default"))
+        XCTAssertTrue(ClawJSRuntimeLensSupportDecisionPresentation.isPositiveStatus(completePresentation.status))
+        XCTAssertTrue(ClawJSRuntimeLensSupportDecisionPresentation.isPositiveDisposition(completePresentation.claimDisposition))
     }
 
     func testRuntimeLensSupportAuditEvidenceAndPromotionPresentations() async throws {

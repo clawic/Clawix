@@ -290,6 +290,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         struct FinalPromotionReview: Decodable, Equatable {
             let status: String?
             let finalPromotionAllowed: Bool?
+            let supportCompletionMode: String?
             let commandCoverageSummary: CommandCoverageSummary?
             let claimDisposition: String?
             let productBlockedByDecisionCount: Int?
@@ -312,6 +313,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let commandCoverageSummary: CommandCoverageSummary?
             let uiParityDisposition: String?
             let claimDisposition: String?
+            let supportCompletionMode: String?
             let blockedPromotionClaims: [String]?
             let blockerClasses: [String]?
             let productBlockedRequirementIds: [String]?

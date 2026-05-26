@@ -146,7 +146,7 @@ extension ClawJSRuntimeLensSection {
                 statusPill(text: presentation.status, color: presentation.finalPromotionAllowed ? .green : .orange)
                 statusPill(
                     text: presentation.claimDisposition,
-                    color: presentation.claimDisposition == "all_claims_supported_by_current_evidence" ? .green : .orange
+                    color: ClawJSRuntimeLensSupportDecisionPresentation.isPositiveDisposition(presentation.claimDisposition) ? .green : .orange
                 )
                 Spacer()
             }
@@ -222,10 +222,10 @@ extension ClawJSRuntimeLensSection {
 
         return VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 8) {
-                statusPill(text: presentation.status, color: presentation.status == "promoted" ? .green : .orange)
+                statusPill(text: presentation.status, color: ClawJSRuntimeLensSupportDecisionPresentation.isPositiveStatus(presentation.status) ? .green : .orange)
                 statusPill(text: "claim \(presentation.effectiveSupportStage)", color: claimColor(presentation.effectiveSupportStage))
                 if let parity = presentation.uiParityDisposition {
-                    statusPill(text: parity, color: parity == "ui_parity_promoted" ? .green : .orange)
+                    statusPill(text: parity, color: (parity == "ui_parity_promoted" || parity == "partial_lens_operable_non_default_complete") ? .green : .orange)
                 }
                 if let coverage = presentation.commandCoverageLabel {
                     statusPill(text: "commands \(coverage)", color: .blue)
@@ -261,6 +261,13 @@ extension ClawJSRuntimeLensSection {
                 .foregroundColor(Palette.textSecondary.opacity(0.72))
                 .lineLimit(1)
                 .truncationMode(.middle)
+            if let mode = presentation.supportCompletionMode {
+                Text("Completion: \(mode)")
+                    .font(BodyFont.system(size: 10.5))
+                    .foregroundColor(Palette.textSecondary.opacity(0.72))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
             Text("Recommended: \(presentation.recommended ? "yes" : "no") · Production: \(presentation.production ? "yes" : "no")")
                 .font(BodyFont.system(size: 10.5))
                 .foregroundColor(Palette.textSecondary.opacity(0.72))
