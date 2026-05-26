@@ -153,8 +153,14 @@ if (!exists(hermesFixturePath)) {
 } else {
   const fixture = readJson(hermesFixturePath);
   const supportAudit = fixture?.data?.supportAudit;
+  const support = fixture?.data?.support;
   const readiness = supportAudit?.evidenceReadinessSummary;
   const domains = supportAudit?.domains;
+  requireEqual(support?.ecosystem?.summary?.includes("channel/provider/auth/model evidence"), true, "Hermes fixture support summary names all external live-evidence domains");
+  for (const reason of ["live_channel_evidence_pending", "live_provider_evidence_pending", "live_auth_evidence_pending", "live_model_evidence_pending"]) {
+    requireEqual(support?.ecosystem?.blockingReasons?.includes(reason), true, `Hermes fixture support blocking reason ${reason}`);
+    requireEqual(supportAudit?.blockingReasons?.includes(reason), true, `Hermes fixture support audit blocking reason ${reason}`);
+  }
   if (!supportAudit) {
     errors.push("Hermes runtime portal fixture missing data.supportAudit");
   }
@@ -467,6 +473,7 @@ for (const snippet of [
   "provenanceSource",
   "sourceLabel",
   "blockingReasonCount",
+  "blockingReasons.joined(separator: \", \")",
   "evidenceRequirementCount",
   "notPromoted",
   "normalized"

@@ -20,11 +20,14 @@
         "recommended": false,
         "production": false,
         "uiParityClaim": "partial_runtime_lens",
-        "summary": "Hermes runtime ecosystem support is a dev-only partial runtime lens until official fixture coverage, write policies, and live channel evidence exist.",
+        "summary": "Hermes runtime ecosystem support is a dev-only partial runtime lens until official fixture coverage, write policies, and approved live channel/provider/auth/model evidence exist.",
         "blockingReasons": [
           "dev_only_runtime_ecosystem",
           "fixture_coverage_pending",
-          "live_channel_evidence_pending"
+          "live_channel_evidence_pending",
+          "live_provider_evidence_pending",
+          "live_auth_evidence_pending",
+          "live_model_evidence_pending"
         ],
         "blockedWriteBackDomains": [
           "sessions",
@@ -36,10 +39,19 @@
           "scheduler",
           "plugins",
           "gateway",
+          "doctorCompat",
+          "sandboxPermissions",
           "configuration"
         ],
+        "approvalGatedWriteBackDomains": [
+          "doctorCompat",
+          "sandboxPermissions"
+        ],
         "externalPendingDomains": [
-          "channels"
+          "channels",
+          "providers",
+          "auth",
+          "models"
         ],
         "evidenceRequirements": [
           {
@@ -47,11 +59,26 @@
             "blockerClass": "direct_blocker",
             "approvalRequired": false,
             "commandShape": "not_executable_until_official_runtime_contract_exists",
+            "exactCommand": "not_executable_until_official_runtime_contract_exists",
+            "preflightCommand": "claw runtime hermes domain sessions --json",
+            "approvalScope": "none_until_official_runtime_contract_exists",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "official_runtime_cli_or_api",
               "non_destructive_fixture",
               "round_trip_native_visibility"
             ],
+            "expectedRedactedEvidence": [
+              "official_runtime_contract_reference",
+              "non_destructive_fixture_receipt",
+              "round_trip_native_visibility_without_secret_material"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "sessions",
+              "blockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence",
+              "plaintextSecretLeak": false
+            },
             "riskControls": [
               "no_silent_write_back",
               "no_direct_runtime_store_mutation",
@@ -65,18 +92,35 @@
             "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
             "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
             "userVisibleContract": "read_only_projection_or_local_overlay_only",
-            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist"
+            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist",
+            "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+            "doNotRunWithoutApproval": false
           },
           {
             "id": "hermes.skills.write_back_contract",
             "blockerClass": "direct_blocker",
             "approvalRequired": false,
             "commandShape": "not_executable_until_official_runtime_contract_exists",
+            "exactCommand": "not_executable_until_official_runtime_contract_exists",
+            "preflightCommand": "claw runtime hermes domain skills --json",
+            "approvalScope": "none_until_official_runtime_contract_exists",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "official_runtime_cli_or_api",
               "non_destructive_fixture",
               "round_trip_native_visibility"
             ],
+            "expectedRedactedEvidence": [
+              "official_runtime_contract_reference",
+              "non_destructive_fixture_receipt",
+              "round_trip_native_visibility_without_secret_material"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "skills",
+              "blockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence",
+              "plaintextSecretLeak": false
+            },
             "riskControls": [
               "no_silent_write_back",
               "no_direct_runtime_store_mutation",
@@ -90,18 +134,35 @@
             "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
             "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
             "userVisibleContract": "read_only_projection_or_local_overlay_only",
-            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist"
+            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist",
+            "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+            "doNotRunWithoutApproval": false
           },
           {
             "id": "hermes.memory.write_back_contract",
             "blockerClass": "direct_blocker",
             "approvalRequired": false,
             "commandShape": "not_executable_until_official_runtime_contract_exists",
+            "exactCommand": "not_executable_until_official_runtime_contract_exists",
+            "preflightCommand": "claw runtime hermes domain memory --json",
+            "approvalScope": "none_until_official_runtime_contract_exists",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "official_runtime_cli_or_api",
               "non_destructive_fixture",
               "round_trip_native_visibility"
             ],
+            "expectedRedactedEvidence": [
+              "official_runtime_contract_reference",
+              "non_destructive_fixture_receipt",
+              "round_trip_native_visibility_without_secret_material"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "memory",
+              "blockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence",
+              "plaintextSecretLeak": false
+            },
             "riskControls": [
               "no_silent_write_back",
               "no_direct_runtime_store_mutation",
@@ -115,18 +176,38 @@
             "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
             "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
             "userVisibleContract": "read_only_projection_or_local_overlay_only",
-            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist"
+            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist",
+            "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+            "doNotRunWithoutApproval": false
           },
           {
             "id": "hermes.channels.live_evidence",
             "blockerClass": "external_pending",
             "approvalRequired": true,
             "commandShape": "runtime hermes domain channels --json",
+            "exactCommand": "claw runtime hermes domain channels --json",
+            "preflightCommand": "claw runtime hermes support --json",
+            "approvalScope": "read_only_redacted_live_domain_evidence_only",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "redacted_json_receipt",
               "no_plaintext_secrets",
               "support_contract_matches_manifest"
             ],
+            "expectedRedactedEvidence": [
+              "redacted_json_receipt_for_exact_command",
+              "no_plaintext_secrets_or_credentials",
+              "support_contract_matches_manifest",
+              "evidence_attached_to_goal_before_claim_promotion"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "channels",
+              "command": "claw runtime hermes domain channels --json",
+              "redacted": true,
+              "plaintextSecretLeak": false,
+              "supportContractMatchesManifest": true
+            },
             "riskControls": [
               "read_only_first",
               "no_paid_calls_without_explicit_approval",
@@ -140,18 +221,80 @@
             "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
             "supportResolution": "external_pending_not_product_blocked",
             "userVisibleContract": "read_only_degraded_projection_until_live_evidence_is_approved",
-            "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached"
+            "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached",
+            "claimBlockedUntil": "approved_redacted_live_evidence_attached",
+            "doNotRunWithoutApproval": true
+          },
+          {
+            "id": "hermes.providers.live_evidence",
+            "blockerClass": "external_pending",
+            "approvalRequired": true,
+            "commandShape": "runtime hermes domain providers --json",
+            "exactCommand": "claw runtime hermes domain providers --json",
+            "preflightCommand": "claw runtime hermes support --json",
+            "approvalScope": "read_only_redacted_live_domain_evidence_only",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+            "expectedEvidence": [
+              "redacted_json_receipt",
+              "no_plaintext_secrets",
+              "support_contract_matches_manifest"
+            ],
+            "expectedRedactedEvidence": [
+              "redacted_json_receipt_for_exact_command",
+              "no_plaintext_secrets_or_credentials",
+              "support_contract_matches_manifest",
+              "evidence_attached_to_goal_before_claim_promotion"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "providers",
+              "command": "claw runtime hermes domain providers --json",
+              "redacted": true,
+              "plaintextSecretLeak": false,
+              "supportContractMatchesManifest": true
+            },
+            "riskControls": [
+              "read_only_first",
+              "no_paid_calls_without_explicit_approval",
+              "no_provider_or_channel_mutation_without_explicit_approval"
+            ],
+            "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
+            "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
+            "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
+            "claimEffect": "blocks_recommended_production_native_parity",
+            "reentryCondition": "approve_and_run_runtime_hermes_domain_providers_read_only_evidence",
+            "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
+            "supportResolution": "external_pending_not_product_blocked",
+            "userVisibleContract": "read_only_degraded_projection_until_live_evidence_is_approved",
+            "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached",
+            "claimBlockedUntil": "approved_redacted_live_evidence_attached",
+            "doNotRunWithoutApproval": true
           },
           {
             "id": "hermes.providers.write_back_contract",
             "blockerClass": "direct_blocker",
             "approvalRequired": false,
             "commandShape": "not_executable_until_official_runtime_contract_exists",
+            "exactCommand": "not_executable_until_official_runtime_contract_exists",
+            "preflightCommand": "claw runtime hermes domain providers --json",
+            "approvalScope": "none_until_official_runtime_contract_exists",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "official_runtime_cli_or_api",
               "non_destructive_fixture",
               "round_trip_native_visibility"
             ],
+            "expectedRedactedEvidence": [
+              "official_runtime_contract_reference",
+              "non_destructive_fixture_receipt",
+              "round_trip_native_visibility_without_secret_material"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "providers",
+              "blockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence",
+              "plaintextSecretLeak": false
+            },
             "riskControls": [
               "no_silent_write_back",
               "no_direct_runtime_store_mutation",
@@ -165,18 +308,80 @@
             "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
             "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
             "userVisibleContract": "read_only_projection_or_local_overlay_only",
-            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist"
+            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist",
+            "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+            "doNotRunWithoutApproval": false
+          },
+          {
+            "id": "hermes.auth.live_evidence",
+            "blockerClass": "external_pending",
+            "approvalRequired": true,
+            "commandShape": "runtime hermes domain auth --json",
+            "exactCommand": "claw runtime hermes domain auth --json",
+            "preflightCommand": "claw runtime hermes support --json",
+            "approvalScope": "read_only_redacted_live_domain_evidence_only",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+            "expectedEvidence": [
+              "redacted_json_receipt",
+              "no_plaintext_secrets",
+              "support_contract_matches_manifest"
+            ],
+            "expectedRedactedEvidence": [
+              "redacted_json_receipt_for_exact_command",
+              "no_plaintext_secrets_or_credentials",
+              "support_contract_matches_manifest",
+              "evidence_attached_to_goal_before_claim_promotion"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "command": "claw runtime hermes domain auth --json",
+              "redacted": true,
+              "plaintextSecretLeak": false,
+              "supportContractMatchesManifest": true
+            },
+            "riskControls": [
+              "read_only_first",
+              "no_paid_calls_without_explicit_approval",
+              "no_provider_or_channel_mutation_without_explicit_approval"
+            ],
+            "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
+            "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
+            "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
+            "claimEffect": "blocks_recommended_production_native_parity",
+            "reentryCondition": "approve_and_run_runtime_hermes_domain_auth_read_only_evidence",
+            "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
+            "supportResolution": "external_pending_not_product_blocked",
+            "userVisibleContract": "read_only_degraded_projection_until_live_evidence_is_approved",
+            "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached",
+            "claimBlockedUntil": "approved_redacted_live_evidence_attached",
+            "doNotRunWithoutApproval": true
           },
           {
             "id": "hermes.auth.write_back_contract",
             "blockerClass": "direct_blocker",
             "approvalRequired": false,
             "commandShape": "not_executable_until_official_runtime_contract_exists",
+            "exactCommand": "not_executable_until_official_runtime_contract_exists",
+            "preflightCommand": "claw runtime hermes domain auth --json",
+            "approvalScope": "none_until_official_runtime_contract_exists",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "official_runtime_cli_or_api",
               "non_destructive_fixture",
               "round_trip_native_visibility"
             ],
+            "expectedRedactedEvidence": [
+              "official_runtime_contract_reference",
+              "non_destructive_fixture_receipt",
+              "round_trip_native_visibility_without_secret_material"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "auth",
+              "blockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence",
+              "plaintextSecretLeak": false
+            },
             "riskControls": [
               "no_silent_write_back",
               "no_direct_runtime_store_mutation",
@@ -190,18 +395,80 @@
             "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
             "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
             "userVisibleContract": "read_only_projection_or_local_overlay_only",
-            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist"
+            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist",
+            "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+            "doNotRunWithoutApproval": false
+          },
+          {
+            "id": "hermes.models.live_evidence",
+            "blockerClass": "external_pending",
+            "approvalRequired": true,
+            "commandShape": "runtime hermes domain models --json",
+            "exactCommand": "claw runtime hermes domain models --json",
+            "preflightCommand": "claw runtime hermes support --json",
+            "approvalScope": "read_only_redacted_live_domain_evidence_only",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+            "expectedEvidence": [
+              "redacted_json_receipt",
+              "no_plaintext_secrets",
+              "support_contract_matches_manifest"
+            ],
+            "expectedRedactedEvidence": [
+              "redacted_json_receipt_for_exact_command",
+              "no_plaintext_secrets_or_credentials",
+              "support_contract_matches_manifest",
+              "evidence_attached_to_goal_before_claim_promotion"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "models",
+              "command": "claw runtime hermes domain models --json",
+              "redacted": true,
+              "plaintextSecretLeak": false,
+              "supportContractMatchesManifest": true
+            },
+            "riskControls": [
+              "read_only_first",
+              "no_paid_calls_without_explicit_approval",
+              "no_provider_or_channel_mutation_without_explicit_approval"
+            ],
+            "evidenceDisposition": "external_pending_until_approved_redacted_live_receipt",
+            "currentBehavior": "read_only_projection_or_degraded_snapshot_only",
+            "fallbackPolicy": "no_live_claim_promotion_without_explicit_approval",
+            "claimEffect": "blocks_recommended_production_native_parity",
+            "reentryCondition": "approve_and_run_runtime_hermes_domain_models_read_only_evidence",
+            "productDecision": "external_live_claim_not_supported_without_approved_redacted_evidence",
+            "supportResolution": "external_pending_not_product_blocked",
+            "userVisibleContract": "read_only_degraded_projection_until_live_evidence_is_approved",
+            "promotionGate": "claim_remains_unpromoted_until_redacted_live_evidence_is_attached",
+            "claimBlockedUntil": "approved_redacted_live_evidence_attached",
+            "doNotRunWithoutApproval": true
           },
           {
             "id": "hermes.models.write_back_contract",
             "blockerClass": "direct_blocker",
             "approvalRequired": false,
             "commandShape": "not_executable_until_official_runtime_contract_exists",
+            "exactCommand": "not_executable_until_official_runtime_contract_exists",
+            "preflightCommand": "claw runtime hermes domain models --json",
+            "approvalScope": "none_until_official_runtime_contract_exists",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "official_runtime_cli_or_api",
               "non_destructive_fixture",
               "round_trip_native_visibility"
             ],
+            "expectedRedactedEvidence": [
+              "official_runtime_contract_reference",
+              "non_destructive_fixture_receipt",
+              "round_trip_native_visibility_without_secret_material"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "models",
+              "blockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence",
+              "plaintextSecretLeak": false
+            },
             "riskControls": [
               "no_silent_write_back",
               "no_direct_runtime_store_mutation",
@@ -215,18 +482,35 @@
             "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
             "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
             "userVisibleContract": "read_only_projection_or_local_overlay_only",
-            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist"
+            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist",
+            "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+            "doNotRunWithoutApproval": false
           },
           {
             "id": "hermes.scheduler.write_back_contract",
             "blockerClass": "direct_blocker",
             "approvalRequired": false,
             "commandShape": "not_executable_until_official_runtime_contract_exists",
+            "exactCommand": "not_executable_until_official_runtime_contract_exists",
+            "preflightCommand": "claw runtime hermes domain scheduler --json",
+            "approvalScope": "none_until_official_runtime_contract_exists",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "official_runtime_cli_or_api",
               "non_destructive_fixture",
               "round_trip_native_visibility"
             ],
+            "expectedRedactedEvidence": [
+              "official_runtime_contract_reference",
+              "non_destructive_fixture_receipt",
+              "round_trip_native_visibility_without_secret_material"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "scheduler",
+              "blockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence",
+              "plaintextSecretLeak": false
+            },
             "riskControls": [
               "no_silent_write_back",
               "no_direct_runtime_store_mutation",
@@ -240,18 +524,35 @@
             "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
             "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
             "userVisibleContract": "read_only_projection_or_local_overlay_only",
-            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist"
+            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist",
+            "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+            "doNotRunWithoutApproval": false
           },
           {
             "id": "hermes.plugins.write_back_contract",
             "blockerClass": "direct_blocker",
             "approvalRequired": false,
             "commandShape": "not_executable_until_official_runtime_contract_exists",
+            "exactCommand": "not_executable_until_official_runtime_contract_exists",
+            "preflightCommand": "claw runtime hermes domain plugins --json",
+            "approvalScope": "none_until_official_runtime_contract_exists",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "official_runtime_cli_or_api",
               "non_destructive_fixture",
               "round_trip_native_visibility"
             ],
+            "expectedRedactedEvidence": [
+              "official_runtime_contract_reference",
+              "non_destructive_fixture_receipt",
+              "round_trip_native_visibility_without_secret_material"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "plugins",
+              "blockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence",
+              "plaintextSecretLeak": false
+            },
             "riskControls": [
               "no_silent_write_back",
               "no_direct_runtime_store_mutation",
@@ -265,18 +566,35 @@
             "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
             "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
             "userVisibleContract": "read_only_projection_or_local_overlay_only",
-            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist"
+            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist",
+            "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+            "doNotRunWithoutApproval": false
           },
           {
             "id": "hermes.gateway.write_back_contract",
             "blockerClass": "direct_blocker",
             "approvalRequired": false,
             "commandShape": "not_executable_until_official_runtime_contract_exists",
+            "exactCommand": "not_executable_until_official_runtime_contract_exists",
+            "preflightCommand": "claw runtime hermes domain gateway --json",
+            "approvalScope": "none_until_official_runtime_contract_exists",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "official_runtime_cli_or_api",
               "non_destructive_fixture",
               "round_trip_native_visibility"
             ],
+            "expectedRedactedEvidence": [
+              "official_runtime_contract_reference",
+              "non_destructive_fixture_receipt",
+              "round_trip_native_visibility_without_secret_material"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "gateway",
+              "blockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence",
+              "plaintextSecretLeak": false
+            },
             "riskControls": [
               "no_silent_write_back",
               "no_direct_runtime_store_mutation",
@@ -290,18 +608,127 @@
             "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
             "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
             "userVisibleContract": "read_only_projection_or_local_overlay_only",
-            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist"
+            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist",
+            "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+            "doNotRunWithoutApproval": false
+          },
+          {
+            "id": "hermes.doctorCompat.approval_gate_evidence",
+            "blockerClass": "direct_blocker",
+            "approvalRequired": true,
+            "commandShape": "runtime hermes domain doctorCompat --json",
+            "exactCommand": "claw runtime hermes domain doctorCompat --json",
+            "preflightCommand": "claw runtime hermes support --json",
+            "approvalScope": "non_destructive_approval_gate_fixture_only",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+            "expectedEvidence": [
+              "approval_gate_fixture",
+              "non_destructive_dry_run_or_denial_receipt",
+              "no_runtime_or_host_mutation_without_approval"
+            ],
+            "expectedRedactedEvidence": [
+              "approval_gate_fixture_receipt",
+              "non_destructive_dry_run_or_denial_receipt",
+              "no_plaintext_secrets_or_permission_tokens",
+              "evidence_attached_to_goal_before_claim_promotion"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "doctorCompat",
+              "command": "claw runtime hermes domain doctorCompat --json",
+              "approvalGated": true,
+              "redacted": true,
+              "plaintextSecretLeak": false,
+              "mutationWithoutApproval": false
+            },
+            "riskControls": [
+              "no_unapproved_runtime_repair",
+              "no_unapproved_host_permission_change",
+              "no_silent_permission_or_repair_mutation"
+            ],
+            "evidenceDisposition": "blocked_until_approval_gate_fixture",
+            "currentBehavior": "read_only_projection_only_no_repair_or_permission_mutation",
+            "fallbackPolicy": "do_not_execute_repair_or_permission_mutation_without_approval_gate_fixture",
+            "claimEffect": "blocks_recommended_production_native_parity",
+            "reentryCondition": "add_doctorCompat_approval_gate_fixture_and_redacted_receipt",
+            "productDecision": "approval_gated_runtime_or_host_action_unpromoted_until_fixture_exists",
+            "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+            "userVisibleContract": "read_only_projection_until_non_destructive_approval_gate_is_validated",
+            "promotionGate": "claim_remains_unpromoted_until_approval_gate_fixture_and_redacted_receipt_exist",
+            "claimBlockedUntil": "approval_gate_fixture_and_redacted_receipt_attached",
+            "doNotRunWithoutApproval": true
+          },
+          {
+            "id": "hermes.sandboxPermissions.approval_gate_evidence",
+            "blockerClass": "direct_blocker",
+            "approvalRequired": true,
+            "commandShape": "runtime hermes domain sandboxPermissions --json",
+            "exactCommand": "claw runtime hermes domain sandboxPermissions --json",
+            "preflightCommand": "claw runtime hermes support --json",
+            "approvalScope": "non_destructive_approval_gate_fixture_only",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+            "expectedEvidence": [
+              "approval_gate_fixture",
+              "non_destructive_dry_run_or_denial_receipt",
+              "no_runtime_or_host_mutation_without_approval"
+            ],
+            "expectedRedactedEvidence": [
+              "approval_gate_fixture_receipt",
+              "non_destructive_dry_run_or_denial_receipt",
+              "no_plaintext_secrets_or_permission_tokens",
+              "evidence_attached_to_goal_before_claim_promotion"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "sandboxPermissions",
+              "command": "claw runtime hermes domain sandboxPermissions --json",
+              "approvalGated": true,
+              "redacted": true,
+              "plaintextSecretLeak": false,
+              "mutationWithoutApproval": false
+            },
+            "riskControls": [
+              "no_unapproved_runtime_repair",
+              "no_unapproved_host_permission_change",
+              "no_silent_permission_or_repair_mutation"
+            ],
+            "evidenceDisposition": "blocked_until_approval_gate_fixture",
+            "currentBehavior": "read_only_projection_only_no_repair_or_permission_mutation",
+            "fallbackPolicy": "do_not_execute_repair_or_permission_mutation_without_approval_gate_fixture",
+            "claimEffect": "blocks_recommended_production_native_parity",
+            "reentryCondition": "add_sandboxPermissions_approval_gate_fixture_and_redacted_receipt",
+            "productDecision": "approval_gated_runtime_or_host_action_unpromoted_until_fixture_exists",
+            "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+            "userVisibleContract": "read_only_projection_until_non_destructive_approval_gate_is_validated",
+            "promotionGate": "claim_remains_unpromoted_until_approval_gate_fixture_and_redacted_receipt_exist",
+            "claimBlockedUntil": "approval_gate_fixture_and_redacted_receipt_attached",
+            "doNotRunWithoutApproval": true
           },
           {
             "id": "hermes.configuration.write_back_contract",
             "blockerClass": "direct_blocker",
             "approvalRequired": false,
             "commandShape": "not_executable_until_official_runtime_contract_exists",
+            "exactCommand": "not_executable_until_official_runtime_contract_exists",
+            "preflightCommand": "claw runtime hermes domain configuration --json",
+            "approvalScope": "none_until_official_runtime_contract_exists",
+            "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
             "expectedEvidence": [
               "official_runtime_cli_or_api",
               "non_destructive_fixture",
               "round_trip_native_visibility"
             ],
+            "expectedRedactedEvidence": [
+              "official_runtime_contract_reference",
+              "non_destructive_fixture_receipt",
+              "round_trip_native_visibility_without_secret_material"
+            ],
+            "evidenceArtifactTemplate": {
+              "runtimeId": "hermes",
+              "domain": "configuration",
+              "blockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence",
+              "plaintextSecretLeak": false
+            },
             "riskControls": [
               "no_silent_write_back",
               "no_direct_runtime_store_mutation",
@@ -315,7 +742,9 @@
             "productDecision": "native_write_back_unsupported_until_official_runtime_contract",
             "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
             "userVisibleContract": "read_only_projection_or_local_overlay_only",
-            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist"
+            "promotionGate": "write_back_claim_remains_blocked_until_contract_fixture_and_round_trip_evidence_exist",
+            "claimBlockedUntil": "official_runtime_contract_fixture_and_round_trip_evidence_attached",
+            "doNotRunWithoutApproval": false
           }
         ],
         "claimSource": "runtime-ecosystem-manifest",
@@ -4539,12 +4968,14 @@
       "recommended": false,
       "production": false,
       "uiParityClaim": "partial_runtime_lens",
-      "summary": "Hermes runtime ecosystem support is a dev-only partial runtime lens until official fixture coverage, write policies, and approved live channel/provider evidence exist.",
+      "summary": "Hermes runtime ecosystem support is a dev-only partial runtime lens until official fixture coverage, write policies, and approved live channel/provider/auth/model evidence exist.",
       "blockingReasons": [
         "dev_only_runtime_ecosystem",
         "fixture_coverage_pending",
         "live_channel_evidence_pending",
-        "live_provider_evidence_pending"
+        "live_provider_evidence_pending",
+        "live_auth_evidence_pending",
+        "live_model_evidence_pending"
       ],
       "blockerSummary": {
         "byBlockerClass": {

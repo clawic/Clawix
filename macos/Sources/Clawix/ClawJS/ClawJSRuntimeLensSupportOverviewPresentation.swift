@@ -75,7 +75,7 @@ struct ClawJSRuntimeLensSupportOverviewPresentation: Equatable {
             blockingReasonCount: blockingReasons.count,
             blockingReasonsLabel: blockingReasons.isEmpty
                 ? nil
-                : blockingReasons.prefix(3).joined(separator: ", "),
+                : blockingReasons.joined(separator: ", "),
             evidenceRequirementCount: evidenceRequirementCount,
             notPromoted: notPromoted,
             hasSummary: summary != nil
