@@ -635,7 +635,10 @@ if (evidenceSchema) {
   if (!String(evidenceSchema.baselineComparisonContract?.suiteAggregationPolicy ?? "").includes("one comparison row per suite metric")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.suiteAggregationPolicy must require suite-level metric comparison coverage`);
   }
-  if (!String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("reference an emitted KPI metric")) {
+  if (
+    !String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("reference an emitted KPI metric")
+    || !String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("must match the emitted metric row")
+  ) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.rowPolicy must require KPI metric row correlation`);
   }
   if (!String(evidenceSchema.baselineComparisonContract?.statusConsistencyPolicy ?? "").includes("derived from row statuses")) {
@@ -990,10 +993,13 @@ if (evidenceVerifierSource) {
     "baselineComparisonRowStatuses",
     "baselineComparisonMetricKey(",
     "baselineFailureKey(",
+    "comparisonValueMatchesMetric(",
     "expectedBaselineComparisonStatus(",
     "metricKeys",
+    "metricRows",
     "failureRows",
     "has no matching metric row",
+    "must match the emitted metric row",
     "comparisons must include one row per metric",
     "requires a matching failures.json row",
     "baseline_regression must exceed gate.maxRegressionPercent",

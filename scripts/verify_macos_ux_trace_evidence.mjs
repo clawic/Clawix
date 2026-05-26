@@ -257,6 +257,16 @@ function baselineFailureKey(row, type) {
   return [row?.runId || "", row?.scenarioId || "", row?.fixtureProfile || "", row?.kpiId || "", type].join("\u001f");
 }
 
+function comparisonValueMatchesMetric(rowValue, metricValue) {
+  if (rowValue === null || metricValue === null || rowValue === undefined || metricValue === undefined) {
+    return rowValue === metricValue;
+  }
+  if (typeof rowValue === "string" || typeof metricValue === "string") {
+    return rowValue === metricValue;
+  }
+  return Number.isFinite(Number(rowValue)) && Number(rowValue) === Number(metricValue);
+}
+
 function expectedBaselineComparisonStatus(comparison) {
   if (comparison.comparisons.some((row) => row.status === "baseline_regression")) {
     return comparison.gate ? "gate_failed" : "compared";
@@ -316,6 +326,14 @@ function validateBaselineComparison(failures, comparison, label = "baseline-comp
       seenRows.add(metricKey);
       if (options.metricKeys && !options.metricKeys.has(metricKey)) {
         fail(failures, `${rowLabel}.kpiId ${row.kpiId} has no matching metric row`);
+      }
+      const metric = options.metricRows?.get(metricKey);
+      if (metric) {
+        for (const field of ["priority", "surface", "p95", "baseline", "regressionPercent"]) {
+          if (!comparisonValueMatchesMetric(row[field], metric[field])) {
+            fail(failures, `${rowLabel}.${field} must match the emitted metric row`);
+          }
+        }
       }
     }
     if (typeof row?.priority !== "string" || !/^P[0-2]$/.test(row.priority)) {
@@ -497,17 +515,21 @@ function validateRun(runDir, schema, options = {}) {
 
   const kpiIds = new Set();
   const metricKeys = new Set();
+  const metricRows = new Map();
   for (const [index, metric] of (metricsArtifact.metrics || []).entries()) {
     const label = `metrics.json.metrics[${index}]`;
     requireFields(failures, metric, label, schema.metricRequiredFields);
     kpiIds.add(metric.kpiId);
-    metricKeys.add(baselineComparisonMetricKey(metric));
+    const metricKey = baselineComparisonMetricKey(metric);
+    metricKeys.add(metricKey);
+    metricRows.set(metricKey, metric);
     for (const ref of metric.evidenceEventRefs || []) {
       if (!eventKeys.has(ref)) fail(failures, `${label}.evidenceEventRefs contains unknown event ref ${ref}`);
     }
   }
   validateBaselineComparison(failures, baselineComparison, "baseline-comparison.json", {
     metricKeys,
+    metricRows,
     failureRows: failuresArtifact.failures || [],
     expectedCount: (metricsArtifact.metrics || []).length,
   });
@@ -620,9 +642,16 @@ function validateSuite(suiteDir, schema) {
   if (suiteBaselineObject.suiteId !== suite.suiteId) {
     fail(failures, "suite-baseline-comparison.json suiteId must match suite.json");
   }
-  const suiteMetricKeys = new Set((suiteMetrics.metrics || []).map((metric) => baselineComparisonMetricKey(metric)));
+  const suiteMetricKeys = new Set();
+  const suiteMetricRows = new Map();
+  for (const metric of suiteMetrics.metrics || []) {
+    const metricKey = baselineComparisonMetricKey(metric);
+    suiteMetricKeys.add(metricKey);
+    suiteMetricRows.set(metricKey, metric);
+  }
   validateBaselineComparison(failures, suiteBaselineComparison, "suite-baseline-comparison.json", {
     metricKeys: suiteMetricKeys,
+    metricRows: suiteMetricRows,
     failureRows: suiteFailures.failures || [],
     expectedCount: (suiteMetrics.metrics || []).length,
   });

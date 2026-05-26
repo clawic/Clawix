@@ -331,9 +331,11 @@ available diagnostics into `geometry.sample`, `scroll.sample`,
 opaque payload hashes. The verifier rejects baseline comparison artifacts that
 store raw external paths, omit a metric comparison row, reference a KPI that is
 not present in `metrics.json` / `suite-metrics.json`, or use an unsupported
-comparison status. It also recomputes the aggregate comparison status from the
-row statuses and active gate, so stale or contradictory gate summaries cannot
-support closure. When a gate is active, gated-priority `baseline_missing` and
+comparison status. Copied comparison fields such as priority, surface, P95,
+baseline, and regression percentage must match the emitted metric row. The
+verifier also recomputes the aggregate comparison status from the row statuses
+and active gate, so stale or contradictory gate summaries cannot support
+closure. When a gate is active, gated-priority `baseline_missing` and
 `baseline_regression` comparison rows must also have matching structured failure
 rows, so a gate failure is visible both in the comparison artifact and in
 `failures.json`. `run.json` and `suite.json` include `evidenceSources`
