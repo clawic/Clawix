@@ -1898,9 +1898,20 @@ enum ClxControlHandlers {
             return resolvedSidebarChatRowId() ?? id
         case "chat.streaming.placeholder":
             return "chat.streaming.deltaTarget"
+        case "chat.message.workSummary":
+            return firstVisibleRegisteredControl(prefix: "chat.workSummary.") ?? id
         default:
             return id
         }
+    }
+
+    private static func firstVisibleRegisteredControl(prefix: String) -> String? {
+        let candidates = ClxControlRegistry.shared.all()
+            .map(\.id)
+            .filter { $0.hasPrefix(prefix) }
+        return candidates.first { controlId in
+            (ClxControlRegistry.shared.observedViewState(controlId)?.visible ?? false) == true
+        } ?? candidates.first
     }
 
     private static func resolvedSidebarChatRowId() -> String? {

@@ -57,6 +57,7 @@ struct ChatTranscriptScrollerView: View {
                             }
                             .frame(height: 28)
                             .transition(.opacity)
+                            .clxControl("app.loadingState", role: "loader", label: "Loading older messages")
                         }
                         let lastUserMessageId = transcript.lastMessageId { $0.role == .user }
                         let lastAssistantMessageId = transcript.lastMessageId {

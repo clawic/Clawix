@@ -541,12 +541,14 @@ struct RecentChatRow: View, Equatable {
                     SidebarChatRowSpinner()
                         .frame(width: 14, height: 14)
                         .frame(width: 28)
+                        .clxControl("sidebar.runningIndicator", role: "indicator", label: "Running conversation")
                         .transition(.opacity.combined(with: .scale(scale: 0.7)))
                 } else if !archivedRow && chat.hasUnreadCompletion {
                     Circle()
                         .fill(Palette.pastelBlue)
                         .frame(width: 7, height: 7)
                         .frame(width: 28, height: 14)
+                        .clxControl("sidebar.runningIndicator", role: "indicator", label: "Unread conversation")
                         .transition(.scale(scale: 0.0, anchor: .center).combined(with: .opacity))
                 } else {
                     Text(ageLabel)
