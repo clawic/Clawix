@@ -396,6 +396,7 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(scalarAuthRow.nativeIdentifierLabel, "native id: authProviderId")
         XCTAssertEqual(scalarAuthRow.provenanceSource, "hermes-runtime-adapter")
         XCTAssertEqual(scalarAuthRow.attributesLabel, "auth scalar: redacted_value")
+        XCTAssertEqual(scalarAuthRow.enabledLabel, "enabled: false")
         XCTAssertTrue(authInventory.rows.first { $0.id == "anthropic" }?.summaryLabel?.contains("auth is missing") == true)
         XCTAssertTrue(authInventory.rows.contains { $0.id == "hermes-auth-secret-ref-policy" && $0.statusLabel == "projected" })
 

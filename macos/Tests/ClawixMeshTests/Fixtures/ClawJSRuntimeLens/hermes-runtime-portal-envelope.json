@@ -6324,6 +6324,7 @@
             "attributes": [
               "auth scalar: redacted_value"
             ],
+            "enabled": false,
             "summary": "Hermes auth state is redacted; no credential value is exposed."
           },
           {
