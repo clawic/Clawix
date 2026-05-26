@@ -312,6 +312,14 @@ function expectedBaselineComparisonStatus(comparison) {
   return comparison.gate ? "gate_passed" : "compared";
 }
 
+function expectedSuiteStatus(childStatuses, launchMode) {
+  if (childStatuses.every((status) => status === "PASS")) return "PASS";
+  if (launchMode === "dry-run" && childStatuses.every((status) => status === "BLOCKED")) return "BLOCKED";
+  if (childStatuses.some((status) => status === "FAIL")) return "FAIL";
+  if (childStatuses.some((status) => status === "BLOCKED" || status === "PARTIAL")) return "PARTIAL";
+  return "FAIL";
+}
+
 function validateBaselineComparison(failures, comparison, label = "baseline-comparison.json", options = {}) {
   if (!comparison || typeof comparison !== "object") {
     fail(failures, `${label} must be an object`);
@@ -821,6 +829,10 @@ function validateSuite(suiteDir, schema) {
     }
   }
   if (suite.scenarioCount !== (suite.runs || []).length) fail(failures, "suite.json.scenarioCount must match runs.length");
+  if (runResults.length === (suite.runs || []).length) {
+    const expectedStatus = expectedSuiteStatus(runResults.map((result) => result.status), suite.launchMode);
+    if (suite.status !== expectedStatus) fail(failures, `suite.json.status must be ${expectedStatus} for child run statuses`);
+  }
   const actualSuiteMetricRows = new Map();
   for (const metric of suiteMetrics.metrics || []) {
     addMultisetRow(actualSuiteMetricRows, stableAggregateKey(metricAggregateFields, metric));
