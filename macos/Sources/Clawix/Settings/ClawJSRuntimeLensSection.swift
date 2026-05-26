@@ -191,6 +191,10 @@ struct ClawJSRuntimeLensSection: View {
             result.degradedReason.map { "degraded reason \($0)" },
             result.roundTripVerificationStatus.map { "round-trip verification \($0)" },
             result.blockerClass.map { "blocker \($0)" },
+            result.officialContractRequired.map { "official contract required \($0)" },
+            result.officialContractKnown.map { "official contract known \($0)" },
+            result.integrationRequired.map { "integration required \($0)" },
+            result.fixtureRequired.map { "fixture required \($0)" },
             result.requiredFlag.map { "required flag \($0)" },
             result.officialProtocol.map { "protocol \($0)" },
             result.officialMethod.map { "method \($0)" }
@@ -224,6 +228,9 @@ struct ClawJSRuntimeLensSection: View {
         if let safeDefault = result.safeDefault {
             policyFields.append("safe default \(safeDefault)")
         }
+        if let writeBackStatus = result.writeBackStatus {
+            policyFields.append("write back \(writeBackStatus)")
+        }
         if let productionTransportCommandShape = result.productionTransportCommandShape {
             policyFields.append("command shape \(productionTransportCommandShape)")
         }
@@ -256,6 +263,12 @@ struct ClawJSRuntimeLensSection: View {
         }
         if let commandShape = result.commandShape {
             policyFields.append("action command \(commandShape)")
+        }
+        if let requiredEvidence = result.requiredEvidence, !requiredEvidence.isEmpty {
+            policyFields.append("required evidence \(requiredEvidence.joined(separator: ", "))")
+        }
+        if let riskControls = result.riskControls, !riskControls.isEmpty {
+            policyFields.append("risk controls \(riskControls.joined(separator: ", "))")
         }
         if let productDecision = result.productDecision {
             policyFields.append("product decision \(productDecision)")

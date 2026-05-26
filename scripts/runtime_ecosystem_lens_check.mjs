@@ -1106,9 +1106,14 @@ for (const snippet of [
 
 for (const snippet of [
   "result.transportPolicy?.configuredEndpointClass",
+  "result.officialContractRequired.map { \"official contract required \\($0)\" }",
+  "result.integrationRequired.map { \"integration required \\($0)\" }",
   "policyFields.append(\"endpoint class \\(configuredEndpointClass)\")",
+  "policyFields.append(\"write back \\(writeBackStatus)\")",
   "policyFields.append(\"user visible contract \\(userVisibleContract)\")",
   "policyFields.append(\"claim effect \\(claimEffect)\")",
+  "policyFields.append(\"required evidence \\(requiredEvidence.joined(separator: \", \"))\")",
+  "policyFields.append(\"risk controls \\(riskControls.joined(separator: \", \"))\")",
   "policyFields.append(\"product decision \\(productDecision)\")"
 ]) {
   requireSnippet("macos/Sources/Clawix/Settings/ClawJSRuntimeLensSection.swift", snippet);
@@ -1298,6 +1303,10 @@ for (const snippet of [
   "XCTAssertEqual(result.transportPolicy?.configuredEndpointClass, \"non_loopback_endpoint_rejected\")",
   "XCTAssertEqual(result.doNotRunWithoutApproval, true)",
   "XCTAssertEqual(result.claimBlockedUntil, \"production_transport_lifecycle_policy_and_native_round_trip_evidence_attached\")",
+  "official contract required false",
+  "write back blocked_until_tui_gateway_wrapper_fixture",
+  "required evidence tui_gateway_prompt_submit_fixture, non_destructive_fixture, confirmation_or_dry_run_policy, round_trip_native_visibility",
+  "risk controls no_silent_runtime_write, no_direct_runtime_store_mutation, local_overlay_only_until_contract_exists",
   "XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 6)",
   "XCTAssertEqual(commandPresentation.rows.first?.blockerClass, \"direct_blocker\")",
   "XCTAssertEqual(commandPresentation.rows.first?.nativeWriteBackFixtureRequired, true)",
