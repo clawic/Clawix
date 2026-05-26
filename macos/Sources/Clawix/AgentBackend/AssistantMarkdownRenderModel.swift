@@ -17,8 +17,24 @@ final class AssistantMarkdownRenderModel: ObservableObject {
     private var fulfilledRequest: AssistantMarkdownRenderRequest?
     private var parseTask: Task<Void, Never>?
 
-    init(parser: @escaping Parser = AssistantMarkdownRenderModel.parseInBackground) {
+    init(
+        initialRequest: AssistantMarkdownRenderRequest? = nil,
+        parser: @escaping Parser = AssistantMarkdownRenderModel.parseInBackground
+    ) {
         self.parser = parser
+        if let initialRequest,
+           initialRequest.phase == .settled {
+            let parsed = MarkdownParseCache.parse(
+                initialRequest.text,
+                renderKey: initialRequest.renderKey,
+                phase: initialRequest.phase
+            )
+            result = parsed
+            latestRequest = initialRequest
+            fulfilledRequest = initialRequest
+            markRenderReady(parsed, request: initialRequest)
+            logRenderTimingIfNeeded(parsed, request: initialRequest)
+        }
     }
 
     deinit {
@@ -27,6 +43,10 @@ final class AssistantMarkdownRenderModel: ObservableObject {
 
     var blocks: [IndexedAnnotatedBlock] {
         result?.blocks ?? []
+    }
+
+    func result(for request: AssistantMarkdownRenderRequest) -> MarkdownParseCache.Result? {
+        fulfilledRequest == request ? result : nil
     }
 
     @discardableResult

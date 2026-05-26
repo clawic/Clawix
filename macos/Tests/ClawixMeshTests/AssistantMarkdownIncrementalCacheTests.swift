@@ -140,6 +140,48 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
         XCTAssertEqual(model.result?.cacheHit, true)
     }
 
+    @MainActor
+    func testRenderModelSeedsInitialSettledRequestBeforeFirstTaskFrame() {
+        let text = """
+        # Initial render \(UUID().uuidString)
+
+        The assistant body must be available on the first frame.
+
+        ```swift
+        let firstFrame = true
+        ```
+        """
+        let request = AssistantMarkdownRenderRequest(
+            text: text,
+            renderKey: .custom(UUID().uuidString),
+            phase: .settled
+        )
+
+        let model = AssistantMarkdownRenderModel(initialRequest: request)
+
+        XCTAssertEqual(model.result?.document.text, text)
+        XCTAssertFalse(model.blocks.isEmpty)
+        XCTAssertFalse(model.request(request))
+    }
+
+    @MainActor
+    func testRenderModelDoesNotExposeStaleBlocksForDifferentRequest() {
+        let first = AssistantMarkdownRenderRequest(
+            text: "First \(UUID().uuidString)",
+            renderKey: .custom(UUID().uuidString),
+            phase: .settled
+        )
+        let second = AssistantMarkdownRenderRequest(
+            text: "Second \(UUID().uuidString)",
+            renderKey: first.renderKey,
+            phase: .settled
+        )
+        let model = AssistantMarkdownRenderModel(initialRequest: first)
+
+        XCTAssertNotNil(model.result(for: first))
+        XCTAssertNil(model.result(for: second))
+    }
+
     func testAppendOnlyTextReusesStableBlockIds() {
         let key = AssistantMarkdownRenderKey.custom(UUID().uuidString)
         let first = "First paragraph.\n\nSecond paragraph."

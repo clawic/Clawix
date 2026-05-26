@@ -624,6 +624,20 @@ struct AssistantMarkdownText: View {
         self.findQuery = findQuery
         self.openLink = openLink
         self.onToggleCodeBlockWordWrap = onToggleCodeBlockWordWrap
+        if streamingFinished {
+            let request = AssistantMarkdownRenderRequest(
+                text: text,
+                renderKey: renderKey,
+                phase: .settled
+            )
+            _renderModel = StateObject(
+                wrappedValue: AssistantMarkdownRenderModel(initialRequest: request)
+            )
+        } else {
+            _renderModel = StateObject(
+                wrappedValue: AssistantMarkdownRenderModel()
+            )
+        }
     }
 
     var body: some View {
@@ -642,6 +656,9 @@ struct AssistantMarkdownText: View {
             streamingFinished: streamingFinished,
             findQuery: findQuery
         )
+        let request = renderRequest
+        let currentBlocks = renderModel.result(for: request)?.blocks
+            ?? Self.firstFrameBlocksIfNeeded(for: request)
         Group {
             if let plainStreamingAtoms {
                 PlainStreamingTextFlow(
@@ -652,7 +669,7 @@ struct AssistantMarkdownText: View {
                     now: now
                 )
             } else {
-                blocksView(renderModel.blocks, checkpoints: renderCheckpoints, now: now)
+                blocksView(currentBlocks, checkpoints: renderCheckpoints, now: now)
             }
         }
         .task(id: renderRequest) {
@@ -670,6 +687,17 @@ struct AssistantMarkdownText: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: accessibilityPlainText))
+    }
+
+    private static func firstFrameBlocksIfNeeded(
+        for request: AssistantMarkdownRenderRequest
+    ) -> [IndexedAnnotatedBlock] {
+        guard request.phase == .settled else { return [] }
+        return MarkdownParseCache.parse(
+            request.text,
+            renderKey: request.renderKey,
+            phase: request.phase
+        ).blocks
     }
 
     private func markLiveStreamMarkdownBodyIfNeeded() {
