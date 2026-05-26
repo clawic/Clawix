@@ -31,11 +31,7 @@ struct ClawJSRuntimeLensSection: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
 
-                let presentation = runtimeLensPresentation
-                ForEach(Array(presentation.sections.enumerated()), id: \.element.id) { index, section in
-                    if index > 0 {
-                        Divider().background(Color.overlay(0.07))
-                    }
+                ForEach(runtimeLensPresentation.sections) { section in
                     runtimeLensPresentationSection(section)
                 }
 
