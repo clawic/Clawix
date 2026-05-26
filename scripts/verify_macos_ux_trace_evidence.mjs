@@ -221,9 +221,19 @@ function validateExitPolicy(failures, policy, status, label, schema) {
   }
 }
 
-function validateArtifactIndex(failures, rows, label) {
-  for (const row of rows || []) {
-    if (!isRelativeSafe(row)) fail(failures, `${label}.artifactIndex contains unsafe path ${row}`);
+function validateArtifactIndex(failures, rows, label, baseDir = null) {
+  if (!Array.isArray(rows)) {
+    fail(failures, `${label}.artifactIndex must be an array`);
+    return;
+  }
+  for (const row of rows) {
+    if (!isRelativeSafe(row)) {
+      fail(failures, `${label}.artifactIndex contains unsafe path ${row}`);
+      continue;
+    }
+    if (baseDir && !fs.existsSync(path.join(baseDir, row))) {
+      fail(failures, `${label}.artifactIndex path must exist: ${row}`);
+    }
   }
 }
 
@@ -443,9 +453,10 @@ function validateRun(runDir, schema, options = {}) {
   validateTraceIsolation(failures, run.traceIsolation, "run.json", "runDirectoryName", path.basename(runDir));
   if (run.traceIsolation?.runDirectoryMatchesRunId !== true) fail(failures, "run.json.traceIsolation.runDirectoryMatchesRunId must be true");
   validateOverheadCalibration(failures, run.overheadCalibration, "run.json", schema);
-  validateArtifactIndex(failures, run.artifactIndex, "run.json");
+  validateArtifactIndex(failures, run.artifactIndex, "run.json", runDir);
+  const runArtifactIndex = Array.isArray(run.artifactIndex) ? run.artifactIndex : [];
   for (const relativePath of requiredFiles) {
-    if (!run.artifactIndex?.includes(relativePath)) fail(failures, `run.json.artifactIndex is missing ${relativePath}`);
+    if (!runArtifactIndex.includes(relativePath)) fail(failures, `run.json.artifactIndex is missing ${relativePath}`);
   }
 
   if (metricsArtifact.runId !== run.runId) fail(failures, "metrics.json runId must match run.json");
@@ -682,9 +693,11 @@ function validateSuite(suiteDir, schema) {
   validateTraceIsolation(failures, suite.traceIsolation, "suite.json", "suiteDirectoryName", path.basename(suiteDir));
   if (suite.traceIsolation?.suiteDirectoryMatchesSuiteId !== true) fail(failures, "suite.json.traceIsolation.suiteDirectoryMatchesSuiteId must be true");
   validateOverheadCalibration(failures, suite.overheadCalibration, "suite.json", schema);
-  validateArtifactIndex(failures, suite.artifactIndex, "suite.json");
-  if (!suite.artifactIndex?.includes("suite-baseline-comparison.json")) {
-    fail(failures, "suite.json.artifactIndex is missing suite-baseline-comparison.json");
+  const requiredSuiteFiles = ["suite.json", "suite-metrics.json", "suite-failures.json", "suite-baseline-comparison.json"];
+  validateArtifactIndex(failures, suite.artifactIndex, "suite.json", suiteDir);
+  const suiteArtifactIndex = Array.isArray(suite.artifactIndex) ? suite.artifactIndex : [];
+  for (const relativePath of requiredSuiteFiles) {
+    if (!suiteArtifactIndex.includes(relativePath)) fail(failures, `suite.json.artifactIndex is missing ${relativePath}`);
   }
   if (suiteMetrics.suiteId !== suite.suiteId) fail(failures, "suite-metrics.json suiteId must match suite.json");
   if (suiteFailures.suiteId !== suite.suiteId) fail(failures, "suite-failures.json suiteId must match suite.json");
@@ -736,6 +749,7 @@ function validateSuite(suiteDir, schema) {
   for (const [index, row] of (suite.runs || []).entries()) {
     requireFields(failures, row, `suite.json.runs[${index}]`, ["runId", "scenarioId", "fixtureProfile", "status", "runDir"]);
     if (!isRelativeSafe(row.runDir)) fail(failures, `suite.json.runs[${index}].runDir must be relative and safe`);
+    if (!suiteArtifactIndex.includes(row.runDir)) fail(failures, `suite.json.artifactIndex is missing child run directory ${row.runDir}`);
     const runDir = path.join(suiteDir, row.runDir);
     const runResult = validateRun(runDir, schema, { allowStatusMismatch: false });
     const childMetrics = readJson(path.join(runDir, "metrics.json"));

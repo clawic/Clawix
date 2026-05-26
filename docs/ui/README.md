@@ -324,7 +324,9 @@ plus per-run `run.json`, `events.jsonl`, `metrics.json`, `failures.json`,
 `fixture-manifest.json`, and `baseline-comparison.json`. Failed visual
 conditions with final UI state also
 write redacted `logs/failure-ui-states.jsonl` rows that are referenced from
-`failures.json` and `capture.written` events. The runner also normalizes
+`failures.json` and `capture.written` events. Run and suite `artifactIndex`
+values must be arrays of public-safe paths that exist; suite indexes must also
+include every required suite artifact and every child run directory. The runner also normalizes
 available diagnostics into `geometry.sample`, `scroll.sample`,
 `render.window`, `hitch.sample`, `resource.sample`, `database.sample`, and
 `bridge.sample` events so agents can query performance facts without opening
