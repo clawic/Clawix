@@ -127,6 +127,12 @@ final class ClawJSRuntimeLensSettingsPresentationTests: XCTestCase {
         XCTAssertTrue(channelContract.detailLines.contains("official commands hermes gateway, hermes gateway setup, hermes gateway run, hermes gateway start, +10 more"))
         XCTAssertTrue(channelContract.detailLines.contains("evidence hermes.channels.live_evidence"))
 
+        let closure = try XCTUnwrap(presentation.sections.first { $0.id == "closure-checklist" })
+        let sessionClosure = try XCTUnwrap(closure.rows.first { $0.label == "sessions" })
+        XCTAssertTrue(sessionClosure.detailLines.contains("hermes.sessions.write_back_contract, hermes.sessions.send.action_contract, hermes.sessions.inject.action_contract, +4 more"))
+        XCTAssertTrue(sessionClosure.detailLines.contains("implemented facets manifest_domain_contract, claw_cli_resource_surface, read_projection_contract, session_list_action, +4 more"))
+        XCTAssertTrue(sessionClosure.detailLines.contains("blocking facets native_write_back_contract, product_blocked_claim, native_action_contract"))
+
         let sessionActions = try XCTUnwrap(presentation.sections.first { $0.id == "session-actions" })
         let pinAction = try XCTUnwrap(sessionActions.rows.first { $0.label == "pin" })
         XCTAssertTrue(pinAction.detailLines.contains("user visible contract local_overlay_only_until_official_runtime_pin_api_exists"))

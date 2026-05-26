@@ -87,6 +87,20 @@ extension ClawJSRuntimeLensSection {
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
+                    if let implementedFacets = item.implementedFacetsLabel {
+                        Text("Implemented facets: \(implementedFacets)")
+                            .font(BodyFont.system(size: 10.5))
+                            .foregroundColor(Palette.textSecondary.opacity(0.72))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    if let blockingFacets = item.blockingFacetsLabel {
+                        Text("Blocking facets: \(blockingFacets)")
+                            .font(BodyFont.system(size: 10.5))
+                            .foregroundColor(Palette.textSecondary.opacity(0.72))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
                     if let supportResolutions = item.supportResolutionsLabel {
                         Text("Resolution: \(supportResolutions)")
                             .font(BodyFont.system(size: 10.5))

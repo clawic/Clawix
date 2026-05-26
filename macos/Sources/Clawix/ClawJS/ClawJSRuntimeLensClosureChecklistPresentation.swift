@@ -23,7 +23,9 @@ struct ClawJSRuntimeLensClosureChecklistPresentation: Equatable {
         let evidenceRequirementIdsLabel: String?
         let readProjectionStatus: String?
         let implementedFacetCount: Int
+        let implementedFacetsLabel: String?
         let blockingFacetCount: Int
+        let blockingFacetsLabel: String?
         let projectionDisposition: String?
         let writeBackPolicy: String?
         let validation: String?
@@ -44,7 +46,9 @@ struct ClawJSRuntimeLensClosureChecklistPresentation: Equatable {
                 evidenceRequirementIdsLabel.map { "evidence ids \($0)" },
                 supportResolutionsLabel.map { "support resolutions \($0)" },
                 "implemented facets \(implementedFacetCount)",
+                implementedFacetsLabel.map { "implemented facet ids \($0)" },
                 "blocking facets \(blockingFacetCount)",
+                blockingFacetsLabel.map { "blocking facet ids \($0)" },
                 safeDefault.map { "safe default \($0)" },
                 nextAction.map { "next action \($0)" }
             ]
@@ -89,7 +93,9 @@ struct ClawJSRuntimeLensClosureChecklistPresentation: Equatable {
                     evidenceRequirementIdsLabel: listLabel($0.evidenceRequirementIds, limit: 3),
                     readProjectionStatus: $0.readProjectionStatus,
                     implementedFacetCount: $0.implementedFacets?.count ?? 0,
+                    implementedFacetsLabel: listLabel($0.implementedFacets, limit: 4),
                     blockingFacetCount: $0.blockingFacets?.count ?? 0,
+                    blockingFacetsLabel: listLabel($0.blockingFacets, limit: 4),
                     projectionDisposition: $0.projectionDisposition,
                     writeBackPolicy: $0.writeBackPolicy,
                     validation: $0.validation,
@@ -107,6 +113,12 @@ struct ClawJSRuntimeLensClosureChecklistPresentation: Equatable {
 
     private static func listLabel(_ values: [String]?, limit: Int) -> String? {
         guard let values, !values.isEmpty else { return nil }
-        return values.prefix(limit).joined(separator: ", ")
+        let visibleLimit = max(0, limit)
+        var visible = Array(values.prefix(visibleLimit))
+        let hiddenCount = max(0, values.count - visible.count)
+        if hiddenCount > 0 {
+            visible.append("+\(hiddenCount) more")
+        }
+        return visible.joined(separator: ", ")
     }
 }

@@ -336,7 +336,15 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertEqual(closurePresentation.rows.first?.evidenceRequirementIdsLabel, "example.sessions.create.action_contract, example.sessions.pin.native_write_back_contract")
         XCTAssertEqual(closurePresentation.rows.first?.readProjectionStatus, "projected")
         XCTAssertEqual(closurePresentation.rows.first?.implementedFacetCount, 3)
+        XCTAssertEqual(
+            closurePresentation.rows.first?.implementedFacetsLabel,
+            "manifest_domain_contract, claw_cli_resource_surface, session_list_action"
+        )
         XCTAssertEqual(closurePresentation.rows.first?.blockingFacetCount, 3)
+        XCTAssertEqual(
+            closurePresentation.rows.first?.blockingFacetsLabel,
+            "native_action_contract, native_write_back_contract, product_blocked_claim"
+        )
         XCTAssertEqual(closurePresentation.rows.first?.claim, "inventoried")
         XCTAssertEqual(closurePresentation.rows.first?.runtimeStatus, "error")
         XCTAssertEqual(closurePresentation.rows.first?.writeBackPolicy, "blocked_until_fixture_coverage")
@@ -347,6 +355,8 @@ final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
         XCTAssertTrue(closurePresentation.rows.first?.accessibilityLabel.contains("read projection projected") == true)
         XCTAssertTrue(closurePresentation.rows.first?.accessibilityLabel.contains("write back blocked_until_fixture_coverage") == true)
         XCTAssertTrue(closurePresentation.rows.first?.accessibilityLabel.contains("evidence ids example.sessions.create.action_contract") == true)
+        XCTAssertTrue(closurePresentation.rows.first?.accessibilityLabel.contains("implemented facet ids manifest_domain_contract") == true)
+        XCTAssertTrue(closurePresentation.rows.first?.accessibilityLabel.contains("blocking facet ids native_action_contract") == true)
         XCTAssertTrue(closurePresentation.rows.last?.accessibilityLabel.contains("blocker classes external_pending") == true)
         XCTAssertTrue(closurePresentation.rows.last?.accessibilityLabel.contains("support resolutions external_pending_not_product_blocked") == true)
         let validationSummary = ClawJSRuntimeLensValidationSummary.make(snapshot: snapshot)

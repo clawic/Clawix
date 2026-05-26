@@ -449,7 +449,26 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
             rows: [
                 Row(id: "summary", label: "Closure checklist", value: presentation.totalLabel, pills: presentation.statusPills.map { Pill(id: $0.status, label: $0.label, tone: ClawJSRuntimeLensStatusTone.closureStatus($0.status)) }, detailLines: [], accessibilityLabel: presentation.accessibilityLabel)
             ] + presentation.rows.map {
-                Row(id: $0.domain, label: $0.domain, value: $0.claim, pills: [Pill(id: "status", label: $0.closureStatus, tone: ClawJSRuntimeLensStatusTone.closureStatus($0.closureStatus))], detailLines: optionalLines([$0.projectionDisposition, $0.runtimeStatus, $0.writeBackPolicy, $0.validation, $0.blockerClassesLabel, $0.evidenceRequirementIdsLabel, $0.supportResolutionsLabel, $0.safeDefault, $0.nextAction]), accessibilityLabel: $0.accessibilityLabel)
+                Row(
+                    id: $0.domain,
+                    label: $0.domain,
+                    value: $0.claim,
+                    pills: [Pill(id: "status", label: $0.closureStatus, tone: ClawJSRuntimeLensStatusTone.closureStatus($0.closureStatus))],
+                    detailLines: optionalLines([
+                        $0.projectionDisposition,
+                        $0.runtimeStatus,
+                        $0.writeBackPolicy,
+                        $0.validation,
+                        $0.blockerClassesLabel,
+                        $0.evidenceRequirementIdsLabel,
+                        $0.implementedFacetsLabel.map { "implemented facets \($0)" },
+                        $0.blockingFacetsLabel.map { "blocking facets \($0)" },
+                        $0.supportResolutionsLabel,
+                        $0.safeDefault,
+                        $0.nextAction
+                    ]),
+                    accessibilityLabel: $0.accessibilityLabel
+                )
             },
             accessibilityLabel: presentation.accessibilityLabel
         )
