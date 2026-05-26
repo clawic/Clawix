@@ -773,12 +773,19 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let blockerClass: String?
         let approvalRequired: Bool?
         let commandShape: String?
+        let exactCommand: String?
+        let preflightCommand: String?
+        let approvalScope: String?
+        let evidenceSafetyPolicy: String?
         let expectedEvidence: [String]?
+        let expectedRedactedEvidence: [String]?
         let riskControls: [String]?
         let evidenceDisposition: String?
         let currentBehavior: String?
         let fallbackPolicy: String?
+        let safeDefault: String?
         let claimEffect: String?
+        let claimBlockedUntil: String?
         let reentryCondition: String?
         let productDecision: String?
         let supportResolution: String?
@@ -787,6 +794,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let officialProtocol: String?
         let officialMethod: String?
         let officialContractSource: String?
+        let doNotRunWithoutApproval: Bool?
     }
 
     struct SessionActionPolicy: Decodable, Equatable, Identifiable {

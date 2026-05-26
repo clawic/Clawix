@@ -144,6 +144,9 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
         if let readiness = audit.evidenceReadinessSummary {
             sections.append(evidenceReadinessSummarySection(ClawJSRuntimeLensSupportSummaryPresentation.make(evidenceReadiness: readiness)))
         }
+        if let requirements = audit.evidenceRequirements, !requirements.isEmpty {
+            sections.append(evidenceRequirementsSection(ClawJSRuntimeLensEvidenceRequirementPresentation.make(requirements: requirements, limit: 8)))
+        }
         if let checklist = audit.closureChecklist, !checklist.isEmpty {
             sections.append(closureSection(ClawJSRuntimeLensClosureChecklistPresentation.make(checklist: checklist, summary: audit.closureChecklistSummary)))
         }
@@ -405,6 +408,36 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                     accessibilityLabel: presentation.accessibilityLabel
                 )
             ],
+            accessibilityLabel: presentation.accessibilityLabel
+        )
+    }
+
+    private static func evidenceRequirementsSection(_ presentation: ClawJSRuntimeLensEvidenceRequirementPresentation) -> Section {
+        Section(
+            id: "evidence-requirements",
+            title: "Evidence requirements",
+            rows: [
+                Row(id: "summary", label: "Evidence requirements", value: presentation.blockerClassLabel, pills: [
+                    Pill(id: "total", label: "requirements \(presentation.totalRequirementCount)", tone: presentation.totalRequirementCount > 0 ? .warning : .success),
+                    Pill(id: "approval", label: "approval \(presentation.approvalRequiredCount)", tone: presentation.approvalRequiredCount > 0 ? .warning : .muted),
+                    Pill(id: "direct", label: "direct \(presentation.directBlockerCount)", tone: presentation.directBlockerCount > 0 ? .warning : .muted),
+                    Pill(id: "external", label: "external \(presentation.externalPendingCount)", tone: presentation.externalPendingCount > 0 ? .warning : .muted)
+                ], detailLines: [], accessibilityLabel: presentation.accessibilityLabel)
+            ] + presentation.rows.map {
+                Row(
+                    id: $0.id,
+                    label: $0.id,
+                    value: $0.detailLabel,
+                    pills: optionalPills([
+                        $0.blockerClass.map { Pill(id: "blocker", label: $0, tone: .warning) },
+                        $0.approvalRequired ? Pill(id: "approval", label: "approval", tone: .warning) : nil,
+                        $0.expectedEvidenceCount > 0 ? Pill(id: "expected", label: "expected \($0.expectedEvidenceCount)", tone: .info) : nil,
+                        $0.riskControlCount > 0 ? Pill(id: "risk", label: "risk \($0.riskControlCount)", tone: .muted) : nil
+                    ]),
+                    detailLines: $0.detailLines,
+                    accessibilityLabel: $0.accessibilityLabel
+                )
+            },
             accessibilityLabel: presentation.accessibilityLabel
         )
     }
