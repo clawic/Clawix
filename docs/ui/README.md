@@ -318,7 +318,9 @@ primary timing source.
   add `--write-baseline <private-baseline-file>`.
 - Baseline comparison and P0 gate:
   add `--baseline <private-baseline-file> --gate p0`.
-  External baseline paths are written to evidence only as hash references.
+  External baseline paths are written to evidence only as hash references, and
+  every non-null baseline reference carries a content hash for the exact
+  baseline artifact used.
 - Evidence validation:
   `node scripts/verify_macos_ux_trace_evidence.mjs --path <run-or-suite-dir>`.
   The same verifier also accepts a generated baseline JSON file and validates
@@ -381,7 +383,9 @@ available diagnostics into `geometry.sample`, `scroll.sample`,
 opaque payload hashes. The verifier rejects baseline comparison artifacts that
 store raw external paths, omit a metric comparison row, reference a KPI that is
 not present in `metrics.json` / `suite-metrics.json`, or use an unsupported
-comparison status. Run comparison artifacts must also match the run
+comparison status. Baseline references must include a sha256 content hash in
+addition to any safe relative path or external path hash. Run comparison
+artifacts must also match the run
 `runId`/`scenarioId`/`fixtureProfile`, and suite comparison artifacts must
 match the suite `suiteId`/`suiteName`/`requestedFixtureProfile`, before their
 metric rows can support closure. Copied comparison fields such as priority, surface, P95,

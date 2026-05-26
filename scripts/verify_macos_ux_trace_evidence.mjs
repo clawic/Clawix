@@ -390,6 +390,13 @@ function validatePathReference(failures, value, label) {
   fail(failures, `${label}.kind must be relative-to-run or external-hash-only`);
 }
 
+function validateBaselineReference(failures, value, label) {
+  validatePathReference(failures, value, label);
+  if (typeof value?.contentHash !== "string" || !value.contentHash.startsWith("sha256:")) {
+    fail(failures, `${label}.contentHash must be a sha256 hash`);
+  }
+}
+
 const baselineComparisonStatuses = new Set(["gate_passed", "gate_failed", "baseline_missing", "compared"]);
 const baselineComparisonRowStatuses = new Set(["baseline_missing", "baseline_regression", "compared"]);
 
@@ -521,7 +528,7 @@ function validateBaselineComparison(failures, comparison, label = "baseline-comp
     fail(failures, `${label} must not include raw baselinePath`);
   }
   if (comparison.baselineReference) {
-    validatePathReference(failures, comparison.baselineReference, `${label}.baselineReference`);
+    validateBaselineReference(failures, comparison.baselineReference, `${label}.baselineReference`);
   }
   requireFields(failures, comparison, label, ["schemaVersion", "status", "comparisons"]);
   if (comparison.schemaVersion !== 1) fail(failures, `${label}.schemaVersion must be 1`);

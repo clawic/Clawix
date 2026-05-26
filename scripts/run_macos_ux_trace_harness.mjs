@@ -915,7 +915,11 @@ function exitPolicyForRun(args, status) {
 
 function baselineReferenceForRun(runDir, baselinePath) {
   if (!baselinePath) return null;
-  return publicPathReference(runDir, path.resolve(baselinePath));
+  const resolved = path.resolve(baselinePath);
+  return {
+    ...publicPathReference(runDir, resolved),
+    contentHash: fileContentHash(resolved),
+  };
 }
 
 function writeBaselineArtifact(file, context, metrics) {

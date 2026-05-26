@@ -99,7 +99,7 @@ hash-referenced, harness-disabled, measured, and numerically comparable.
   sidecars, normalized diagnostic sample events, contract source key/id/path
   identity and hashes, baseline artifact identity, metadata, and source provenance, run
   and suite baseline comparisons, baseline path redaction, exact metric-row
-  correlation and metric value consistency, aggregate
+  correlation, baseline reference content hashes, and metric value consistency, aggregate
   comparison status consistency, exact child-to-suite metric/failure
   aggregation including required metric evidence fields such as `worstSample`,
   `budget`, and `evidenceEventRefs`, child baseline-comparison path ownership,

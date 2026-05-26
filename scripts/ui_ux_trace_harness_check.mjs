@@ -699,6 +699,9 @@ if (evidenceSchema) {
   if (!String(evidenceSchema.baselineComparisonContract?.baselineReferencePolicy ?? "").includes("must not store raw external baseline paths")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.baselineReferencePolicy must forbid raw external baseline paths`);
   }
+  if (!String(evidenceSchema.baselineComparisonContract?.baselineReferencePolicy ?? "").includes("sha256 contentHash")) {
+    fail(`${evidenceSchemaPath}.baselineComparisonContract.baselineReferencePolicy must bind baseline references to content hashes`);
+  }
   if (!String(evidenceSchema.baselineComparisonContract?.suiteAggregationPolicy ?? "").includes("one comparison row per suite metric")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.suiteAggregationPolicy must require suite-level metric comparison coverage`);
   }
@@ -1161,6 +1164,7 @@ if (runnerSource) {
     "function evidenceSourceReferences(",
     "function exitPolicyForRun(",
     "function baselineReferenceForRun(",
+    "contentHash: fileContentHash(resolved)",
     "function baselineComparisonsFromMetrics(",
     "approval.status=approved-by-user",
     "self-test pending generated baseline must not be usable for comparison",
@@ -1328,6 +1332,8 @@ if (evidenceVerifierSource) {
     "instrumentationOverheadEstimate.${numberField} must be numeric when status is compared",
     "overheadCalibration.traceWriter.bounded must be true",
     "validatePathReference(",
+    "validateBaselineReference(",
+    "${label}.contentHash must be a sha256 hash",
     "must not include an external local path",
     "geometry.sample",
     "resource.sample",
