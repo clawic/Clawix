@@ -270,11 +270,18 @@ final class ClawJSAppStateSyncCoordinator {
             process.standardOutput = stdout
             process.standardError = stderr
             try process.run()
+            let outputTask = Task.detached(priority: .utility) {
+                stdout.fileHandleForReading.readDataToEndOfFile()
+            }
+            let errorTask = Task.detached(priority: .utility) {
+                stderr.fileHandleForReading.readDataToEndOfFile()
+            }
             process.waitUntilExit()
-            let output = stdout.fileHandleForReading.readDataToEndOfFile()
+            let output = await outputTask.value
+            let errorOutput = await errorTask.value
             if process.terminationStatus != 0 {
                 let errorText = String(
-                    data: stderr.fileHandleForReading.readDataToEndOfFile(),
+                    data: errorOutput,
                     encoding: .utf8
                 ) ?? "claw host app-state failed"
                 throw NSError(
