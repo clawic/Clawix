@@ -222,10 +222,11 @@
   ],
   "baselineArtifactContract": {
     "defaultApprovalStatus": "pending-user-approval",
+    "comparisonRequiredApprovalStatus": "approved-by-user",
     "versioned": true,
     "privateEvidenceRemainsExternal": true,
     "verifierTarget": "scripts/verify_macos_ux_trace_evidence.mjs must accept generated baseline JSON files in addition to run and suite directories.",
-    "p0Protection": "Generated baselines must not allow lower-priority optimizations to update P0 baselines without approved evidence.",
+    "p0Protection": "Generated baselines must not allow lower-priority optimizations to update P0 baselines without approved evidence. Formal baseline artifacts with approval.status=pending-user-approval are capture artifacts only; the runner must require approval.status=approved-by-user before using them for comparison or P0 gates.",
     "identityPolicy": "Generated baseline JSON files must declare schemaVersion 1, program macos-ux-trace-harness-baseline, baselineVersion 1, platform macos, and a valid ISO generatedAt timestamp.",
     "sourceEvidencePolicy": "Baseline sourceEvidence must identify exactly one source artifact kind. Run baselines require a runId plus top-level scenarioId and fixtureProfile and must not carry a suiteId. Suite baselines require a suiteId and top-level fixtureProfile and must not carry a runId."
   },

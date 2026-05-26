@@ -83,7 +83,10 @@ hash-referenced, harness-disabled, measured, and numerically comparable.
 - **Debt or pending evidence**: the live P0 runner, fixture scenarios, baseline
   capture, and P0 gate comparison are implemented. Baseline approval, strict
   threshold promotion, and real-equivalent aggregate calibration remain pending
-  until the user approves the private evidence.
+  until the user approves the private evidence. Generated baseline artifacts
+  stay capture-only while `approval.status` is `pending-user-approval`; the
+  runner requires `approved-by-user` before using formal baseline artifacts for
+  comparison or P0 gates.
 
 ## Surface Parity
 

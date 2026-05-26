@@ -329,7 +329,10 @@ primary timing source.
   `sourceEvidence` must identify exactly one run or suite source; run baselines
   require `runId`, `scenarioId`, and
   `fixtureProfile`, while suite baselines require a matching `suiteId` and
-  `fixtureProfile`.
+  `fixtureProfile`. Generated baselines remain capture artifacts while
+  `approval.status` is `pending-user-approval`; formal baseline artifacts can
+  be used for comparison or P0 gates only after they carry
+  `approval.status: approved-by-user` plus user approval metadata.
 
 Evidence is written under the chosen output directory as `suite.json`,
 `suite-metrics.json`, `suite-failures.json`, `suite-baseline-comparison.json`,

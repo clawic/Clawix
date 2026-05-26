@@ -727,15 +727,25 @@ if (evidenceSchema) {
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedRowStatuses, `${evidenceSchemaPath}.baselineComparisonContract.allowedRowStatuses`), `${evidenceSchemaPath}.baselineComparisonContract.allowedRowStatuses`, ["baseline_missing", "baseline_regression", "compared"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedReferenceKinds, `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`), `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`, ["relative-to-run", "external-hash-only"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineArtifactRequiredFields, `${evidenceSchemaPath}.baselineArtifactRequiredFields`), `${evidenceSchemaPath}.baselineArtifactRequiredFields`, ["baselineVersion", "sourceEvidence", "approval", "promotionPolicy", "evidenceSources", "privateBoundary", "metrics"]);
-  requireFields(evidenceSchema.baselineArtifactContract, `${evidenceSchemaPath}.baselineArtifactContract`, ["defaultApprovalStatus", "versioned", "privateEvidenceRemainsExternal", "verifierTarget", "p0Protection", "identityPolicy", "sourceEvidencePolicy"]);
+  requireFields(evidenceSchema.baselineArtifactContract, `${evidenceSchemaPath}.baselineArtifactContract`, ["defaultApprovalStatus", "comparisonRequiredApprovalStatus", "versioned", "privateEvidenceRemainsExternal", "verifierTarget", "p0Protection", "identityPolicy", "sourceEvidencePolicy"]);
   if (evidenceSchema.baselineArtifactContract?.defaultApprovalStatus !== "pending-user-approval") {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.defaultApprovalStatus must be pending-user-approval`);
+  }
+  if (evidenceSchema.baselineArtifactContract?.comparisonRequiredApprovalStatus !== "approved-by-user") {
+    fail(`${evidenceSchemaPath}.baselineArtifactContract.comparisonRequiredApprovalStatus must be approved-by-user`);
   }
   if (evidenceSchema.baselineArtifactContract?.versioned !== true) {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.versioned must be true`);
   }
   if (!String(evidenceSchema.baselineArtifactContract?.verifierTarget ?? "").includes("baseline JSON files")) {
     fail(`${evidenceSchemaPath}.baselineArtifactContract.verifierTarget must require baseline JSON verification`);
+  }
+  if (
+    !String(evidenceSchema.baselineArtifactContract?.p0Protection ?? "").includes("pending-user-approval")
+    || !String(evidenceSchema.baselineArtifactContract?.p0Protection ?? "").includes("approved-by-user")
+    || !String(evidenceSchema.baselineArtifactContract?.p0Protection ?? "").includes("comparison or P0 gates")
+  ) {
+    fail(`${evidenceSchemaPath}.baselineArtifactContract.p0Protection must require approved baselines before comparison`);
   }
   if (
     !String(evidenceSchema.baselineArtifactContract?.identityPolicy ?? "").includes("schemaVersion 1")
@@ -1152,6 +1162,8 @@ if (runnerSource) {
     "function exitPolicyForRun(",
     "function baselineReferenceForRun(",
     "function baselineComparisonsFromMetrics(",
+    "approval.status=approved-by-user",
+    "self-test pending generated baseline must not be usable for comparison",
     "baselineReference: baselineReferenceForRun(runDir, args.baseline)",
     "writeJson(path.join(suiteDir, \"suite-baseline-comparison.json\"), suiteBaselineComparison)",
     "baselineComparisonPath: path.join(suiteRunDirs[index], \"baseline-comparison.json\")",
@@ -1277,6 +1289,11 @@ if (evidenceVerifierSource) {
     "validateBaselineArtifact(",
     "baseline.schemaVersion must be 1",
     "parseIsoTimestamp(failures, baseline.generatedAt, \"baseline.generatedAt\")",
+    "baseline.approval.status must be ${pendingStatus} or ${approvedStatus}",
+    "baseline.approval.approvedByUserAt must be null while pending",
+    "baseline.approval.approvedScope must be null while pending",
+    "baseline.approval.approvedByUserAt",
+    "baseline.approval.approvedScope must be an object when approved",
     "suite-baseline-comparison.json",
     "suiteBaselineComparison",
     "baseline-comparison.json scenarioId must match run.json",

@@ -812,6 +812,9 @@ function makeMetric(kpi, samples, eventRefs, baselineEntry) {
 function readBaseline(file) {
   if (!file) return new Map();
   const payload = readJson(path.resolve(file));
+  if (payload?.program === "macos-ux-trace-harness-baseline" && payload?.approval?.status !== "approved-by-user") {
+    throw new Error("formal UX trace baseline requires approval.status=approved-by-user before comparison");
+  }
   const rows = Array.isArray(payload) ? payload : (payload.metrics || payload.comparisons || []);
   return new Map(rows.filter((row) => row?.kpiId).map((row) => [row.kpiId, row]));
 }
@@ -1790,6 +1793,25 @@ async function selfTest() {
     throw new Error("self-test baseline must protect P0 promotion policy");
   }
   verifyEvidencePath(baselinePath);
+  const pendingBaselineResult = spawnSync(process.execPath, [
+    runnerPath,
+    "--dry-run",
+    "--scenario",
+    "startup-to-usable",
+    "--fixture-profile",
+    "smoke",
+    "--baseline",
+    baselinePath,
+    "--out-dir",
+    outDir,
+    "--json",
+  ], {
+    cwd: rootDir,
+    encoding: "utf8",
+  });
+  if (pendingBaselineResult.status !== 1 || !pendingBaselineResult.stderr.includes("approval.status=approved-by-user")) {
+    throw new Error("self-test pending generated baseline must not be usable for comparison");
+  }
   return result;
 }
 

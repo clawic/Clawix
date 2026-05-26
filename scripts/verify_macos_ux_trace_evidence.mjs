@@ -1250,8 +1250,20 @@ function validateBaselineArtifact(file, schema) {
     }
   }
   requireFields(failures, baseline.approval, "baseline.approval", ["status", "approvedByUserAt", "approvedScope"]);
-  if (baseline.approval?.status !== schema.baselineArtifactContract?.defaultApprovalStatus) {
-    fail(failures, `baseline.approval.status must be ${schema.baselineArtifactContract?.defaultApprovalStatus}`);
+  const pendingStatus = schema.baselineArtifactContract?.defaultApprovalStatus || "pending-user-approval";
+  const approvedStatus = schema.baselineArtifactContract?.comparisonRequiredApprovalStatus || "approved-by-user";
+  if (![pendingStatus, approvedStatus].includes(baseline.approval?.status)) {
+    fail(failures, `baseline.approval.status must be ${pendingStatus} or ${approvedStatus}`);
+  }
+  if (baseline.approval?.status === pendingStatus) {
+    if (baseline.approval.approvedByUserAt !== null) fail(failures, "baseline.approval.approvedByUserAt must be null while pending");
+    if (baseline.approval.approvedScope !== null) fail(failures, "baseline.approval.approvedScope must be null while pending");
+  }
+  if (baseline.approval?.status === approvedStatus) {
+    parseIsoTimestamp(failures, baseline.approval.approvedByUserAt, "baseline.approval.approvedByUserAt");
+    if (!baseline.approval.approvedScope || typeof baseline.approval.approvedScope !== "object" || Array.isArray(baseline.approval.approvedScope)) {
+      fail(failures, "baseline.approval.approvedScope must be an object when approved");
+    }
   }
   requireFields(failures, baseline.promotionPolicy, "baseline.promotionPolicy", [
     "lowerPriorityOptimizationMayUpdateP0",
