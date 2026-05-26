@@ -814,7 +814,32 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let delegatesTo: String?
         let writesRuntime: Bool?
         let wouldWriteRuntime: Bool?
+        let writesLocalOverlay: Bool?
+        let nativeWriteBackStatus: String?
+        let nativeWriteBackBlockerClass: String?
+        let officialRuntimeWriteBackContractRequired: Bool?
+        let officialRuntimeWriteBackContractKnown: Bool?
+        let nativeWriteBackFixtureRequired: Bool?
+        let nativeWriteBackSafeDefault: String?
+        let userVisibleContract: String?
+        let claimEffect: String?
+        let supportResolution: String?
+        let evidenceRequirementId: String?
+        let nativeWriteBackContract: NativeWriteBackContract?
         let args: [String]?
+
+        struct NativeWriteBackContract: Decodable, Equatable {
+            let status: String?
+            let writesRuntime: Bool?
+            let wouldWriteRuntime: Bool?
+            let officialContractRequired: Bool?
+            let officialContractKnown: Bool?
+            let fixtureRequired: Bool?
+            let safeDefault: String?
+            let userVisibleContract: String?
+            let claimEffect: String?
+            let evidenceRequirementId: String?
+        }
     }
 
     typealias RuntimeResource = ClawJSRuntimeLensRuntimeResource

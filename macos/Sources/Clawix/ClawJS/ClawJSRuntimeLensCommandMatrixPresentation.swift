@@ -6,6 +6,9 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
         let command: String
         let delegatesTo: String?
         let writeDisposition: String
+        let nativeWriteBackStatus: String?
+        let nativeWriteBackSafeDefault: String?
+        let evidenceRequirementId: String?
         let argumentCount: Int
         let argsLabel: String?
 
@@ -13,6 +16,9 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
             [
                 command,
                 "disposition \(writeDisposition)",
+                nativeWriteBackStatus.map { "native write-back \($0)" },
+                nativeWriteBackSafeDefault.map { "safe default \($0)" },
+                evidenceRequirementId.map { "evidence \($0)" },
                 "arguments \(argumentCount)",
                 argsLabel.map { "args \($0)" },
                 delegatesTo.map { "delegates to \($0)" }
@@ -27,6 +33,8 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
     let executableCount: Int
     let writesRuntimeCount: Int
     let wouldWriteRuntimeCount: Int
+    let localOverlayCommandCount: Int
+    let nativeWriteBackBlockedCount: Int
     let readLocalCount: Int
     let argumentCommandCount: Int
     let argumentCount: Int
@@ -41,6 +49,8 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
             authority.map { "authority \($0)" },
             "writes runtime \(writesRuntimeCount)",
             "would write runtime \(wouldWriteRuntimeCount)",
+            "local overlay \(localOverlayCommandCount)",
+            "native write-back blocked \(nativeWriteBackBlockedCount)",
             "read local \(readLocalCount)",
             "argument commands \(argumentCommandCount)",
             "arguments \(argumentCount)",
@@ -62,6 +72,9 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
                 command: command.command,
                 delegatesTo: command.delegatesTo,
                 writeDisposition: writeDisposition(for: command),
+                nativeWriteBackStatus: command.nativeWriteBackStatus,
+                nativeWriteBackSafeDefault: command.nativeWriteBackSafeDefault,
+                evidenceRequirementId: command.evidenceRequirementId,
                 argumentCount: command.args?.count ?? 0,
                 argsLabel: listLabel(command.args, limit: 8)
             )
@@ -73,6 +86,8 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
             executableCount: allCommands.count,
             writesRuntimeCount: allCommands.filter { $0.writesRuntime == true }.count,
             wouldWriteRuntimeCount: allCommands.filter { $0.wouldWriteRuntime == true }.count,
+            localOverlayCommandCount: allCommands.filter { $0.writesLocalOverlay == true }.count,
+            nativeWriteBackBlockedCount: allCommands.filter { $0.nativeWriteBackStatus != nil }.count,
             readLocalCount: allCommands.filter { $0.writesRuntime != true && $0.wouldWriteRuntime != true }.count,
             argumentCommandCount: allCommands.filter { command in
                 !(command.args ?? []).isEmpty
@@ -123,6 +138,12 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
         }
         if command.wouldWriteRuntime == true {
             return "blocked write"
+        }
+        if command.writesLocalOverlay == true && command.nativeWriteBackStatus != nil {
+            return "local overlay, native blocked"
+        }
+        if command.writesLocalOverlay == true {
+            return "local overlay"
         }
         return "read/local"
     }

@@ -211,6 +211,25 @@ if (!exists(hermesFixturePath)) {
   if (supportAudit && JSON.stringify(supportAudit).includes("/var/folders/")) {
     errors.push("Hermes runtime portal fixture supportAudit must not contain temp source paths");
   }
+  const commands = fixture?.data?.commands?.executableByClawCli;
+  if (!Array.isArray(commands)) {
+    errors.push("Hermes runtime portal fixture missing command matrix rows");
+  } else {
+    const pinCommand = commands.find((entry) => entry.command === "runtime hermes sessions pin --session-key <id>");
+    const unpinCommand = commands.find((entry) => entry.command === "runtime hermes sessions unpin --session-key <id>");
+    requireEqual(pinCommand?.writesRuntime, false, "Hermes pin command matrix writesRuntime");
+    requireEqual(pinCommand?.writesLocalOverlay, true, "Hermes pin command matrix writesLocalOverlay");
+    requireEqual(pinCommand?.nativeWriteBackStatus, "blocked_until_official_runtime_write_back_contract", "Hermes pin command matrix native write-back status");
+    requireEqual(pinCommand?.nativeWriteBackSafeDefault, "keep_local_overlay_and_do_not_write_runtime_pin_state", "Hermes pin command matrix safe default");
+    requireEqual(pinCommand?.evidenceRequirementId, "hermes.sessions.pin.native_write_back_contract", "Hermes pin command matrix evidence id");
+    requireEqual(pinCommand?.nativeWriteBackContract?.officialContractRequired, true, "Hermes pin command matrix official contract required");
+    requireEqual(pinCommand?.nativeWriteBackContract?.officialContractKnown, false, "Hermes pin command matrix official contract known");
+    requireEqual(unpinCommand?.writesLocalOverlay, true, "Hermes unpin command matrix writesLocalOverlay");
+    requireEqual(unpinCommand?.nativeWriteBackStatus, "blocked_until_official_runtime_write_back_contract", "Hermes unpin command matrix native write-back status");
+    requireEqual(unpinCommand?.nativeWriteBackSafeDefault, "keep_local_overlay_and_do_not_write_runtime_pin_state", "Hermes unpin command matrix safe default");
+    requireEqual(unpinCommand?.evidenceRequirementId, "hermes.sessions.unpin.native_write_back_contract", "Hermes unpin command matrix evidence id");
+    requireEqual(unpinCommand?.nativeWriteBackContract?.officialContractRequired, true, "Hermes unpin command matrix official contract required");
+  }
 }
 
 if (fs.existsSync(siblingClawJs)) {
@@ -661,6 +680,9 @@ for (const snippet of [
   "Runtime command matrix",
   "writesRuntimeCount",
   "wouldWriteRuntimeCount",
+  "localOverlayCommandCount",
+  "nativeWriteBackBlockedCount",
+  "nativeWriteBackStatus",
   "argumentCommandCount",
   "argsLabel",
   "resourceDomainsLabel",
@@ -1059,6 +1081,8 @@ for (const snippet of [
   "XCTAssertEqual(result.nativeWriteBackStatus, \"blocked_until_official_runtime_write_back_contract\")",
   "XCTAssertEqual(result.evidenceRequirementId, \"hermes.sessions.pin.native_write_back_contract\")",
   "XCTAssertEqual(result.nativeWriteBackContract?.officialContractRequired, true)",
+  "XCTAssertEqual(hermesPinCommand.nativeWriteBackStatus, \"blocked_until_official_runtime_write_back_contract\")",
+  "XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 2)",
   "channelInventory.statusLabel",
   "configurationInventory.statusLabel",
   "managed-file-1",
