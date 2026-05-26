@@ -270,6 +270,35 @@ const expectedP0Kpis = [
   "p0.idle.no_unbounded_log_growth",
 ];
 
+const expectedP1Kpis = [
+  "p1.dropdown.open_latency_ms",
+  "p1.settings.open_latency_ms",
+  "p1.rightSidebar.open_latency_ms",
+  "p1.rightSidebar.switch_latency_ms",
+  "p1.browserPanel.open_latency_ms",
+  "p1.browserPanel.switch_latency_ms",
+  "p1.workSummary.expand_collapse_latency_ms",
+  "p1.toolActionDetail.expand_collapse_latency_ms",
+  "p1.attachment.preview_latency_ms",
+  "p1.search.open_latency_ms",
+  "p1.search.results_first_paint_ms",
+  "p1.project.switch_latency_ms",
+  "p1.pinnedView.switch_latency_ms",
+  "p1.chatFilter.switch_latency_ms",
+  "p1.state.transition_latency_ms",
+  "p1.window.resize_frame_stability_px",
+  "p1.multiWindow.instance_switch_latency_ms",
+];
+
+const expectedP2Kpis = [
+  "p2.settings.rare_pane_open_latency_ms",
+  "p2.integration.deep_panel_open_latency_ms",
+  "p2.provider.secondary_surface_latency_ms",
+  "p2.diagnostics.panel_open_latency_ms",
+  "p2.maintenance.flow_open_latency_ms",
+  "p2.infoPanel.visible_latency_ms",
+];
+
 const expectedKpiFields = [
   "id",
   "priority",
@@ -596,10 +625,9 @@ if (registry) {
 
   requireUniqueStringArray(requireArray(registry.scalingDimensions, `${registryPath}.scalingDimensions`, expectedScalingDimensions.length), `${registryPath}.scalingDimensions`, expectedScalingDimensions);
 
-  const kpis = requireArray(registry.kpis, `${registryPath}.kpis`, expectedP0Kpis.length);
-  const kpiIds = requireRecordIds(kpis, `${registryPath}.kpis`, expectedP0Kpis);
-  if (!kpis.some((kpi) => kpi.priority === "P1")) fail(`${registryPath}.kpis must include at least one P1 KPI`);
-  if (!kpis.some((kpi) => kpi.priority === "P2")) fail(`${registryPath}.kpis must include at least one P2 KPI`);
+  const expectedKpis = [...expectedP0Kpis, ...expectedP1Kpis, ...expectedP2Kpis];
+  const kpis = requireArray(registry.kpis, `${registryPath}.kpis`, expectedKpis.length);
+  const kpiIds = requireRecordIds(kpis, `${registryPath}.kpis`, expectedKpis);
   for (const kpi of kpis) {
     requireFields(kpi, `${registryPath}.kpis.${kpi.id ?? "unknown"}`, requiredNonNullKpiFields);
     for (const field of expectedKpiFields) {

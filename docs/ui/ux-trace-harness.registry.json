@@ -3157,6 +3157,268 @@
       ]
     },
     {
+      "id": "p1.rightSidebar.switch_latency_ms",
+      "priority": "P1",
+      "surface": "rightSidebar",
+      "trigger": "switch-right-sidebar-item",
+      "completionCondition": "target right-sidebar item visible",
+      "geometryCondition": "right-sidebar item frame stable",
+      "fixtureProfiles": [
+        "medium"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete switch-right-sidebar-item and reach target right-sidebar item visible on rightSidebar without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.browserPanel.open_latency_ms",
+      "priority": "P1",
+      "surface": "browserPanel",
+      "trigger": "open-browser-panel",
+      "completionCondition": "browser panel visible",
+      "geometryCondition": "browser panel frame visible",
+      "fixtureProfiles": [
+        "medium"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete open-browser-panel and reach browser panel visible on browserPanel without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.browserPanel.switch_latency_ms",
+      "priority": "P1",
+      "surface": "browserPanel",
+      "trigger": "switch-browser-panel",
+      "completionCondition": "target browser panel visible",
+      "geometryCondition": "browser panel frame stable",
+      "fixtureProfiles": [
+        "medium"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete switch-browser-panel and reach target browser panel visible on browserPanel without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.workSummary.expand_collapse_latency_ms",
+      "priority": "P1",
+      "surface": "workSummary",
+      "trigger": "expand-collapse-work-summary",
+      "completionCondition": "work summary expansion state visible",
+      "geometryCondition": "work summary frame stable",
+      "fixtureProfiles": [
+        "dense-chat",
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete expand-collapse-work-summary and reach work summary expansion state visible on workSummary without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.toolActionDetail.expand_collapse_latency_ms",
+      "priority": "P1",
+      "surface": "toolActionDetail",
+      "trigger": "expand-collapse-tool-action-detail",
+      "completionCondition": "tool/action detail expansion state visible",
+      "geometryCondition": "tool/action detail frame stable",
+      "fixtureProfiles": [
+        "dense-chat",
+        "streaming-heavy"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete expand-collapse-tool-action-detail and reach tool/action detail expansion state visible on toolActionDetail without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.attachment.preview_latency_ms",
+      "priority": "P1",
+      "surface": "attachmentPreview",
+      "trigger": "stage-attachment-preview",
+      "completionCondition": "attachment preview visible",
+      "geometryCondition": "attachment preview frame visible",
+      "fixtureProfiles": [
+        "medium"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete stage-attachment-preview and reach attachment preview visible on attachmentPreview without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.search.open_latency_ms",
+      "priority": "P1",
+      "surface": "search",
+      "trigger": "open-search",
+      "completionCondition": "search input visible",
+      "geometryCondition": "search panel frame visible",
+      "fixtureProfiles": [
+        "medium",
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete open-search and reach search input visible on search without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
       "id": "p1.search.results_first_paint_ms",
       "priority": "P1",
       "surface": "search",
@@ -3195,6 +3457,334 @@
       ]
     },
     {
+      "id": "p1.project.switch_latency_ms",
+      "priority": "P1",
+      "surface": "projectSwitch",
+      "trigger": "switch-project",
+      "completionCondition": "project conversation list visible",
+      "geometryCondition": "project list frame stable",
+      "fixtureProfiles": [
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete switch-project and reach project conversation list visible on projectSwitch without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.pinnedView.switch_latency_ms",
+      "priority": "P1",
+      "surface": "pinnedView",
+      "trigger": "switch-pinned-view",
+      "completionCondition": "pinned conversation list visible",
+      "geometryCondition": "pinned list frame stable",
+      "fixtureProfiles": [
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete switch-pinned-view and reach pinned conversation list visible on pinnedView without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.chatFilter.switch_latency_ms",
+      "priority": "P1",
+      "surface": "chatFilter",
+      "trigger": "switch-archived-all-chats-filter",
+      "completionCondition": "requested chat filter results visible",
+      "geometryCondition": "filtered list frame stable",
+      "fixtureProfiles": [
+        "dense-sidebar"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete switch-archived-all-chats-filter and reach requested chat filter results visible on chatFilter without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.state.transition_latency_ms",
+      "priority": "P1",
+      "surface": "app.state",
+      "trigger": "transition-empty-error-loading-state",
+      "completionCondition": "target empty/error/loading state visible",
+      "geometryCondition": "state panel frame stable",
+      "fixtureProfiles": [
+        "smoke"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete transition-empty-error-loading-state and reach target empty/error/loading state visible on app.state without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.window.resize_frame_stability_px",
+      "priority": "P1",
+      "surface": "window",
+      "trigger": "resize-window",
+      "completionCondition": "window content stable after resize",
+      "geometryCondition": "primary frames remain within tolerance",
+      "fixtureProfiles": [
+        "medium"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete resize-window and reach window content stable after resize on window without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample",
+        "render.window"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p1.multiWindow.instance_switch_latency_ms",
+      "priority": "P1",
+      "surface": "multiWindow",
+      "trigger": "switch-clawix-window-or-agent-instance",
+      "completionCondition": "target Clawix window or agent instance visible",
+      "geometryCondition": "target window frame visible",
+      "fixtureProfiles": [
+        "medium"
+      ],
+      "baselineComparison": "approved-private-baseline",
+      "userOutcome": "User can complete switch-clawix-window-or-agent-instance and reach target Clawix window or agent instance visible on multiWindow without degrading higher-priority monitoring flows.",
+      "sampleCount": 3,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "relative-to-approved-baseline",
+        "maxRegressionPercent": 15,
+        "enforcement": "warn-until-approved"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "warning",
+      "knownExternalDependencies": [
+        "approved-private-baseline"
+      ]
+    },
+    {
+      "id": "p2.settings.rare_pane_open_latency_ms",
+      "priority": "P2",
+      "surface": "settings",
+      "trigger": "open-rare-settings-pane",
+      "completionCondition": "rare settings pane visible",
+      "geometryCondition": "settings pane frame visible",
+      "fixtureProfiles": [
+        "smoke"
+      ],
+      "baselineComparison": "tracked-only",
+      "userOutcome": "User can complete open-rare-settings-pane and reach rare settings pane visible on settings while this low-frequency surface remains tracked without blocking P0 work.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "tracked-only",
+        "maxRegressionPercent": null,
+        "enforcement": "none"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "tracked",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p2.integration.deep_panel_open_latency_ms",
+      "priority": "P2",
+      "surface": "integrationPanel",
+      "trigger": "open-deep-integration-panel",
+      "completionCondition": "deep integration panel visible",
+      "geometryCondition": "integration panel frame visible",
+      "fixtureProfiles": [
+        "smoke"
+      ],
+      "baselineComparison": "tracked-only",
+      "userOutcome": "User can complete open-deep-integration-panel and reach deep integration panel visible on integrationPanel while this low-frequency surface remains tracked without blocking P0 work.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "tracked-only",
+        "maxRegressionPercent": null,
+        "enforcement": "none"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "tracked",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p2.provider.secondary_surface_latency_ms",
+      "priority": "P2",
+      "surface": "providerSurface",
+      "trigger": "open-provider-secondary-surface",
+      "completionCondition": "provider secondary surface visible",
+      "geometryCondition": "provider surface frame visible",
+      "fixtureProfiles": [
+        "smoke"
+      ],
+      "baselineComparison": "tracked-only",
+      "userOutcome": "User can complete open-provider-secondary-surface and reach provider secondary surface visible on providerSurface while this low-frequency surface remains tracked without blocking P0 work.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "tracked-only",
+        "maxRegressionPercent": null,
+        "enforcement": "none"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "tracked",
+      "knownExternalDependencies": []
+    },
+    {
       "id": "p2.diagnostics.panel_open_latency_ms",
       "priority": "P2",
       "surface": "diagnostics",
@@ -3206,6 +3796,76 @@
       ],
       "baselineComparison": "tracked-only",
       "userOutcome": "User can open diagnostics and reach diagnostics panel visible on diagnostics without degrading higher-priority monitoring flows.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "tracked-only",
+        "maxRegressionPercent": null,
+        "enforcement": "none"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "tracked",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p2.maintenance.flow_open_latency_ms",
+      "priority": "P2",
+      "surface": "maintenance",
+      "trigger": "open-maintenance-flow",
+      "completionCondition": "maintenance flow visible",
+      "geometryCondition": "maintenance panel frame visible",
+      "fixtureProfiles": [
+        "smoke"
+      ],
+      "baselineComparison": "tracked-only",
+      "userOutcome": "User can complete open-maintenance-flow and reach maintenance flow visible on maintenance while this low-frequency surface remains tracked without blocking P0 work.",
+      "sampleCount": 1,
+      "coldWarmMode": "warm",
+      "absoluteBudget": null,
+      "regressionThreshold": {
+        "mode": "tracked-only",
+        "maxRegressionPercent": null,
+        "enforcement": "none"
+      },
+      "evidenceRequired": [
+        "run.json",
+        "events.jsonl",
+        "metrics.json",
+        "baseline-comparison.json",
+        "geometry.sample"
+      ],
+      "ownerDocs": [
+        "docs/adr/0040-macos-ux-trace-harness.md",
+        "docs/ui/README.md",
+        "macos/PERF.md"
+      ],
+      "failureSeverity": "tracked",
+      "knownExternalDependencies": []
+    },
+    {
+      "id": "p2.infoPanel.visible_latency_ms",
+      "priority": "P2",
+      "surface": "infoPanel",
+      "trigger": "open-visual-info-panel",
+      "completionCondition": "visual information panel visible",
+      "geometryCondition": "information panel frame visible",
+      "fixtureProfiles": [
+        "smoke"
+      ],
+      "baselineComparison": "tracked-only",
+      "userOutcome": "User can complete open-visual-info-panel and reach visual information panel visible on infoPanel while this low-frequency surface remains tracked without blocking P0 work.",
       "sampleCount": 1,
       "coldWarmMode": "warm",
       "absoluteBudget": null,

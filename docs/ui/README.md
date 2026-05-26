@@ -314,6 +314,10 @@ primary timing source.
   run the same command with `real-equivalent-private`, then check
   `docs/ui/ux-trace-calibration.manifest.json` before making any real-mode
   equivalence claim.
+- P1/P2 KPI coverage:
+  `docs/ui/ux-trace-harness.registry.json` enumerates the full phase-2 P1
+  warning set and P2 tracked categories; `node scripts/ui_ux_trace_harness_check.mjs`
+  fails if the registry collapses back to placeholder secondary coverage.
 - Baseline capture:
   add `--write-baseline <private-baseline-file>`.
 - Baseline comparison and P0 gate:

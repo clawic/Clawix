@@ -43,6 +43,9 @@ cold/warm mode, absolute budget when known, baseline comparison policy,
 regression threshold, required evidence artifacts, owner docs, failure
 severity, and external dependencies. P0 rows are blocking, P1 rows are warning
 until approved, and P2 rows are tracked-only unless promoted.
+The phase-2 registry must enumerate the full agreed P1 warning set and P2
+tracked categories, so secondary surfaces are intentional coverage rather than
+a single placeholder row.
 
 Synthetic fixtures must scale across the dimensions that make real Clawix usage
 slow: conversation count, active runs, pinned/project distribution, transcript
