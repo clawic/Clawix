@@ -784,6 +784,7 @@ if (evidenceSchema) {
   if (
     !String(evidenceSchema.failureCorrelationContract?.timelinePolicy ?? "").includes("matching step.failed event")
     || !String(evidenceSchema.failureCorrelationContract?.timelinePolicy ?? "").includes("every step.failed event must include a failure object")
+    || !String(evidenceSchema.failureCorrelationContract?.timelinePolicy ?? "").includes("Duplicate step.failed events")
   ) {
     fail(`${evidenceSchemaPath}.failureCorrelationContract.timelinePolicy must require matching step.failed events`);
   }
@@ -1123,6 +1124,8 @@ if (evidenceVerifierSource) {
     "must have a matching step.failed event",
     "step.failed must include a failure object",
     "step.failed must have a matching failures.json row",
+    "step.failed ${key} must be unique",
+    "duplicates failure identity",
     "contains row not emitted by child runs",
     "\"worstSample\"",
     "\"budget\"",

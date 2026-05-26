@@ -287,7 +287,7 @@
       "controlId",
       "kpiId"
     ],
-    "timelinePolicy": "Every failures.json row must have a matching step.failed event with the same stepId, actionId, surfaceId, controlId, and kpiId, and every step.failed event must include a failure object with a matching failures.json row so failures remain bidirectionally correlated to the action timeline."
+    "timelinePolicy": "Every failures.json row must have a matching step.failed event with the same stepId, actionId, surfaceId, controlId, and kpiId, and every step.failed event must include a failure object with a matching failures.json row so failures remain bidirectionally correlated to the action timeline. Duplicate step.failed events or failures.json rows with the same failure identity are invalid."
   },
   "failureStateSidecar": {
     "path": "logs/failure-ui-states.jsonl",

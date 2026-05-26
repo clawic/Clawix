@@ -99,7 +99,7 @@ explicit external-pending condition rather than an implied pass.
   metric-to-KPI-registry priority/surface binding, KPI-specific metric event
   references, run/scenario/step lifecycle event consistency, suite status
   derivation from child runs, gated comparison-to-failure correlation, bidirectional
-  failure-to-timeline correlation, enforceable gate exit policy,
+  failure-to-timeline correlation with unique failure identities, enforceable gate exit policy,
   trace-isolation metadata, and private-boundary flags before evidence can
   support closure.
 - **Persistence**: public-safe JSON contracts live under `docs/ui/`; private

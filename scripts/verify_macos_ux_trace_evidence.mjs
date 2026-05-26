@@ -612,9 +612,15 @@ function validateRun(runDir, schema, options = {}) {
   if (scenarioStartedEvents.length > 0 && scenarioCompletedEvents.length !== 1) {
     fail(failures, "events.jsonl scenario.started requires exactly one scenario.completed");
   }
+  const stepFailedEventRows = new Map();
   const stepFailedEvents = new Map();
   for (const event of events.filter((item) => item.eventType === "step.failed")) {
-    stepFailedEvents.set(failureEventKey(event), event);
+    const key = failureEventKey(event);
+    addEventRow(stepFailedEventRows, key, event);
+    stepFailedEvents.set(key, event);
+  }
+  for (const [key, rows] of stepFailedEventRows.entries()) {
+    if (rows.length !== 1) fail(failures, `events.jsonl step.failed ${key} must be unique`);
   }
   const stepStartedEvents = new Map();
   const actionDispatchedEvents = new Map();
@@ -714,8 +720,10 @@ function validateRun(runDir, schema, options = {}) {
     const label = `failures.json.failures[${index}]`;
     requireFields(failures, failure, label, ["type", "message", "stepId", "actionId", "surfaceId", "controlId", "kpiId"]);
     if (!failureTypes.has(failure.type)) fail(failures, `${label}.type ${failure.type} is not declared`);
-    failureRowsByEventKey.set(failureEventKey(failure), failure);
-    const stepFailedEvent = stepFailedEvents.get(failureEventKey(failure));
+    const eventKey = failureEventKey(failure);
+    if (failureRowsByEventKey.has(eventKey)) fail(failures, `${label} duplicates failure identity ${eventKey}`);
+    failureRowsByEventKey.set(eventKey, failure);
+    const stepFailedEvent = stepFailedEvents.get(eventKey);
     if (!stepFailedEvent) {
       fail(failures, `${label} must have a matching step.failed event`);
     } else if (stepFailedEvent.failure?.type && stepFailedEvent.failure.type !== failure.type) {
