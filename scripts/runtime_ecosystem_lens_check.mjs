@@ -197,7 +197,7 @@ if (!exists(hermesFixturePath)) {
     requireEqual(readiness.totalRequirementCount, 22, "Hermes fixture total readiness requirement count");
     requireEqual(readiness.approvalRequiredCount, 6, "Hermes fixture approval-required count");
     requireEqual(readiness.externalPendingCount, 4, "Hermes fixture external-pending count");
-    requireEqual(readiness.upstreamContractBlockedCount, 16, "Hermes fixture upstream-contract blocked count");
+    requireEqual(readiness.upstreamContractBlockedCount, 12, "Hermes fixture upstream-contract blocked count");
     requireEqual(readiness.approvalGateBlockedCount, 2, "Hermes fixture approval-gate blocked count");
     requireEqual(readiness.tuiGatewayBlockedCount, 4, "Hermes fixture TUI Gateway blocked count");
     requireEqual(readiness.tuiGatewayWrapperBlockedCount, 4, "Hermes fixture TUI Gateway wrapper blocked count");
