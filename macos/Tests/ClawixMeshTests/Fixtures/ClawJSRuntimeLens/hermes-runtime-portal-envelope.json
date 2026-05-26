@@ -2955,7 +2955,11 @@
             },
             "pinned": false,
             "pinAuthority": "none",
-            "divergence": "none"
+            "divergence": "none",
+            "limitations": [
+              "write back: blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+              "validation: fixture_required"
+            ]
           }
         ],
         "resources": [
@@ -3799,6 +3803,9 @@
               "runtimeId": "hermes",
               "domain": "channels",
               "path": "/Users/tester/.hermes/config.yaml"
+            },
+            "nativeIdentifier": {
+              "name": "policyId"
             }
           },
           {
@@ -3949,6 +3956,9 @@
               "runtimeId": "hermes",
               "domain": "providers",
               "path": "/Users/tester/.hermes/config.yaml"
+            },
+            "nativeIdentifier": {
+              "name": "policyId"
             }
           },
           {
@@ -5588,6 +5598,9 @@
               "runtimeId": "hermes",
               "domain": "auth",
               "path": "/Users/tester/.hermes/auth.json"
+            },
+            "nativeIdentifier": {
+              "name": "policyId"
             }
           },
           {
@@ -6975,6 +6988,9 @@
             "provenance": {
               "source": "runtime-session-descriptor",
               "runtimeId": "hermes"
+            },
+            "nativeIdentifier": {
+              "name": "gatewayStatusId"
             }
           },
           {
@@ -7029,6 +7045,9 @@
             "provenance": {
               "source": "runtime-portal-hermes-tui-gateway-policy",
               "runtimeId": "hermes"
+            },
+            "nativeIdentifier": {
+              "name": "transportPolicyId"
             }
           }
         ],
@@ -7177,6 +7196,9 @@
             "provenance": {
               "source": "runtime-status",
               "runtimeId": "hermes"
+            },
+            "nativeIdentifier": {
+              "name": "doctorStatusId"
             }
           }
         ],
@@ -7298,6 +7320,9 @@
             "provenance": {
               "source": "runtime-options",
               "runtimeId": "hermes"
+            },
+            "nativeIdentifier": {
+              "name": "sandboxPolicyId"
             }
           }
         ],
@@ -7509,6 +7534,9 @@
               "runtimeId": "hermes",
               "domain": "configuration",
               "path": "/Users/tester/.hermes/config.yaml"
+            },
+            "nativeIdentifier": {
+              "name": "policyId"
             }
           }
         ],

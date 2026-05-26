@@ -625,6 +625,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let diagnostics: Status.Diagnostics?
             let redactedConfigSnapshot: RedactedConfigSnapshot?
             let capability: RuntimeCapability?
+            let resources: [RuntimeResource]?
             let supportContract: SupportContract?
 
             struct RedactedConfigSnapshot: Decodable, Equatable {
@@ -1346,6 +1347,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
     }
 
     private func configurationResources() -> [RuntimeResource] {
+        let portalResources = resourcesWithCommonAttributes(domainData?.configuration?.resources ?? [])
         let canonicalPaths = domainData?.configuration?.canonicalPaths ?? workspace?.canonicalPaths ?? [:]
         let managedFiles = domainData?.configuration?.managedFiles ?? workspace?.managedFiles ?? []
         let pathResources: [RuntimeResource] = canonicalPaths
@@ -1539,7 +1541,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
                 )
             ]
         }()
-        return pathResources + managedFileResources + redactedSnapshotResources + diagnosticsResources + capabilityResources
+        return portalResources + pathResources + managedFileResources + redactedSnapshotResources + diagnosticsResources + capabilityResources
     }
 }
 
