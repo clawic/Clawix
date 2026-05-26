@@ -761,6 +761,12 @@ if (evidenceSchema) {
   }
   requireUniqueStringArray(requireArray(evidenceSchema.traceIsolationRequiredFields, `${evidenceSchemaPath}.traceIsolationRequiredFields`), `${evidenceSchemaPath}.traceIsolationRequiredFields`, ["mode", "evidenceRootHash", "globalSharedTraceFile", "mainDatabaseTraceWrites", "parallelSafe"]);
   requireFields(evidenceSchema.traceIsolationContract, `${evidenceSchemaPath}.traceIsolationContract`, ["runDirectory", "suiteDirectory", "forbidden", "externalPaths"]);
+  if (
+    !String(evidenceSchema.traceIsolationContract?.runDirectory ?? "").includes("evidenceRootHash must match")
+    || !String(evidenceSchema.traceIsolationContract?.suiteDirectory ?? "").includes("traceIsolation.childRunDirectories")
+  ) {
+    fail(`${evidenceSchemaPath}.traceIsolationContract must require evidence root hash and child run directory validation`);
+  }
   requireUniqueStringArray(requireArray(evidenceSchema.traceIsolationContract?.forbidden, `${evidenceSchemaPath}.traceIsolationContract.forbidden`), `${evidenceSchemaPath}.traceIsolationContract.forbidden`, ["global shared trace files", "main app database trace writes", "absolute local paths in artifact indexes", "raw external fixture paths"]);
   if (!String(evidenceSchema.traceIsolationContract?.externalPaths ?? "").includes("sha256 hashes")) {
     fail(`${evidenceSchemaPath}.traceIsolationContract.externalPaths must require hash-only external paths`);
@@ -1148,6 +1154,9 @@ if (evidenceVerifierSource) {
     "contentHash does not match current source content",
     "runDirectoryMatchesRunId must be true",
     "suiteDirectoryMatchesSuiteId must be true",
+    "evidenceRootHash must match evidence parent directory",
+    "traceIsolation.childRunDirectories must match suite run directories",
+    "suite.json.runs.runDir values must be unique",
     "artifactIndex must be an array",
     "artifactIndex path must exist",
     "artifactIndex is missing child run directory",

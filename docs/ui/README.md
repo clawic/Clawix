@@ -378,7 +378,10 @@ produced it. Suite-level metric and failure artifacts must exactly match the
 child run rows they aggregate; extra or missing aggregate rows fail evidence
 verification. They also include a `traceIsolation` block proving
 per-run/per-suite directories, no global shared trace file, no main app
-database trace writes, and relative-only artifact indexes; external fixture
+database trace writes, and relative-only artifact indexes; `evidenceRootName`
+and `evidenceRootHash` must match the evidence parent directory being verified.
+Suite `traceIsolation.childRunDirectories` must match the declared child run
+directories, which must be relative and unique. External fixture
 paths are represented by hashes rather than local absolute paths.
 `exitPolicy` records whether a gate is enforcing the run; when `--gate p0`
 produces `FAIL` or `INVALID` evidence, the runner computes and returns exit

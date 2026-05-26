@@ -106,7 +106,7 @@ function isRelativeSafe(relativePath) {
   return typeof relativePath === "string" && relativePath.length > 0 && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
 }
 
-function validateTraceIsolation(failures, isolation, label, expectedNameField, expectedName) {
+function validateTraceIsolation(failures, isolation, label, expectedNameField, expectedName, evidenceDir = null) {
   requireFields(failures, isolation, `${label}.traceIsolation`, [
     "mode",
     "evidenceRootName",
@@ -120,6 +120,15 @@ function validateTraceIsolation(failures, isolation, label, expectedNameField, e
   if (isolation?.parallelSafe !== true) fail(failures, `${label}.traceIsolation.parallelSafe must be true`);
   if (expectedNameField && isolation?.[expectedNameField] !== expectedName) {
     fail(failures, `${label}.traceIsolation.${expectedNameField} must be ${expectedName}`);
+  }
+  if (evidenceDir) {
+    const evidenceRoot = path.dirname(evidenceDir);
+    if (isolation?.evidenceRootName !== path.basename(evidenceRoot)) {
+      fail(failures, `${label}.traceIsolation.evidenceRootName must match evidence parent directory`);
+    }
+    if (isolation?.evidenceRootHash !== stableHash(evidenceRoot)) {
+      fail(failures, `${label}.traceIsolation.evidenceRootHash must match evidence parent directory`);
+    }
   }
 }
 
@@ -503,7 +512,7 @@ function validateRun(runDir, schema, options = {}) {
   validatePrivateBoundary(failures, run.privateBoundary, "run.json");
   validateExitPolicy(failures, run.exitPolicy, run.status, "run.json", schema);
   validateEvidenceSources(failures, run.evidenceSources, "run.json", schema);
-  validateTraceIsolation(failures, run.traceIsolation, "run.json", "runDirectoryName", path.basename(runDir));
+  validateTraceIsolation(failures, run.traceIsolation, "run.json", "runDirectoryName", path.basename(runDir), runDir);
   if (run.traceIsolation?.runDirectoryMatchesRunId !== true) fail(failures, "run.json.traceIsolation.runDirectoryMatchesRunId must be true");
   validateOverheadCalibration(failures, run.overheadCalibration, "run.json", schema);
   validateArtifactIndex(failures, run.artifactIndex, "run.json", runDir);
@@ -816,7 +825,7 @@ function validateSuite(suiteDir, schema) {
   validatePrivateBoundary(failures, suite.privateBoundary, "suite.json");
   validateExitPolicy(failures, suite.exitPolicy, suite.status, "suite.json", schema);
   validateEvidenceSources(failures, suite.evidenceSources, "suite.json", schema);
-  validateTraceIsolation(failures, suite.traceIsolation, "suite.json", "suiteDirectoryName", path.basename(suiteDir));
+  validateTraceIsolation(failures, suite.traceIsolation, "suite.json", "suiteDirectoryName", path.basename(suiteDir), suiteDir);
   if (suite.traceIsolation?.suiteDirectoryMatchesSuiteId !== true) fail(failures, "suite.json.traceIsolation.suiteDirectoryMatchesSuiteId must be true");
   validateOverheadCalibration(failures, suite.overheadCalibration, "suite.json", schema);
   const requiredSuiteFiles = ["suite.json", "suite-metrics.json", "suite-failures.json", "suite-baseline-comparison.json"];
@@ -905,6 +914,20 @@ function validateSuite(suiteDir, schema) {
     }
     if (runResult.runId && runResult.runId !== row.runId) fail(failures, `suite.json.runs[${index}].runId must match child run`);
     if (runResult.status && runResult.status !== row.status) fail(failures, `suite.json.runs[${index}].status must match child run`);
+  }
+  const suiteRunDirs = (suite.runs || []).map((row) => row.runDir);
+  const uniqueSuiteRunDirs = new Set(suiteRunDirs);
+  if (uniqueSuiteRunDirs.size !== suiteRunDirs.length) fail(failures, "suite.json.runs.runDir values must be unique");
+  const traceChildRunDirs = suite.traceIsolation?.childRunDirectories;
+  if (!Array.isArray(traceChildRunDirs)) {
+    fail(failures, "suite.json.traceIsolation.childRunDirectories must be an array");
+  } else {
+    for (const childDir of traceChildRunDirs) {
+      if (!isRelativeSafe(childDir)) fail(failures, `suite.json.traceIsolation.childRunDirectories contains unsafe path ${childDir}`);
+    }
+    if (JSON.stringify([...traceChildRunDirs].sort()) !== JSON.stringify([...suiteRunDirs].sort())) {
+      fail(failures, "suite.json.traceIsolation.childRunDirectories must match suite run directories");
+    }
   }
   for (const [index, row] of (suiteBaselineObject.childRuns || []).entries()) {
     requireFields(failures, row, `suite-baseline-comparison.json.childRuns[${index}]`, ["runId", "scenarioId", "fixtureProfile", "runDir", "baselineComparisonPath"]);

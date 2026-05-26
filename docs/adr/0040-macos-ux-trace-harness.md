@@ -100,7 +100,7 @@ explicit external-pending condition rather than an implied pass.
   references, run/scenario/step lifecycle event consistency, suite status
   derivation from child runs, gated comparison-to-failure correlation, bidirectional
   failure-to-timeline correlation with unique failure identities, enforceable gate exit policy,
-  trace-isolation metadata, and private-boundary flags before evidence can
+  trace-isolation root hashes and child-run directory consistency, and private-boundary flags before evidence can
   support closure.
 - **Persistence**: public-safe JSON contracts live under `docs/ui/`; private
   baselines and run evidence stay outside the public repo.

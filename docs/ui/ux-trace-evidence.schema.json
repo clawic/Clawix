@@ -83,8 +83,8 @@
     "parallelSafe"
   ],
   "traceIsolationContract": {
-    "runDirectory": "Each run must declare a per-run directory name and prove it matches the run id.",
-    "suiteDirectory": "Each suite must declare a per-suite directory name and keep child run directories relative and unique.",
+    "runDirectory": "Each run must declare a per-run directory name and prove it matches the run id. evidenceRootName and evidenceRootHash must match the parent directory being verified.",
+    "suiteDirectory": "Each suite must declare a per-suite directory name and keep child run directories relative, unique, and equal to traceIsolation.childRunDirectories. evidenceRootName and evidenceRootHash must match the parent directory being verified.",
     "forbidden": [
       "global shared trace files",
       "main app database trace writes",
