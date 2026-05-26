@@ -156,8 +156,20 @@ if (!exists(hermesFixturePath)) {
   const support = fixture?.data?.support;
   const readiness = supportAudit?.evidenceReadinessSummary;
   const domains = supportAudit?.domains;
-  requireEqual(support?.ecosystem?.summary?.includes("channel/provider/auth/model evidence"), true, "Hermes fixture support summary names all external live-evidence domains");
-  for (const reason of ["live_channel_evidence_pending", "live_provider_evidence_pending", "live_auth_evidence_pending", "live_model_evidence_pending"]) {
+  for (const summaryFragment of ["native write-back contracts", "approval-gate receipts", "TUI Gateway production transport policy", "channel/provider/auth/model evidence"]) {
+    requireEqual(support?.ecosystem?.summary?.includes(summaryFragment), true, `Hermes fixture support summary includes ${summaryFragment}`);
+    requireEqual(supportAudit?.summary?.includes(summaryFragment), true, `Hermes fixture support audit summary includes ${summaryFragment}`);
+  }
+  for (const reason of [
+    "native_write_back_pending",
+    "approval_gate_fixture_pending",
+    "tui_gateway_round_trip_evidence_pending",
+    "production_transport_policy_pending",
+    "live_channel_evidence_pending",
+    "live_provider_evidence_pending",
+    "live_auth_evidence_pending",
+    "live_model_evidence_pending",
+  ]) {
     requireEqual(support?.ecosystem?.blockingReasons?.includes(reason), true, `Hermes fixture support blocking reason ${reason}`);
     requireEqual(supportAudit?.blockingReasons?.includes(reason), true, `Hermes fixture support audit blocking reason ${reason}`);
   }
