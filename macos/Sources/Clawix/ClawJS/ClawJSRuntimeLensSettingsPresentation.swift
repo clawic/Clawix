@@ -690,7 +690,14 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
             Row(id: $0.id, label: $0.displayLabel, value: $0.policyLabel, pills: optionalPills([
                 $0.writeBackPolicy.map { Pill(id: "write", label: $0, tone: .warning) },
                 $0.validation.map { Pill(id: "validation", label: $0, tone: .muted) }
-            ]), detailLines: optionalLines([$0.provenanceLabel, $0.relationshipLabel, $0.authorityLabel, $0.approvalGateFixtureLabel]), accessibilityLabel: $0.accessibilityLabel)
+            ]), detailLines: optionalLines([
+                $0.provenanceLabel,
+                $0.relationshipLabel,
+                $0.authorityLabel,
+                $0.officialCommandsLabel.map { "official commands \($0)" },
+                $0.evidenceRequirementsLabel.map { "evidence \($0)" },
+                $0.approvalGateFixtureLabel
+            ]), accessibilityLabel: $0.accessibilityLabel)
         }, accessibilityLabel: presentation.accessibilityLabel)
     }
 

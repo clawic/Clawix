@@ -292,6 +292,20 @@ final class ClawJSRuntimeLensInventoryPresentationTests: XCTestCase {
         XCTAssertEqual(supportContracts.contractAuthorityDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
         XCTAssertEqual(supportContracts.provenanceDomainCount, ClawJSRuntimeLensSnapshot.canonicalDomains.count)
         XCTAssertEqual(supportContracts.rows.first { $0.domain == "channels" }?.externalPending, true)
+        XCTAssertEqual(
+            supportContracts.rows.first { $0.domain == "channels" }?.officialCommandsLabel,
+            "hermes gateway, hermes gateway setup, hermes gateway run, hermes gateway start, +10 more"
+        )
+        XCTAssertEqual(
+            supportContracts.rows.first { $0.domain == "channels" }?.evidenceRequirementsLabel,
+            "hermes.channels.live_evidence"
+        )
+        XCTAssertTrue(
+            supportContracts.rows.first { $0.domain == "channels" }?.accessibilityLabel.contains("official commands hermes gateway, hermes gateway setup, hermes gateway run, hermes gateway start, +10 more") == true
+        )
+        XCTAssertTrue(
+            supportContracts.rows.first { $0.domain == "channels" }?.accessibilityLabel.contains("evidence ids hermes.channels.live_evidence") == true
+        )
         XCTAssertEqual(supportContracts.rows.first { $0.domain == "doctorCompat" }?.writeBackAllowed, false)
         XCTAssertTrue(supportContracts.rows.allSatisfy { $0.provenanceRuntimeId == "hermes" })
         XCTAssertTrue(supportContracts.accessibilityLabel.contains("Runtime support contracts"))

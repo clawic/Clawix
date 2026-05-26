@@ -62,8 +62,16 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
             officialCommands.count
         }
 
+        var officialCommandsLabel: String? {
+            ClawJSRuntimeLensSupportContractPresentation.listLabel(officialCommands, limit: 4)
+        }
+
         var evidenceRequirementCount: Int {
             evidenceRequirements.count
+        }
+
+        var evidenceRequirementsLabel: String? {
+            ClawJSRuntimeLensSupportContractPresentation.listLabel(evidenceRequirements.map(\.id), limit: 4)
         }
 
         var accessibilityLabel: String {
@@ -84,7 +92,9 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
                 "external pending \(externalPending)",
                 freshness.map { "freshness \($0)" },
                 "commands \(officialCommandCount)",
+                officialCommandsLabel.map { "official commands \($0)" },
                 "evidence \(evidenceRequirementCount)",
+                evidenceRequirementsLabel.map { "evidence ids \($0)" },
                 provenanceSource.map { "provenance source \($0)" },
                 provenanceRuntimeId.map { "provenance runtime \($0)" },
                 provenanceDomain.map { "provenance domain \($0)" }
@@ -243,7 +253,13 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
 
     private static func listLabel(_ values: [String], limit: Int) -> String? {
         guard !values.isEmpty else { return nil }
-        return values.prefix(limit).joined(separator: ", ")
+        let visibleLimit = max(0, limit)
+        var visible = Array(values.prefix(visibleLimit))
+        let hiddenCount = max(0, values.count - visible.count)
+        if hiddenCount > 0 {
+            visible.append("+\(hiddenCount) more")
+        }
+        return visible.joined(separator: ", ")
     }
 
     private static func approvalGateFixtureLabel(
