@@ -169,20 +169,28 @@ extension ClawJSRuntimeLensSection {
                 TextField("Session", text: $runtimeLensActionSessionId)
                     .textFieldStyle(.roundedBorder)
                     .font(BodyFont.system(size: 11.5))
-                    .accessibilityIdentifier("runtime-lens-session-action-session-id")
+                    .clxControl("runtime-lens-session-action-session-id", role: "input", label: "Runtime lens session action session") { value in
+                        runtimeLensActionSessionId = value
+                    }
                 TextField("Message", text: $runtimeLensActionMessage)
                     .textFieldStyle(.roundedBorder)
                     .font(BodyFont.system(size: 11.5))
-                    .accessibilityIdentifier("runtime-lens-session-action-message")
+                    .clxControl("runtime-lens-session-action-message", role: "input", label: "Runtime lens session action message") { value in
+                        runtimeLensActionMessage = value
+                    }
                 TextField("Title", text: $runtimeLensActionTitle)
                     .textFieldStyle(.roundedBorder)
                     .font(BodyFont.system(size: 11.5))
-                    .accessibilityIdentifier("runtime-lens-session-action-title")
+                    .clxControl("runtime-lens-session-action-title", role: "input", label: "Runtime lens session action title") { value in
+                        runtimeLensActionTitle = value
+                    }
             }
             TextField("Loopback gateway URL", text: $runtimeLensActionGatewayURL)
                 .textFieldStyle(.roundedBorder)
                 .font(BodyFont.system(size: 11.5))
-                .accessibilityIdentifier("runtime-lens-session-action-gateway-url")
+                .clxControl("runtime-lens-session-action-gateway-url", role: "input", label: "Runtime lens session action gateway URL") { value in
+                    runtimeLensActionGatewayURL = value
+                }
             if let result = runtimeLensActionResult {
                 Text(result)
                     .font(BodyFont.system(size: 10.5))
@@ -200,7 +208,7 @@ extension ClawJSRuntimeLensSection {
                     .accessibilityIdentifier("runtime-lens-session-action-result-detail")
             }
         }
-        .accessibilityIdentifier("runtime-lens-session-action-controls")
+        .clxControl("runtime-lens-session-action-controls", role: "group", label: "Runtime lens session action controls")
     }
 
     func runtimeLensSessionActionButtons(action: String) -> some View {
@@ -225,8 +233,10 @@ extension ClawJSRuntimeLensSection {
             .foregroundColor(presentation.canCheckGate ? Palette.textPrimary : Palette.textSecondary.opacity(0.45))
             .help(presentation.checkGateHelp)
             .disabled(!presentation.canCheckGate)
-            .accessibilityIdentifier("\(presentation.accessibilityIdentifier)-check")
             .accessibilityLabel(Text("\(presentation.accessibilityLabel), check confirmation gate"))
+            .clxControl("\(presentation.accessibilityIdentifier)-check", role: "button", label: "\(presentation.action) confirmation gate") {
+                Task { await runRuntimeLensSessionAction(action: action, confirmRuntimeWrite: false) }
+            }
 
             Button {
                 runtimeLensPendingConfirmedAction = action
@@ -238,8 +248,12 @@ extension ClawJSRuntimeLensSection {
             .foregroundColor(presentation.canRunConfirmedFixture ? .orange : Palette.textSecondary.opacity(0.45))
             .help(presentation.confirmedRunHelp)
             .disabled(!presentation.canRunConfirmedFixture)
-            .accessibilityIdentifier("\(presentation.accessibilityIdentifier)-run")
             .accessibilityLabel(Text("\(presentation.accessibilityLabel), run confirmed loopback fixture"))
+            .clxControl("\(presentation.accessibilityIdentifier)-run", role: "button", label: "\(presentation.action) confirmed loopback fixture") {
+                if presentation.canRunConfirmedFixture {
+                    runtimeLensPendingConfirmedAction = action
+                }
+            }
         }
     }
 
