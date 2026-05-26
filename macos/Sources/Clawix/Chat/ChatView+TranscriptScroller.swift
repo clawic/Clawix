@@ -10,6 +10,8 @@ struct ChatTranscriptScrollerView: View {
     let visibleMessageStores: [ChatMessageStore]
     let hiddenLocalMessageCount: Int
     @Binding var visibleMessageLimit: Int
+    @Binding var visibleMessageEndOffset: Int
+    let newerLocalMessageCount: Int
     @Binding var lastLocalRevealAt: Date
     @Binding var bottomId: String?
     let closedMetadataReady: Bool
@@ -75,6 +77,10 @@ struct ChatTranscriptScrollerView: View {
                             }
                         }
                     }
+                    if newerLocalMessageCount > 0 {
+                        Color.clear
+                            .frame(height: CGFloat(newerLocalMessageCount) * ChatView.virtualizedTranscriptRowEstimate)
+                    }
                     Color.clear
                         .frame(height: 1)
                         .id(chatTailId)
@@ -129,6 +135,7 @@ struct ChatTranscriptScrollerView: View {
             .onAppear {
                 appState.ensureSelectedChat()
                 visibleMessageLimit = ChatView.initialVisibleMessageLimit
+                visibleMessageEndOffset = 0
                 lastLocalRevealAt = .distantPast
                 bottomId = chatTailId
                 awayFromBottom = false
@@ -138,6 +145,7 @@ struct ChatTranscriptScrollerView: View {
                 appState.ensureSelectedChat()
                 appState.requestComposerFocus()
                 visibleMessageLimit = ChatView.initialVisibleMessageLimit
+                visibleMessageEndOffset = 0
                 lastLocalRevealAt = .distantPast
                 bottomId = chatTailId
                 awayFromBottom = false
@@ -225,10 +233,14 @@ struct ChatTranscriptScrollerView: View {
     /// anchor so subsequent streaming keeps following the bottom.
     private func returnToTail(proxy: ScrollViewProxy) {
         awayFromBottom = false
+        visibleMessageLimit = ChatView.initialVisibleMessageLimit
+        visibleMessageEndOffset = 0
         bottomId = chatTailId
         markBottomAnchor("return-to-tail")
-        withAnimation(.easeOut(duration: 0.25)) {
-            proxy.scrollTo(chatTailId, anchor: .bottom)
+        DispatchQueue.main.async {
+            withAnimation(.easeOut(duration: 0.25)) {
+                proxy.scrollTo(chatTailId, anchor: .bottom)
+            }
         }
     }
 
@@ -245,6 +257,7 @@ struct ChatTranscriptScrollerView: View {
             olderAnchorProbeSequence += 1
             let probeId = olderAnchorProbeSequence
             let oldVisibleLimit = visibleMessageLimit
+            let oldEndOffset = visibleMessageEndOffset
             bottomId = nil
             RenderProbe.mark(
                 "ChatOlderAnchorProbeStart",
@@ -252,6 +265,7 @@ struct ChatTranscriptScrollerView: View {
                     "anchor": anchorId?.uuidString ?? "none",
                     "bottomArmed": "false",
                     "chat": chatId.uuidString,
+                    "endOffset": "\(oldEndOffset)",
                     "fromVisible": "\(oldVisibleLimit)",
                     "hiddenBefore": "\(hiddenLocalMessageCount)",
                     "last": visibleMessageStores.last?.id.uuidString ?? "none",
@@ -263,13 +277,13 @@ struct ChatTranscriptScrollerView: View {
                 .merging(rowProbeFields()) { current, _ in current }
                 .merging(scrollProbeFields(prefix: "before")) { current, _ in current }
             )
-            let nextVisibleLimit = min(
-                transcript.messageIds.count,
-                visibleMessageLimit + ChatView.visibleMessagePageSize
+            let shiftedRows = min(hiddenLocalMessageCount, ChatView.visibleMessagePageSize)
+            visibleMessageEndOffset = min(
+                max(0, transcript.messageIds.count - max(1, visibleMessageLimit)),
+                visibleMessageEndOffset + shiftedRows
             )
-            let exhaustedLocalWindow = nextVisibleLimit >= transcript.messageIds.count
-            visibleMessageLimit = nextVisibleLimit
-            let insertedLocalRows = max(0, nextVisibleLimit - oldVisibleLimit)
+            let exhaustedLocalWindow = hiddenLocalMessageCount - shiftedRows <= 0
+            let insertedLocalRows = shiftedRows
             if let anchorId {
                 DispatchQueue.main.async {
                     RenderProbe.mark(
@@ -277,6 +291,7 @@ struct ChatTranscriptScrollerView: View {
                         fields: [
                             "anchor": anchorId.uuidString,
                             "chat": chatId.uuidString,
+                            "endOffset": "\(visibleMessageEndOffset)",
                             "insertedLocalRows": "\(insertedLocalRows)",
                             "last": visibleMessageStores.last?.id.uuidString ?? "none",
                             "probe": "\(probeId)",
@@ -324,8 +339,9 @@ struct ChatTranscriptScrollerView: View {
                             fields: [
                                 "anchor": anchorId.uuidString,
                                 "chat": chatId.uuidString,
+                                "endOffset": "\(visibleMessageEndOffset)",
                                 "probe": "\(probeId)",
-                                "visible": "\(nextVisibleLimit)"
+                                "visible": "\(visibleMessageLimit)"
                             ]
                             .merging(rowProbeFields()) { current, _ in current }
                             .merging(scrollProbeFields(prefix: "request")) { current, _ in current }
@@ -557,6 +573,7 @@ struct ChatTranscriptScrollerView: View {
         [
             "measuredRows": "\(messageFrames.count)",
             "mountedRows": "\(ChatMessageNativeFrameRegistry.shared.mountedCount)",
+            "newerLocalRows": "\(newerLocalMessageCount)",
             "renderWindowRows": "\(visibleMessageStores.count)"
         ]
     }

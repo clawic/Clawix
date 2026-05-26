@@ -202,6 +202,7 @@ struct ChatView: View {
     @State private var branchCreateOpen = false
     @State private var branchSearch = ""
     @State private var visibleMessageLimit = Self.initialVisibleMessageLimit
+    @State private var visibleMessageEndOffset = 0
     @State private var lastLocalRevealAt: Date = .distantPast
     @State private var firstVisibleRuntimeDemandChatId: UUID?
     @State private var closedMetadataReadyChatId: UUID?
@@ -235,13 +236,22 @@ struct ChatView: View {
     static let initialVisibleMessageLimit = 8
     static let visibleMessagePageSize = 6
     static let localRevealThrottle: TimeInterval = 0.5
+    static let virtualizedTranscriptRowEstimate: CGFloat = 320
 
     var body: some View {
         RenderProbe.tick("ChatView")
         return Group {
             if let chat, let transcript {
-                let visibleMessageStores: [ChatMessageStore] = Array(transcript.messageStores.suffix(visibleMessageLimit))
-                let hiddenLocalMessageCount = max(0, transcript.messageIds.count - visibleMessageStores.count)
+                let messageStores = transcript.messageStores
+                let clampedEndOffset = min(max(0, visibleMessageEndOffset), max(0, messageStores.count))
+                let endIndex = max(0, messageStores.count - clampedEndOffset)
+                let windowCount = min(max(0, visibleMessageLimit), endIndex)
+                let startIndex = max(0, endIndex - windowCount)
+                let visibleMessageStores: [ChatMessageStore] = startIndex < endIndex
+                    ? Array(messageStores[startIndex..<endIndex])
+                    : []
+                let hiddenLocalMessageCount = startIndex
+                let newerLocalMessageCount = max(0, messageStores.count - endIndex)
                 let visibleWindowEvidence = ChatVisibleWindowEvidence(
                     chatId: chatId,
                     visibleCount: visibleMessageStores.count,
@@ -264,6 +274,8 @@ struct ChatView: View {
                         visibleMessageStores: visibleMessageStores,
                         hiddenLocalMessageCount: hiddenLocalMessageCount,
                         visibleMessageLimit: $visibleMessageLimit,
+                        visibleMessageEndOffset: $visibleMessageEndOffset,
+                        newerLocalMessageCount: newerLocalMessageCount,
                         lastLocalRevealAt: $lastLocalRevealAt,
                         bottomId: $bottomId,
                         closedMetadataReady: closedMetadataReadyChatId == chatId,
