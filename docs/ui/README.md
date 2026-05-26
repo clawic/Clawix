@@ -230,7 +230,8 @@ the public repo.
 28a. Keep macOS UX trace harness contracts current with
    `scripts/ui_ux_trace_harness_check.mjs`; P0 UI performance work must preserve
    traceable surfaces, KPI references, scenario coverage, evidence correlation,
-   private/public boundaries, and the rule that Computer Use is witness-only.
+   calibration status, private/public boundaries, and the rule that Computer
+   Use is witness-only.
 28b. Keep macOS UX trace fixture generation current with
    `scripts/scale_lab_fixture_check.mjs`; required profiles must remain
    deterministic, public-safe, and materializable as macOS thread/rollout
@@ -268,6 +269,43 @@ the public repo.
 40. Keep private baseline coverage current with
    `scripts/ui_private_baseline_manifest_check.mjs`; the public repo stores only
    safe hashes, aliases, tolerances, and runner IDs.
+
+## macOS UX Trace Quick Commands
+
+Use these commands when the task is macOS P0 UI latency, scroll stability,
+streaming visibility, composer responsiveness, terminal-under-load behavior, or
+fixture calibration. They require an isolated agent instance control URL and
+owner token from the private agent control bus; do not use Computer Use as the
+primary timing source.
+
+- Contract self-test:
+  `node scripts/run_macos_ux_trace_harness.mjs --self-test`
+- Generate a fixture:
+  `node scripts/generate_macos_ux_trace_fixtures.mjs --profile smoke --out-dir <fixture-dir> --json`
+- Quick smoke evidence:
+  `node scripts/run_macos_ux_trace_harness.mjs --suite p0 --fixture-profile smoke --fixture-dir <fixture-dir> --control-url <url> --token <token> --out-dir <evidence-dir> --json`
+- Dense sidebar/chat/streaming/terminal evidence:
+  run the same command with `dense-sidebar`, `dense-chat`, `streaming-heavy`, or
+  `terminal-under-load`.
+- Idle and representative daily workload evidence:
+  run the same command with `medium`.
+- Nonlinear bottleneck investigation:
+  run the same command with `worst-case`.
+- Public-safe synthetic real-equivalent stress:
+  run the same command with `real-equivalent-private`, then check
+  `docs/ui/ux-trace-calibration.manifest.json` before making any real-mode
+  equivalence claim.
+- Baseline capture:
+  add `--write-baseline <private-baseline-file>`.
+- Baseline comparison and P0 gate:
+  add `--baseline <private-baseline-file> --gate p0`.
+
+Evidence is written under the chosen output directory as `suite.json`,
+`suite-metrics.json`, `suite-failures.json`, plus per-run `run.json`,
+`events.jsonl`, `metrics.json`, `failures.json`, `fixture-manifest.json`, and
+`baseline-comparison.json`. Private baselines, raw captures, readable
+screenshots, local private paths, and aggregate real-mode evidence stay outside
+the public repo.
 41. Keep the private evidence plan current with
     `scripts/ui_private_evidence_plan_check.mjs`; it derives expected private
     evidence records without requiring private roots.
