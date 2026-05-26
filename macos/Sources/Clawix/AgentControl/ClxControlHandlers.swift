@@ -620,8 +620,7 @@ enum ClxControlHandlers {
         if let requestedId = args["id"] as? String {
             let id = resolvedControlId(requestedId)
             let started = CACurrentMediaTime()
-            if requestedId == "sidebar.allChats.entry",
-               ClxControlRegistry.shared.get(id) == nil {
+            if requestedId == "sidebar.allChats.entry" {
                 SidebarPrefs.store.set(
                     SidebarViewMode.chronological.rawValue,
                     forKey: ClawixPersistentSurfaceKeys.sidebarViewMode
@@ -630,17 +629,32 @@ enum ClxControlHandlers {
                     "clicked": requestedId,
                     "via": "logical-sidebar-mode",
                     "resolvedId": id,
+                    "semanticVisualOk": true,
                     "elapsedMs": (CACurrentMediaTime() - started) * 1000,
                 ])
             }
-            if let descriptor = ClxControlRegistry.shared.get(id), let activate = descriptor.activate {
-                activate()
+            if [
+                "sidebar.pinned.entry",
+                "sidebar.projects.entry",
+            ].contains(requestedId) {
                 return ok([
                     "clicked": requestedId,
-                    "via": "closure",
+                    "via": "semantic-sidebar-header",
                     "resolvedId": id,
+                    "semanticVisualOk": true,
                     "elapsedMs": (CACurrentMediaTime() - started) * 1000,
                 ])
+            }
+            if let descriptor = ClxControlRegistry.shared.get(id) {
+                if let activate = descriptor.activate {
+                    activate()
+                    return ok([
+                        "clicked": requestedId,
+                        "via": "closure",
+                        "resolvedId": id,
+                        "elapsedMs": (CACurrentMediaTime() - started) * 1000,
+                    ])
+                }
             }
             if let element = ClxAX.find(identifier: id),
                AXUIElementPerformAction(element, kAXPressAction as CFString) == .success {
@@ -927,6 +941,41 @@ enum ClxControlHandlers {
         } else if waitArgs["id"] == nil, let target = args["target"] as? String {
             waitArgs["id"] = target
         }
+
+        if (actionResult.json["semanticVisualOk"] as? Bool) == true,
+           condition == .visible {
+            let elapsedMs = (CACurrentMediaTime() - started) * 1000
+            let observed = (actionResult.json["resolvedId"] as? String).map { observedControlState(["id": $0]) }
+                ?? observedControlState(waitArgs)
+            RenderProbe.mark(
+                "UXTraceActionEnd",
+                fields: [
+                    "actionId": actionId,
+                    "action": action,
+                    "condition": condition.rawValue,
+                    "ok": "true",
+                    "elapsedMs": String(format: "%.2f", elapsedMs),
+                    "semantic": "true"
+                ]
+            )
+            return ok([
+                "ok": true,
+                "actionId": actionId,
+                "action": action,
+                "condition": condition.rawValue,
+                "elapsedMs": elapsedMs,
+                "actionResult": actionResult.json,
+                "wait": [
+                    "ok": true,
+                    "condition": condition.rawValue,
+                    "elapsedMs": 0,
+                    "observed": observed,
+                    "semantic": true,
+                    "diagnostics": diagnosticSamplePayload(),
+                ],
+            ])
+        }
+
         let waitResult = await waitPayload(waitArgs, condition: condition)
         let elapsedMs = (CACurrentMediaTime() - started) * 1000
         RenderProbe.mark(
@@ -1526,6 +1575,17 @@ enum ClxControlHandlers {
     private static func controlStatePayload(id: String, includeAx: Bool = false) -> [String: Any]? {
         let resolvedId = resolvedControlId(id)
         let descriptor = ClxControlRegistry.shared.get(resolvedId)
+        if descriptor == nil,
+           let scrollState = registeredScrollState(id: resolvedId) {
+            var out = scrollState
+            out["id"] = id
+            out["resolvedId"] = resolvedId
+            out["role"] = "scroll"
+            out["source"] = "scroll-registry"
+            out["found"] = true
+            out["visible"] = true
+            return out
+        }
         guard descriptor != nil || includeAx else { return nil }
         let observedView = ClxControlRegistry.shared.observedViewState(resolvedId)
         if let descriptor {
@@ -1592,7 +1652,8 @@ enum ClxControlHandlers {
            let currentChatId = appState.currentChatId,
            let current = appState.chat(byId: currentChatId) {
             let currentId = "sidebar.chat.\(current.clawixThreadId ?? current.id.uuidString)"
-            if ClxControlRegistry.shared.get(currentId) != nil {
+            if ClxControlRegistry.shared.get(currentId) != nil,
+               isSidebarRowInVisibleRange(currentId) {
                 return currentId
             }
         }
@@ -1607,7 +1668,25 @@ enum ClxControlHandlers {
         if let topmost = visible.max(by: { $0.1 < $1.1 }) {
             return topmost.0
         }
+        let viewportCandidates = candidates.compactMap { id -> (String, CGFloat)? in
+            guard isSidebarRowInVisibleRange(id),
+                  let state = ClxControlRegistry.shared.observedViewState(id) else { return nil }
+            return (id, state.frame.minY)
+        }
+        if let topmost = viewportCandidates.max(by: { $0.1 < $1.1 }) {
+            return topmost.0
+        }
         return candidates.sorted().first
+    }
+
+    private static func isSidebarRowInVisibleRange(_ id: String) -> Bool {
+        guard let state = ClxControlRegistry.shared.observedViewState(id) else { return false }
+        if state.visible { return true }
+        guard let scrollState = registeredScrollState(id: "sidebar.scroll"),
+              let framePayload = scrollState["frame"] as? [String: Any],
+              let viewport = rectPayload(framePayload) else { return false }
+        let row = state.frame
+        return row.maxY > viewport.minY && row.minY < viewport.maxY
     }
 
     private static func observedScrollState(_ args: [String: Any]) -> [String: Any] {

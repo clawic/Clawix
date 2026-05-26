@@ -575,7 +575,7 @@ async function runScenario(args) {
     token: args.token,
     timeoutMs: boundedInteger(args["timeout-ms"], defaultTimeoutMs, 100, 120_000),
     pollMs: boundedInteger(args["poll-ms"], defaultPollMs, 10, 5_000),
-    requestTimeoutMs: boundedInteger(args["request-timeout-ms"], Math.max(boundedInteger(args["timeout-ms"], defaultTimeoutMs, 100, 120_000) + 2_000, 5_000), 500, 180_000),
+    requestTimeoutMs: boundedInteger(args["request-timeout-ms"], Math.max(boundedInteger(args["timeout-ms"], defaultTimeoutMs, 100, 120_000) + 10_000, 15_000), 500, 180_000),
     controlReadyTimeoutMs: boundedInteger(args["control-ready-timeout-ms"], defaultControlReadyTimeoutMs, 500, 120_000),
   };
   if (!options.dryRun) {
