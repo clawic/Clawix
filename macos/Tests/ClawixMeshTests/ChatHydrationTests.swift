@@ -87,6 +87,59 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
+    func testKnownLocalRolloutHydratesImmediatelyBeforeClawJSSessionRetryPath() async throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-known-rollout-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let rollout = tmp.appendingPathComponent("rollout-thread-local.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-20T10:00:00.000Z","type":"session_meta","payload":{"id":"thread-local","cwd":"/tmp"}}"#,
+            #"{"timestamp":"2026-05-20T10:00:01.000Z","type":"event_msg","payload":{"type":"user_message","message":"Local prompt"}}"#,
+            #"{"timestamp":"2026-05-20T10:00:02.000Z","type":"event_msg","payload":{"type":"agent_message","message":"Local answer","phase":"final_answer"}}"#
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        var attempts = 0
+        SessionsHistoryURLProtocol.handler = { _ in
+            attempts += 1
+            throw URLError(.cannotConnectToHost)
+        }
+
+        let state = AppState()
+        let chatId = UUID()
+        state.currentRoute = .chat(chatId)
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Thread",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-local",
+                rolloutPath: rollout,
+                historyHydrated: false
+            )
+        ]
+        state.sessionHistoryHydrationAttempts = 4
+        state.sessionHistoryHydrationInitialDelayNanos = 1_000_000
+        state.clawJSSessionsClientFactory = {
+            ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+        }
+
+        state.hydrateHistoryIfNeeded(chatId: chatId)
+
+        try await waitUntil {
+            state.chatStore.transcript(for: chatId)?.messages.map(\.content) == ["Local prompt", "Local answer"]
+        }
+
+        XCTAssertEqual(attempts, 0)
+        XCTAssertEqual(state.chats.first?.messages.count, 0)
+    }
+
     func testApplyDaemonChatsDeduplicatesThreadIdsWithoutCrashing() {
         let state = AppState()
         let existingId = UUID()

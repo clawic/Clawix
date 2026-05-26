@@ -145,7 +145,11 @@ extension AppState {
         // on ~8 retries (~10s of backoff) and then surface a spurious
         // "service unavailable" error bubble, because the service is not
         // running and the codex-home fallback locator finds nothing.
-        if Self.prefersLocalRolloutHydration, let path = chat.rolloutPath {
+        if !blocking,
+           let path = chat.rolloutPath,
+           FileManager.default.fileExists(atPath: path.path) {
+            hydrateHistoryFromLocalRollout(path: path, chatId: chatId, blocking: false)
+        } else if Self.prefersLocalRolloutHydration, let path = chat.rolloutPath {
             hydrateHistoryFromLocalRollout(path: path, chatId: chatId, blocking: blocking)
         } else if let threadId = chat.clawixThreadId {
             hydrateHistoryFromClawJSSessions(threadId: threadId, chatId: chatId, blocking: blocking)
