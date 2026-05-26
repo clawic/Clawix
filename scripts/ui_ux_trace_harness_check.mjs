@@ -762,6 +762,18 @@ if (clxAgentInstanceSource) {
   }
 }
 
+if (clxControlHandlersSource) {
+  for (const snippet of [
+    "case \"snapshot\":  return snapshot(args)",
+    "static func snapshot(_ args: [String: Any]) -> ClxControlResult",
+    "let maxControls = boundedInt(args[\"maxControls\"]",
+    "state[\"scrollState\"] = registeredScrollState(id: id) ?? [:]",
+    "if let selected = ClxAX.bool(element, kAXSelectedAttribute) { out[\"selected\"] = selected }",
+  ]) {
+    requireSnippet(clxControlHandlersSource, clxControlHandlersPath, snippet);
+  }
+}
+
 if (runnerSource) {
   for (const snippet of [
     "const maxEvidenceEventsPerRun = 100_000",

@@ -709,11 +709,39 @@ enum ClxControlHandlers {
     }
 
     static func snapshot(_ args: [String: Any]) -> ClxControlResult {
-        var snapshotArgs = args
-        if snapshotArgs["includeFrames"] == nil {
-            snapshotArgs["includeFrames"] = true
+        let includeAx = (args["includeAx"] as? Bool) ?? true
+        let maxControls = boundedInt(args["maxControls"], defaultValue: 1_500, min: 1, max: 5_000)
+        var controls: [[String: Any]] = []
+        var seen = Set<String>()
+
+        for descriptor in ClxControlRegistry.shared.all() {
+            guard controls.count < maxControls else { break }
+            guard let state = controlStatePayload(id: descriptor.id, includeAx: includeAx) else { continue }
+            controls.append(state)
+            seen.insert(descriptor.id)
         }
-        return inventory(snapshotArgs)
+
+        for id in ClxScrollRegistry.shared.allIds().sorted() where controls.count < maxControls && !seen.contains(id) {
+            guard var state = registeredScrollState(id: id) else { continue }
+            state["id"] = id
+            state["resolvedId"] = id
+            state["role"] = "scroll"
+            state["source"] = "scroll-registry"
+            state["found"] = true
+            state["visible"] = true
+            state["scrollState"] = registeredScrollState(id: id) ?? [:]
+            controls.append(state)
+            seen.insert(id)
+        }
+
+        return ok([
+            "instanceId": ClxAgentInstance.instanceId,
+            "count": controls.count,
+            "maxControls": maxControls,
+            "truncated": controls.count >= maxControls,
+            "includeAx": includeAx,
+            "controls": controls,
+        ])
     }
 
     static func click(_ args: [String: Any]) -> ClxControlResult {
@@ -1859,10 +1887,28 @@ enum ClxControlHandlers {
             if let observedView {
                 out["frame"] = framePayload(observedView.frame)
             }
+            if let scrollState = registeredScrollState(id: resolvedId) {
+                out["scrollState"] = scrollState
+                if out["frame"] == nil { out["frame"] = scrollState["frame"] }
+            }
             if resolvedId == "composer.input", let appState {
                 out["value"] = appState.composer.text
                 out["enabled"] = true
                 out["focused"] = false
+            }
+            if includeAx, let element = ClxAX.find(identifier: resolvedId) {
+                out["source"] = observedView == nil ? "ax+registry" : "registry+ax+view"
+                if let role = ClxAX.string(element, kAXRoleAttribute) { out["axRole"] = role }
+                if let value = ClxAX.string(element, kAXValueAttribute) { out["value"] = value }
+                if let enabled = ClxAX.bool(element, kAXEnabledAttribute) { out["enabled"] = enabled }
+                if let title = ClxAX.string(element, kAXTitleAttribute) { out["title"] = title }
+                if let description = ClxAX.string(element, kAXDescriptionAttribute) { out["description"] = description }
+                if let focused = ClxAX.bool(element, kAXFocusedAttribute) { out["focused"] = focused }
+                if let selected = ClxAX.bool(element, kAXSelectedAttribute) { out["selected"] = selected }
+                if let frame = ClxAX.frame(element) {
+                    out["frame"] = framePayload(frame)
+                    out["visible"] = frame.width > 0 && frame.height > 0
+                }
             }
             return out
         }
