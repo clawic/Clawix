@@ -84,8 +84,9 @@ explicit external-pending condition rather than an implied pass.
   evidence against the schema, event correlation, metric references, failure
   sidecars, normalized diagnostic sample events, contract source hashes,
   baseline artifact metadata, run and suite baseline comparisons, baseline path
-  redaction, enforceable gate exit policy, trace-isolation metadata, and
-  private-boundary flags before evidence can support closure.
+  redaction, KPI-row correlation for every comparison row, enforceable gate
+  exit policy, trace-isolation metadata, and private-boundary flags before
+  evidence can support closure.
 - **Persistence**: public-safe JSON contracts live under `docs/ui/`; private
   baselines and run evidence stay outside the public repo.
 - **Validation**: `node scripts/ui_ux_trace_harness_check.mjs`.

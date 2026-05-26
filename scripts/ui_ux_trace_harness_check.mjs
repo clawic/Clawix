@@ -628,13 +628,18 @@ if (evidenceSchema) {
   if (!String(evidenceSchema.exitPolicyContract?.p0Gate ?? "").includes("exit code 1")) {
     fail(`${evidenceSchemaPath}.exitPolicyContract.p0Gate must require exit code 1`);
   }
-  requireFields(evidenceSchema.baselineComparisonContract, `${evidenceSchemaPath}.baselineComparisonContract`, ["baselineReferencePolicy", "suiteAggregationPolicy", "allowedReferenceKinds"]);
+  requireFields(evidenceSchema.baselineComparisonContract, `${evidenceSchemaPath}.baselineComparisonContract`, ["baselineReferencePolicy", "suiteAggregationPolicy", "rowPolicy", "allowedStatuses", "allowedRowStatuses", "allowedReferenceKinds"]);
   if (!String(evidenceSchema.baselineComparisonContract?.baselineReferencePolicy ?? "").includes("must not store raw external baseline paths")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.baselineReferencePolicy must forbid raw external baseline paths`);
   }
   if (!String(evidenceSchema.baselineComparisonContract?.suiteAggregationPolicy ?? "").includes("one comparison row per suite metric")) {
     fail(`${evidenceSchemaPath}.baselineComparisonContract.suiteAggregationPolicy must require suite-level metric comparison coverage`);
   }
+  if (!String(evidenceSchema.baselineComparisonContract?.rowPolicy ?? "").includes("reference an emitted KPI metric")) {
+    fail(`${evidenceSchemaPath}.baselineComparisonContract.rowPolicy must require KPI metric row correlation`);
+  }
+  requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedStatuses, `${evidenceSchemaPath}.baselineComparisonContract.allowedStatuses`), `${evidenceSchemaPath}.baselineComparisonContract.allowedStatuses`, ["gate_passed", "gate_failed", "baseline_missing", "compared"]);
+  requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedRowStatuses, `${evidenceSchemaPath}.baselineComparisonContract.allowedRowStatuses`), `${evidenceSchemaPath}.baselineComparisonContract.allowedRowStatuses`, ["baseline_missing", "baseline_regression", "compared"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineComparisonContract?.allowedReferenceKinds, `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`), `${evidenceSchemaPath}.baselineComparisonContract.allowedReferenceKinds`, ["relative-to-run", "external-hash-only"]);
   requireUniqueStringArray(requireArray(evidenceSchema.baselineArtifactRequiredFields, `${evidenceSchemaPath}.baselineArtifactRequiredFields`), `${evidenceSchemaPath}.baselineArtifactRequiredFields`, ["baselineVersion", "sourceEvidence", "approval", "promotionPolicy", "evidenceSources", "privateBoundary", "metrics"]);
   requireFields(evidenceSchema.baselineArtifactContract, `${evidenceSchemaPath}.baselineArtifactContract`, ["defaultApprovalStatus", "versioned", "privateEvidenceRemainsExternal", "verifierTarget", "p0Protection"]);
@@ -972,12 +977,18 @@ if (evidenceVerifierSource) {
     "validateEvidenceSources(",
     "validateExitPolicy(",
     "validateBaselineComparison(",
+    "baselineComparisonStatuses",
+    "baselineComparisonRowStatuses",
+    "baselineComparisonMetricKey(",
+    "metricKeys",
+    "has no matching metric row",
+    "comparisons must include one row per metric",
     "validateBaselineArtifact(",
     "suite-baseline-comparison.json",
     "suiteBaselineComparison",
     "baselineComparisonPath",
     "is not a UX trace run, suite, or baseline artifact",
-    "baseline-comparison.json must not include raw baselinePath",
+    "must not include raw baselinePath",
     "exitPolicy.computedExitCode must be",
     "contentHash does not match current source content",
     "runDirectoryMatchesRunId must be true",

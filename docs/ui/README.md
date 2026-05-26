@@ -328,7 +328,10 @@ write redacted `logs/failure-ui-states.jsonl` rows that are referenced from
 available diagnostics into `geometry.sample`, `scroll.sample`,
 `render.window`, `hitch.sample`, `resource.sample`, `database.sample`, and
 `bridge.sample` events so agents can query performance facts without opening
-opaque payload hashes. `run.json` and `suite.json` include `evidenceSources`
+opaque payload hashes. The verifier rejects baseline comparison artifacts that
+store raw external paths, omit a metric comparison row, reference a KPI that is
+not present in `metrics.json` / `suite-metrics.json`, or use an unsupported
+comparison status. `run.json` and `suite.json` include `evidenceSources`
 with repo-relative registry, scenario manifest, schema, generator, and verifier
 paths plus content hashes, so a bundle is tied to the exact public contract that
 produced it. They also include a `traceIsolation` block proving

@@ -870,13 +870,17 @@ function baselineComparisonsFromMetrics(metrics, gate) {
     ) {
       comparisonStatus = "baseline_regression";
     }
-    return {
+    const comparison = {
       kpiId: metric.kpiId,
       p95: metric.p95,
       baseline: metric.baseline,
       regressionPercent: metric.regressionPercent,
       status: comparisonStatus,
     };
+    for (const field of ["runId", "scenarioId", "fixtureProfile"]) {
+      if (metric[field]) comparison[field] = metric[field];
+    }
+    return comparison;
   });
 }
 

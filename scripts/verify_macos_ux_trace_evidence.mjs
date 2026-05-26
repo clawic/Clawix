@@ -246,16 +246,63 @@ function validatePathReference(failures, value, label) {
   fail(failures, `${label}.kind must be relative-to-run or external-hash-only`);
 }
 
-function validateBaselineComparison(failures, comparison) {
+const baselineComparisonStatuses = new Set(["gate_passed", "gate_failed", "baseline_missing", "compared"]);
+const baselineComparisonRowStatuses = new Set(["baseline_missing", "baseline_regression", "compared"]);
+
+function baselineComparisonMetricKey(row) {
+  return [row?.runId || "", row?.scenarioId || "", row?.fixtureProfile || "", row?.kpiId || ""].join("\u001f");
+}
+
+function validateBaselineComparison(failures, comparison, label = "baseline-comparison.json", options = {}) {
   if (!comparison || typeof comparison !== "object") {
-    fail(failures, "baseline-comparison.json must be an object");
+    fail(failures, `${label} must be an object`);
     return;
   }
   if (Object.hasOwn(comparison, "baselinePath")) {
-    fail(failures, "baseline-comparison.json must not include raw baselinePath");
+    fail(failures, `${label} must not include raw baselinePath`);
   }
   if (comparison.baselineReference) {
-    validatePathReference(failures, comparison.baselineReference, "baseline-comparison.json.baselineReference");
+    validatePathReference(failures, comparison.baselineReference, `${label}.baselineReference`);
+  }
+  requireFields(failures, comparison, label, ["schemaVersion", "status", "comparisons"]);
+  if (comparison.schemaVersion !== 1) fail(failures, `${label}.schemaVersion must be 1`);
+  if (!baselineComparisonStatuses.has(comparison.status)) {
+    fail(failures, `${label}.status ${comparison.status} is not allowed`);
+  }
+  if (comparison.gate !== null && comparison.gate !== undefined && typeof comparison.gate !== "object") {
+    fail(failures, `${label}.gate must be null or an object`);
+  }
+  if (!Array.isArray(comparison.comparisons)) {
+    fail(failures, `${label}.comparisons must be an array`);
+    return;
+  }
+  if (Number.isInteger(options.expectedCount) && comparison.comparisons.length !== options.expectedCount) {
+    fail(failures, `${label}.comparisons must include one row per metric`);
+  }
+  const seenRows = new Set();
+  for (const [index, row] of comparison.comparisons.entries()) {
+    const rowLabel = `${label}.comparisons[${index}]`;
+    requireFields(failures, row, rowLabel, ["kpiId", "p95", "baseline", "regressionPercent", "status"]);
+    if (typeof row?.kpiId !== "string" || row.kpiId.length === 0) {
+      fail(failures, `${rowLabel}.kpiId must be a non-empty string`);
+    } else {
+      const metricKey = baselineComparisonMetricKey(row);
+      if (seenRows.has(metricKey)) fail(failures, `${rowLabel}.kpiId duplicates ${row.kpiId} for the same run/scenario/fixture`);
+      seenRows.add(metricKey);
+      if (options.metricKeys && !options.metricKeys.has(metricKey)) {
+        fail(failures, `${rowLabel}.kpiId ${row.kpiId} has no matching metric row`);
+      }
+    }
+    if (!Number.isFinite(Number(row?.p95))) fail(failures, `${rowLabel}.p95 must be numeric`);
+    if (row?.baseline !== null && !Number.isFinite(Number(row?.baseline))) {
+      fail(failures, `${rowLabel}.baseline must be numeric or null`);
+    }
+    if (row?.regressionPercent !== null && !Number.isFinite(Number(row?.regressionPercent))) {
+      fail(failures, `${rowLabel}.regressionPercent must be numeric or null`);
+    }
+    if (!baselineComparisonRowStatuses.has(row?.status)) {
+      fail(failures, `${rowLabel}.status ${row?.status} is not allowed`);
+    }
   }
 }
 
@@ -299,7 +346,6 @@ function validateRun(runDir, schema, options = {}) {
   if (failuresArtifact.runId !== run.runId) fail(failures, "failures.json runId must match run.json");
   if (fixtureManifest.runId !== run.runId) fail(failures, "fixture-manifest.json runId must match run.json");
   if (baselineComparison.runId !== run.runId) fail(failures, "baseline-comparison.json runId must match run.json");
-  validateBaselineComparison(failures, baselineComparison);
   if (fixtureManifest.generatedFixture?.privateBoundary || fixtureManifest.privateBoundary) {
     validatePrivateBoundary(failures, fixtureManifest.generatedFixture?.privateBoundary ?? fixtureManifest.privateBoundary, "fixture-manifest.json");
   } else if (fixtureManifest.privateContentExported !== false) {
@@ -387,14 +433,20 @@ function validateRun(runDir, schema, options = {}) {
   if (!events.some((event) => event.eventType === "run.completed")) fail(failures, "events.jsonl must include run.completed");
 
   const kpiIds = new Set();
+  const metricKeys = new Set();
   for (const [index, metric] of (metricsArtifact.metrics || []).entries()) {
     const label = `metrics.json.metrics[${index}]`;
     requireFields(failures, metric, label, schema.metricRequiredFields);
     kpiIds.add(metric.kpiId);
+    metricKeys.add(baselineComparisonMetricKey(metric));
     for (const ref of metric.evidenceEventRefs || []) {
       if (!eventKeys.has(ref)) fail(failures, `${label}.evidenceEventRefs contains unknown event ref ${ref}`);
     }
   }
+  validateBaselineComparison(failures, baselineComparison, "baseline-comparison.json", {
+    metricKeys,
+    expectedCount: (metricsArtifact.metrics || []).length,
+  });
 
   const failureTypes = new Set(schema.failureTypes);
   const failureStateByRef = new Map();
@@ -504,15 +556,11 @@ function validateSuite(suiteDir, schema) {
   if (suiteBaselineObject.suiteId !== suite.suiteId) {
     fail(failures, "suite-baseline-comparison.json suiteId must match suite.json");
   }
-  validateBaselineComparison(failures, suiteBaselineComparison);
-  if (!["gate_passed", "gate_failed", "baseline_missing", "compared"].includes(suiteBaselineObject.status)) {
-    fail(failures, `suite-baseline-comparison.json.status ${suiteBaselineObject.status} is not allowed`);
-  }
-  if (!Array.isArray(suiteBaselineObject.comparisons)) {
-    fail(failures, "suite-baseline-comparison.json.comparisons must be an array");
-  } else if (suiteBaselineObject.comparisons.length !== (suiteMetrics.metrics || []).length) {
-    fail(failures, "suite-baseline-comparison.json.comparisons must include one row per suite metric");
-  }
+  const suiteMetricKeys = new Set((suiteMetrics.metrics || []).map((metric) => baselineComparisonMetricKey(metric)));
+  validateBaselineComparison(failures, suiteBaselineComparison, "suite-baseline-comparison.json", {
+    metricKeys: suiteMetricKeys,
+    expectedCount: (suiteMetrics.metrics || []).length,
+  });
   if (!Array.isArray(suiteBaselineObject.childRuns)) {
     fail(failures, "suite-baseline-comparison.json.childRuns must be an array");
   } else if (suiteBaselineObject.childRuns.length !== (suite.runs || []).length) {

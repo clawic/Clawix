@@ -151,6 +151,18 @@
   "baselineComparisonContract": {
     "baselineReferencePolicy": "baseline-comparison.json must not store raw external baseline paths; external baselines are represented by sha256 path hashes, while generated in-run baselines may be relative references.",
     "suiteAggregationPolicy": "suite-baseline-comparison.json must aggregate one comparison row per suite metric and link every child run to its baseline-comparison.json artifact with public-safe relative paths.",
+    "rowPolicy": "Every baseline comparison row must reference an emitted KPI metric, including run/scenario/fixture context when present, and carry numeric p95, numeric-or-null baseline, numeric-or-null regressionPercent, and an allowed row status.",
+    "allowedStatuses": [
+      "gate_passed",
+      "gate_failed",
+      "baseline_missing",
+      "compared"
+    ],
+    "allowedRowStatuses": [
+      "baseline_missing",
+      "baseline_regression",
+      "compared"
+    ],
     "allowedReferenceKinds": [
       "relative-to-run",
       "external-hash-only"
