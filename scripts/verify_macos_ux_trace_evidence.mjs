@@ -297,6 +297,12 @@ function addMultisetRow(map, key) {
   map.set(key, (map.get(key) || 0) + 1);
 }
 
+function addEventRow(map, key, event) {
+  const rows = map.get(key) || [];
+  rows.push(event);
+  map.set(key, rows);
+}
+
 function compareMultisets(failures, label, expected, actual) {
   for (const [key, count] of expected.entries()) {
     if ((actual.get(key) || 0) !== count) {
@@ -609,6 +615,40 @@ function validateRun(runDir, schema, options = {}) {
   const stepFailedEvents = new Map();
   for (const event of events.filter((item) => item.eventType === "step.failed")) {
     stepFailedEvents.set(failureEventKey(event), event);
+  }
+  const stepStartedEvents = new Map();
+  const actionDispatchedEvents = new Map();
+  const stepCompletedEvents = new Map();
+  const terminalStepEvents = new Map();
+  for (const event of events) {
+    const key = failureEventKey(event);
+    if (event.eventType === "step.started") addEventRow(stepStartedEvents, key, event);
+    if (event.eventType === "action.dispatched") addEventRow(actionDispatchedEvents, key, event);
+    if (event.eventType === "step.completed") {
+      addEventRow(stepCompletedEvents, key, event);
+      addEventRow(terminalStepEvents, key, event);
+    }
+    if (event.eventType === "step.failed") addEventRow(terminalStepEvents, key, event);
+  }
+  for (const [key, startedRows] of stepStartedEvents.entries()) {
+    if (startedRows.length !== 1) fail(failures, `events.jsonl step ${key} must have exactly one step.started`);
+    const actionRows = actionDispatchedEvents.get(key) || [];
+    if (actionRows.length !== 1) fail(failures, `events.jsonl step ${key} must have exactly one action.dispatched`);
+    const terminalRows = terminalStepEvents.get(key) || [];
+    if (terminalRows.length !== 1) fail(failures, `events.jsonl step ${key} must have exactly one step.completed or step.failed`);
+    const started = startedRows[0];
+    const action = actionRows[0];
+    const terminal = terminalRows[0];
+    if (action && Number(action.sequence) <= Number(started.sequence)) {
+      fail(failures, `events.jsonl step ${key} action.dispatched must occur after step.started`);
+    }
+    if (terminal && action && Number(terminal.sequence) <= Number(action.sequence)) {
+      fail(failures, `events.jsonl step ${key} terminal event must occur after action.dispatched`);
+    }
+  }
+  for (const [key, completedRows] of stepCompletedEvents.entries()) {
+    if (!stepStartedEvents.has(key)) fail(failures, `events.jsonl step.completed ${key} must have a matching step.started`);
+    if (completedRows.length !== 1) fail(failures, `events.jsonl step.completed ${key} must be unique`);
   }
 
   const kpiIds = new Set();

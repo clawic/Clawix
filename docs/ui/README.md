@@ -343,7 +343,9 @@ non-empty `evidenceEventRefs` and at least one referenced timeline event must
 carry the same KPI ID, keeping aggregate numbers tied to action and visual
 condition evidence. Lifecycle events are strict: each run timeline has one
 `run.started` and one `run.completed`, `run.completed.status` must match
-`run.json.status`, and a started scenario must complete once. The runner also normalizes
+`run.json.status`, and a started scenario must complete once. Each measured
+step must also have one `step.started`, one `action.dispatched`, and exactly
+one terminal `step.completed` or `step.failed` in sequence order. The runner also normalizes
 available diagnostics into `geometry.sample`, `scroll.sample`,
 `render.window`, `hitch.sample`, `resource.sample`, `database.sample`, and
 `bridge.sample` events so agents can query performance facts without opening

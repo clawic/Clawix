@@ -745,6 +745,8 @@ if (evidenceSchema) {
   if (
     !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("exactly one run.started")
     || !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("run.completed.status must match run.json.status")
+    || !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("exactly one step.started")
+    || !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("exactly one terminal step.completed or step.failed")
   ) {
     fail(`${evidenceSchemaPath}.eventLifecycleContract must bind run lifecycle events to run status`);
   }
@@ -1100,6 +1102,9 @@ if (evidenceVerifierSource) {
     "evidenceEventRefs must include an event for the same KPI",
     "run.completed status must match run.json.status",
     "scenario.started requires exactly one scenario.completed",
+    "must have exactly one action.dispatched",
+    "must have exactly one step.completed or step.failed",
+    "terminal event must occur after action.dispatched",
     "metrics.json.schemaVersion must be 1",
     "failures.json.schemaVersion must be 1",
     "suite-metrics.json.schemaVersion must be 1",
