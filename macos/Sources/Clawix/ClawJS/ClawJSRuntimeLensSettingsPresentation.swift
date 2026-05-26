@@ -374,6 +374,7 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                         $0.relationshipLabel.map { "relationship \($0)" },
                         $0.approvalGateFixtureStatus.map { "approval gate fixture \($0)" },
                         $0.liveEvidenceFixtureStatus.map { "live evidence fixture \($0)" },
+                        $0.writeBackContractFixtureStatus.map { "write back contract fixture \($0)" },
                         $0.implementedFacetsLabel.map { "implemented facets \($0)" },
                         $0.blockingFacetsLabel.map { "blocking facets \($0)" },
                         $0.blockerClassesLabel.map { "blocker classes \($0)" },
@@ -774,7 +775,8 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                 $0.officialCommandsLabel.map { "official commands \($0)" },
                 $0.evidenceRequirementsLabel.map { "evidence \($0)" },
                 $0.approvalGateFixtureLabel,
-                $0.liveEvidenceFixtureLabel
+                $0.liveEvidenceFixtureLabel,
+                $0.writeBackContractFixtureLabel
             ]), accessibilityLabel: $0.accessibilityLabel)
         }, accessibilityLabel: presentation.accessibilityLabel)
     }

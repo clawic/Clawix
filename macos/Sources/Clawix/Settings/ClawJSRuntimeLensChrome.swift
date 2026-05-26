@@ -113,6 +113,24 @@ extension ClawJSRuntimeLensSection {
                 .clxControl("runtime-lens-live-evidence-fixture", role: "input", label: "Runtime lens live evidence fixture") { value in
                     runtimeLensLiveEvidenceFixture = value
                 }
+            TextField("Production transport fixture path", text: $runtimeLensProductionTransportFixture)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .clxControl("runtime-lens-production-transport-fixture", role: "input", label: "Runtime lens production transport fixture") { value in
+                    runtimeLensProductionTransportFixture = value
+                }
+            TextField("Write-back contract fixture path", text: $runtimeLensWriteBackContractFixture)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .clxControl("runtime-lens-write-back-contract-fixture", role: "input", label: "Runtime lens write-back contract fixture") { value in
+                    runtimeLensWriteBackContractFixture = value
+                }
+            TextField("Native contract fixture path", text: $runtimeLensNativeContractFixture)
+                .textFieldStyle(.roundedBorder)
+                .font(BodyFont.system(size: 11.5))
+                .clxControl("runtime-lens-native-contract-fixture", role: "input", label: "Runtime lens native contract fixture") { value in
+                    runtimeLensNativeContractFixture = value
+                }
             TextField("Loopback gateway URL", text: $runtimeLensActionGatewayURL)
                 .textFieldStyle(.roundedBorder)
                 .font(BodyFont.system(size: 11.5))

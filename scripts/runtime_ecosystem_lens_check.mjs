@@ -99,7 +99,7 @@ for (const file of [
 
 if (exists("docs/runtime-ecosystem-lens.md")) {
   const text = read("docs/runtime-ecosystem-lens.md");
-  for (const snippet of ["runtime lens", "semantic native parity", "local overlays", "product-blocked", "status-tone contract", "finalPromotionReview", "finalSupportClaimDecision", "closureChecklist", "evidenceReentryPackets", "supportContract", "EXTERNAL PENDING", "resources <domain>", "stable `ok:false` JSON error envelopes", "claw commands resolve runtime resources --json", "model and plugin inventory", "capability diagnostics", "common runtime resource metadata", "claim source", "official snapshot", "source snapshot date", "source count", "drift policy", "audit provenance source/runtime", "capability-map status counts", "top-level session descriptors", "top-level workspace canonical/managed file counts", "top-level resource aggregates", "dev-only partial runtime lens", "guarded 44-command JSON portal set", "Guarded command coverage is not", "promotion signal by itself", "SQLite session-store reads", "bounded preview/history/resolve", "local-overlay pin/unpin", "support contracts", "evidence reentry packets", "production TUI Gateway transport", "approved live channel/provider/auth/model evidence", "live evidence fixture path", "approved redacted live-evidence receipts"]) {
+  for (const snippet of ["runtime lens", "semantic native parity", "local overlays", "product-blocked", "status-tone contract", "finalPromotionReview", "finalSupportClaimDecision", "closureChecklist", "evidenceReentryPackets", "supportContract", "EXTERNAL PENDING", "resources <domain>", "stable `ok:false` JSON error envelopes", "claw commands resolve runtime resources --json", "model and plugin inventory", "capability diagnostics", "common runtime resource metadata", "claim source", "official snapshot", "source snapshot date", "source count", "drift policy", "audit provenance source/runtime", "capability-map status counts", "top-level session descriptors", "top-level workspace canonical/managed file counts", "top-level resource aggregates", "dev-only partial runtime lens", "guarded 44-command JSON portal set", "Guarded command coverage is not", "promotion signal by itself", "SQLite session-store reads", "bounded preview/history/resolve", "local-overlay pin/unpin", "support contracts", "evidence reentry packets", "production TUI Gateway transport", "approved live channel/provider/auth/model evidence", "live evidence fixture path", "production transport fixture path", "write-back contract fixture path", "native contract fixture path", "approved redacted live-evidence receipts", "official contract receipts"]) {
     if (!text.includes(snippet)) errors.push(`runtime lens doc missing ${snippet}`);
   }
 }
@@ -507,6 +507,9 @@ for (const snippet of [
   "readProjectionStatus: String?",
   "liveEvidenceFixtureStatus: String?",
   "liveEvidenceFixtureReceipt: LiveEvidenceFixtureReceipt?",
+  "writeBackContractFixtureStatus: String?",
+  "writeBackContractFixtureReceipt: OfficialContractFixtureReceipt?",
+  "final class OfficialContractFixtureReceipt",
   "final class LiveEvidenceFixtureReceipt",
   "implementedFacets: [String]?",
   "blockingFacets: [String]?",
@@ -1071,7 +1074,13 @@ for (const snippet of [
   "runtimeLensSessionOverlayActionResultLabel(result)",
   "runtimeLensSessionOverlayActionResultDetails(result)",
   "runtimeLensLiveEvidenceFixture",
+  "runtimeLensProductionTransportFixture",
+  "runtimeLensWriteBackContractFixture",
+  "runtimeLensNativeContractFixture",
   "liveEvidenceFixture: trimmedRuntimeLensInput(runtimeLensLiveEvidenceFixture)",
+  "productionTransportFixture: trimmedRuntimeLensInput(runtimeLensProductionTransportFixture)",
+  "writeBackContractFixture: trimmedRuntimeLensInput(runtimeLensWriteBackContractFixture)",
+  "nativeContractFixture: trimmedRuntimeLensInput(runtimeLensNativeContractFixture)",
   "action contract ",
   "result.requiredFlag.map { \"required flag \\($0)\" }",
   "result.officialProtocol.map { \"protocol \\($0)\" }",
@@ -1125,6 +1134,7 @@ for (const snippet of [
   "supportContractSection(contracts)",
   "ClawJSRuntimeLensSupportContractPresentation.make(snapshot: snapshot)",
   "liveEvidenceFixtureLabel",
+  "writeBackContractFixtureLabel",
   "inventorySection(inventory)",
   "runtimeLensDetailedInventory()",
   "runtimeLensInventory(snapshot, presentation: inventory)",

@@ -168,6 +168,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let approvalGateFixtureReceipt: ApprovalGateFixtureReceipt?
             let liveEvidenceFixtureStatus: String?
             let liveEvidenceFixtureReceipt: LiveEvidenceFixtureReceipt?
+            let writeBackContractFixtureStatus: String?
+            let writeBackContractFixtureReceipt: OfficialContractFixtureReceipt?
             let validation: String?
             let externalPending: Bool?
             let persistence: String?
@@ -485,6 +487,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let approvalGateFixtureReceipt: ApprovalGateFixtureReceipt?
         let liveEvidenceFixtureStatus: String?
         let liveEvidenceFixtureReceipt: LiveEvidenceFixtureReceipt?
+        let writeBackContractFixtureStatus: String?
+        let writeBackContractFixtureReceipt: OfficialContractFixtureReceipt?
         let validation: String?
         let externalPending: Bool?
         let freshness: String?
@@ -773,6 +777,8 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let approvalGateFixtureReceipt: ApprovalGateFixtureReceipt?
         let liveEvidenceFixtureStatus: String?
         let liveEvidenceFixtureReceipt: LiveEvidenceFixtureReceipt?
+        let writeBackContractFixtureStatus: String?
+        let writeBackContractFixtureReceipt: OfficialContractFixtureReceipt?
         let validation: String?
         let externalPending: Bool?
         let freshness: String?
@@ -837,6 +843,40 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
                 && lhs.mutationPerformed == rhs.mutationPerformed
                 && lhs.plaintextSecretLeak == rhs.plaintextSecretLeak
                 && lhs.redacted == rhs.redacted
+                && lhs.supportContractMatchesManifest == rhs.supportContractMatchesManifest
+                && lhs.evidenceSafetyPolicy == rhs.evidenceSafetyPolicy
+                && lhs.source == rhs.source
+        }
+    }
+
+    final class OfficialContractFixtureReceipt: Decodable, Equatable {
+        let domain: String?
+        let receiptId: String?
+        let receiptType: String?
+        let status: String?
+        let approved: Bool?
+        let redacted: Bool?
+        let plaintextSecretLeak: Bool?
+        let officialContractKnown: Bool?
+        let nonDestructiveFixture: Bool?
+        let roundTripNativeVisibility: Bool?
+        let noSilentWriteBack: Bool?
+        let supportContractMatchesManifest: Bool?
+        let evidenceSafetyPolicy: String?
+        let source: String?
+
+        static func == (lhs: OfficialContractFixtureReceipt, rhs: OfficialContractFixtureReceipt) -> Bool {
+            lhs.domain == rhs.domain
+                && lhs.receiptId == rhs.receiptId
+                && lhs.receiptType == rhs.receiptType
+                && lhs.status == rhs.status
+                && lhs.approved == rhs.approved
+                && lhs.redacted == rhs.redacted
+                && lhs.plaintextSecretLeak == rhs.plaintextSecretLeak
+                && lhs.officialContractKnown == rhs.officialContractKnown
+                && lhs.nonDestructiveFixture == rhs.nonDestructiveFixture
+                && lhs.roundTripNativeVisibility == rhs.roundTripNativeVisibility
+                && lhs.noSilentWriteBack == rhs.noSilentWriteBack
                 && lhs.supportContractMatchesManifest == rhs.supportContractMatchesManifest
                 && lhs.evidenceSafetyPolicy == rhs.evidenceSafetyPolicy
                 && lhs.source == rhs.source
@@ -1852,6 +1892,9 @@ struct ClawJSRuntimeLensClient {
         authStore: String? = nil,
         approvalGateFixture: String? = nil,
         liveEvidenceFixture: String? = nil,
+        productionTransportFixture: String? = nil,
+        writeBackContractFixture: String? = nil,
+        nativeContractFixture: String? = nil,
         gatewayURL: String? = nil
     ) async throws -> ClawJSRuntimeLensSnapshot {
         var args = ["runtime", runtime.rawValue, "domains"]
@@ -1863,6 +1906,9 @@ struct ClawJSRuntimeLensClient {
             authStore: authStore,
             approvalGateFixture: approvalGateFixture,
             liveEvidenceFixture: liveEvidenceFixture,
+            productionTransportFixture: productionTransportFixture,
+            writeBackContractFixture: writeBackContractFixture,
+            nativeContractFixture: nativeContractFixture,
             gatewayURL: gatewayURL
         )
         args.append("--json")
@@ -1924,6 +1970,9 @@ struct ClawJSRuntimeLensClient {
         authStore: String? = nil,
         approvalGateFixture: String? = nil,
         liveEvidenceFixture: String? = nil,
+        productionTransportFixture: String? = nil,
+        writeBackContractFixture: String? = nil,
+        nativeContractFixture: String? = nil,
         confirmRuntimeWrite: Bool = false
     ) async throws -> SessionNativeActionResult {
         var args = [
@@ -1949,6 +1998,9 @@ struct ClawJSRuntimeLensClient {
             authStore: authStore,
             approvalGateFixture: approvalGateFixture,
             liveEvidenceFixture: liveEvidenceFixture,
+            productionTransportFixture: productionTransportFixture,
+            writeBackContractFixture: writeBackContractFixture,
+            nativeContractFixture: nativeContractFixture,
             gatewayURL: gatewayURL
         )
         if confirmRuntimeWrite {
@@ -1980,6 +2032,9 @@ struct ClawJSRuntimeLensClient {
         authStore: String?,
         approvalGateFixture: String?,
         liveEvidenceFixture: String?,
+        productionTransportFixture: String?,
+        writeBackContractFixture: String?,
+        nativeContractFixture: String?,
         gatewayURL: String?
     ) {
         if let homeDir, !homeDir.isEmpty {
@@ -1999,6 +2054,15 @@ struct ClawJSRuntimeLensClient {
         }
         if let liveEvidenceFixture, !liveEvidenceFixture.isEmpty {
             args.append(contentsOf: ["--live-evidence-fixture", liveEvidenceFixture])
+        }
+        if let productionTransportFixture, !productionTransportFixture.isEmpty {
+            args.append(contentsOf: ["--production-transport-fixture", productionTransportFixture])
+        }
+        if let writeBackContractFixture, !writeBackContractFixture.isEmpty {
+            args.append(contentsOf: ["--write-back-contract-fixture", writeBackContractFixture])
+        }
+        if let nativeContractFixture, !nativeContractFixture.isEmpty {
+            args.append(contentsOf: ["--native-contract-fixture", nativeContractFixture])
         }
         if let gatewayURL, !gatewayURL.isEmpty {
             args.append(contentsOf: ["--gateway-url", gatewayURL])

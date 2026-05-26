@@ -399,6 +399,27 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertTrue(row.accessibilityLabel.contains("live evidence receipt attached"))
     }
 
+    func testRuntimeLensDecodesOfficialContractFixtureReceipts() async throws {
+        let data = Self.hermesFixtureDataWithWriteBackContractReceipt()
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            XCTAssertEqual(args, ["runtime", "hermes", "domains", "--json"])
+            return .init(data: data, exitCode: 2)
+        })
+
+        let snapshot = try await client.load(runtime: .hermes)
+        let contract = try XCTUnwrap(snapshot.domainData?.sessions?.supportContract)
+        XCTAssertEqual(contract.writeBackContractFixtureStatus, "attached")
+        XCTAssertEqual(contract.writeBackContractFixtureReceipt?.receiptId, "fixture-sessions-write-back-contract")
+        XCTAssertEqual(contract.writeBackContractFixtureReceipt?.roundTripNativeVisibility, true)
+        XCTAssertEqual(snapshot.domains.first { $0.domain == "sessions" }?.writeBackContractFixtureStatus, "attached")
+        XCTAssertEqual(snapshot.supportAudit?.domains?.first { $0.domain == "sessions" }?.writeBackContractFixtureStatus, "attached")
+
+        let supportContracts = ClawJSRuntimeLensSupportContractPresentation.make(snapshot: snapshot)
+        let row = try XCTUnwrap(supportContracts.rows.first { $0.domain == "sessions" })
+        XCTAssertEqual(row.writeBackContractFixtureLabel, "attached, receipt fixture-sessions-write-back-contract, status official_write_back_contract_verified, redacted true, round trip true")
+        XCTAssertTrue(row.accessibilityLabel.contains("write back contract receipt attached"))
+    }
+
     func testRuntimeLensPresentationsExposeParityEvidenceAndClosureState() async throws {
         let snapshot = try await ClawJSRuntimeLensTestFixtures.degradedRuntimePortalSnapshot()
         let audit = try XCTUnwrap(snapshot.supportAudit)
@@ -815,6 +836,95 @@ private extension ClawJSRuntimeLensClientTests {
                         "supportContractMatchesManifest": true,
                         "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
                         "source": "live-evidence-fixture"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+            """.utf8
+        )
+    }
+
+    static func hermesFixtureDataWithWriteBackContractReceipt() -> Data {
+        Data(
+            """
+            {
+              "data": {
+                "runtimeId": "hermes",
+                "runtimeName": "Hermes Agent",
+                "status": {},
+                "domains": [
+                  {
+                    "domain": "sessions",
+                    "writeBackContractFixtureStatus": "attached",
+                    "writeBackContractFixtureReceipt": {
+                      "domain": "sessions",
+                      "receiptId": "fixture-sessions-write-back-contract",
+                      "receiptType": "official_runtime_write_back_contract_receipt",
+                      "status": "official_write_back_contract_verified",
+                      "approved": true,
+                      "redacted": true,
+                      "plaintextSecretLeak": false,
+                      "officialContractKnown": true,
+                      "nonDestructiveFixture": true,
+                      "roundTripNativeVisibility": true,
+                      "noSilentWriteBack": true,
+                      "supportContractMatchesManifest": true,
+                      "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+                      "source": "write-back-contract-fixture"
+                    }
+                  }
+                ],
+                "domainData": {
+                  "sessions": {
+                    "supportContract": {
+                      "claim": "dev_only",
+                      "authority": "runtime_adapter",
+                      "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
+                      "writeBackAllowed": false,
+                      "writeBackContractFixtureStatus": "attached",
+                      "writeBackContractFixtureReceipt": {
+                        "domain": "sessions",
+                        "receiptId": "fixture-sessions-write-back-contract",
+                        "receiptType": "official_runtime_write_back_contract_receipt",
+                        "status": "official_write_back_contract_verified",
+                        "approved": true,
+                        "redacted": true,
+                        "plaintextSecretLeak": false,
+                        "officialContractKnown": true,
+                        "nonDestructiveFixture": true,
+                        "roundTripNativeVisibility": true,
+                        "noSilentWriteBack": true,
+                        "supportContractMatchesManifest": true,
+                        "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+                        "source": "write-back-contract-fixture"
+                      },
+                      "validation": "fixture_required",
+                      "externalPending": false
+                    }
+                  }
+                },
+                "supportAudit": {
+                  "domains": [
+                    {
+                      "domain": "sessions",
+                      "writeBackContractFixtureStatus": "attached",
+                      "writeBackContractFixtureReceipt": {
+                        "domain": "sessions",
+                        "receiptId": "fixture-sessions-write-back-contract",
+                        "receiptType": "official_runtime_write_back_contract_receipt",
+                        "status": "official_write_back_contract_verified",
+                        "approved": true,
+                        "redacted": true,
+                        "plaintextSecretLeak": false,
+                        "officialContractKnown": true,
+                        "nonDestructiveFixture": true,
+                        "roundTripNativeVisibility": true,
+                        "noSilentWriteBack": true,
+                        "supportContractMatchesManifest": true,
+                        "evidenceSafetyPolicy": "redacted_values_only_in_commands_outputs_and_evidence",
+                        "source": "write-back-contract-fixture"
                       }
                     }
                   ]

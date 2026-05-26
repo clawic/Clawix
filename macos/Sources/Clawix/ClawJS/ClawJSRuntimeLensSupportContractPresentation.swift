@@ -16,6 +16,7 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
         let writeBackAllowed: Bool
         let approvalGateFixtureLabel: String?
         let liveEvidenceFixtureLabel: String?
+        let writeBackContractFixtureLabel: String?
         let validation: String?
         let externalPending: Bool
         let freshness: String?
@@ -90,6 +91,7 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
                 "write back allowed \(writeBackAllowed)",
                 approvalGateFixtureLabel.map { "approval gate receipt \($0)" },
                 liveEvidenceFixtureLabel.map { "live evidence receipt \($0)" },
+                writeBackContractFixtureLabel.map { "write back contract receipt \($0)" },
                 validation.map { "validation \($0)" },
                 "external pending \(externalPending)",
                 freshness.map { "freshness \($0)" },
@@ -223,6 +225,10 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
                 status: metadata.liveEvidenceStatus,
                 receipt: metadata.liveEvidenceReceipt
             ),
+            writeBackContractFixtureLabel: officialContractFixtureLabel(
+                status: metadata.writeBackContractStatus,
+                receipt: metadata.writeBackContractReceipt
+            ),
             validation: contract.validation,
             externalPending: contract.externalPending == true,
             freshness: contract.freshness,
@@ -242,17 +248,21 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
         approvalGateStatus: String?,
         approvalGateReceipt: ClawJSRuntimeLensSnapshot.ApprovalGateFixtureReceipt?,
         liveEvidenceStatus: String?,
-        liveEvidenceReceipt: ClawJSRuntimeLensSnapshot.LiveEvidenceFixtureReceipt?
+        liveEvidenceReceipt: ClawJSRuntimeLensSnapshot.LiveEvidenceFixtureReceipt?,
+        writeBackContractStatus: String?,
+        writeBackContractReceipt: ClawJSRuntimeLensSnapshot.OfficialContractFixtureReceipt?
     ) {
         guard let metadata = domains.first(where: { $0.domain == domain }) else {
-            return (false, nil, nil, nil, nil)
+            return (false, nil, nil, nil, nil, nil, nil)
         }
         return (
             metadata.writeBackApprovalGated == true,
             metadata.approvalGateFixtureStatus,
             metadata.approvalGateFixtureReceipt,
             metadata.liveEvidenceFixtureStatus,
-            metadata.liveEvidenceFixtureReceipt
+            metadata.liveEvidenceFixtureReceipt,
+            metadata.writeBackContractFixtureStatus,
+            metadata.writeBackContractFixtureReceipt
         )
     }
 
@@ -302,6 +312,22 @@ struct ClawJSRuntimeLensSupportContractPresentation: Equatable {
             receipt?.status.map { "status \($0)" },
             receipt?.redacted.map { "redacted \($0)" },
             receipt?.readOnly.map { "read only \($0)" }
+        ]
+        .compactMap { $0 }
+        return values.joined(separator: ", ")
+    }
+
+    private static func officialContractFixtureLabel(
+        status: String?,
+        receipt: ClawJSRuntimeLensSnapshot.OfficialContractFixtureReceipt?
+    ) -> String? {
+        guard let status else { return nil }
+        let values = [
+            status,
+            receipt?.receiptId.map { "receipt \($0)" },
+            receipt?.status.map { "status \($0)" },
+            receipt?.redacted.map { "redacted \($0)" },
+            receipt?.roundTripNativeVisibility.map { "round trip \($0)" }
         ]
         .compactMap { $0 }
         return values.joined(separator: ", ")

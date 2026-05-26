@@ -109,9 +109,11 @@ ecosystem manifest:
   gateway fixture is not mistaken for production native transport support.
 - Runtime Lens scope controls include runtime home, runtime workspace, config
   path, auth store, approval-gate fixture path, live evidence fixture path, and
+  production transport, write-back contract, native contract fixture paths, and
   loopback gateway URL. These controls are forwarded to ClawJS portal refreshes
-  so approval-gate receipts, approved redacted live-evidence receipts, and
-  gateway fixture state can be validated inside an isolated runtime scope.
+  so approval-gate receipts, approved redacted live-evidence receipts, official contract receipts,
+  and gateway fixture state can be validated inside an
+  isolated runtime scope.
   For Hermes, a loopback TUI Gateway URL can also materialize read-only session
   list/preview/resolve/history through `session.list`, `session.history`, and
   `session.status`; the lens must keep those reads `writesRuntime: false`, must
@@ -235,7 +237,9 @@ than silently rendering aggregate or stale state from another runtime.
 The lens may pass explicit runtime scope overrides to the ClawJS portal when a
 user needs to inspect an isolated runtime store: runtime home, runtime
 workspace, config path, auth store, approval-gate fixture path,
-live-evidence fixture path, and an approved loopback gateway URL.
+live-evidence fixture path, production transport fixture path,
+write-back contract fixture path, native contract fixture path, and an approved
+loopback gateway URL.
 Empty override fields preserve the default runtime scope. Overrides must be
 forwarded to both the selected runtime snapshot refresh and scoped session
 actions so UI validation can target the same runtime store and gateway fixture

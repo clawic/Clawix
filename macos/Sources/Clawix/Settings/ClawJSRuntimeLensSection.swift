@@ -19,6 +19,9 @@ struct ClawJSRuntimeLensSection: View {
     @State var runtimeLensAuthStore = ""
     @State var runtimeLensApprovalGateFixture = ""
     @State var runtimeLensLiveEvidenceFixture = ""
+    @State var runtimeLensProductionTransportFixture = ""
+    @State var runtimeLensWriteBackContractFixture = ""
+    @State var runtimeLensNativeContractFixture = ""
     @State var runtimeLensPendingConfirmedAction: String?
     @State var runtimeLensSessionActionsInFlight: Set<String> = []
     @State var runtimeLensPages: [ClawJSRuntimeLensPageKey: Int] = [:]
@@ -120,6 +123,9 @@ struct ClawJSRuntimeLensSection: View {
                     authStore: trimmedRuntimeLensInput(runtimeLensAuthStore),
                     approvalGateFixture: trimmedRuntimeLensInput(runtimeLensApprovalGateFixture),
                     liveEvidenceFixture: trimmedRuntimeLensInput(runtimeLensLiveEvidenceFixture),
+                    productionTransportFixture: trimmedRuntimeLensInput(runtimeLensProductionTransportFixture),
+                    writeBackContractFixture: trimmedRuntimeLensInput(runtimeLensWriteBackContractFixture),
+                    nativeContractFixture: trimmedRuntimeLensInput(runtimeLensNativeContractFixture),
                     gatewayURL: trimmedRuntimeLensInput(runtimeLensActionGatewayURL)
                 )
             } catch {
@@ -167,6 +173,9 @@ struct ClawJSRuntimeLensSection: View {
                 authStore: trimmedRuntimeLensInput(runtimeLensAuthStore),
                 approvalGateFixture: trimmedRuntimeLensInput(runtimeLensApprovalGateFixture),
                 liveEvidenceFixture: trimmedRuntimeLensInput(runtimeLensLiveEvidenceFixture),
+                productionTransportFixture: trimmedRuntimeLensInput(runtimeLensProductionTransportFixture),
+                writeBackContractFixture: trimmedRuntimeLensInput(runtimeLensWriteBackContractFixture),
+                nativeContractFixture: trimmedRuntimeLensInput(runtimeLensNativeContractFixture),
                 confirmRuntimeWrite: confirmRuntimeWrite
             )
             runtimeLensActionResult = runtimeLensSessionActionResultLabel(result)
