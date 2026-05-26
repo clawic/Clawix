@@ -74,7 +74,7 @@
     },
     {
       "id": "worst-case",
-      "status": "defined-not-baselined",
+      "status": "investigation-baseline-captured",
       "calibrationRole": "opt-in nonlinear bottleneck discovery profile",
       "baselineAlias": "external-ui-baselines:macos/ux-trace/worst-case",
       "approvalStatus": "not-required-for-p0-baseline-approval"
