@@ -158,4 +158,48 @@ extension AppState {
         bounded.append(contentsOf: archived.prefix(Self.archivedSidebarLimit))
         return bounded
     }
+
+    func boundedSidebarChats(_ source: [Chat], preserving preservedId: UUID? = nil) -> [Chat] {
+        let active = source.filter { !$0.isArchived }
+        let pinnedCount = active.lazy.filter(\.isPinned).count
+        guard active.count > Self.sidebarBootstrapRecentLimit
+            || pinnedCount > Self.startupPinnedSessionLimit
+        else { return source }
+
+        let sorted = active.sorted { $0.createdAt > $1.createdAt }
+        var selectedIds = Set<UUID>()
+        var bounded: [Chat] = []
+        bounded.reserveCapacity(Self.sidebarBootstrapRecentLimit)
+
+        func append(_ chat: Chat) {
+            guard bounded.count < Self.sidebarBootstrapRecentLimit else { return }
+            guard selectedIds.insert(chat.id).inserted else { return }
+            bounded.append(chat)
+        }
+
+        if let preservedId,
+           let preserved = sorted.first(where: { $0.id == preservedId }) {
+            append(preserved)
+        }
+
+        for chat in sorted where chat.hasActiveTurn {
+            append(chat)
+        }
+
+        var emittedPinned = bounded.filter(\.isPinned).count
+        for chat in sorted where chat.isPinned && !chat.hasActiveTurn {
+            guard emittedPinned < Self.startupPinnedSessionLimit else { break }
+            let before = bounded.count
+            append(chat)
+            if bounded.count > before {
+                emittedPinned += 1
+            }
+        }
+
+        for chat in sorted where !chat.isPinned && !chat.hasActiveTurn {
+            append(chat)
+        }
+
+        return bounded
+    }
 }

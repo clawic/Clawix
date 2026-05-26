@@ -570,6 +570,7 @@ extension AppState {
         } else {
             cachedWireSessions.append(wire)
         }
+        cachedWireSessions = boundedSidebarWireSessions(deduplicatedWireSessions(cachedWireSessions))
         withAnimation(.easeOut(duration: 0.20)) {
             if wire.isArchived {
                 let old = chats.first(where: { $0.id == id }) ?? archivedChats.first(where: { $0.id == id })
@@ -580,19 +581,17 @@ extension AppState {
                 } else {
                     archivedChats.insert(chat, at: 0)
                 }
-                return
-            }
-            if let archivedIndex = archivedChats.firstIndex(where: { $0.id == id }) {
+            } else if let archivedIndex = archivedChats.firstIndex(where: { $0.id == id }) {
                 let chat = chat(from: wire, old: archivedChats[archivedIndex])
                 archivedChats.remove(at: archivedIndex)
                 chats.insert(chat, at: 0)
-                return
-            }
-            if let idx = chats.firstIndex(where: { $0.id == id }) {
+            } else if let idx = chats.firstIndex(where: { $0.id == id }) {
                 chats[idx] = chat(from: wire, old: chats[idx])
             } else {
                 chats.insert(chat(from: wire, old: nil), at: 0)
             }
+            chats = boundedSidebarChats(chats, preserving: id)
+            archivedChats = Array(archivedChats.prefix(Self.archivedSidebarLimit))
         }
     }
 

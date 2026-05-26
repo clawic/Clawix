@@ -38,6 +38,7 @@ extension AppState {
             } else {
                 chats.insert(snapshot, at: 0)
             }
+            chats = boundedSidebarChats(chats, preserving: chatId)
             archivedChats.removeAll { $0.id == chatId }
         }
         syncingLegacyChatsFromStore = false
@@ -45,7 +46,13 @@ extension AppState {
 
     func replaceLegacyChatsFromStore() {
         syncingLegacyChatsFromStore = true
-        chats = chatStore.activeSnapshots
+        let preservingId: UUID?
+        if case let .chat(id) = currentRoute {
+            preservingId = id
+        } else {
+            preservingId = nil
+        }
+        chats = boundedSidebarChats(chatStore.activeSnapshots, preserving: preservingId)
         archivedChats = chatStore.archivedSnapshots
         syncingLegacyChatsFromStore = false
     }

@@ -169,6 +169,30 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertTrue(state.chats.contains { $0.clawixThreadId == "thread-\(activeCount - 1)" })
     }
 
+    func testApplyDaemonChatBoundsIndividualUpdates() {
+        let state = AppState()
+        let baseDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let activeCount = AppState.sidebarBootstrapRecentLimit + 150
+        let pinnedCount = AppState.startupPinnedSessionLimit + 50
+
+        for index in 0..<activeCount {
+            let date = baseDate.addingTimeInterval(TimeInterval(index))
+            state.applyDaemonChat(WireSession(
+                id: UUID().uuidString,
+                title: "Thread \(index)",
+                createdAt: date,
+                isPinned: index < pinnedCount,
+                lastMessageAt: date,
+                threadId: "thread-\(index)"
+            ))
+        }
+
+        XCTAssertEqual(state.chats.count, AppState.sidebarBootstrapRecentLimit)
+        XCTAssertEqual(state.chats.filter(\.isPinned).count, AppState.startupPinnedSessionLimit)
+        XCTAssertLessThanOrEqual(state.cachedWireSessions.count, AppState.sidebarBootstrapRecentLimit)
+        XCTAssertTrue(state.chats.contains { $0.clawixThreadId == "thread-\(activeCount - 1)" })
+    }
+
     func testApplyThreadsBoundsRuntimeSidebarSnapshot() {
         let state = AppState()
         let activeCount = AppState.sidebarBootstrapRecentLimit + 150
