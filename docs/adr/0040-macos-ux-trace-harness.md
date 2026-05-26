@@ -104,7 +104,7 @@ hash-referenced, harness-disabled, measured, and numerically comparable.
   artifact-index existence/completeness, metrics/failures artifact shape,
   run/suite artifact identity and run build-context shape, suite run array/count/path shape,
   metric-to-KPI-registry priority/surface binding, KPI-specific metric event
-  references, run/scenario/step lifecycle event consistency, run/suite/event
+  references, event schema/timestamp shape, run/scenario/step lifecycle event consistency, run/suite/event
   time-range consistency, suite status
   derivation from child runs, gated comparison-to-failure correlation, bidirectional
   failure-to-timeline correlation with unique failure identities, enforceable gate exit policy,

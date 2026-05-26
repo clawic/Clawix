@@ -701,9 +701,11 @@ function validateRun(runDir, schema, options = {}) {
   for (const [index, event] of events.entries()) {
     const label = `events.jsonl:${index + 1}`;
     requireFields(failures, event, label, schema.eventRequiredFields);
+    if (event.schemaVersion !== 1) fail(failures, `${label}.schemaVersion must be 1`);
     if (event.runId !== run.runId) fail(failures, `${label}.runId must match run.json`);
     if (event.scenarioId !== run.scenarioId) fail(failures, `${label}.scenarioId must match run.json`);
     if (event.fixtureProfile !== run.fixtureProfile) fail(failures, `${label}.fixtureProfile must match run.json`);
+    if (!Number.isFinite(Number(event.timestampMonotonicNs))) fail(failures, `${label}.timestampMonotonicNs must be numeric`);
     const eventWallClockMs = parseIsoTimestamp(failures, event.timestampWallClock, `${label}.timestampWallClock`);
     if (Number.isFinite(eventWallClockMs) && Number.isFinite(runTimeRange.startedAtMs) && eventWallClockMs < runTimeRange.startedAtMs) {
       fail(failures, `${label}.timestampWallClock must not be before run.json.startedAt`);
@@ -877,6 +879,8 @@ function validateRun(runDir, schema, options = {}) {
       "redactedState",
       "privateBoundary",
     ]);
+    if (state.schemaVersion !== 1) fail(failures, `${ref}.schemaVersion must be 1`);
+    if (!Number.isInteger(state.sequence) || state.sequence <= 0) fail(failures, `${ref}.sequence must be a positive integer`);
     if (state.runId !== run.runId) fail(failures, `${ref}.runId must match run.json`);
     validatePrivateBoundary(failures, state.privateBoundary, ref);
   }

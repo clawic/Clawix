@@ -361,13 +361,17 @@ samples and null percentile fields. Run metric rows must include
 non-empty `evidenceEventRefs` and at least one referenced timeline event must
 carry the same KPI ID, keeping aggregate numbers tied to action and visual
 condition evidence. Lifecycle events are strict: each run timeline has one
-`run.started` and one `run.completed`, `run.completed.status` must match
-`run.json.status`, and a started scenario must complete once. Run and suite
+`run.started` and one `run.completed`, every event row must declare
+`schemaVersion: 1` plus numeric `timestampMonotonicNs`,
+`run.completed.status` must match `run.json.status`, and a started scenario
+must complete once. Run and suite
 time ranges must use valid ISO timestamps, `finishedAt` cannot precede
 `startedAt`, event wall-clock timestamps must stay inside the run range, and
 child run ranges must stay inside the suite range. Each measured
 step must also have one `step.started`, one `action.dispatched`, and exactly
-one terminal `step.completed` or `step.failed` in sequence order. The runner also normalizes
+one terminal `step.completed` or `step.failed` in sequence order. Redacted
+failure UI state sidecar rows must also declare `schemaVersion: 1` and positive
+sequence numbers. The runner also normalizes
 available diagnostics into `geometry.sample`, `scroll.sample`,
 `render.window`, `hitch.sample`, `resource.sample`, `database.sample`, and
 `bridge.sample` events so agents can query performance facts without opening

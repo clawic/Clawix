@@ -255,7 +255,7 @@
     "purpose": "Metric rows must remain auditable back to action/visual-condition timeline evidence instead of only reporting aggregate numbers."
   },
   "eventLifecycleContract": {
-    "policy": "Each run evidence timeline must contain exactly one run.started and one run.completed event; run.completed.status must match run.json.status. If scenario.started is emitted, exactly one scenario.completed event must also be emitted. Each measured step must have exactly one step.started, exactly one action.dispatched, and exactly one terminal step.completed or step.failed event in sequence order.",
+    "policy": "Each run evidence timeline event must declare schemaVersion 1 and a numeric timestampMonotonicNs. The timeline must contain exactly one run.started and one run.completed event; run.completed.status must match run.json.status. If scenario.started is emitted, exactly one scenario.completed event must also be emitted. Each measured step must have exactly one step.started, exactly one action.dispatched, and exactly one terminal step.completed or step.failed event in sequence order.",
     "purpose": "The JSON summary and timeline lifecycle must describe the same run outcome."
   },
   "timeRangeContract": {
@@ -376,7 +376,7 @@
     "requiredWhenFinalUIStateExists": true,
     "maxControlsPerState": 200,
     "maxBytesPerRun": 16777216,
-    "contentPolicy": "Public artifacts must store redacted UI state only: stable trace surface IDs, enum-like roles/sources, geometry, scroll/resource numbers, booleans, and hashes/lengths for readable strings or dynamic identifiers."
+    "contentPolicy": "Sidecar rows must declare schemaVersion 1 and positive sequence values. Public artifacts must store redacted UI state only: stable trace surface IDs, enum-like roles/sources, geometry, scroll/resource numbers, booleans, and hashes/lengths for readable strings or dynamic identifiers."
   },
   "normalizedSampleEvents": {
     "purpose": "The runner must convert app/control-bus payload diagnostics into queryable event rows instead of leaving resource, hitch, geometry, scroll, render-window, database, or bridge facts only inside opaque payload hashes.",

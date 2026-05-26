@@ -782,7 +782,9 @@ if (evidenceSchema) {
   }
   requireFields(evidenceSchema.eventLifecycleContract, `${evidenceSchemaPath}.eventLifecycleContract`, ["policy", "purpose"]);
   if (
-    !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("exactly one run.started")
+    !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("schemaVersion 1")
+    || !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("numeric timestampMonotonicNs")
+    || !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("exactly one run.started")
     || !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("run.completed.status must match run.json.status")
     || !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("exactly one step.started")
     || !String(evidenceSchema.eventLifecycleContract?.policy ?? "").includes("exactly one terminal step.completed or step.failed")
@@ -903,6 +905,12 @@ if (evidenceSchema) {
   }
   if (!String(evidenceSchema.failureStateSidecar?.contentPolicy ?? "").includes("hashes/lengths")) {
     fail(`${evidenceSchemaPath}.failureStateSidecar.contentPolicy must require hashes/lengths for readable strings`);
+  }
+  if (
+    !String(evidenceSchema.failureStateSidecar?.contentPolicy ?? "").includes("schemaVersion 1")
+    || !String(evidenceSchema.failureStateSidecar?.contentPolicy ?? "").includes("positive sequence")
+  ) {
+    fail(`${evidenceSchemaPath}.failureStateSidecar.contentPolicy must require sidecar schema and sequence identity`);
   }
   requireUniqueStringArray(requireArray(evidenceSchema.normalizedSampleEvents?.eventTypes, `${evidenceSchemaPath}.normalizedSampleEvents.eventTypes`), `${evidenceSchemaPath}.normalizedSampleEvents.eventTypes`, [
     "geometry.sample",
@@ -1222,6 +1230,8 @@ if (evidenceVerifierSource) {
     "sampleCount must be 0 when status is missing_sample",
     "evidenceEventRefs must include at least one event ref",
     "evidenceEventRefs must include an event for the same KPI",
+    ".schemaVersion must be 1",
+    ".timestampMonotonicNs must be numeric",
     "run.completed status must match run.json.status",
     "scenario.started requires exactly one scenario.completed",
     "must have exactly one action.dispatched",
@@ -1251,6 +1261,7 @@ if (evidenceVerifierSource) {
     "must have a matching step.failed event",
     "step.failed must include a failure object",
     "step.failed must have a matching failures.json row",
+    ".sequence must be a positive integer",
     "step.failed ${key} must be unique",
     "duplicates failure identity",
     "contains row not emitted by child runs",
