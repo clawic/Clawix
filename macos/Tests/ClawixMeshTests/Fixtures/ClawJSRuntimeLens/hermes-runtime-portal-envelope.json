@@ -1787,7 +1787,7 @@
           "persistence": "index_and_shadow_when_safe",
           "relation": "native_projection",
           "lossPolicy": "preserve_when_safe",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "officialCommands": [
             "hermes",
@@ -2264,7 +2264,7 @@
           "persistence": "index_only",
           "relation": "inventory_projection",
           "lossPolicy": "no_auto_import",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "snapshot_required",
           "officialCommands": [
             "hermes skills browse",
@@ -2344,7 +2344,7 @@
           "persistence": "sensitive_index",
           "relation": "sensitive_projection",
           "lossPolicy": "metadata_default",
-          "writeBackPolicy": "blocked_until_policy",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "officialCommands": [
             "hermes memory setup",
@@ -2826,7 +2826,7 @@
           "persistence": "redacted_snapshot",
           "relation": "provider_projection",
           "lossPolicy": "redacted_only",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "officialCommands": [
             "hermes model",
@@ -3185,7 +3185,7 @@
           "persistence": "redacted_snapshot",
           "relation": "secret_ref_projection",
           "lossPolicy": "no_plaintext",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "secret_guard",
           "officialCommands": [
             "hermes auth",
@@ -3282,7 +3282,7 @@
           "persistence": "index_only",
           "relation": "model_projection",
           "lossPolicy": "native_names_preserved",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "officialCommands": [
             "hermes model",
@@ -3350,7 +3350,7 @@
           "persistence": "index_only",
           "relation": "scheduler_projection",
           "lossPolicy": "index_only",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "officialCommands": [
             "hermes cron list",
@@ -3445,7 +3445,7 @@
           "persistence": "index_only",
           "relation": "inventory_projection",
           "lossPolicy": "no_auto_enable",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "officialCommands": [
             "hermes plugins",
@@ -3592,7 +3592,7 @@
           "persistence": "status_snapshot",
           "relation": "status_projection",
           "lossPolicy": "status_snapshot",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "officialCommands": [
             "hermes gateway",
@@ -3871,7 +3871,7 @@
           "persistence": "redacted_snapshot",
           "relation": "config_projection",
           "lossPolicy": "redacted_only",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "config_fixture_required",
           "officialCommands": [
             "hermes config show",
@@ -4141,7 +4141,7 @@
         "persistence": "index_and_shadow_when_safe",
         "relation": "native_projection",
         "lossPolicy": "preserve_when_safe",
-        "writeBackPolicy": "blocked_until_fixture_coverage",
+        "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
         "writeBackAllowed": false,
         "validation": "fixture_required",
         "externalPending": false,
@@ -4217,7 +4217,7 @@
         "persistence": "index_only",
         "relation": "inventory_projection",
         "lossPolicy": "no_auto_import",
-        "writeBackPolicy": "blocked_until_fixture_coverage",
+        "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
         "writeBackAllowed": false,
         "validation": "snapshot_required",
         "externalPending": false,
@@ -4295,7 +4295,7 @@
         "persistence": "sensitive_index",
         "relation": "sensitive_projection",
         "lossPolicy": "metadata_default",
-        "writeBackPolicy": "blocked_until_policy",
+        "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
         "writeBackAllowed": false,
         "validation": "fixture_required",
         "externalPending": false,
@@ -4433,7 +4433,7 @@
         "persistence": "redacted_snapshot",
         "relation": "provider_projection",
         "lossPolicy": "redacted_only",
-        "writeBackPolicy": "blocked_until_fixture_coverage",
+        "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
         "writeBackAllowed": false,
         "validation": "fixture_required",
         "externalPending": false,
@@ -4502,7 +4502,7 @@
         "persistence": "redacted_snapshot",
         "relation": "secret_ref_projection",
         "lossPolicy": "no_plaintext",
-        "writeBackPolicy": "blocked_until_fixture_coverage",
+        "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
         "writeBackAllowed": false,
         "validation": "secret_guard",
         "externalPending": false,
@@ -4574,7 +4574,7 @@
         "persistence": "index_only",
         "relation": "model_projection",
         "lossPolicy": "native_names_preserved",
-        "writeBackPolicy": "blocked_until_fixture_coverage",
+        "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
         "writeBackAllowed": false,
         "validation": "fixture_required",
         "externalPending": false,
@@ -4641,7 +4641,7 @@
         "persistence": "index_only",
         "relation": "scheduler_projection",
         "lossPolicy": "index_only",
-        "writeBackPolicy": "blocked_until_fixture_coverage",
+        "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
         "writeBackAllowed": false,
         "validation": "fixture_required",
         "externalPending": false,
@@ -4712,7 +4712,7 @@
         "persistence": "index_only",
         "relation": "inventory_projection",
         "lossPolicy": "no_auto_enable",
-        "writeBackPolicy": "blocked_until_fixture_coverage",
+        "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
         "writeBackAllowed": false,
         "validation": "fixture_required",
         "externalPending": false,
@@ -4790,7 +4790,7 @@
         "persistence": "status_snapshot",
         "relation": "status_projection",
         "lossPolicy": "status_snapshot",
-        "writeBackPolicy": "blocked_until_fixture_coverage",
+        "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
         "writeBackAllowed": false,
         "validation": "fixture_required",
         "externalPending": false,
@@ -4951,7 +4951,7 @@
         "persistence": "redacted_snapshot",
         "relation": "config_projection",
         "lossPolicy": "redacted_only",
-        "writeBackPolicy": "blocked_until_fixture_coverage",
+        "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
         "writeBackAllowed": false,
         "validation": "config_fixture_required",
         "externalPending": false,
@@ -6228,7 +6228,7 @@
           "status": "error",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "writeBackAllowed": false,
           "writeBackApprovalGated": false,
           "approvalGateFixtureStatus": "not_required",
@@ -6282,7 +6282,7 @@
           "status": "degraded",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "writeBackAllowed": false,
           "writeBackApprovalGated": false,
           "approvalGateFixtureStatus": "not_required",
@@ -6323,7 +6323,7 @@
           "status": "ready",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
-          "writeBackPolicy": "blocked_until_policy",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "writeBackAllowed": false,
           "writeBackApprovalGated": false,
           "approvalGateFixtureStatus": "not_required",
@@ -6404,7 +6404,7 @@
           "status": "degraded",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "writeBackAllowed": false,
           "writeBackApprovalGated": false,
           "approvalGateFixtureStatus": "not_required",
@@ -6450,7 +6450,7 @@
           "status": "degraded",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "writeBackAllowed": false,
           "writeBackApprovalGated": false,
           "approvalGateFixtureStatus": "not_required",
@@ -6496,7 +6496,7 @@
           "status": "degraded",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "writeBackAllowed": false,
           "writeBackApprovalGated": false,
           "approvalGateFixtureStatus": "not_required",
@@ -6542,7 +6542,7 @@
           "status": "degraded",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "writeBackAllowed": false,
           "writeBackApprovalGated": false,
           "approvalGateFixtureStatus": "not_required",
@@ -6583,7 +6583,7 @@
           "status": "degraded",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "writeBackAllowed": false,
           "writeBackApprovalGated": false,
           "approvalGateFixtureStatus": "not_required",
@@ -6624,7 +6624,7 @@
           "status": "degraded",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "writeBackAllowed": false,
           "writeBackApprovalGated": false,
           "approvalGateFixtureStatus": "not_required",
@@ -6747,7 +6747,7 @@
           "status": "ready",
           "canonicalAuthority": "runtime",
           "nativeAuthority": "runtime",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "writeBackAllowed": false,
           "writeBackApprovalGated": false,
           "approvalGateFixtureStatus": "not_required",
@@ -6817,8 +6817,7 @@
           "config_projection": 1
         },
         "writeBackPolicyCounts": {
-          "blocked_until_fixture_coverage": 9,
-          "blocked_until_policy": 1,
+          "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence": 10,
           "external_pending_live_accounts": 1,
           "safe_repair_only_after_approval": 1,
           "explicit_approval_only": 1
@@ -7064,7 +7063,7 @@
             "native_action_contract"
           ],
           "projectionDisposition": "read_projection_available_write_back_blocked",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "blockerClasses": [
             "direct_blocker"
@@ -7101,7 +7100,7 @@
             "product_blocked_claim"
           ],
           "projectionDisposition": "read_projection_available_write_back_blocked",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "snapshot_required",
           "blockerClasses": [
             "direct_blocker"
@@ -7132,7 +7131,7 @@
             "product_blocked_claim"
           ],
           "projectionDisposition": "read_projection_available_write_back_blocked",
-          "writeBackPolicy": "blocked_until_policy",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "blockerClasses": [
             "direct_blocker"
@@ -7194,7 +7193,7 @@
             "product_blocked_claim"
           ],
           "projectionDisposition": "read_projection_available_live_evidence_pending",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_and_external_pending_live",
           "blockerClasses": [
             "external_pending",
@@ -7229,7 +7228,7 @@
             "product_blocked_claim"
           ],
           "projectionDisposition": "read_projection_available_live_evidence_pending",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "secret_guard_and_external_pending_live_credentials",
           "blockerClasses": [
             "external_pending",
@@ -7264,7 +7263,7 @@
             "product_blocked_claim"
           ],
           "projectionDisposition": "read_projection_available_live_evidence_pending",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_and_external_pending_provider_calls",
           "blockerClasses": [
             "external_pending",
@@ -7298,7 +7297,7 @@
             "product_blocked_claim"
           ],
           "projectionDisposition": "read_projection_available_write_back_blocked",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "blockerClasses": [
             "direct_blocker"
@@ -7329,7 +7328,7 @@
             "product_blocked_claim"
           ],
           "projectionDisposition": "read_projection_available_write_back_blocked",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "blockerClasses": [
             "direct_blocker"
@@ -7360,7 +7359,7 @@
             "product_blocked_claim"
           ],
           "projectionDisposition": "read_projection_available_write_back_blocked",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "fixture_required",
           "blockerClasses": [
             "direct_blocker"
@@ -7453,7 +7452,7 @@
             "product_blocked_claim"
           ],
           "projectionDisposition": "read_projection_available_write_back_blocked",
-          "writeBackPolicy": "blocked_until_fixture_coverage",
+          "writeBackPolicy": "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence",
           "validation": "config_fixture_required",
           "blockerClasses": [
             "direct_blocker"

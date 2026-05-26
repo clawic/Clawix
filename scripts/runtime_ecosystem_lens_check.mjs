@@ -156,6 +156,7 @@ if (!exists(hermesFixturePath)) {
   const support = fixture?.data?.support;
   const readiness = supportAudit?.evidenceReadinessSummary;
   const domains = supportAudit?.domains;
+  const hermesWriteBackPolicy = "blocked_until_official_runtime_write_back_contract_fixture_and_round_trip_evidence";
   for (const summaryFragment of ["native write-back contracts", "approval-gate receipts", "TUI Gateway production transport policy", "channel/provider/auth/model evidence"]) {
     requireEqual(support?.ecosystem?.summary?.includes(summaryFragment), true, `Hermes fixture support summary includes ${summaryFragment}`);
     requireEqual(supportAudit?.summary?.includes(summaryFragment), true, `Hermes fixture support audit summary includes ${summaryFragment}`);
@@ -190,6 +191,9 @@ if (!exists(hermesFixturePath)) {
     requireEqual(readiness.productBlockedCount, 18, "Hermes fixture product-blocked count");
     requireEqual(readiness.safeDefaultCounts?.keep_unpromoted_and_do_not_synthesize_runtime_state, 14, "Hermes fixture generic unpromoted safe-default count");
     requireEqual(readiness.safeDefaultCounts?.keep_local_overlay_and_do_not_write_runtime_pin_state, 2, "Hermes fixture local overlay pin safe-default count");
+    requireEqual(supportAudit?.syncPolicySummary?.writeBackPolicyCounts?.[hermesWriteBackPolicy], 10, "Hermes fixture precise official write-back policy count");
+    requireEqual(supportAudit?.syncPolicySummary?.writeBackPolicyCounts?.blocked_until_fixture_coverage, undefined, "Hermes fixture does not use generic fixture-coverage write-back policy");
+    requireEqual(supportAudit?.syncPolicySummary?.writeBackPolicyCounts?.blocked_until_policy, undefined, "Hermes fixture does not use generic blocked-until-policy write-back policy");
     requireArrayEquals(readiness.approvalGateRequirementIds, [
       "hermes.doctorCompat.approval_gate_evidence",
       "hermes.sandboxPermissions.approval_gate_evidence"
