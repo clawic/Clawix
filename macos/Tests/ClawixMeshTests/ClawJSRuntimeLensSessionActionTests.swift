@@ -420,6 +420,148 @@ final class ClawJSRuntimeLensSessionActionTests: XCTestCase {
     }
 
     @MainActor
+    func testRuntimeLensClientSurfacesHermesProductionEndpointPolicyBlock() async throws {
+        var requested: [[String]] = []
+        let client = ClawJSRuntimeLensClient(runner: .init { args in
+            requested.append(args)
+            return .init(
+                data: """
+                {
+                  "data": {
+                    "runtimeId": "hermes",
+                    "domain": "sessions",
+                    "action": "send",
+                    "status": "blocked",
+                    "authority": "runtime",
+                    "writesRuntime": false,
+                    "wouldWriteRuntime": true,
+                    "writesLocalOverlay": false,
+                    "reason": "Hermes TUI gateway writes are currently limited to explicit loopback fixture endpoints.",
+                    "blockerClass": "direct_blocker",
+                    "officialContractRequired": false,
+                    "officialContractKnown": true,
+                    "officialProtocol": "tui_gateway_json_rpc",
+                    "officialMethod": "prompt.submit",
+                    "officialContractSource": "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
+                    "integrationRequired": true,
+                    "fixtureRequired": true,
+                    "requiredEvidence": [
+                      "tui_gateway_prompt_submit_fixture",
+                      "non_destructive_fixture",
+                      "confirmation_or_dry_run_policy",
+                      "round_trip_native_visibility"
+                    ],
+                    "riskControls": [
+                      "no_silent_runtime_write",
+                      "no_direct_runtime_store_mutation",
+                      "local_overlay_only_until_contract_exists"
+                    ],
+                    "writeBackStatus": "blocked_until_tui_gateway_wrapper_fixture",
+                    "fallbackPolicy": "do_not_synthesize_native_runtime_action",
+                    "supportResolution": "explicitly_product_blocked_not_a_silent_gap",
+                    "productDecision": "production_gateway_transport_blocked_until_lifecycle_policy_and_approval",
+                    "userVisibleContract": "non_loopback_gateway_endpoint_rejected_until_production_transport_lifecycle_policy",
+                    "claimEffect": "blocks_recommended_production_native_parity",
+                    "promotionGate": "session_action_claim_remains_blocked_until_production_transport_lifecycle_policy_and_native_round_trip_evidence_exist",
+                    "safeDefault": "fixture_only_no_production_transport_contact",
+                    "commandShape": "runtime hermes sessions send --session-key <id> --message <text> --confirm-runtime-write --json",
+                    "evidenceRequirementId": "hermes.sessions.send.action_contract",
+                    "evidenceReentryStatus": "blocked_until_tui_gateway_wrapper_fixture",
+                    "transportPolicyId": "hermes.tui_gateway.transport_lifecycle_policy",
+                    "transportPolicy": {
+                      "id": "hermes.tui_gateway.transport_lifecycle_policy",
+                      "protocol": "tui_gateway_json_rpc",
+                      "fixtureTransport": "loopback_http_json_rpc_fixture",
+                      "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+                      "lifecycleStatus": "external_user_managed_not_started_by_claw",
+                      "lifecycleOwner": "hermes_runtime_or_user",
+                      "allowedEndpointClassesWithoutApproval": [
+                        "loopback_http_json_rpc_fixture"
+                      ],
+                      "configuredEndpointClass": "non_loopback_endpoint_rejected",
+                      "endpointConfigured": true,
+                      "loopbackConfigured": false,
+                      "confirmationPolicy": "requires_confirm_runtime_write",
+                      "startupPolicy": "no_auto_start_stop_or_install_from_runtime_lens",
+                      "mutationPolicy": "no_production_gateway_mutation_without_explicit_approval_and_contract",
+                      "credentialPolicy": "no_credential_or_token_emission",
+                      "safeDefault": "fixture_only_no_production_transport_contact",
+                      "supportClaimEffect": "blocks_recommended_production_native_parity",
+                      "requiredEvidence": [
+                        "production_transport_lifecycle_policy",
+                        "approved_native_round_trip_evidence",
+                        "non_destructive_fixture",
+                        "no_plaintext_credential_token_evidence"
+                      ],
+                      "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+                    },
+                    "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
+                    "lifecycleStatus": "external_user_managed_not_started_by_claw",
+                    "requiredEndpoint": "loopback_http_json_rpc",
+                    "endpointPolicy": "non_loopback_endpoint_rejected_until_production_transport_lifecycle_policy",
+                    "approvalScope": "production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
+                    "productionTransportCommandShape": "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval",
+                    "doNotRunWithoutApproval": true,
+                    "claimBlockedUntil": "production_transport_lifecycle_policy_and_native_round_trip_evidence_attached"
+                  }
+                }
+                """.data(using: .utf8)!,
+                exitCode: 2
+            )
+        })
+
+        let result = try await client.runSessionAction(
+            runtime: .hermes,
+            action: "send",
+            sessionId: "prod-session",
+            message: "hi",
+            gatewayURL: "http://198.51.100.10:8080",
+            confirmRuntimeWrite: true
+        )
+
+        XCTAssertEqual(requested, [[
+            "runtime",
+            "hermes",
+            "sessions",
+            "send",
+            "--session-key",
+            "prod-session",
+            "--message",
+            "hi",
+            "--gateway-url",
+            "http://198.51.100.10:8080",
+            "--confirm-runtime-write",
+            "--json"
+        ]])
+        XCTAssertEqual(result.status, "blocked")
+        XCTAssertEqual(result.writesRuntime, false)
+        XCTAssertEqual(result.wouldWriteRuntime, true)
+        XCTAssertEqual(result.endpointPolicy, "non_loopback_endpoint_rejected_until_production_transport_lifecycle_policy")
+        XCTAssertEqual(result.approvalScope, "production_transport_lifecycle_policy_and_non_loopback_endpoint_approval")
+        XCTAssertEqual(result.productionTransportCommandShape, "blocked_until_approved_production_transport_lifecycle_policy_and_non_loopback_endpoint_approval")
+        XCTAssertEqual(result.safeDefault, "fixture_only_no_production_transport_contact")
+        XCTAssertEqual(result.doNotRunWithoutApproval, true)
+        XCTAssertEqual(result.claimBlockedUntil, "production_transport_lifecycle_policy_and_native_round_trip_evidence_attached")
+        XCTAssertEqual(result.productDecision, "production_gateway_transport_blocked_until_lifecycle_policy_and_approval")
+        XCTAssertEqual(result.userVisibleContract, "non_loopback_gateway_endpoint_rejected_until_production_transport_lifecycle_policy")
+        XCTAssertEqual(result.transportPolicy?.configuredEndpointClass, "non_loopback_endpoint_rejected")
+
+        let section = ClawJSRuntimeLensSection()
+        XCTAssertEqual(section.runtimeLensSessionActionResultLabel(result), "send blocked prompt.submit")
+        let details = section.runtimeLensSessionActionResultDetails(result)
+        XCTAssertTrue(details.contains {
+            $0.contains("endpoint policy non_loopback_endpoint_rejected_until_production_transport_lifecycle_policy")
+                && $0.contains("approval scope production_transport_lifecycle_policy_and_non_loopback_endpoint_approval")
+                && $0.contains("endpoint class non_loopback_endpoint_rejected")
+                && $0.contains("safe default fixture_only_no_production_transport_contact")
+                && $0.contains("do not run without approval true")
+                && $0.contains("claim blocked until production_transport_lifecycle_policy_and_native_round_trip_evidence_attached")
+                && $0.contains("user visible contract non_loopback_gateway_endpoint_rejected_until_production_transport_lifecycle_policy")
+                && $0.contains("product decision production_gateway_transport_blocked_until_lifecycle_policy_and_approval")
+        })
+    }
+
+    @MainActor
     func testRuntimeLensClientSurfacesHermesConfirmationRequiredWithoutGatewayContact() async throws {
         var requested: [[String]] = []
         let client = ClawJSRuntimeLensClient(runner: .init { args in

@@ -1057,6 +1057,26 @@ for (const snippet of [
 }
 
 for (const snippet of [
+  "endpointPolicy: String?",
+  "approvalScope: String?",
+  "productionTransportCommandShape: String?",
+  "doNotRunWithoutApproval: Bool?",
+  "claimBlockedUntil: String?",
+  "ClawJSRuntimeLensSnapshot.TransportPolicy?"
+]) {
+  requireSnippet("macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensClient.swift", snippet);
+}
+
+for (const snippet of [
+  "result.transportPolicy?.configuredEndpointClass",
+  "policyFields.append(\"endpoint class \\(configuredEndpointClass)\")",
+  "policyFields.append(\"user visible contract \\(userVisibleContract)\")",
+  "policyFields.append(\"product decision \\(productDecision)\")"
+]) {
+  requireSnippet("macos/Sources/Clawix/Settings/ClawJSRuntimeLensSection.swift", snippet);
+}
+
+for (const snippet of [
   "snapshot.commands?.resourceDomains",
   "ClawJSRuntimeLensRuntimeSummaryPresentation.make",
   "runtimeSummaryPresentation.accessibilityLabel",
@@ -1222,6 +1242,11 @@ for (const snippet of [
   "XCTAssertEqual(readyForGateCheck.checkGateHelp, \"Check confirmation gate\")",
   "XCTAssertEqual(readyForGateCheck.confirmedRunHelp, \"confirmed run requires loopback gateway URL\")",
   "XCTAssertEqual(loopbackGateway.confirmedRunHelp, \"Run confirmed loopback fixture\")",
+  "XCTAssertEqual(result.endpointPolicy, \"non_loopback_endpoint_rejected_until_production_transport_lifecycle_policy\")",
+  "XCTAssertEqual(result.approvalScope, \"production_transport_lifecycle_policy_and_non_loopback_endpoint_approval\")",
+  "XCTAssertEqual(result.transportPolicy?.configuredEndpointClass, \"non_loopback_endpoint_rejected\")",
+  "XCTAssertEqual(result.doNotRunWithoutApproval, true)",
+  "XCTAssertEqual(result.claimBlockedUntil, \"production_transport_lifecycle_policy_and_native_round_trip_evidence_attached\")",
   "XCTAssertEqual(commandPresentation.nativeWriteBackBlockedCount, 6)",
   "XCTAssertEqual(commandPresentation.rows.first?.blockerClass, \"direct_blocker\")",
   "XCTAssertEqual(commandPresentation.rows.first?.nativeWriteBackFixtureRequired, true)",

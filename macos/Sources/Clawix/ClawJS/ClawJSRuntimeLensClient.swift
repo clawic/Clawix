@@ -803,7 +803,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let officialMethod: String?
         let officialContractSource: String?
         let requiredEvidence: [String]?
-        let transportPolicy: TransportPolicy?
+        let transportPolicy: ClawJSRuntimeLensSnapshot.TransportPolicy?
         let productionTransportStatus: String?
         let lifecycleStatus: String?
         let nativeWriteBackStatus: String?
@@ -1622,10 +1622,39 @@ struct ClawJSRuntimeLensClient {
         let writesRuntime: Bool
         let wouldWriteRuntime: Bool?
         let writesLocalOverlay: Bool?
+        let reason: String?
+        let blockerClass: String?
+        let officialContractRequired: Bool?
+        let officialContractKnown: Bool?
         let requiredFlag: String?
         let officialProtocol: String?
         let officialMethod: String?
         let officialContractSource: String?
+        let integrationRequired: Bool?
+        let fixtureRequired: Bool?
+        let requiredEvidence: [String]?
+        let riskControls: [String]?
+        let writeBackStatus: String?
+        let fallbackPolicy: String?
+        let supportResolution: String?
+        let productDecision: String?
+        let userVisibleContract: String?
+        let claimEffect: String?
+        let promotionGate: String?
+        let safeDefault: String?
+        let commandShape: String?
+        let evidenceRequirementId: String?
+        let evidenceReentryStatus: String?
+        let transportPolicyId: String?
+        let transportPolicy: ClawJSRuntimeLensSnapshot.TransportPolicy?
+        let productionTransportStatus: String?
+        let lifecycleStatus: String?
+        let requiredEndpoint: String?
+        let endpointPolicy: String?
+        let approvalScope: String?
+        let productionTransportCommandShape: String?
+        let doNotRunWithoutApproval: Bool?
+        let claimBlockedUntil: String?
         let result: Result?
 
         struct Result: Decodable, Equatable {

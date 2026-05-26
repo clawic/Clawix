@@ -187,12 +187,57 @@ struct ClawJSRuntimeLensSection: View {
             "writes runtime \(result.writesRuntime)",
             result.wouldWriteRuntime.map { "would write runtime \($0)" },
             result.writesLocalOverlay.map { "writes local overlay \($0)" },
+            result.blockerClass.map { "blocker \($0)" },
             result.requiredFlag.map { "required flag \($0)" },
             result.officialProtocol.map { "protocol \($0)" },
             result.officialMethod.map { "method \($0)" }
         ].compactMap { $0 }
         if !contractFields.isEmpty {
             details.append("action contract " + contractFields.joined(separator: ", "))
+        }
+
+        var policyFields: [String] = []
+        if let endpointPolicy = result.endpointPolicy {
+            policyFields.append("endpoint policy \(endpointPolicy)")
+        }
+        if let approvalScope = result.approvalScope {
+            policyFields.append("approval scope \(approvalScope)")
+        }
+        if let requiredEndpoint = result.requiredEndpoint {
+            policyFields.append("required endpoint \(requiredEndpoint)")
+        }
+        if let transportPolicyId = result.transportPolicyId {
+            policyFields.append("transport policy \(transportPolicyId)")
+        }
+        if let configuredEndpointClass = result.transportPolicy?.configuredEndpointClass {
+            policyFields.append("endpoint class \(configuredEndpointClass)")
+        }
+        if let productionTransportStatus = result.productionTransportStatus {
+            policyFields.append("production transport \(productionTransportStatus)")
+        }
+        if let lifecycleStatus = result.lifecycleStatus {
+            policyFields.append("lifecycle \(lifecycleStatus)")
+        }
+        if let safeDefault = result.safeDefault {
+            policyFields.append("safe default \(safeDefault)")
+        }
+        if let productionTransportCommandShape = result.productionTransportCommandShape {
+            policyFields.append("command shape \(productionTransportCommandShape)")
+        }
+        if let doNotRunWithoutApproval = result.doNotRunWithoutApproval {
+            policyFields.append("do not run without approval \(doNotRunWithoutApproval)")
+        }
+        if let claimBlockedUntil = result.claimBlockedUntil {
+            policyFields.append("claim blocked until \(claimBlockedUntil)")
+        }
+        if let userVisibleContract = result.userVisibleContract {
+            policyFields.append("user visible contract \(userVisibleContract)")
+        }
+        if let productDecision = result.productDecision {
+            policyFields.append("product decision \(productDecision)")
+        }
+        if !policyFields.isEmpty {
+            details.append("transport policy " + policyFields.joined(separator: ", "))
         }
 
         if let gatewayReceipt = result.result?.gatewayReceipt {
