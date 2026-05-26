@@ -850,16 +850,19 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let writesRuntime: Bool?
         let wouldWriteRuntime: Bool?
         let writesLocalOverlay: Bool?
+        let blockerClass: String?
         let nativeWriteBackStatus: String?
         let nativeWriteBackBlockerClass: String?
         let officialRuntimeWriteBackContractRequired: Bool?
         let officialRuntimeWriteBackContractKnown: Bool?
         let nativeWriteBackFixtureRequired: Bool?
         let nativeWriteBackSafeDefault: String?
+        let safeDefault: String?
         let userVisibleContract: String?
         let claimEffect: String?
         let supportResolution: String?
         let evidenceRequirementId: String?
+        let requiredEvidence: [String]?
         let nativeWriteBackContract: NativeWriteBackContract?
         let args: [String]?
 

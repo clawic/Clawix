@@ -6,9 +6,17 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
         let command: String
         let delegatesTo: String?
         let writeDisposition: String
+        let blockerClass: String?
         let nativeWriteBackStatus: String?
+        let nativeWriteBackBlockerClass: String?
+        let nativeWriteBackFixtureRequired: Bool?
         let nativeWriteBackSafeDefault: String?
+        let safeDefault: String?
+        let userVisibleContract: String?
+        let claimEffect: String?
+        let supportResolution: String?
         let evidenceRequirementId: String?
+        let requiredEvidenceLabel: String?
         let argumentCount: Int
         let argsLabel: String?
 
@@ -16,9 +24,17 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
             [
                 command,
                 "disposition \(writeDisposition)",
+                blockerClass.map { "blocker \($0)" },
                 nativeWriteBackStatus.map { "native write-back \($0)" },
+                nativeWriteBackBlockerClass.map { "native blocker \($0)" },
+                nativeWriteBackFixtureRequired.map { "fixture required \($0)" },
                 nativeWriteBackSafeDefault.map { "safe default \($0)" },
+                safeDefault.map { "safe default \($0)" },
+                userVisibleContract.map { "user visible contract \($0)" },
+                claimEffect.map { "claim effect \($0)" },
+                supportResolution.map { "support resolution \($0)" },
                 evidenceRequirementId.map { "evidence \($0)" },
+                requiredEvidenceLabel.map { "required evidence \($0)" },
                 "arguments \(argumentCount)",
                 argsLabel.map { "args \($0)" },
                 delegatesTo.map { "delegates to \($0)" }
@@ -72,9 +88,17 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
                 command: command.command,
                 delegatesTo: command.delegatesTo,
                 writeDisposition: writeDisposition(for: command),
+                blockerClass: command.blockerClass,
                 nativeWriteBackStatus: command.nativeWriteBackStatus,
+                nativeWriteBackBlockerClass: command.nativeWriteBackBlockerClass,
+                nativeWriteBackFixtureRequired: command.nativeWriteBackFixtureRequired,
                 nativeWriteBackSafeDefault: command.nativeWriteBackSafeDefault,
+                safeDefault: command.safeDefault,
+                userVisibleContract: command.userVisibleContract,
+                claimEffect: command.claimEffect,
+                supportResolution: command.supportResolution,
                 evidenceRequirementId: command.evidenceRequirementId,
+                requiredEvidenceLabel: listLabel(command.requiredEvidence, limit: 4),
                 argumentCount: command.args?.count ?? 0,
                 argsLabel: listLabel(command.args, limit: 8)
             )
