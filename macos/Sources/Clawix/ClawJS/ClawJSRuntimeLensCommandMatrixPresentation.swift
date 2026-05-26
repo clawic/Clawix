@@ -18,6 +18,8 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
         let evidenceRequirementId: String?
         let requiredEvidenceLabel: String?
         let transportPolicyId: String?
+        let officialTransportSurface: String?
+        let productionTransportBlocker: String?
         let productionTransportStatus: String?
         let lifecycleStatus: String?
         let productionTransportCommandShape: String?
@@ -44,6 +46,8 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
                 evidenceRequirementId.map { "evidence \($0)" },
                 requiredEvidenceLabel.map { "required evidence \($0)" },
                 transportPolicyId.map { "transport policy \($0)" },
+                officialTransportSurface.map { "official transport \($0)" },
+                productionTransportBlocker.map { "production blocker \($0)" },
                 productionTransportStatus.map { "production transport \($0)" },
                 lifecycleStatus.map { "lifecycle \($0)" },
                 productionTransportCommandShape.map { "production command \($0)" },
@@ -130,6 +134,8 @@ struct ClawJSRuntimeLensCommandMatrixPresentation: Equatable {
                 evidenceRequirementId: command.evidenceRequirementId,
                 requiredEvidenceLabel: listLabel(command.requiredEvidence, limit: 4),
                 transportPolicyId: command.transportPolicyId,
+                officialTransportSurface: command.transportPolicy?.officialTransportSurface,
+                productionTransportBlocker: command.transportPolicy?.productionTransportBlocker,
                 productionTransportStatus: command.productionTransportStatus,
                 lifecycleStatus: command.lifecycleStatus,
                 productionTransportCommandShape: command.productionTransportCommandShape,

@@ -403,8 +403,12 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
     struct TransportPolicy: Decodable, Equatable {
         let id: String?
         let protocolName: String?
+        let officialTransportSurface: String?
+        let officialTransportClasses: [String]?
+        let officialTransportSource: String?
         let fixtureTransport: String?
         let productionTransportStatus: String?
+        let productionTransportBlocker: String?
         let lifecycleStatus: String?
         let lifecycleOwner: String?
         let configuredEndpointClass: String?
@@ -422,8 +426,12 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         enum CodingKeys: String, CodingKey {
             case id
             case protocolName = "protocol"
+            case officialTransportSurface
+            case officialTransportClasses
+            case officialTransportSource
             case fixtureTransport
             case productionTransportStatus
+            case productionTransportBlocker
             case lifecycleStatus
             case lifecycleOwner
             case configuredEndpointClass

@@ -13,6 +13,8 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
         let officialMethod: String?
         let officialContractSource: String?
         let transportPolicyId: String?
+        let officialTransportSurface: String?
+        let productionTransportBlocker: String?
         let productionTransportStatus: String?
         let lifecycleStatus: String?
         let requiredEvidenceCount: Int
@@ -24,6 +26,8 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
         var detailLabel: String? {
             let transportValues = [
                 transportPolicyId.map { "transport policy \($0)" },
+                officialTransportSurface.map { "official transport \($0)" },
+                productionTransportBlocker.map { "production blocker \($0)" },
                 productionTransportStatus.map { "production transport \($0)" },
                 lifecycleStatus.map { "lifecycle \($0)" }
             ].compactMap { $0 }
@@ -57,6 +61,8 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 officialMethod.map { "official method \($0)" },
                 officialContractSource.map { "official contract source \($0)" },
                 transportPolicyId.map { "transport policy \($0)" },
+                officialTransportSurface.map { "official transport \($0)" },
+                productionTransportBlocker.map { "production blocker \($0)" },
                 productionTransportStatus.map { "production transport \($0)" },
                 lifecycleStatus.map { "lifecycle \($0)" },
                 "required evidence count \(requiredEvidenceCount)",
@@ -115,6 +121,8 @@ struct ClawJSRuntimeLensSessionActionPresentation: Equatable {
                 officialMethod: action.officialMethod,
                 officialContractSource: action.officialContractSource,
                 transportPolicyId: action.transportPolicy?.id,
+                officialTransportSurface: action.transportPolicy?.officialTransportSurface,
+                productionTransportBlocker: action.transportPolicy?.productionTransportBlocker,
                 productionTransportStatus: action.productionTransportStatus ?? action.transportPolicy?.productionTransportStatus,
                 lifecycleStatus: action.lifecycleStatus ?? action.transportPolicy?.lifecycleStatus,
                 requiredEvidenceCount: action.requiredEvidence?.count ?? 0,

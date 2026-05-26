@@ -635,6 +635,8 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
 
     private static func sessionActionDetailLines(_ row: ClawJSRuntimeLensSessionActionPresentation.Row) -> [String] {
         optionalLines([
+            row.officialTransportSurface.map { "official transport \($0)" },
+            row.productionTransportBlocker.map { "production blocker \($0)" },
             row.requiredEvidenceLabel,
             row.userVisibleContract.map { "user visible contract \($0)" },
             row.claimEffect.map { "claim effect \($0)" }
@@ -665,6 +667,8 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
             row.officialMethod.map { "official method \($0)" },
             row.officialContractSource.map { "official contract source \($0)" },
             row.transportPolicyId.map { "transport policy \($0)" },
+            row.officialTransportSurface.map { "official transport \($0)" },
+            row.productionTransportBlocker.map { "production blocker \($0)" },
             row.productionTransportStatus.map { "production transport \($0)" },
             row.lifecycleStatus.map { "lifecycle \($0)" },
             row.nativeWriteBackStatus.map { "native write-back \($0)" },
@@ -717,6 +721,8 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
             row.evidenceRequirementId.map { "evidence \($0)" },
             row.requiredEvidenceLabel.map { "required evidence \($0)" },
             row.transportPolicyId.map { "transport policy \($0)" },
+            row.officialTransportSurface.map { "official transport \($0)" },
+            row.productionTransportBlocker.map { "production blocker \($0)" },
             row.productionTransportStatus.map { "production transport \($0)" },
             row.lifecycleStatus.map { "lifecycle \($0)" },
             row.productionTransportCommandShape.map { "production command \($0)" },

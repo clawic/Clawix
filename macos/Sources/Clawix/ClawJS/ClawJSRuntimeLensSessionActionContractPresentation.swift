@@ -16,6 +16,8 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
         let officialMethod: String?
         let officialContractSource: String?
         let transportPolicyId: String?
+        let officialTransportSurface: String?
+        let productionTransportBlocker: String?
         let productionTransportStatus: String?
         let lifecycleStatus: String?
         let nativeWriteBackStatus: String?
@@ -34,6 +36,8 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 officialMethod,
                 officialContractSource,
                 transportPolicyId.map { "transport policy \($0)" },
+                officialTransportSurface.map { "official transport \($0)" },
+                productionTransportBlocker.map { "production blocker \($0)" },
                 productionTransportStatus.map { "production transport \($0)" },
                 lifecycleStatus.map { "lifecycle \($0)" },
                 nativeWriteBackStatus.map { "native write-back \($0)" },
@@ -63,6 +67,8 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 officialMethod.map { "official method \($0)" },
                 officialContractSource.map { "official contract source \($0)" },
                 transportPolicyId.map { "transport policy \($0)" },
+                officialTransportSurface.map { "official transport \($0)" },
+                productionTransportBlocker.map { "production blocker \($0)" },
                 productionTransportStatus.map { "production transport \($0)" },
                 lifecycleStatus.map { "lifecycle \($0)" },
                 nativeWriteBackStatus.map { "native write-back \($0)" },
@@ -146,6 +152,8 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 officialMethod: materialized?.officialMethod ?? contract?.officialMethod,
                 officialContractSource: materialized?.officialContractSource ?? contract?.officialContractSource,
                 transportPolicyId: materialized?.transportPolicy?.id ?? contract?.transportPolicy?.id,
+                officialTransportSurface: materialized?.transportPolicy?.officialTransportSurface ?? contract?.transportPolicy?.officialTransportSurface,
+                productionTransportBlocker: materialized?.transportPolicy?.productionTransportBlocker ?? contract?.transportPolicy?.productionTransportBlocker,
                 productionTransportStatus: materialized?.productionTransportStatus
                     ?? materialized?.transportPolicy?.productionTransportStatus
                     ?? contract?.productionTransportStatus

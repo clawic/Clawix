@@ -181,6 +181,9 @@ if (!exists(hermesFixturePath)) {
   requireEqual(supportAudit?.commandCoverageSummary?.supportImpact, "guarded_command_coverage_does_not_promote_support", "Hermes fixture support audit command coverage support impact");
   requireEqual(supportAudit?.finalPromotionReview?.commandCoverageSummary?.totalCommandCount, 44, "Hermes fixture promotion review command coverage count");
   requireEqual(supportAudit?.finalSupportClaimDecision?.commandCoverageSummary?.totalCommandCount, 44, "Hermes fixture final decision command coverage count");
+  requireEqual(fixture?.data?.domainData?.gateway?.tuiGatewayTransportPolicy?.officialTransportSurface, "stdio_or_websocket_json_rpc", "Hermes fixture TUI Gateway official transport surface");
+  requireEqual((fixture?.data?.domainData?.gateway?.tuiGatewayTransportPolicy?.officialTransportClasses ?? []).join(","), "stdio_json_rpc,websocket_json_rpc", "Hermes fixture TUI Gateway official transport classes");
+  requireEqual(fixture?.data?.domainData?.gateway?.tuiGatewayTransportPolicy?.productionTransportBlocker, "approval_required_for_non_loopback_endpoint_and_lifecycle_management", "Hermes fixture TUI Gateway production transport blocker");
   requireEqual(fixture?.data?.status?.capabilityMap?.memory?.status, "degraded", "Hermes fixture memory capability degrades when CLI is unavailable");
   requireEqual(fixture?.data?.domains?.find((entry) => entry.domain === "memory")?.status, "degraded", "Hermes fixture memory domain degrades when CLI is unavailable");
   requireEqual(fixture?.data?.status?.capabilityMap?.doctor?.status, "degraded", "Hermes fixture doctor capability degrades when CLI is unavailable");
@@ -855,6 +858,8 @@ for (const snippet of [
   "nativeWriteBackBlockedCount",
   "nativeWriteBackStatus",
   "transportPolicyId",
+  "officialTransportSurface",
+  "productionTransportBlocker",
   "productionTransportCommandShape",
   "doNotRunWithoutApproval",
   "claimBlockedUntil",
@@ -1155,7 +1160,10 @@ for (const snippet of [
   "productionTransportCommandShape: String?",
   "doNotRunWithoutApproval: Bool?",
   "claimBlockedUntil: String?",
-  "ClawJSRuntimeLensSnapshot.TransportPolicy?"
+  "ClawJSRuntimeLensSnapshot.TransportPolicy?",
+  "officialTransportSurface: String?",
+  "officialTransportClasses: [String]?",
+  "productionTransportBlocker: String?"
 ]) {
   requireSnippet("macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensClient.swift", snippet);
 }
