@@ -282,9 +282,10 @@ enum ClxControlHandlers {
         guard let appState else {
             return ClxControlResult(status: 503, json: ["error": "app state unavailable"])
         }
-        guard let chatId = ensureTraceChatId(args, appState: appState) else {
+        guard let chatId = traceChatIdForMockSend(args, appState: appState) else {
             return badRequest("missing current chat, id, threadId, title, index, or fixture chat")
         }
+        appState.hydrateHistoryIfNeeded(chatId: chatId, blocking: true)
         let composerText = appState.composer.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let text = (args["text"] as? String).flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
             ?? (composerText.isEmpty ? nil : composerText)
@@ -299,6 +300,10 @@ enum ClxControlHandlers {
         appState.composer.attachments = []
         appState.syncLegacyChatFromStore(chatId: chatId)
         let assistantId = appState.appendAssistantPlaceholder(chatId: chatId)
+        if assistantId != nil {
+            appState.appendAssistantDelta(chatId: chatId, delta: "Preparing mock response...")
+        }
+        _ = scrollRegisteredToBottom(id: "chat.transcript.scroll")
         RenderProbe.mark(
             "UXTraceMockSend",
             fields: [
@@ -316,6 +321,29 @@ enum ClxControlHandlers {
             "assistantMessage": assistantId?.uuidString ?? "",
             "elapsedMs": (CACurrentMediaTime() - started) * 1000,
         ])
+    }
+
+    private static func traceChatIdForMockSend(_ args: [String: Any], appState: AppState) -> UUID? {
+        let hasExplicitChatTarget = ["chatId", "threadId", "title", "index"].contains { args[$0] != nil }
+            || (args["id"] as? String).flatMap(UUID.init(uuidString:)) != nil
+        if hasExplicitChatTarget {
+            return ensureTraceChatId(args, appState: appState)
+        }
+        if let current = appState.currentChatId,
+           let chat = appState.chat(byId: current),
+           chat.rolloutPath == nil,
+           chat.historyHydrated {
+            return ensureTraceChatId(["id": current.uuidString], appState: appState)
+        }
+        let chat = Chat(
+            title: "UX Trace Mock Chat",
+            historyHydrated: true,
+            hasActiveTurn: false
+        )
+        appState.chats.insert(chat, at: 0)
+        appState.chatStore.upsert(chat)
+        appState.navigate(to: .chat(chat.id))
+        return chat.id
     }
 
     static func mockBridgeStream(_ args: [String: Any]) -> ClxControlResult {
@@ -1278,6 +1306,9 @@ enum ClxControlHandlers {
             ].compactMap { $0 }.joined(separator: "\n")
             guard hasNeedle else { return (false, observed) }
             if needle.isEmpty {
+                if let value = observed["value"] as? String {
+                    return (value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, observed)
+                }
                 return (haystack.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, observed)
             }
             return (haystack.localizedCaseInsensitiveContains(needle), observed)

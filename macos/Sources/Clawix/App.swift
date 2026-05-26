@@ -300,8 +300,24 @@ struct ClawixApp: App {
                     .environmentObject(featureFlags)
             }
         } label: {
-            Image(nsImage: ClawixLogoTemplateImage.make(size: 18))
+            AgentInstanceMenuBarLabel()
         }
+    }
+}
+
+private struct AgentInstanceMenuBarLabel: View {
+    @Environment(\.openWindow) private var openWindow
+    @State private var requestedAgentWindow = false
+
+    var body: some View {
+        Image(nsImage: ClawixLogoTemplateImage.make(size: 18))
+            .onAppear {
+                guard ClxAgentInstance.isAgent, !requestedAgentWindow else { return }
+                requestedAgentWindow = true
+                DispatchQueue.main.async {
+                    ClawixApp.bringMainWindowToFront(openWindow: openWindow)
+                }
+            }
     }
 }
 
