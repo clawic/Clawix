@@ -296,6 +296,7 @@ const expectedScenarios = [
   "composer-and-send",
   "terminal-under-conversation-load",
   "idle-stability",
+  "settings-account-route",
 ];
 
 const expectedControlBusCapabilities = [

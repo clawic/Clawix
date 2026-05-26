@@ -229,6 +229,19 @@
         { "id": "sample-idle-wakeups", "action": "sample", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "kpi": "p0.idle.timer_wakeups" },
         { "id": "verify-bounded-trace-growth", "action": "analyze-events", "wait": "wait-idle", "target": "app.shell.firstUsableWindow", "kpi": "p0.idle.no_unbounded_log_growth" }
       ]
+    },
+    {
+      "id": "settings-account-route",
+      "priority": "P1",
+      "fixtureProfiles": ["smoke"],
+      "kpiRefs": [
+        "p1.settings.open_latency_ms"
+      ],
+      "steps": [
+        { "id": "open-settings-popover", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.settings.openAccountPopover", "waitTarget": "sidebar.settings.openSettings", "kpi": "none" },
+        { "id": "verify-account-row", "action": "observe", "wait": "wait-visible", "target": "sidebar.settings.account", "kpi": "none" },
+        { "id": "open-settings-route", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.settings.openSettings", "waitTarget": "settings.route", "kpi": "p1.settings.open_latency_ms" }
+      ]
     }
   ]
 }
