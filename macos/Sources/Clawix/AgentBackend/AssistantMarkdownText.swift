@@ -672,12 +672,14 @@ struct AssistantMarkdownText: View {
                 blocksView(currentBlocks, checkpoints: renderCheckpoints, now: now)
             }
         }
-        .task(id: renderRequest) {
+        .task(id: request) {
             guard plainStreamingAtoms == nil else {
                 renderModel.cancel()
                 return
             }
-            renderModel.request(renderRequest)
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            renderModel.request(request)
         }
         .task(id: TickKey(timestamp: checkpoints.last?.addedAt, finished: streamingFinished)) {
             await scheduleSettle()
