@@ -111,8 +111,44 @@ enum TimelineEntryWindow {
         visibleLimit: Int
     ) -> [AssistantTimelineEntry] {
         guard visibleLimit > 0 else { return [] }
-        guard visibleLimit < timeline.count else { return timeline }
-        return Array(timeline.suffix(visibleLimit))
+        let entries = visibleLimit < timeline.count
+            ? Array(timeline.suffix(visibleLimit))
+            : timeline
+        return coalescingAdjacentToolEntries(entries)
+    }
+
+    private static func coalescingAdjacentToolEntries(
+        _ entries: [AssistantTimelineEntry]
+    ) -> [AssistantTimelineEntry] {
+        var result: [AssistantTimelineEntry] = []
+        var pendingTools: [(id: UUID, items: [WorkItem], presentation: ToolTimelinePresentationSnapshot?)] = []
+
+        func flushPendingTools() {
+            guard !pendingTools.isEmpty else { return }
+            if pendingTools.count == 1, let first = pendingTools.first {
+                result.append(.tools(id: first.id, items: first.items, presentation: first.presentation))
+            } else if let first = pendingTools.first {
+                let mergedItems = pendingTools.flatMap(\.items)
+                result.append(.tools(
+                    id: first.id,
+                    items: mergedItems,
+                    presentation: ToolTimelinePresentation.snapshot(groupID: first.id, items: mergedItems)
+                ))
+            }
+            pendingTools.removeAll(keepingCapacity: true)
+        }
+
+        for entry in entries {
+            switch entry {
+            case .tools(let id, let items, let presentation):
+                pendingTools.append((id, items, presentation))
+            default:
+                flushPendingTools()
+                result.append(entry)
+            }
+        }
+        flushPendingTools()
+        return result
     }
 }
 

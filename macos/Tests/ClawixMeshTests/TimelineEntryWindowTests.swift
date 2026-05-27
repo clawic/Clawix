@@ -74,6 +74,67 @@ final class TimelineEntryWindowTests: XCTestCase {
         })
     }
 
+    func testAdjacentToolGroupsCoalesceLikeToolDisclosure() {
+        let firstGroupID = UUID()
+        let secondGroupID = UUID()
+        let thirdGroupID = UUID()
+        let fourthGroupID = UUID()
+        let fifthGroupID = UUID()
+        let firstGroup = [
+            command("cmd-1"),
+            command("cmd-2"),
+            computerUse("cu-1")
+        ]
+        let secondGroup = [
+            read("read-1"),
+            command("cmd-3")
+        ]
+        let thirdGroup = (4...6).map { command("cmd-\($0)") }
+        let fourthGroup = [command("cmd-7")]
+        let fifthGroup = (8...10).map { command("cmd-\($0)") }
+        let timeline: [AssistantTimelineEntry] = [
+            .tools(
+                id: firstGroupID,
+                items: firstGroup,
+                presentation: ToolTimelinePresentation.snapshot(groupID: firstGroupID, items: firstGroup)
+            ),
+            .tools(
+                id: secondGroupID,
+                items: secondGroup,
+                presentation: ToolTimelinePresentation.snapshot(groupID: secondGroupID, items: secondGroup)
+            ),
+            .message(id: UUID(), text: "La segunda pasada caliente no generó eventos."),
+            .tools(
+                id: thirdGroupID,
+                items: thirdGroup,
+                presentation: ToolTimelinePresentation.snapshot(groupID: thirdGroupID, items: thirdGroup)
+            ),
+            .tools(
+                id: fourthGroupID,
+                items: fourthGroup,
+                presentation: ToolTimelinePresentation.snapshot(groupID: fourthGroupID, items: fourthGroup)
+            ),
+            .tools(
+                id: fifthGroupID,
+                items: fifthGroup,
+                presentation: ToolTimelinePresentation.snapshot(groupID: fifthGroupID, items: fifthGroup)
+            ),
+            .message(id: UUID(), text: "Hecho.")
+        ]
+
+        let visible = TimelineEntryWindow.visibleEntries(
+            in: timeline,
+            isStreaming: false,
+            visibleLimit: timeline.count
+        )
+
+        XCTAssertEqual(visible.count, 4)
+        XCTAssertEqual(toolTexts(in: visible), [
+            "Explored 1 file, ran 3 commands, used Computer Use",
+            "Ran 7 commands"
+        ])
+    }
+
     func testFileLinkPreviewUsesOnlyAssistantMarkdownFileLinks() {
         let message = ChatMessage(
             role: .assistant,
@@ -183,5 +244,24 @@ final class TimelineEntryWindowTests: XCTestCase {
             guard case .message(_, let text) = entry else { return nil }
             return text
         }
+    }
+
+    private func toolTexts(in entries: [AssistantTimelineEntry]) -> [String] {
+        entries.compactMap { entry in
+            guard case .tools(_, _, let presentation) = entry else { return nil }
+            return presentation?.aggregateRows.map(\.text).joined(separator: " | ")
+        }
+    }
+
+    private func command(_ id: String) -> WorkItem {
+        WorkItem(id: id, kind: .command(text: "pwd", actions: []), status: .completed)
+    }
+
+    private func read(_ id: String) -> WorkItem {
+        WorkItem(id: id, kind: .command(text: "sed -n '1p' README.md", actions: [.read]), status: .completed)
+    }
+
+    private func computerUse(_ id: String) -> WorkItem {
+        WorkItem(id: id, kind: .mcpTool(server: "computer_use", tool: "click"), status: .completed)
     }
 }
