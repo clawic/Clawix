@@ -55,25 +55,31 @@ struct ToolGroupView: View {
 
     @ViewBuilder
     private func detailRow(_ row: ToolTimelineDetailRow) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            icon(row.icon)
-                .foregroundColor(iconColor(for: row.status))
-                .frame(width: 16, alignment: .leading)
-            if row.status == .inProgress {
-                ShimmerText(
-                    text: row.text,
-                    font: BodyFont.system(size: 13, wght: 500),
-                    color: .white,
-                    baseOpacity: 0.30,
-                    peakOpacity: 0.80,
-                    cycleDuration: 3.0,
-                    radius: 6.0
-                )
-            } else {
-                Text(verbatim: row.text)
-                    .font(BodyFont.system(size: 13, wght: 500))
-                    .foregroundColor(textColor(for: row.status))
-                    .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                icon(row.icon)
+                    .foregroundColor(iconColor(for: row.status))
+                    .frame(width: 16, alignment: .leading)
+                if row.status == .inProgress {
+                    ShimmerText(
+                        text: row.text,
+                        font: BodyFont.system(size: 13, wght: 500),
+                        color: .white,
+                        baseOpacity: 0.30,
+                        peakOpacity: 0.80,
+                        cycleDuration: 3.0,
+                        radius: 6.0
+                    )
+                } else {
+                    Text(verbatim: row.text)
+                        .font(BodyFont.system(size: 13, wght: 500))
+                        .foregroundColor(textColor(for: row.status))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            if let path = row.previewImagePath, !path.isEmpty {
+                ToolImagePreview(path: path)
+                    .padding(.leading, 24)
             }
         }
     }
@@ -138,5 +144,46 @@ struct ToolGroupView: View {
 
     private var accessibilityLabel: String {
         AccessibilityText.clipped(detailRows.map(\.text).joined(separator: ". "))
+    }
+}
+
+private struct ToolImagePreview: View {
+    let path: String
+    @State private var image: NSImage?
+
+    private let width: CGFloat = 260
+    private let height: CGFloat = 146
+    private let radius: CGFloat = 8
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                Color.overlay(0.05)
+                LucideIcon(.image, size: 14)
+                    .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
+            }
+        }
+        .frame(width: width, height: height)
+        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .stroke(Color.overlay(0.08), lineWidth: 0.6)
+        )
+        .help(URL(fileURLWithPath: path).lastPathComponent)
+        .task(id: path) {
+            let source = UserBubbleContent.ImageSource.file(URL(fileURLWithPath: path))
+            if let cached = UserImageThumbnailLoader.shared.cachedImage(for: source, maxPixelSize: 640) {
+                image = cached
+                return
+            }
+            image = nil
+            let loaded = await UserImageThumbnailLoader.shared.thumbnail(for: source, maxPixelSize: 640)
+            guard !Task.isCancelled else { return }
+            image = loaded.image
+        }
     }
 }

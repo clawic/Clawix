@@ -242,6 +242,46 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertEqual(tools.first?.1?.aggregateRows.first?.text, "Ran 2 commands")
     }
 
+    func testRolloutReaderPreservesViewImageFunctionCallPreviewPath() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let imageURL = tmp.appendingPathComponent("screen.png")
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-26T20:55:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-26T20:55:01.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "view_image",
+                "call_id": "view-1",
+                "arguments": #"{"path":"\#(imageURL.path)","detail":"high"}"#
+            ]),
+            jsonLine(timestamp: "2026-05-26T20:55:02.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Done.",
+                "phase": "final_answer"
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout)
+        let assistant = try XCTUnwrap(result.entries.first)
+        let toolEntry = try XCTUnwrap(assistant.timeline.compactMap { entry -> [WorkItem]? in
+            if case .tools(_, let items, _) = entry { return items }
+            return nil
+        }.first)
+        let item = try XCTUnwrap(toolEntry.first)
+
+        XCTAssertEqual(item.kind, .imageView)
+        XCTAssertEqual(item.generatedImagePath, imageURL.path)
+
+        let detail = try XCTUnwrap(ToolTimelinePresentation.detailRows(for: toolEntry).first)
+        XCTAssertFalse(detail.text.isEmpty)
+        XCTAssertEqual(detail.previewImagePath, imageURL.path)
+    }
+
     func testRolloutChatMessagesAreSettledForHistoricalRendering() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

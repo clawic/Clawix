@@ -11,6 +11,7 @@ struct ToolTimelineDetailRow: Identifiable, Equatable {
     let icon: String
     let text: String
     let status: WorkItemStatus
+    let previewImagePath: String?
 }
 
 struct ToolTimelinePresentationSnapshot: Equatable {
@@ -275,7 +276,8 @@ enum ToolTimelinePresentation {
                 id: item.id,
                 icon: iconForSingleItem(item) ?? "clawix.terminal",
                 text: commandLineText(status: item.status, command: command),
-                status: item.status
+                status: item.status,
+                previewImagePath: item.generatedImagePath
             )
         default:
             let row = aggregateRows(for: [item]).first
@@ -283,7 +285,8 @@ enum ToolTimelinePresentation {
                 id: item.id.isEmpty ? "item-\(fallbackIndex)" : item.id,
                 icon: row?.icon ?? iconForSingleItem(item) ?? "wrench.and.screwdriver",
                 text: row?.text ?? fallbackDetailText(for: item),
-                status: item.status
+                status: item.status,
+                previewImagePath: item.generatedImagePath
             )
         }
     }

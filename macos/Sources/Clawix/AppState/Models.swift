@@ -132,13 +132,11 @@ struct WorkItem: Equatable, Identifiable {
     let id: String
     var kind: WorkItemKind
     var status: WorkItemStatus
-    /// Absolute path on this Mac of the PNG Codex's `imagegen` tool wrote
-    /// for this call. Filled in by `RolloutReader` when it sees an
-    /// `image_generation_end` event paired with the rollout's session
-    /// id; clients fetch the bytes via `requestGeneratedImage`. Nil
-    /// for non-image kinds and for live-streamed items (the JSON-RPC
-    /// `item` payload doesn't carry the path; rehydration from the
-    /// rollout fills it in on the next chat open).
+    /// Absolute path on this Mac for image-producing or image-viewing
+    /// work. For generated images, clients fetch bytes through
+    /// `requestGeneratedImage`; for viewed local files, macOS can render
+    /// a local preview directly. Nil for non-image kinds and for
+    /// streaming-only items that do not carry a path yet.
     var generatedImagePath: String? = nil
 }
 

@@ -642,6 +642,20 @@ enum RolloutReader {
                         code: "",
                         isReset: true
                     )
+                case "view_image":
+                    if seenCallIds.contains(callId) { continue }
+                    if pending == nil {
+                        pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                    }
+                    pending?.appendOther(
+                        WorkItem(
+                            id: callId,
+                            kind: .imageView,
+                            status: .completed,
+                            generatedImagePath: decodeViewImagePath(payload["arguments"])
+                        )
+                    )
+                    seenCallIds.insert(callId)
                 case "update_plan":
                     // Chat-level checklist, not a per-message work item.
                     // Keep the most recent one for the Progress panel.
@@ -743,7 +757,12 @@ enum RolloutReader {
                     pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendOther(
-                    WorkItem(id: callId, kind: .imageView, status: .completed)
+                    WorkItem(
+                        id: callId,
+                        kind: .imageView,
+                        status: .completed,
+                        generatedImagePath: decodeViewImagePath(payload)
+                    )
                 )
 
             case ("event_msg", "mcp_tool_call_end"):
@@ -918,6 +937,27 @@ enum RolloutReader {
         let title = (obj["title"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         let code = obj["code"] as? String ?? ""
         return (title, code)
+    }
+
+    fileprivate static func decodeViewImagePath(_ raw: Any?) -> String? {
+        let obj: [String: Any]?
+        if let dict = raw as? [String: Any] {
+            obj = dict
+        } else if let str = raw as? String,
+                  let data = str.data(using: .utf8) {
+            obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        } else {
+            obj = nil
+        }
+        let value = (obj?["path"] as? String)
+            ?? (obj?["file_path"] as? String)
+            ?? (obj?["url"] as? String)
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else { return nil }
+        if let url = URL(string: trimmed), url.isFileURL {
+            return url.path
+        }
+        return trimmed
     }
 
     /// Decide whether a single `js` invocation drove the in-app browser

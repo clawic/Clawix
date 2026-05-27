@@ -102,7 +102,12 @@ extension WorkItem {
                 generatedImagePath: generatedImagePath
             )
         case .imageView:
-            return WireWorkItem(id: id, kind: "imageView", status: status)
+            return WireWorkItem(
+                id: id,
+                kind: "imageView",
+                status: status,
+                generatedImagePath: generatedImagePath
+            )
         case .jsCall, .jsReset:
             // The daemon's wire schema still describes browser-use as MCP
             // calls against the synthetic `node_repl` server. Round-trip

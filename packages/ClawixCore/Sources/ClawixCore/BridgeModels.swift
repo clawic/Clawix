@@ -258,13 +258,11 @@ public struct WireWorkItem: Codable, Equatable, Sendable {
     public var mcpTool: String?
     /// Dynamic tool name (when kind == "dynamicTool").
     public var dynamicToolName: String?
-    /// Filled when `kind == "imageGeneration"`. Absolute filesystem path
-    /// where the daemon's host wrote the generated PNG (today Codex
-    /// stores them under `~/.codex/generated_images/<session>/<id>.png`).
-    /// Clients pass this path back to `requestGeneratedImage` to fetch
-    /// the bytes; the daemon validates the path stays inside its
-    /// generated_images sandbox before reading. Optional because
-    /// streaming-only items may arrive before the rollout has been parsed.
+    /// Filled when image work has a local file path. Generated-image
+    /// clients pass this path back to `requestGeneratedImage`; viewed
+    /// local files may be rendered directly by clients that already have
+    /// filesystem access. Optional because streaming-only items may
+    /// arrive before the rollout has been parsed.
     public var generatedImagePath: String?
 
     public init(
