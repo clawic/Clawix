@@ -17,16 +17,24 @@ struct ChatScrollDeclarativeAnchors: ViewModifier {
 
 struct ChatScrollUpSentinel: ViewModifier {
     let threshold: CGFloat
+    let isEnabled: Bool
     let onTrigger: () -> Void
+
+    init(threshold: CGFloat, isEnabled: Bool = true, onTrigger: @escaping () -> Void) {
+        self.threshold = threshold
+        self.isEnabled = isEnabled
+        self.onTrigger = onTrigger
+    }
 
     func body(content: Content) -> some View {
         if #available(macOS 15, *) {
             content.onScrollGeometryChange(for: Bool.self) { geom in
+                guard isEnabled else { return false }
                 let realOverflow = geom.contentSize.height
                     > geom.containerSize.height - geom.contentInsets.top - geom.contentInsets.bottom + 1
                 return geom.contentOffset.y < threshold && realOverflow
             } action: { wasNearTop, isNearTop in
-                if isNearTop && !wasNearTop {
+                if isEnabled, isNearTop && !wasNearTop {
                     onTrigger()
                 }
             }
@@ -82,16 +90,18 @@ private struct ChatScrollBottomGeometryState: Equatable {
 
 struct ChatTopScrollTriggerInstaller: NSViewRepresentable {
     let controlId: String
+    let isEnabled: Bool
     let onTrigger: () -> Void
 
     func makeNSView(context: Context) -> ChatTopScrollTriggerInstallerView {
-        let view = ChatTopScrollTriggerInstallerView(controlId: controlId)
+        let view = ChatTopScrollTriggerInstallerView(controlId: controlId, isEnabled: isEnabled)
         view.onTrigger = onTrigger
         return view
     }
 
     func updateNSView(_ nsView: ChatTopScrollTriggerInstallerView, context: Context) {
         nsView.controlId = controlId
+        nsView.isEnabled = isEnabled
         nsView.onTrigger = onTrigger
         nsView.installIfNeeded()
     }
@@ -110,14 +120,24 @@ final class ChatTopScrollTriggerInstallerView: NSView {
             }
         }
     }
+    var isEnabled: Bool {
+        didSet {
+            if isEnabled {
+                registerBoundaryTriggerIfNeeded()
+            } else {
+                unregisterBoundaryTrigger(id: controlId)
+            }
+        }
+    }
     var onTrigger: (() -> Void)?
 
     private weak var installedScrollView: NSScrollView?
     private var wheelMonitor: Any?
     private var lastTriggerTime: CFTimeInterval = 0
 
-    init(controlId: String) {
+    init(controlId: String, isEnabled: Bool) {
         self.controlId = controlId
+        self.isEnabled = isEnabled
         super.init(frame: .zero)
     }
 
@@ -168,6 +188,7 @@ final class ChatTopScrollTriggerInstallerView: NSView {
     }
 
     private func registerBoundaryTriggerIfNeeded() {
+        guard isEnabled else { return }
         guard let installedScrollView else { return }
         ClxScrollBoundaryTriggerRegistry.shared.upsert(scrollView: installedScrollView, id: controlId) { [weak self] in
             self?.triggerIfAllowed(source: "boundary-registry")
@@ -180,7 +201,8 @@ final class ChatTopScrollTriggerInstallerView: NSView {
     }
 
     private func handleWheel(_ event: NSEvent) {
-        guard let scrollView = installedScrollView,
+        guard isEnabled,
+              let scrollView = installedScrollView,
               event.window === scrollView.window,
               event.scrollingDeltaY > 0,
               isEventInsideScrollView(event, scrollView: scrollView),

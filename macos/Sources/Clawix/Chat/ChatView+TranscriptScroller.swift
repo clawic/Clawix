@@ -43,6 +43,14 @@ struct ChatTranscriptScrollerView: View {
         return "\(first)-\(last)-\(newerLocalMessageCount)"
     }
 
+    private var canTriggerOlderHistory: Bool {
+        if hiddenLocalMessageCount > 0 { return true }
+        guard let pagination = appState.messagesPaginationByChat[chatId] else { return false }
+        return pagination.hasMore
+            && !pagination.loadingOlder
+            && pagination.oldestKnownId != nil
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -105,7 +113,10 @@ struct ChatTranscriptScrollerView: View {
                             style: .clawixAlwaysVisible,
                             controlId: "chat.transcript.scroll"
                         )
-                        ChatTopScrollTriggerInstaller(controlId: "chat.transcript.scroll") {
+                        ChatTopScrollTriggerInstaller(
+                            controlId: "chat.transcript.scroll",
+                            isEnabled: canTriggerOlderHistory
+                        ) {
                             handleScrollUpTrigger(proxy: proxy)
                         }
                     }
@@ -122,6 +133,7 @@ struct ChatTranscriptScrollerView: View {
             .modifier(ChatScrollDeclarativeAnchors())
             .modifier(ChatScrollUpSentinel(
                 threshold: ChatView.loadOlderThreshold,
+                isEnabled: canTriggerOlderHistory,
                 onTrigger: {
                     handleScrollUpTrigger(proxy: proxy)
                 }

@@ -149,12 +149,52 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         ]))
         try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
 
-        let result = RolloutReader.readTailWithStatus(path: rollout, limit: bridgeInitialPageLimit)
+        let result = RolloutReader.readTailWithStatus(
+            path: rollout,
+            limit: bridgeInitialPageLimit,
+            maxBytes: 128 * 1024
+        )
 
         XCTAssertFalse(result.entries.isEmpty)
         XCTAssertTrue(result.hasMoreBefore)
         XCTAssertFalse(result.readEntireFile)
         XCTAssertLessThan(UInt64(result.readBytes), result.totalFileBytes)
+    }
+
+    func testRolloutReaderReadsWholeShortRolloutBeforeTailWindow() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let largeOutput = String(repeating: "static audit output ", count: 18_000)
+        let lines = [
+            #"{"timestamp":"2026-05-26T20:55:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-26T20:55:01.000Z", type: "event_msg", payload: [
+                "type": "user_message",
+                "message": "Audit this project."
+            ]),
+            jsonLine(timestamp: "2026-05-26T20:55:02.000Z", type: "response_item", payload: [
+                "type": "function_call_output",
+                "call_id": "call-large",
+                "output": largeOutput
+            ]),
+            jsonLine(timestamp: "2026-05-26T20:55:03.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Audit complete.",
+                "phase": "final_answer"
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        XCTAssertGreaterThan(try Data(contentsOf: rollout).count, RolloutReader.initialTailBytes)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout)
+
+        XCTAssertEqual(result.entries.map(\.text), ["Audit this project.", "Audit complete."])
+        XCTAssertFalse(result.hasMoreBefore)
+        XCTAssertTrue(result.readEntireFile)
     }
 
     func testRolloutChatMessagesAreSettledForHistoricalRendering() throws {

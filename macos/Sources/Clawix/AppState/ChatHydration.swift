@@ -1020,7 +1020,8 @@ extension AppState {
                 "loaded": "\(chatStore.transcript(for: chatId)?.messageIds.count ?? 0)"
             ]
         )
-        if Self.prefersLocalRolloutHydration, let path = chat(byId: chatId)?.rolloutPath {
+        if let path = chat(byId: chatId)?.rolloutPath,
+           FileManager.default.fileExists(atPath: path.path) {
             Task { @MainActor [weak self] in
                 let started = CFAbsoluteTimeGetCurrent()
                 let result = await Task.detached(priority: .userInitiated) {

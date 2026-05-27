@@ -2,6 +2,14 @@ import XCTest
 @testable import Clawix
 
 final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
+    func testAngleWrappedAbsoluteMarkdownLinkParsesAsFileURL() {
+        let path = "/Users/example/Desktop/report/AUDITORIA.md"
+        let urls = AssistantMarkdown.extractLinkURLs(in: "Open [AUDITORIA.md](<\(path)>).")
+
+        XCTAssertEqual(urls, [URL(fileURLWithPath: path)])
+        XCTAssertTrue(urls.first?.isFileURL == true)
+    }
+
     @MainActor
     func testRenderModelSkipsIdenticalRequest() async {
         let counter = RenderModelParseCounter()

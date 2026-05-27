@@ -493,9 +493,10 @@ enum AssistantMarkdown {
                     let urlOpen = input.index(after: close)
                     if let urlClose = input[urlOpen...].firstIndex(of: ")") {
                         let label = String(input[labelStart..<close])
-                        let urlStr = String(input[input.index(after: urlOpen)..<urlClose])
-                        // Codex Desktop writes local files as bare absolute
-                        // paths inside markdown links (`[label](/abs/path.md)`).
+                        let rawURLStr = String(input[input.index(after: urlOpen)..<urlClose])
+                        let urlStr = Self.unwrapMarkdownLinkDestination(rawURLStr)
+                        // Local agents write files as bare absolute paths
+                        // inside markdown links (`[label](/abs/path.md)`).
                         // Promote those to file:// URLs so the renderer can
                         // tell them apart from web links and the tap routes
                         // to the in-app file viewer instead of the browser.
@@ -647,6 +648,13 @@ enum AssistantMarkdown {
             emit(current)
         }
         return out
+    }
+
+    private static func unwrapMarkdownLinkDestination(_ raw: String) -> String {
+        guard raw.hasPrefix("<"), raw.hasSuffix(">"), raw.count >= 2 else {
+            return raw
+        }
+        return String(raw.dropFirst().dropLast())
     }
 
     /// Walk every block in the source and return the URLs of every link
