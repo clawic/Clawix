@@ -10,6 +10,24 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
         XCTAssertTrue(urls.first?.isFileURL == true)
     }
 
+    func testAbsoluteFileMarkdownLinkMatchingPathLabelDisplaysBasename() {
+        let path = "/Users/example/Desktop/captures/chat-window-test.png"
+        let link = firstParsedLink(in: "See [\(path)](\(path)).")
+
+        XCTAssertEqual(link?.label, "chat-window-test.png")
+        XCTAssertEqual(link?.url, URL(fileURLWithPath: path))
+        XCTAssertEqual(link?.isBareUrl, true)
+    }
+
+    func testAbsoluteFileMarkdownLinkPreservesCustomLabel() {
+        let path = "/Users/example/Desktop/captures/chat-window-test.png"
+        let link = firstParsedLink(in: "See [window](\(path)).")
+
+        XCTAssertEqual(link?.label, "window")
+        XCTAssertEqual(link?.url, URL(fileURLWithPath: path))
+        XCTAssertEqual(link?.isBareUrl, false)
+    }
+
     @MainActor
     func testRenderModelSkipsIdenticalRequest() async {
         let counter = RenderModelParseCounter()
@@ -533,6 +551,15 @@ final class AssistantMarkdownIncrementalCacheTests: XCTestCase {
         case .link(let label, let url, let isBareUrl):
             return "\(label)<\(url.absoluteString)>\(isBareUrl)"
         }
+    }
+
+    private func firstParsedLink(in text: String) -> (label: String, url: URL, isBareUrl: Bool)? {
+        for atom in AssistantMarkdown.parseAtoms(in: text) {
+            if case .link(let label, let url, let isBareUrl) = atom {
+                return (label, url, isBareUrl)
+            }
+        }
+        return nil
     }
 
     private func document(

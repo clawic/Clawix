@@ -492,7 +492,7 @@ enum AssistantMarkdown {
                     let labelStart = input.index(after: i)
                     let urlOpen = input.index(after: close)
                     if let urlClose = input[urlOpen...].firstIndex(of: ")") {
-                        let label = String(input[labelStart..<close])
+                        let rawLabel = String(input[labelStart..<close])
                         let rawURLStr = String(input[input.index(after: urlOpen)..<urlClose])
                         let urlStr = Self.unwrapMarkdownLinkDestination(rawURLStr)
                         // Local agents write files as bare absolute paths
@@ -504,11 +504,16 @@ enum AssistantMarkdown {
                             ? URL(fileURLWithPath: urlStr)
                             : URL(string: urlStr)
                         if let url {
+                            let label = Self.displayLabel(
+                                forMarkdownLinkLabel: rawLabel,
+                                destination: urlStr,
+                                url: url
+                            )
                             flushWords()
                             atoms.append(.link(
                                 label: label,
                                 url: url,
-                                isBareUrl: label == urlStr
+                                isBareUrl: rawLabel == urlStr
                             ))
                             i = input.index(after: urlClose)
                             continue
@@ -655,6 +660,32 @@ enum AssistantMarkdown {
             return raw
         }
         return String(raw.dropFirst().dropLast())
+    }
+
+    private static func displayLabel(forMarkdownLinkLabel label: String, destination: String, url: URL) -> String {
+        guard url.isFileURL else {
+            return label
+        }
+
+        let trimmedLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedLabel.isEmpty else {
+            return label
+        }
+
+        var matchingDestinations = Set([destination, url.path, url.absoluteString])
+        if let decodedDestination = destination.removingPercentEncoding {
+            matchingDestinations.insert(decodedDestination)
+        }
+        if let decodedAbsoluteString = url.absoluteString.removingPercentEncoding {
+            matchingDestinations.insert(decodedAbsoluteString)
+        }
+
+        let decodedLabel = trimmedLabel.removingPercentEncoding ?? trimmedLabel
+        guard matchingDestinations.contains(trimmedLabel) || matchingDestinations.contains(decodedLabel) else {
+            return label
+        }
+
+        return url.lastPathComponent.isEmpty ? label : url.lastPathComponent
     }
 
     /// Walk every block in the source and return the URLs of every link
