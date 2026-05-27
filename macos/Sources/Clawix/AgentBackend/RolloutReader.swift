@@ -496,6 +496,16 @@ enum RolloutReader {
             return next
         }
 
+        func ensurePending(id: UUID, startOffset: UInt64, timestamp: Date) {
+            if let current = pending, current.isClosed {
+                out.append(current.finalize())
+                pending = nil
+            }
+            if pending == nil {
+                pending = makePending(id: id, startOffset: startOffset, timestamp: timestamp)
+            }
+        }
+
         for slice in slices {
             var start = slice.data.startIndex
             while start < slice.data.endIndex {
@@ -523,7 +533,9 @@ enum RolloutReader {
                 // `WorkSummary` ends on the last activity timestamp instead
                 // of leaving the chat row's "Worked for Xs" header ticking
                 // forever (`isActive` is gated on `endedAt == nil`).
-                pending?.endedAt = parsedTimestamp
+                if pending?.hasExplicitDuration != true {
+                    pending?.endedAt = parsedTimestamp
+                }
             }
             let kind = obj["type"] as? String
             guard let payload = obj["payload"] as? [String: Any] else { continue }
@@ -634,9 +646,7 @@ enum RolloutReader {
                 guard let msg = payload["message"] as? String else { continue }
                 let trimmed = msg.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed.isEmpty { continue }
-                if pending == nil {
-                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                }
+                ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 pending?.appendText(trimmed, isFinal: phase == "final_answer")
 
             case ("event_msg", "task_complete"):
@@ -658,18 +668,14 @@ enum RolloutReader {
                 }
 
             case ("compacted", _):
-                if pending == nil {
-                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                }
+                ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 pending?.appendDivider("Context automatically compacted")
 
             case ("event_msg", "exec_command_end"):
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 let actions = parseCommandActions(payload["parsed_cmd"])
                 let cmdText = (payload["command"] as? [String])?.last
-                if pending == nil {
-                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                }
+                ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 if seenCallIds.contains(callId) {
                     // function_call already emitted a placeholder for this
                     // command; replace it with the rich parsed_cmd payload
@@ -687,9 +693,7 @@ enum RolloutReader {
                 switch name {
                 case "exec_command":
                     if seenCallIds.contains(callId) { continue }
-                    if pending == nil {
-                        pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                    }
+                    ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                     pending?.appendCommand(id: callId, text: nil, actions: [])
                     seenCallIds.insert(callId)
                 case "js":
@@ -710,9 +714,7 @@ enum RolloutReader {
                     )
                 case "view_image":
                     if seenCallIds.contains(callId) { continue }
-                    if pending == nil {
-                        pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                    }
+                    ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                     pending?.appendOther(
                         WorkItem(
                             id: callId,
@@ -732,9 +734,7 @@ enum RolloutReader {
                     // Codex presents terminal polling/input as command
                     // activity, not as repeated generic tool rows.
                     if seenCallIds.contains(callId) { continue }
-                    if pending == nil {
-                        pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                    }
+                    ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                     pending?.appendCommand(id: callId, text: nil, actions: [])
                     seenCallIds.insert(callId)
                 default:
@@ -747,9 +747,7 @@ enum RolloutReader {
                 let stdout = payload["stdout"] as? String ?? ""
                 let paths = Self.parsePatchApplyPaths(stdout)
                 if paths.isEmpty { continue }
-                if pending == nil {
-                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                }
+                ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 pending?.appendOther(
                     WorkItem(
                         id: callId,
@@ -774,9 +772,7 @@ enum RolloutReader {
                 let raw = Self.parseApplyPatchInputPaths(input)
                 let paths = raw.map { Self.resolveAgainstCwd($0, cwd: sessionCwd) }
                 if paths.isEmpty { continue }
-                if pending == nil {
-                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                }
+                ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 pending?.appendOther(
                     WorkItem(
                         id: callId,
@@ -788,9 +784,7 @@ enum RolloutReader {
             case ("response_item", "web_search_call"):
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 if !seenCallIds.insert(callId).inserted { continue }
-                if pending == nil {
-                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                }
+                ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 pending?.appendOther(
                     WorkItem(id: callId, kind: .webSearch, status: .completed)
                 )
@@ -798,9 +792,7 @@ enum RolloutReader {
             case ("event_msg", "image_generation_end"):
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 if !seenCallIds.insert(callId).inserted { continue }
-                if pending == nil {
-                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                }
+                ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 let imagePath: String? = sessionId.map { sid in
                     ClawixAgentBackendRoutes.codexGeneratedImageURL(
                         sessionId: sid,
@@ -819,9 +811,7 @@ enum RolloutReader {
             case ("event_msg", "view_image_tool_call"):
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 if !seenCallIds.insert(callId).inserted { continue }
-                if pending == nil {
-                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                }
+                ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 pending?.appendOther(
                     WorkItem(
                         id: callId,
@@ -837,9 +827,7 @@ enum RolloutReader {
                 let invocation = payload["invocation"] as? [String: Any]
                 let server = (invocation?["server"] as? String) ?? ""
                 let tool = (invocation?["tool"] as? String) ?? ""
-                if pending == nil {
-                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                }
+                ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 // The browser-use plugin runs every call (including
                 // js_reset) through the synthetic `node_repl` MCP server.
                 // Route those by JS-flavour classification so the timeline
@@ -1282,6 +1270,7 @@ private struct PendingAssistant {
     var finalText: String = ""
     var goalOutcome: GoalOutcome? = nil
     var isClosed: Bool = false
+    var hasExplicitDuration: Bool = false
 
     init(id: UUID, startOffset: UInt64, timestamp: Date) {
         self.id = id
@@ -1328,8 +1317,10 @@ private struct PendingAssistant {
 
     mutating func setDuration(milliseconds: Double) {
         guard milliseconds.isFinite, milliseconds >= 0 else { return }
+        guard !hasExplicitDuration else { return }
         let seconds = milliseconds / 1000
         timestamp = endedAt.addingTimeInterval(-seconds)
+        hasExplicitDuration = true
     }
 
     mutating func appendCommand(id: String, text: String?, actions: [CommandActionKind]) {

@@ -91,6 +91,43 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertEqual(result.entries[1].workSummary?.elapsedSeconds(asOf: Date.distantFuture), 129)
     }
 
+    func testRolloutReaderKeepsFirstTaskDurationWhenDuplicateCompletionFollows() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-23T17:22:10.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-23T17:22:12.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Working.",
+                "phase": "commentary"
+            ]),
+            jsonLine(timestamp: "2026-05-23T17:26:46.247Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Done.",
+                "phase": "final_answer"
+            ]),
+            jsonLine(timestamp: "2026-05-23T17:26:46.495Z", type: "event_msg", payload: [
+                "type": "task_complete",
+                "duration_ms": 273_225
+            ]),
+            jsonLine(timestamp: "2026-05-23T17:26:47.849Z", type: "event_msg", payload: [
+                "type": "task_complete",
+                "duration_ms": 1_193
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout)
+
+        XCTAssertEqual(result.entries.count, 1)
+        XCTAssertEqual(result.entries[0].text, "Done.")
+        XCTAssertEqual(result.entries[0].workSummary?.elapsedSeconds(asOf: Date.distantFuture), 273)
+    }
+
     func testRolloutReaderWindowReadsOlderMessagesBeforeCursor() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
