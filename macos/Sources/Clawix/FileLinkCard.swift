@@ -22,11 +22,18 @@ struct FileLinkCard: View {
 
     private var fileURL: URL { URL(fileURLWithPath: path) }
     private var fileName: String { fileURL.lastPathComponent }
+    private var fileExtension: String { fileURL.pathExtension.lowercased() }
+    private var isImageFile: Bool {
+        ["png", "jpg", "jpeg", "gif", "webp", "tiff", "tif", "heic"].contains(fileExtension)
+    }
+
     private var subtitle: String {
-        let ext = fileURL.pathExtension
-        let kind = String(localized: "Document",
-                          bundle: AppLocale.bundle,
-                          locale: AppLocale.current)
+        let ext = fileExtension
+        let kind = String(
+            localized: isImageFile ? "Image" : "Document",
+            bundle: AppLocale.bundle,
+            locale: AppLocale.current
+        )
         if ext.isEmpty { return kind }
         return "\(kind) · \(ext.uppercased())"
     }
@@ -104,8 +111,13 @@ struct FileLinkCard: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color.gray(light: 0.955, dark: 0.07))
                 .frame(width: 44, height: 44)
-            FileChipIcon(size: 18)
-                .foregroundColor(Color.gray(light: 0.23, dark: 0.82))
+            if isImageFile {
+                LucideIcon(.image, size: 18)
+                    .foregroundColor(Color.gray(light: 0.23, dark: 0.82))
+            } else {
+                FileChipIcon(size: 18)
+                    .foregroundColor(Color.gray(light: 0.23, dark: 0.82))
+            }
         }
     }
 

@@ -90,6 +90,27 @@ final class TimelineEntryWindowTests: XCTestCase {
         XCTAssertEqual(preview.remainingCount, 1)
     }
 
+    func testFileLinkPreviewIncludesImageLinks() {
+        let message = ChatMessage(
+            role: .assistant,
+            content: """
+            See [window](/tmp/codex-window-test.png), \
+            [search](/tmp/codex-sidebar-search-cliclick-test.PNG), and \
+            [page](/tmp/codex-page-down-test.webp).
+            """,
+            streamingFinished: true
+        )
+
+        let preview = FileLinkPreviewCache.shared.preview(for: message)
+
+        XCTAssertEqual(preview.visiblePaths, [
+            "/tmp/codex-window-test.png",
+            "/tmp/codex-sidebar-search-cliclick-test.PNG",
+            "/tmp/codex-page-down-test.webp"
+        ])
+        XCTAssertEqual(preview.remainingCount, 0)
+    }
+
     func testFileLinkPreviewSkipsSourceCodeLinks() {
         let message = ChatMessage(
             role: .assistant,

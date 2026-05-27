@@ -336,8 +336,7 @@ struct MessageRow: View, Equatable {
                 }
 
                 let fileLinks = finalAssistantFileLinkPreview
-                if isLastAssistantMessage,
-                   !responseStreaming,
+                if !responseStreaming,
                    message.streamingFinished,
                    !message.isError,
                    !PlanSegmenter.containsPlan(message.content),
@@ -878,7 +877,11 @@ final class FileLinkPreviewCache {
         let normalized = stripLineColumnSuffix(from: path)
         guard !normalized.isEmpty else { return nil }
         let ext = URL(fileURLWithPath: normalized).pathExtension.lowercased()
-        guard ["md", "markdown", "mdx"].contains(ext) else { return nil }
+        let previewableExtensions = [
+            "md", "markdown", "mdx",
+            "png", "jpg", "jpeg", "gif", "webp", "tiff", "tif", "heic"
+        ]
+        guard previewableExtensions.contains(ext) else { return nil }
         return normalized
     }
 
