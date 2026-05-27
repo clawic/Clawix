@@ -1,9 +1,10 @@
 import SwiftUI
 
 // Inline tool-group row that appears between reasoning chunks in an
-// assistant message timeline. Each work item stays visible as its own
-// row so the expanded "Worked for" transcript preserves every command
-// and tool call Codex showed in the original turn.
+// assistant message timeline. The visible row uses the compact activity
+// summary generated from the full group, matching the upstream work
+// transcript while keeping raw work items available for accessibility
+// and previews.
 
 struct ToolGroupView: View {
     let items: [WorkItem]
@@ -17,7 +18,10 @@ struct ToolGroupView: View {
     var body: some View {
         let _ = markBodyEvaluation()
         VStack(alignment: .leading, spacing: 14) {
-            ForEach(detailRows) { row in
+            ForEach(aggregateRows) { row in
+                aggregateRow(row)
+            }
+            ForEach(runningRows) { row in
                 detailRow(row)
             }
         }
@@ -32,8 +36,8 @@ struct ToolGroupView: View {
         RenderProbe.tick("ToolGroupView")
         RenderProbe.count("ToolGroupVisibleItems", by: items.count, recordsActivity: false)
         RenderProbe.count("ToolGroupVisibleAggregateRows", by: snapshot.aggregateRows.count, recordsActivity: false)
-        RenderProbe.count("ToolGroupVisibleDetailRows", by: detailRows.count, recordsActivity: false)
-        RenderProbe.count("ToolGroupVisibleRunningRows", by: detailRows.filter { $0.status == .inProgress }.count, recordsActivity: false)
+        RenderProbe.count("ToolGroupVisibleDetailRows", by: runningRows.count, recordsActivity: false)
+        RenderProbe.count("ToolGroupVisibleRunningRows", by: runningRows.count, recordsActivity: false)
     }
 
     private func markAppeared() {
@@ -51,6 +55,10 @@ struct ToolGroupView: View {
 
     private var detailRows: [ToolTimelineDetailRow] {
         ToolTimelinePresentation.detailRows(for: items)
+    }
+
+    private var runningRows: [ToolTimelineDetailRow] {
+        detailRows.filter { $0.status == .inProgress }
     }
 
     @ViewBuilder
@@ -143,7 +151,8 @@ struct ToolGroupView: View {
     }
 
     private var accessibilityLabel: String {
-        AccessibilityText.clipped(detailRows.map(\.text).joined(separator: ". "))
+        let texts = aggregateRows.map(\.text) + runningRows.map(\.text)
+        return AccessibilityText.clipped(texts.joined(separator: ". "))
     }
 }
 
