@@ -92,4 +92,19 @@ final class DaemonMessageReconciliationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.messages.count, 0)
         XCTAssertEqual(state.chats.first?.historyHydrated, true)
     }
+
+    func test_repeatedEmptyAssistantPlaceholderReusesLastMessage() {
+        let state = AppState()
+        let chatId = UUID()
+        state.chats = [
+            Chat(id: chatId, title: "Live", messages: [], createdAt: Date())
+        ]
+
+        let firstId = state.appendAssistantPlaceholder(chatId: chatId)
+        let secondId = state.appendAssistantPlaceholder(chatId: chatId)
+
+        XCTAssertEqual(secondId, firstId)
+        XCTAssertEqual(state.chatStore.transcript(for: chatId)?.messageIds.count, 1)
+        XCTAssertEqual(state.chatStore.summary(id: chatId)?.hasActiveTurn, true)
+    }
 }

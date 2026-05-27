@@ -1170,6 +1170,20 @@ final class AppState: ObservableObject {
 
     func appendAssistantPlaceholder(chatId: UUID) -> UUID? {
         guard chatStore.summary(id: chatId) != nil else { return nil }
+        if let transcript = chatStore.transcript(for: chatId),
+           let last = transcript.lastMessage,
+           last.role == .assistant,
+           !last.streamingFinished,
+           last.content.isEmpty,
+           last.reasoningText.isEmpty,
+           last.timeline.isEmpty,
+           (last.workSummary?.items.isEmpty ?? true) {
+            chatStore.updateSummary(id: chatId) { summary in
+                summary.hasActiveTurn = true
+            }
+            syncLegacyChatFromStore(chatId: chatId)
+            return last.id
+        }
         let msg = ChatMessage(
             role: .assistant,
             content: "",
