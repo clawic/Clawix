@@ -230,7 +230,7 @@ final class ChatTopScrollTriggerInstallerView: NSView {
 
     private func triggerIfAllowed(source: String) {
         let now = CACurrentMediaTime()
-        guard now - lastTriggerTime >= 0.12 else { return }
+        guard now - lastTriggerTime >= ChatView.localRevealThrottle else { return }
         lastTriggerTime = now
         RenderProbe.mark("ChatOlderTopBoundaryTrigger", fields: ["source": source])
         onTrigger?()

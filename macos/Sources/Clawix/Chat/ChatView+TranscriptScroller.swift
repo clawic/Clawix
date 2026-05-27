@@ -331,18 +331,32 @@ struct ChatTranscriptScrollerView: View {
                 .merging(rowProbeFields()) { current, _ in current }
                 .merging(scrollProbeFields(prefix: "before")) { current, _ in current }
             )
-            let shiftedRows = min(hiddenLocalMessageCount, ChatView.visibleMessagePageSize)
-            visibleMessageEndOffset = min(
-                max(0, transcript.messageIds.count - max(1, visibleMessageLimit)),
-                visibleMessageEndOffset + shiftedRows
-            )
-            let exhaustedLocalWindow = hiddenLocalMessageCount - shiftedRows <= 0
-            let insertedLocalRows = shiftedRows
+            let insertedOlderRows = min(hiddenLocalMessageCount, ChatView.visibleMessagePageSize)
+            let canMountContiguousWindow = visibleMessageLimit + visibleMessageEndOffset + insertedOlderRows
+                <= ChatView.maxMountedScrollbackMessages
+            let absorbedNewerRows: Int
+            if canMountContiguousWindow {
+                absorbedNewerRows = visibleMessageEndOffset
+                visibleMessageLimit = min(
+                    transcript.messageIds.count,
+                    visibleMessageLimit + visibleMessageEndOffset + insertedOlderRows
+                )
+                visibleMessageEndOffset = 0
+            } else {
+                absorbedNewerRows = 0
+                visibleMessageEndOffset = min(
+                    max(0, transcript.messageIds.count - max(1, visibleMessageLimit)),
+                    visibleMessageEndOffset + insertedOlderRows
+                )
+            }
+            let exhaustedLocalWindow = hiddenLocalMessageCount - insertedOlderRows <= 0
+            let insertedLocalRows = insertedOlderRows
             if let anchorId {
                 DispatchQueue.main.async {
                     RenderProbe.mark(
                         "ChatOlderAnchorProbeInserted",
                         fields: [
+                            "absorbedNewerRows": "\(absorbedNewerRows)",
                             "anchor": anchorId.uuidString,
                             "chat": chatId.uuidString,
                             "endOffset": "\(visibleMessageEndOffset)",
@@ -386,7 +400,7 @@ struct ChatTranscriptScrollerView: View {
                             insertedRows: insertedLocalRows
                         )
                     }
-                    if exhaustedLocalWindow {
+                    if exhaustedLocalWindow, canRequestOlderPage {
                         revealAfterOlderPage = true
                         RenderProbe.mark(
                             "ChatOlderHistoryRequestAfterLocalReveal",
