@@ -501,6 +501,72 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertEqual(detail.previewImagePath, imageURL.path)
     }
 
+    func testRolloutReaderCombinesInterleavedCommandsAndComputerUseLikeCodex() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-27T09:45:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-27T09:45:01.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "I will measure it.",
+                "phase": "commentary"
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:45:02.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "exec_command",
+                "call_id": "exec-1",
+                "arguments": #"{"cmd":"tail -n 20 /tmp/render.log"}"#
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:45:03.000Z", type: "event_msg", payload: [
+                "type": "mcp_tool_call_end",
+                "call_id": "cua-1",
+                "invocation": ["server": "computer-use", "tool": "get_app_state"],
+                "result": [
+                    "Ok": [
+                        "content": [
+                            ["type": "image", "data": "iVBORw0KGgo=", "mimeType": "image/png"]
+                        ]
+                    ]
+                ]
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:45:04.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "write_stdin",
+                "call_id": "stdin-1"
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:45:04.500Z", type: "response_item", payload: [
+                "type": "reasoning",
+                "summary": []
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:45:04.750Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "exec_command",
+                "call_id": "exec-2"
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:45:05.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Done.",
+                "phase": "final_answer"
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout)
+        let assistant = try XCTUnwrap(result.entries.first)
+        let tools = assistant.timeline.compactMap { entry -> ToolTimelinePresentationSnapshot? in
+            if case .tools(_, _, let presentation) = entry { return presentation }
+            return nil
+        }
+
+        XCTAssertEqual(tools.count, 2)
+        XCTAssertEqual(tools[0].aggregateRows.map(\.text), ["Explored 1 file, ran 1 command, used Computer Use"])
+        XCTAssertEqual(tools[1].aggregateRows.map(\.text), ["Ran 1 command"])
+    }
+
     func testRolloutChatMessagesAreSettledForHistoricalRendering() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

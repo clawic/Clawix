@@ -649,6 +649,9 @@ enum RolloutReader {
                 ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 pending?.appendText(trimmed, isFinal: phase == "final_answer")
 
+            case ("response_item", "reasoning"):
+                pending?.markHiddenReasoningBoundary()
+
             case ("event_msg", "task_complete"):
                 if let durationMs = payload["duration_ms"] as? NSNumber {
                     pending?.setDuration(milliseconds: durationMs.doubleValue)
@@ -694,7 +697,12 @@ enum RolloutReader {
                 case "exec_command":
                     if seenCallIds.contains(callId) { continue }
                     ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
-                    pending?.appendCommand(id: callId, text: nil, actions: [])
+                    let command = decodeExecCommandArguments(payload["arguments"])
+                    pending?.appendCommand(
+                        id: callId,
+                        text: command,
+                        actions: parseCommandActions(fromCommandText: command)
+                    )
                     seenCallIds.insert(callId)
                 case "js":
                     // Stash the args; the mcp_tool_call_end branch is
@@ -851,6 +859,16 @@ enum RolloutReader {
                     )
                     continue
                 }
+                if isComputerUseTool(server: server, tool: tool) {
+                    pending?.appendOther(
+                        WorkItem(
+                            id: callId,
+                            kind: .mcpTool(server: server, tool: tool),
+                            status: .completed
+                        )
+                    )
+                    continue
+                }
                 // Clawix relabels MCP calls whose result carries a screenshot
                 // as "navegador" usage. Kept as a defensive fallback for
                 // older or third-party MCP integrations that piped a
@@ -903,6 +921,53 @@ enum RolloutReader {
             default: return .unknown
             }
         }
+    }
+
+    private static func decodeExecCommandArguments(_ arguments: Any?) -> String? {
+        let data: Data?
+        if let string = arguments as? String {
+            data = string.data(using: .utf8)
+        } else if let dict = arguments as? [String: Any] {
+            data = try? JSONSerialization.data(withJSONObject: dict)
+        } else {
+            data = nil
+        }
+        guard let data,
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let cmd = obj["cmd"] as? String else {
+            return nil
+        }
+        let trimmed = cmd.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private static func parseCommandActions(fromCommandText command: String?) -> [CommandActionKind] {
+        guard let command else { return [] }
+        let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+        let lower = trimmed.lowercased()
+        let firstToken = lower
+            .split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "\n" })
+            .first
+            .map(String.init) ?? lower
+        switch firstToken {
+        case "rg", "grep", "find":
+            return [.search]
+        case "ls", "tree":
+            return [.listFiles]
+        case "cat", "sed", "awk", "head", "tail", "nl":
+            return [.read]
+        default:
+            break
+        }
+        if lower.contains(" sed ")
+            || lower.contains(" awk ")
+            || lower.contains(" tail ")
+            || lower.contains(" head ")
+            || lower.contains(" cat ") {
+            return [.read]
+        }
+        return []
     }
 
     /// Pull file paths out of a `custom_tool_call` apply_patch input. The
@@ -1271,6 +1336,7 @@ private struct PendingAssistant {
     var goalOutcome: GoalOutcome? = nil
     var isClosed: Bool = false
     var hasExplicitDuration: Bool = false
+    private var forceNewToolGroup: Bool = false
 
     init(id: UUID, startOffset: UInt64, timestamp: Date) {
         self.id = id
@@ -1280,6 +1346,7 @@ private struct PendingAssistant {
     }
 
     mutating func appendText(_ text: String, isFinal: Bool) {
+        forceNewToolGroup = false
         // Each agent_message lands as a `.message` entry in the
         // timeline, mirroring the live streaming pipeline (where
         // `nAgentMsgDelta` extends a trailing `.message` block). If the
@@ -1298,6 +1365,7 @@ private struct PendingAssistant {
     }
 
     mutating func appendSteeredConversation() {
+        forceNewToolGroup = false
         if case .steered = timeline.last {
             return
         }
@@ -1305,10 +1373,17 @@ private struct PendingAssistant {
     }
 
     mutating func appendDivider(_ text: String) {
+        forceNewToolGroup = false
         if case .divider(_, let existing) = timeline.last, existing == text {
             return
         }
         timeline.append(.divider(id: UUID(), text: text))
+    }
+
+    mutating func markHiddenReasoningBoundary() {
+        if case .tools = timeline.last {
+            forceNewToolGroup = true
+        }
     }
 
     mutating func markClosed() {
@@ -1329,10 +1404,11 @@ private struct PendingAssistant {
             kind: .command(text: text, actions: actions),
             status: .completed
         )
-        // Consecutive shell commands fold into the same tools group so the
-        // aggregated row reads "Se han explorado 3 archivos, ran 1 command".
-        if case .tools(let groupId, let items, let presentation) = timeline.last,
-           items.last.map({ TimelineFamily.command.matches($0.kind) }) ?? false {
+        // Codex groups all tool activity between visible assistant messages
+        // into one compact row, even when shell commands and MCP calls are
+        // interleaved.
+        if !forceNewToolGroup,
+           case .tools(let groupId, let items, let presentation) = timeline.last {
             let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
                 groupID: groupId,
                 previousItems: items,
@@ -1352,6 +1428,7 @@ private struct PendingAssistant {
                 presentation: ToolTimelinePresentation.snapshot(groupID: groupId, items: [item])
             ))
         }
+        forceNewToolGroup = false
     }
 
     /// Replace an already-emitted command placeholder (from a function_call
@@ -1379,24 +1456,11 @@ private struct PendingAssistant {
     }
 
     /// Append any non-command tool item (mcpTool, dynamicTool, fileChange,
-    /// imageGen/View). MCP/dynamic tools always open a new tools group so
-    /// each call renders as its own row, matching how Clawix shows them
-    /// stacked between reasoning paragraphs.
+    /// imageGen/View). Historical Codex rows group all tool activity between
+    /// visible assistant messages into one row.
     mutating func appendOther(_ item: WorkItem) {
-        let openNew: Bool
-        if case .tools(_, let items, _) = timeline.last, let last = items.last {
-            openNew = !TimelineFamily.from(last.kind).matches(item.kind)
-        } else {
-            openNew = true
-        }
-        if openNew {
-            let gid = UUID()
-            timeline.append(.tools(
-                id: gid,
-                items: [item],
-                presentation: ToolTimelinePresentation.snapshot(groupID: gid, items: [item])
-            ))
-        } else if case .tools(let gid, let items, let presentation) = timeline.last {
+        if !forceNewToolGroup,
+           case .tools(let gid, let items, let presentation) = timeline.last {
             let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
                 groupID: gid,
                 previousItems: items,
@@ -1416,6 +1480,7 @@ private struct PendingAssistant {
                 presentation: ToolTimelinePresentation.snapshot(groupID: gid, items: [item])
             ))
         }
+        forceNewToolGroup = false
     }
 
     func finalize() -> RolloutHistoryEntry {

@@ -187,6 +187,10 @@ enum L10n {
         String(localized: "Used \(name)", bundle: AppLocale.bundle, locale: AppLocale.current)
     }
 
+    static func usedToolInline(_ name: String) -> String {
+        lowercaseInitial(usedTool(name))
+    }
+
     /// Inline label for an MCP integration that was invoked more than once
     /// in a single tools group ("Used Revenuecat 3 times"). The N=1 case
     /// keeps using `usedTool` so the row reads naturally.

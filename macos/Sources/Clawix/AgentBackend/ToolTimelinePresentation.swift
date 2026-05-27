@@ -162,7 +162,11 @@ enum ToolTimelinePresentation {
         }
 
         let fileChanges = changedPaths.count + unpathableFileChanges
-        if fileChanges > 0 || readFiles > 0 || listed > 0 || searchedItems > 0 || ranCommands > 0 {
+        let hasPrimaryWork = fileChanges > 0 || readFiles > 0 || listed > 0 || searchedItems > 0 || ranCommands > 0
+        let totalBrowser = jsBrowserCount + (browserUsed ? 1 : 0)
+        let inlineMcpServers = hasPrimaryWork ? Set(mcpTools.map(\.server)) : []
+
+        if hasPrimaryWork {
             var parts: [String] = []
             if fileChanges > 0 { parts.append(L10n.editedFiles(fileChanges)) }
             if readFiles > 0 {
@@ -181,6 +185,12 @@ enum ToolTimelinePresentation {
                     ? L10n.ranCommands(ranCommands)
                     : L10n.ranCommandsInline(ranCommands))
             }
+            if totalBrowser > 0 {
+                parts.append(String(localized: "used the browser", bundle: AppLocale.bundle, locale: AppLocale.current))
+            }
+            for server in uniquePreservingOrder(mcpTools.map(\.server)) {
+                parts.append(L10n.usedToolInline(prettyMcpServer(server)))
+            }
             let icon: String
             if fileChanges > 0 {
                 icon = "clawix.pencil"
@@ -197,8 +207,7 @@ enum ToolTimelinePresentation {
                 text: parts.joined(separator: ", ")
             ))
         }
-        let totalBrowser = jsBrowserCount + (browserUsed ? 1 : 0)
-        if totalBrowser > 0 {
+        if totalBrowser > 0 && !hasPrimaryWork {
             let text: String
             if totalBrowser <= 1 {
                 text = String(localized: "Used the browser", bundle: AppLocale.bundle, locale: AppLocale.current)
@@ -230,7 +239,7 @@ enum ToolTimelinePresentation {
 
         var serverOrder: [String] = []
         var serverCounts: [String: Int] = [:]
-        for mcp in mcpTools where !mcp.server.isEmpty {
+        for mcp in mcpTools where !mcp.server.isEmpty && !inlineMcpServers.contains(mcp.server) {
             if serverCounts[mcp.server] == nil { serverOrder.append(mcp.server) }
             serverCounts[mcp.server, default: 0] += 1
         }
@@ -356,6 +365,17 @@ enum ToolTimelinePresentation {
         case .jsCall(_, .repl), .jsReset:
             return "command"
         }
+    }
+
+    private static func uniquePreservingOrder(_ values: [String]) -> [String] {
+        var seen: Set<String> = []
+        var result: [String] = []
+        for value in values where !value.isEmpty {
+            if seen.insert(value).inserted {
+                result.append(value)
+            }
+        }
+        return result
     }
 }
 
@@ -528,7 +548,11 @@ private final class ToolTimelinePresentationCache {
         private func buildRows() -> [ToolTimelineRow] {
             var rows: [ToolTimelineRow] = []
 
-            if fileChanges > 0 || readFiles > 0 || listed > 0 || searchedItems > 0 || ranCommands > 0 {
+            let hasPrimaryWork = fileChanges > 0 || readFiles > 0 || listed > 0 || searchedItems > 0 || ranCommands > 0
+            let totalBrowser = jsBrowserCount + (dynamicBrowserIDs.isEmpty ? 0 : 1)
+            let inlineMcpServers = hasPrimaryWork ? Set(mcpServerOrder) : []
+
+            if hasPrimaryWork {
                 var parts: [String] = []
                 if fileChanges > 0 { parts.append(L10n.editedFiles(fileChanges)) }
                 if readFiles > 0 {
@@ -547,6 +571,12 @@ private final class ToolTimelinePresentationCache {
                         ? L10n.ranCommands(ranCommands)
                         : L10n.ranCommandsInline(ranCommands))
                 }
+                if totalBrowser > 0 {
+                    parts.append(String(localized: "used the browser", bundle: AppLocale.bundle, locale: AppLocale.current))
+                }
+                for server in mcpServerOrder {
+                    parts.append(L10n.usedToolInline(prettyMcpServer(server)))
+                }
                 let icon: String
                 if fileChanges > 0 {
                     icon = "clawix.pencil"
@@ -563,8 +593,7 @@ private final class ToolTimelinePresentationCache {
                     text: parts.joined(separator: ", ")
                 ))
             }
-            let totalBrowser = jsBrowserCount + (dynamicBrowserIDs.isEmpty ? 0 : 1)
-            if totalBrowser > 0 {
+            if totalBrowser > 0 && !hasPrimaryWork {
                 let text: String
                 if totalBrowser <= 1 {
                     text = String(localized: "Used the browser", bundle: AppLocale.bundle, locale: AppLocale.current)
@@ -594,6 +623,7 @@ private final class ToolTimelinePresentationCache {
                 rows.append(ToolTimelineRow(id: "webSearch", icon: "clawix.globe", text: text))
             }
             for (idx, server) in mcpServerOrder.enumerated() {
+                if inlineMcpServers.contains(server) { continue }
                 let count = mcpServerCounts[server] ?? 1
                 let pretty = prettyMcpServer(server)
                 let text = count <= 1 ? L10n.usedTool(pretty) : L10n.usedToolTimes(pretty, count)
