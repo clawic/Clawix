@@ -51,7 +51,7 @@ struct FileLinkCard: View {
                             .font(BodyFont.system(size: 14, wght: 700))
                             .foregroundColor(Palette.textPrimary)
                             .lineLimit(1)
-                            .truncationMode(.middle)
+                            .truncationMode(.tail)
                         Text(verbatim: subtitle)
                             .font(BodyFont.system(size: 12.5, wght: 500))
                             .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
