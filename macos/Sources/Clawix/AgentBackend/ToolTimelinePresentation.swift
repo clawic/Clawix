@@ -328,7 +328,7 @@ enum ToolTimelinePresentation {
         }
     }
 
-    private static func hasPreviewImage(_ item: WorkItem) -> Bool {
+    fileprivate static func hasPreviewImage(_ item: WorkItem) -> Bool {
         guard let path = item.generatedImagePath?.trimmingCharacters(in: .whitespacesAndNewlines),
               !path.isEmpty
         else { return false }
@@ -883,9 +883,13 @@ private final class ToolTimelinePresentationCache {
                     dynamicToolName = name
                 }
             case .imageGeneration:
-                imageGenerations = 1
+                if !ToolTimelinePresentation.hasPreviewImage(item) {
+                    imageGenerations = 1
+                }
             case .imageView:
-                imageViews = 1
+                if !ToolTimelinePresentation.hasPreviewImage(item) {
+                    imageViews = 1
+                }
             case .jsCall(_, .browser):
                 jsBrowserCount = 1
             case .jsCall(_, .repl):

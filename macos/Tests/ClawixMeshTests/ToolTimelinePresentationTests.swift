@@ -142,6 +142,28 @@ final class ToolTimelinePresentationTests: XCTestCase {
         XCTAssertEqual(previews.map(\.previewImagePath), ["/tmp/window.png"])
     }
 
+    func testSeededPathBackedViewedImagesMatchFullSnapshot() {
+        let items = [
+            WorkItem(
+                id: "cmd-1",
+                kind: .command(text: "screencapture -x -R 20,39,1200,900 window.png", actions: []),
+                status: .completed
+            ),
+            WorkItem(
+                id: "img-1",
+                kind: .imageView,
+                status: .completed,
+                generatedImagePath: "/tmp/window.png"
+            )
+        ]
+
+        let seeded = ToolTimelinePresentation.snapshot(groupID: UUID(), items: items)
+        let full = ToolTimelinePresentation.snapshot(for: items)
+
+        XCTAssertEqual(seeded.aggregateRows, full.aggregateRows)
+        XCTAssertFalse(seeded.aggregateRows.contains { $0.id == "imgView" })
+    }
+
     func testUnresolvedViewedImagesKeepTextSummary() {
         let rows = ToolTimelinePresentation.aggregateRows(for: [
             WorkItem(id: "img-1", kind: .imageView, status: .completed)
