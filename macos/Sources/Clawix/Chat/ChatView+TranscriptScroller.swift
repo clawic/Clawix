@@ -45,6 +45,10 @@ struct ChatTranscriptScrollerView: View {
 
     private var canTriggerOlderHistory: Bool {
         if hiddenLocalMessageCount > 0 { return true }
+        return canRequestOlderPage
+    }
+
+    private var canRequestOlderPage: Bool {
         guard let pagination = appState.messagesPaginationByChat[chatId] else { return false }
         return pagination.hasMore
             && !pagination.loadingOlder
@@ -401,6 +405,7 @@ struct ChatTranscriptScrollerView: View {
                 }
             }
         } else {
+            guard canRequestOlderPage else { return }
             RenderProbe.mark(
                 "ChatOlderAnchorProbeRequestOnly",
                 fields: [
