@@ -171,8 +171,32 @@ final class ToolTimelinePresentationTests: XCTestCase {
 
         XCTAssertEqual(rows.map(\.id), ["cmd-1", "cmd-2"])
         XCTAssertEqual(rows.map(\.text), [
-            "Ran sed -n '1p' README.md",
-            "Ran rg timeline"
+            "Read README.md",
+            "Searched timeline"
+        ])
+    }
+
+    func testAggregateDetailRowsExposeCompletedRowsForDisclosure() {
+        let items = [
+            WorkItem(
+                id: "read-1",
+                kind: .command(text: "sed -n '1,90p' /tmp/agent-commit-scope.mjs", actions: [.read]),
+                status: .completed
+            ),
+            WorkItem(
+                id: "cmd-1",
+                kind: .command(text: "git status --short", actions: []),
+                status: .completed
+            ),
+            WorkItem(id: "web-1", kind: .webSearch, status: .completed)
+        ]
+
+        let rows = ToolTimelinePresentation.detailRows(for: items, aggregateRowID: "exec")
+
+        XCTAssertEqual(rows.map(\.text), [
+            "Read agent-commit-scope.mjs",
+            "Ran git status --short",
+            "Searched web"
         ])
     }
 

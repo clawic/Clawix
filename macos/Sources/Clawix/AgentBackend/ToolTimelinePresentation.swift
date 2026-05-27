@@ -44,6 +44,18 @@ enum ToolTimelinePresentation {
         }
     }
 
+    static func detailRows(
+        for items: [WorkItem],
+        aggregateRowID: String
+    ) -> [ToolTimelineDetailRow] {
+        items.enumerated().compactMap { index, item in
+            guard detailAggregateRowID(for: item, in: items) == aggregateRowID else {
+                return nil
+            }
+            return detailRow(for: item, fallbackIndex: index)
+        }
+    }
+
     static func previewImageRows(for items: [WorkItem]) -> [ToolTimelineDetailRow] {
         items.enumerated().compactMap { index, item in
             guard hasPreviewImage(item) else { return nil }
@@ -295,12 +307,12 @@ enum ToolTimelinePresentation {
 
     private static func detailRow(for item: WorkItem, fallbackIndex: Int) -> ToolTimelineDetailRow {
         switch item.kind {
-        case .command(let text, _):
+        case .command(let text, let actions):
             let command = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             return ToolTimelineDetailRow(
                 id: item.id,
                 icon: iconForSingleItem(item) ?? "clawix.terminal",
-                text: commandLineText(status: item.status, command: command),
+                text: commandLineText(status: item.status, command: command, actions: actions),
                 status: item.status,
                 previewImagePath: item.generatedImagePath
             )
@@ -328,17 +340,143 @@ enum ToolTimelinePresentation {
         }
     }
 
-    private static func commandLineText(status: WorkItemStatus, command: String) -> String {
+    private static func detailAggregateRowID(for item: WorkItem, in items: [WorkItem]) -> String? {
+        let aggregateRows = aggregateRows(for: items)
+        switch item.kind {
+        case .command:
+            return aggregateRows.contains(where: { $0.id == "exec" }) ? "exec" : nil
+        case .fileChange:
+            return aggregateRows.contains(where: { $0.id == "exec" }) ? "exec" : nil
+        case .webSearch:
+            return aggregateRows.contains(where: { $0.id == "exec" })
+                ? "exec"
+                : (aggregateRows.contains(where: { $0.id == "webSearch" }) ? "webSearch" : nil)
+        case .mcpTool(let server, let tool):
+            let bucket = mcpServerBucket(server: server, tool: tool)
+            if aggregateRows.contains(where: { $0.id == "exec" }) {
+                return "exec"
+            }
+            return aggregateRows.first { row in
+                row.id.hasPrefix("mcp")
+                    && row.text.contains(prettyMcpServer(bucket))
+            }?.id
+        case .dynamicTool(let name):
+            let lower = name.lowercased()
+            if lower.contains("browser") {
+                return aggregateRows.contains(where: { $0.id == "exec" })
+                    ? "exec"
+                    : (aggregateRows.contains(where: { $0.id == "browser" }) ? "browser" : nil)
+            }
+            if lower.contains("web") {
+                return aggregateRows.contains(where: { $0.id == "exec" })
+                    ? "exec"
+                    : (aggregateRows.contains(where: { $0.id == "webSearch" }) ? "webSearch" : nil)
+            }
+            return aggregateRows.first { $0.id.hasPrefix("dyn") && $0.text.contains(name) }?.id
+        case .imageGeneration:
+            return aggregateRows.contains(where: { $0.id == "imgGen" }) ? "imgGen" : nil
+        case .imageView:
+            return aggregateRows.contains(where: { $0.id == "imgView" }) ? "imgView" : nil
+        case .jsCall(_, .browser):
+            return aggregateRows.contains(where: { $0.id == "exec" })
+                ? "exec"
+                : (aggregateRows.contains(where: { $0.id == "browser" }) ? "browser" : nil)
+        case .jsCall(_, .repl), .jsReset:
+            return aggregateRows.contains(where: { $0.id == "nodeRepl" }) ? "nodeRepl" : nil
+        }
+    }
+
+    private static func commandLineText(
+        status: WorkItemStatus,
+        command: String,
+        actions: [CommandActionKind]
+    ) -> String {
         let prefix: String
         switch status {
         case .inProgress:
             prefix = String(localized: "Running", bundle: AppLocale.bundle, locale: AppLocale.current)
         case .completed:
+            if actions.contains(.read),
+               let target = commandDisplayTarget(from: command) {
+                return "\(String(localized: "Read", bundle: AppLocale.bundle, locale: AppLocale.current)) \(target)"
+            }
+            if actions.contains(.listFiles),
+               let target = commandDisplayTarget(from: command) {
+                return "\(String(localized: "Listed", bundle: AppLocale.bundle, locale: AppLocale.current)) \(target)"
+            }
+            if actions.contains(.search),
+               let target = commandDisplayTarget(from: command) {
+                return "\(String(localized: "Searched", bundle: AppLocale.bundle, locale: AppLocale.current)) \(target)"
+            }
             prefix = String(localized: "Ran", bundle: AppLocale.bundle, locale: AppLocale.current)
         case .failed:
             prefix = String(localized: "Failed", bundle: AppLocale.bundle, locale: AppLocale.current)
         }
         return command.isEmpty ? L10n.ranCommands(1) : "\(prefix) \(command)"
+    }
+
+    private static func commandDisplayTarget(from command: String) -> String? {
+        let tokens = shellTokens(command)
+        guard tokens.count > 1 else { return nil }
+        let ignoredCommands: Set<String> = [
+            "cat", "sed", "awk", "head", "tail", "nl", "rg", "grep", "find", "ls", "tree"
+        ]
+        for rawToken in tokens.reversed() {
+            let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !token.isEmpty else { continue }
+            let lower = token.lowercased()
+            if ignoredCommands.contains(lower) { continue }
+            if token.hasPrefix("-") { continue }
+            if token == "|" || token == "&&" || token == "||" { continue }
+            if token.range(of: #"^\d+(,\d+)?p$"#, options: .regularExpression) != nil { continue }
+            let basename = URL(fileURLWithPath: token).lastPathComponent
+            if !basename.isEmpty, basename != "/" {
+                return basename
+            }
+        }
+        return nil
+    }
+
+    private static func shellTokens(_ command: String) -> [String] {
+        var tokens: [String] = []
+        var current = ""
+        var quote: Character?
+        var escaping = false
+        for ch in command {
+            if escaping {
+                current.append(ch)
+                escaping = false
+                continue
+            }
+            if ch == "\\" {
+                escaping = true
+                continue
+            }
+            if let activeQuote = quote {
+                if ch == activeQuote {
+                    quote = nil
+                } else {
+                    current.append(ch)
+                }
+                continue
+            }
+            if ch == "'" || ch == "\"" {
+                quote = ch
+                continue
+            }
+            if ch.isWhitespace {
+                if !current.isEmpty {
+                    tokens.append(current)
+                    current.removeAll(keepingCapacity: true)
+                }
+            } else {
+                current.append(ch)
+            }
+        }
+        if !current.isEmpty {
+            tokens.append(current)
+        }
+        return tokens
     }
 
     private static func fallbackDetailText(for item: WorkItem) -> String {

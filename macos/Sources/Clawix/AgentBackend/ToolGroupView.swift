@@ -9,6 +9,7 @@ import SwiftUI
 struct ToolGroupView: View {
     let items: [WorkItem]
     private let snapshot: ToolTimelinePresentationSnapshot
+    @State private var expandedRows: Set<String> = []
 
     init(items: [WorkItem], presentation: ToolTimelinePresentationSnapshot? = nil) {
         self.items = items
@@ -19,7 +20,15 @@ struct ToolGroupView: View {
         let _ = markBodyEvaluation()
         VStack(alignment: .leading, spacing: 14) {
             ForEach(aggregateRows) { row in
-                aggregateRow(row)
+                let details = completedDetailRows(for: row)
+                VStack(alignment: .leading, spacing: 8) {
+                    aggregateRow(row, hasDetails: !details.isEmpty)
+                    if expandedRows.contains(row.id) {
+                        ForEach(details) { detail in
+                            completedDetailRow(detail)
+                        }
+                    }
+                }
             }
             ForEach(previewImageRows) { row in
                 if let path = row.previewImagePath, !path.isEmpty {
@@ -108,15 +117,53 @@ struct ToolGroupView: View {
         snapshot.aggregateRows
     }
 
-    private func aggregateRow(_ row: ToolTimelineRow) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            icon(row.icon)
-            .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
-            .frame(width: 16, alignment: .leading)
-            Text(verbatim: row.text)
-                .font(BodyFont.system(size: 13, wght: 500))
-                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
-                .fixedSize(horizontal: false, vertical: true)
+    private func completedDetailRows(for row: ToolTimelineRow) -> [ToolTimelineDetailRow] {
+        ToolTimelinePresentation.detailRows(for: items, aggregateRowID: row.id)
+            .filter { $0.status != .inProgress && !($0.previewImagePath?.isEmpty == false) }
+    }
+
+    private func aggregateRow(_ row: ToolTimelineRow, hasDetails: Bool) -> some View {
+        Button {
+            toggleRow(row.id, hasDetails: hasDetails)
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                icon(row.icon)
+                    .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
+                    .frame(width: 16, alignment: .leading)
+                Text(verbatim: row.text)
+                    .font(BodyFont.system(size: 13, wght: 500))
+                    .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
+                    .fixedSize(horizontal: false, vertical: true)
+                if hasDetails {
+                    LucideIcon(expandedRows.contains(row.id) ? .chevronDown : .chevronRight, size: 12)
+                        .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
+                        .offset(y: 1)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!hasDetails)
+        .accessibilityLabel(Text(verbatim: row.text))
+        .clxControl("chat.toolRow.\(row.id)", role: "button", label: row.text) {
+            toggleRow(row.id, hasDetails: hasDetails)
+        }
+    }
+
+    private func completedDetailRow(_ row: ToolTimelineDetailRow) -> some View {
+        Text(verbatim: row.text)
+            .font(BodyFont.system(size: 13, wght: 500))
+            .foregroundColor(textColor(for: row.status))
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.leading, 24)
+    }
+
+    private func toggleRow(_ id: String, hasDetails: Bool) {
+        guard hasDetails else { return }
+        if expandedRows.contains(id) {
+            expandedRows.remove(id)
+        } else {
+            expandedRows.insert(id)
         }
     }
 
