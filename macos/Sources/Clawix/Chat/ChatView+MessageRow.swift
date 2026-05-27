@@ -94,7 +94,7 @@ enum ChatMarkdownPrewarmer {
                         result.texts.append(text)
                         result.timelineCount += 1
                     }
-                case .tools:
+                case .divider, .tools:
                     break
                 }
             }
@@ -449,6 +449,8 @@ struct MessageRow: View, Equatable {
                 messageEntries += 1
             case .reasoning:
                 reasoningEntries += 1
+            case .divider:
+                break
             case .tools(_, let items, _):
                 toolEntries += 1
                 toolItems += items.count
@@ -515,6 +517,8 @@ struct MessageRow: View, Equatable {
                 timelineMessageEntries += 1
             case .reasoning:
                 timelineReasoningEntries += 1
+            case .divider:
+                break
             case .tools:
                 timelineToolEntries += 1
             }
@@ -583,7 +587,7 @@ struct MessageRow: View, Equatable {
             switch entry {
             case .reasoning(_, let text), .message(_, let text):
                 return text.isEmpty ? nil : text
-            case .tools:
+            case .divider, .tools:
                 return nil
             }
         }
@@ -610,6 +614,9 @@ struct MessageRow: View, Equatable {
         case .message(let entryId, let text):
             messageEntryBody(entryId: entryId, text: text)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityHidden(!exposeMessageAccessibility)
+        case .divider(_, let text):
+            TimelineDivider(text: text)
                 .accessibilityHidden(!exposeMessageAccessibility)
         case .tools(_, let items, let presentation):
             ToolGroupView(items: items, presentation: presentation)
@@ -769,6 +776,30 @@ struct MessageRow: View, Equatable {
                 }
             }
         }
+    }
+}
+
+private struct TimelineDivider: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            line
+            Text(verbatim: text)
+                .font(BodyFont.system(size: 11.5, wght: 600))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
+                .fixedSize()
+            line
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(verbatim: text))
+    }
+
+    private var line: some View {
+        Rectangle()
+            .fill(Color.overlay(0.08))
+            .frame(height: 1)
     }
 }
 

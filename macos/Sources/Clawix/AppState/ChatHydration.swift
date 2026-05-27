@@ -1289,6 +1289,8 @@ extension AppState {
             return UUID(uuidString: id).map { .reasoning(id: $0, text: text) }
         case .message(let id, let text):
             return UUID(uuidString: id).map { .message(id: $0, text: text) }
+        case .divider(let id, let text):
+            return UUID(uuidString: id).map { .divider(id: $0, text: text) }
         case .tools(let id, let items):
             guard let uuid = UUID(uuidString: id) else { return nil }
             let workItems = items.compactMap(workItem(from:))

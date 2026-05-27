@@ -451,6 +451,8 @@ final class ChatStorePublicationTests: XCTestCase {
                 return "message:\(text)"
             case .reasoning(_, let text):
                 return "reasoning:\(text)"
+            case .divider(_, let text):
+                return "divider:\(text)"
             case .tools(_, let items, _):
                 return "tools:\(items.count)"
             }

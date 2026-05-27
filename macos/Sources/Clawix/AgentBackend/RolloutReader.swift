@@ -140,7 +140,7 @@ enum RolloutReader {
     /// Hard cap for tail reads. Raw runtime artifacts can reach 100+
     /// MB; this cap prevents the UI hydration path from walking the
     /// whole transcript before first paint.
-    static let defaultTailBytes: Int = 4 * 1024 * 1024
+    static let defaultTailBytes: Int = 16 * 1024 * 1024
 
     /// Bytes scanned at the start of the file to recover the
     /// `session_meta` line when doing a tail read. Codex writes it as
@@ -208,7 +208,7 @@ enum RolloutReader {
             sessionMetaLine: sessionMetaLine,
             now: now
         )
-        while lastResult.entries.isEmpty, targetTailBytes < maxTailBytes {
+        while shouldExpandTailRead(lastResult, tailBytes: targetTailBytes, maxTailBytes: maxTailBytes, limit: limit) {
             targetTailBytes = min(maxTailBytes, max(targetTailBytes * 2, targetTailBytes + 1))
             lastResult = readTailSlice(
                 handle: handle,
@@ -224,6 +224,17 @@ enum RolloutReader {
             lastResult.hasMoreBefore = true
         }
         return lastResult
+    }
+
+    private static func shouldExpandTailRead(
+        _ result: ReadResult,
+        tailBytes: UInt64,
+        maxTailBytes: UInt64,
+        limit: Int
+    ) -> Bool {
+        guard tailBytes < maxTailBytes else { return false }
+        if result.entries.isEmpty { return true }
+        return result.entries.count < min(limit, 3)
     }
 
     private static func readTailSlice(
@@ -634,6 +645,12 @@ enum RolloutReader {
                 } else {
                     pending?.goalOutcome = outcome
                 }
+
+            case ("compacted", _):
+                if pending == nil {
+                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                }
+                pending?.appendDivider("Context automatically compacted")
 
             case ("event_msg", "exec_command_end"):
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
@@ -1276,6 +1293,13 @@ private struct PendingAssistant {
         if isFinal {
             finalText = text
         }
+    }
+
+    mutating func appendDivider(_ text: String) {
+        if case .divider(_, let existing) = timeline.last, existing == text {
+            return
+        }
+        timeline.append(.divider(id: UUID(), text: text))
     }
 
     mutating func setDuration(milliseconds: Double) {
