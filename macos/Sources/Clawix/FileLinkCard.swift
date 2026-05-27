@@ -3,18 +3,18 @@ import AppKit
 
 /// Pill card rendered under an assistant message for a local file link.
 /// a square doc icon, the file name + "Document · MD" subtitle, and a
-/// trailing "Open ⌄" pill that pops a menu of editors.
+/// trailing "Open in ⌄" pill that pops a menu of editors.
 struct FileLinkCard: View {
     let path: String
 
     @EnvironmentObject var appState: AppState
     @State private var hovered = false
     @State private var openPillHovered = false
-    /// Window-coordinates frame of the entire "Open" pill, captured every
+    /// Window-coordinates frame of the entire "Open in" pill, captured every
     /// layout pass via a GeometryReader. Used to anchor the NSPanel popup
     /// in screen coordinates so it can escape the chat scroll-view's clip
     /// and sibling z-order entirely. Anchored on the pill (not just the
-    /// chevron) so the popup left-aligns with the "Open" label.
+    /// chevron) so the popup left-aligns with the "Open in" label.
     @State private var openPillWindowFrame: CGRect = .zero
     /// Fallback anchor for accessibility-triggered menu presentation when
     /// the trailing pill has not reported a window frame yet.
@@ -81,7 +81,7 @@ struct FileLinkCard: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .background(FileLinkWindowFrameReader(frame: $cardWindowFrame))
-        // Whole card opens the file in the sidebar preview. The "Open"
+        // Whole card opens the file in the sidebar preview. The "Open in"
         // pill has its own identical tap handler so taps on the pill
         // body never get swallowed by intermediate hit-testing; the
         // chevron declares a more local gesture and stays the only path
@@ -123,11 +123,11 @@ struct FileLinkCard: View {
 
     // MARK: - Open pill
 
-    /// "Open ⌄" pill that matches the file card and presents
+    /// "Open in ⌄" pill that matches the file card and presents
     /// the editor dropdown from a single accessible control.
     private var openPill: some View {
         HStack(spacing: 4) {
-            Text(verbatim: String(localized: "Open",
+            Text(verbatim: String(localized: "Open in",
                                   bundle: AppLocale.bundle,
                                   locale: AppLocale.current))
                 .font(BodyFont.system(size: 14, wght: 500))
@@ -170,7 +170,7 @@ struct FileLinkCard: View {
             return
         }
         // Anchor the popup's top-left at the pill's bottom-left in screen
-        // coordinates so the menu left-aligns with the "Open" label.
+        // coordinates so the menu left-aligns with the "Open in" label.
         let anchorFrame = explicitAnchorFrame
             ?? (openPillWindowFrame.isEmpty ? cardWindowFrame : openPillWindowFrame)
         let anchorPoint: NSPoint
@@ -294,7 +294,7 @@ private struct FileLinkWindowFrameReader: NSViewRepresentable {
     }
 }
 
-/// Reports the "Open" pill's frame in window-local coordinates whenever
+/// Reports the "Open in" pill's frame in window-local coordinates whenever
 /// layout changes. The popup panel uses this to land in the right place
 /// even when the chat scroll view scrolls between layout passes.
 private struct OpenPillWindowFrameReader: NSViewRepresentable {
