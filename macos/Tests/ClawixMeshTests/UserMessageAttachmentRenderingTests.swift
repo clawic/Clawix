@@ -197,6 +197,51 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertTrue(result.readEntireFile)
     }
 
+    func testRolloutReaderFoldsTerminalIoIntoCommandRows() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-26T20:55:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-26T20:55:01.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "write_stdin",
+                "call_id": "stdin-1"
+            ]),
+            jsonLine(timestamp: "2026-05-26T20:55:02.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "read_thread_terminal",
+                "call_id": "read-1"
+            ]),
+            jsonLine(timestamp: "2026-05-26T20:55:03.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Done.",
+                "phase": "final_answer"
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout)
+        let assistant = try XCTUnwrap(result.entries.first)
+        let tools = assistant.timeline.compactMap { entry -> ([WorkItem], ToolTimelinePresentationSnapshot?)? in
+            if case .tools(_, let items, let presentation) = entry {
+                return (items, presentation)
+            }
+            return nil
+        }
+
+        XCTAssertEqual(tools.count, 1)
+        XCTAssertEqual(tools.first?.0.count, 2)
+        XCTAssertTrue(tools.first?.0.allSatisfy {
+            if case .command(nil, []) = $0.kind { return true }
+            return false
+        } ?? false)
+        XCTAssertEqual(tools.first?.1?.aggregateRows.first?.text, "Ran 2 commands")
+    }
+
     func testRolloutChatMessagesAreSettledForHistoricalRendering() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

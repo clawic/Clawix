@@ -649,16 +649,13 @@ enum RolloutReader {
                         latestPlan = steps
                     }
                 case "write_stdin", "read_thread_terminal":
-                    // The agent reading from / writing to the integrated
-                    // terminal. Surface it as terminal activity in the
-                    // timeline (rendered "Used the terminal").
+                    // Codex presents terminal polling/input as command
+                    // activity, not as repeated generic tool rows.
                     if seenCallIds.contains(callId) { continue }
                     if pending == nil {
                         pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                     }
-                    pending?.appendOther(
-                        WorkItem(id: callId, kind: .dynamicTool(name: "the terminal"), status: .completed)
-                    )
+                    pending?.appendCommand(id: callId, text: nil, actions: [])
                     seenCallIds.insert(callId)
                 default:
                     continue
