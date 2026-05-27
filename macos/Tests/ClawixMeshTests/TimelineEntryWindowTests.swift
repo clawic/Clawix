@@ -95,7 +95,7 @@ final class TimelineEntryWindowTests: XCTestCase {
             role: .assistant,
             content: """
             Updated [view](/tmp/ChatView+MessageRow.swift) and \
-            [state](/tmp/ChatHydration.swift), see [doc](/tmp/notes.md).
+            [state](/tmp/ChatHydration.swift:42), see [doc](/tmp/notes.md).
             """,
             streamingFinished: true
         )
@@ -103,6 +103,27 @@ final class TimelineEntryWindowTests: XCTestCase {
         let preview = FileLinkPreviewCache.shared.preview(for: message)
 
         XCTAssertEqual(preview.visiblePaths, ["/tmp/notes.md"])
+        XCTAssertEqual(preview.remainingCount, 0)
+    }
+
+    func testFileLinkPreviewAcceptsMarkdownLinksWithLineSuffixes() {
+        let message = ChatMessage(
+            role: .assistant,
+            content: """
+            Updated [instructions](/Users/example/project/AGENTS.md:170), \
+            [guide](/Users/example/project/docs/guide.markdown:12:4), and \
+            [mdx](/Users/example/project/docs/page.mdx:9).
+            """,
+            streamingFinished: true
+        )
+
+        let preview = FileLinkPreviewCache.shared.preview(for: message)
+
+        XCTAssertEqual(preview.visiblePaths, [
+            "/Users/example/project/AGENTS.md",
+            "/Users/example/project/docs/guide.markdown",
+            "/Users/example/project/docs/page.mdx"
+        ])
         XCTAssertEqual(preview.remainingCount, 0)
     }
 

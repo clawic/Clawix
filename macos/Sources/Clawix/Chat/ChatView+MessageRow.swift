@@ -857,10 +857,9 @@ final class FileLinkPreviewCache {
             .extractLinkURLs(in: message.content)
             .filter(\.isFileURL)
             .map(\.path)
+            .compactMap(Self.previewableFileLinkPath)
             .filter {
-                !$0.isEmpty
-                    && Self.shouldPreviewFileLink(path: $0)
-                    && seen.insert($0).inserted
+                seen.insert($0).inserted
             }
         let preview: FileLinkPreview
         if paths.count > previewLimit {
@@ -875,9 +874,28 @@ final class FileLinkPreviewCache {
         return preview
     }
 
-    private static func shouldPreviewFileLink(path: String) -> Bool {
-        let ext = URL(fileURLWithPath: path).pathExtension.lowercased()
-        return ["md", "markdown", "mdx"].contains(ext)
+    private static func previewableFileLinkPath(_ path: String) -> String? {
+        let normalized = stripLineColumnSuffix(from: path)
+        guard !normalized.isEmpty else { return nil }
+        let ext = URL(fileURLWithPath: normalized).pathExtension.lowercased()
+        guard ["md", "markdown", "mdx"].contains(ext) else { return nil }
+        return normalized
+    }
+
+    private static func stripLineColumnSuffix(from path: String) -> String {
+        var normalized = path
+        for _ in 0..<2 {
+            guard let colon = normalized.lastIndex(of: ":") else { break }
+            if let slash = normalized.lastIndex(of: "/"), colon < slash {
+                break
+            }
+            let suffix = normalized[normalized.index(after: colon)...]
+            guard !suffix.isEmpty, suffix.allSatisfy(\.isNumber) else {
+                break
+            }
+            normalized = String(normalized[..<colon])
+        }
+        return normalized
     }
 
     private func store(_ value: FileLinkPreview, for key: Key) {
