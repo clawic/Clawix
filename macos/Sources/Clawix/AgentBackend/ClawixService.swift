@@ -521,10 +521,10 @@ final class ClawixService: ObservableObject {
 
     /// Bind an existing chat to a server thread when the sidebar opens a
     /// runtime-indexed conversation.
-    func attach(chatId: UUID, threadId: String) async {
+    func attach(chatId: UUID, threadId: String, resume: Bool = false) async {
         threadByChat[chatId] = threadId
         chatByThread[threadId] = chatId
-        guard status == .ready else { return }
+        guard resume, status == .ready else { return }
         _ = try? await client.send(
             method: ClawixMethod.threadResume,
             params: ThreadResumeParams(threadId: threadId),
