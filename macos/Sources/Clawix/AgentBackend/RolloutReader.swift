@@ -432,8 +432,8 @@ enum RolloutReader {
         var latestPlan: [PlanStep]? = nil
         // cwd captured from `session_meta`. Used to resolve relative
         // paths emitted by `apply_patch` (the new custom_tool_call shape
-        // writes paths like `cualquiera.md`, not absolute) so the
-        // ChangedFileCard pill can find the file on disk.
+        // writes paths like `cualquiera.md`, not absolute) before adding
+        // the file-change row to the timeline.
         var sessionCwd: String? = nil
         // session id captured from `session_meta.payload.id`. Used to
         // build the absolute filesystem path for `imagegen` outputs,
@@ -683,8 +683,7 @@ enum RolloutReader {
                 // custom_tool_call (with the patch body in `input`) rather
                 // than the older `patch_apply_end` event. Extract the
                 // touched paths from the patch headers so the timeline
-                // gets the same `.fileChange` row and the trailing
-                // ChangedFileCard pills appear.
+                // gets the same compact `.fileChange` row.
                 let name = payload["name"] as? String ?? ""
                 guard name == "apply_patch" else { continue }
                 let callId = payload["call_id"] as? String ?? UUID().uuidString

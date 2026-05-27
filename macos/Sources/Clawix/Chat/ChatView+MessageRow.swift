@@ -64,9 +64,8 @@ enum ChatMarkdownPrewarmer {
         if !texts.isEmpty {
             PerfSignpost.renderMarkdown.event("prewarm.texts", texts.count)
         }
-        guard !texts.isEmpty || hasCompletedAssistantMessages(messages) else { return }
+        guard !texts.isEmpty else { return }
         await Task.detached(priority: .utility) {
-            prewarmChangedFilePaths(messages: messages)
             for text in texts {
                 MarkdownParseCache.prewarm(text)
             }
@@ -103,18 +102,6 @@ enum ChatMarkdownPrewarmer {
         return result
     }
 
-    private static func hasCompletedAssistantMessages(_ messages: [ChatMessage]) -> Bool {
-        messages.contains {
-            $0.role == .assistant && $0.streamingFinished
-        }
-    }
-
-    private static func prewarmChangedFilePaths(messages: [ChatMessage]) {
-        for message in messages
-        where message.role == .assistant && message.streamingFinished {
-            _ = ChangedFilePathCache.shared.paths(for: message)
-        }
-    }
 }
 
 enum TimelineEntryWindow {
@@ -348,23 +335,20 @@ struct MessageRow: View, Equatable {
                     }
                 }
 
-                // One pill per file the agent edited during this turn,
-                // mirroring compact "README.md / Document / MD"
-                // attachment cards. Order matches first-touch, deduped.
-                // Only surfaces once the turn fully ends so the cards
-                // don't pop in beside the still-streaming reasoning.
-                let changedFiles = ChatTrailingCards.changedFilePreview(
-                    for: message,
-                    responseStreaming: responseStreaming
-                )
-                if !changedFiles.isEmpty {
+                let fileLinks = finalAssistantFileLinkPreview
+                if isLastAssistantMessage,
+                   !responseStreaming,
+                   message.streamingFinished,
+                   !message.isError,
+                   !PlanSegmenter.containsPlan(message.content),
+                   !fileLinks.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        ForEach(changedFiles.visiblePaths, id: \.self) { path in
-                            ChangedFileCard(path: path)
+                        ForEach(fileLinks.visiblePaths, id: \.self) { path in
+                            FileLinkCard(path: path)
                                 .frame(maxWidth: chatRailMaxWidth * 0.7, alignment: .leading)
                         }
-                        if changedFiles.remainingCount > 0 {
-                            Text(verbatim: "+ \(changedFiles.remainingCount) more changed files")
+                        if fileLinks.remainingCount > 0 {
+                            Text(verbatim: "Show \(fileLinks.remainingCount) more")
                                 .font(.system(size: 12, weight: .regular))
                                 .foregroundColor(Palette.textSecondary)
                                 .padding(.top, 1)
@@ -485,6 +469,10 @@ struct MessageRow: View, Equatable {
 
     private var finalAssistantLinkPreviewURL: URL? {
         LinkPreviewURLCache.shared.url(for: message)
+    }
+
+    private var finalAssistantFileLinkPreview: FileLinkPreview {
+        FileLinkPreviewCache.shared.preview(for: message)
     }
 
     private func tickStreamingRowCategory() {
@@ -830,7 +818,8 @@ struct MessageActionIcon: View {
     }
 }
 
-struct ChangedFilePreview: Equatable {
+
+struct FileLinkPreview: Equatable {
     let visiblePaths: [String]
     let remainingCount: Int
 
@@ -839,102 +828,68 @@ struct ChangedFilePreview: Equatable {
     }
 }
 
-enum ChatTrailingCards {
-    static let changedFilePreviewLimit = 3
+final class FileLinkPreviewCache {
+    static let shared = FileLinkPreviewCache()
 
-    static func changedFilePaths(
-        for message: ChatMessage,
-        responseStreaming: Bool
-    ) -> [String] {
-        guard !responseStreaming,
-              message.streamingFinished
-        else { return [] }
-        return ChangedFilePathCache.shared.paths(for: message)
-    }
-
-    static func changedFilePreview(
-        for message: ChatMessage,
-        responseStreaming: Bool
-    ) -> ChangedFilePreview {
-        let paths = changedFilePaths(for: message, responseStreaming: responseStreaming)
-        guard paths.count > changedFilePreviewLimit else {
-            return ChangedFilePreview(visiblePaths: paths, remainingCount: 0)
-        }
-        return ChangedFilePreview(
-            visiblePaths: Array(paths.prefix(changedFilePreviewLimit)),
-            remainingCount: paths.count - changedFilePreviewLimit
-        )
-    }
-}
-
-final class ChangedFilePathCache {
-    static let shared = ChangedFilePathCache()
-
-    private let lock = NSLock()
-    private var values: [Key: [String]] = [:]
+    private var values: [Key: FileLinkPreview] = [:]
     private var order: [Key] = []
     private let limit = 256
+    private let previewLimit = 3
 
     private init() {}
 
-    func paths(for message: ChatMessage) -> [String] {
+    func preview(for message: ChatMessage) -> FileLinkPreview {
         let key = Key(message: message)
-        lock.lock()
         if let cached = values[key] {
-            lock.unlock()
             return cached
         }
-        lock.unlock()
 
         RenderProbe.mark(
-            "ChangedFilePathsCompute",
+            "FileLinkPreviewExtract",
             fields: [
                 "message": message.id.uuidString,
-                "timeline": "\(message.timeline.count)"
+                "bytes": "\(message.content.utf8.count)"
             ]
         )
 
         var seen: Set<String> = []
-        var result: [String] = []
-        for entry in message.timeline {
-            guard case .tools(_, let items, _) = entry else { continue }
-            for item in items {
-                guard case .fileChange(let paths) = item.kind else { continue }
-                for path in paths where seen.insert(path).inserted {
-                    result.append(path)
-                }
-            }
+        let paths = AssistantMarkdown
+            .extractLinkURLs(in: message.content)
+            .filter(\.isFileURL)
+            .map(\.path)
+            .filter { !$0.isEmpty && seen.insert($0).inserted }
+        let preview: FileLinkPreview
+        if paths.count > previewLimit {
+            preview = FileLinkPreview(
+                visiblePaths: Array(paths.prefix(previewLimit)),
+                remainingCount: paths.count - previewLimit
+            )
+        } else {
+            preview = FileLinkPreview(visiblePaths: paths, remainingCount: 0)
         }
+        store(preview, for: key)
+        return preview
+    }
 
-        lock.lock()
-        if let cached = values[key] {
-            lock.unlock()
-            return cached
-        }
-        values[key] = result
+    private func store(_ value: FileLinkPreview, for key: Key) {
+        values[key] = value
         order.append(key)
         if order.count > limit {
-            let overflow = order.count - limit
-            for oldKey in order.prefix(overflow) {
-                values.removeValue(forKey: oldKey)
+            let removeCount = order.count - limit
+            for old in order.prefix(removeCount) {
+                values.removeValue(forKey: old)
             }
-            order.removeFirst(overflow)
+            order.removeFirst(removeCount)
         }
-        lock.unlock()
-        return result
     }
 
     private struct Key: Hashable {
-        let messageId: UUID
-        let timelineCount: Int
-        let lastTimelineId: UUID?
-        let workItemCount: Int
+        let id: UUID
+        let contentHash: Int
 
         init(message: ChatMessage) {
-            messageId = message.id
-            timelineCount = message.timeline.count
-            lastTimelineId = message.timeline.last?.id
-            workItemCount = message.workSummary?.items.count ?? 0
+            id = message.id
+            contentHash = message.content.hashValue
         }
     }
 }

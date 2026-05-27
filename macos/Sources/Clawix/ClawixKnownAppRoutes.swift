@@ -96,7 +96,7 @@ enum ClawixKnownAppRoutes {
         androidStudio.editorOption,
     ]
 
-    static let changedFileEditorOptions: [EditorOption] = [
+    static let fileLinkEditorOptions: [EditorOption] = [
         vsCode.editorOption,
         cursor.editorOption,
         terminal.editorOption,

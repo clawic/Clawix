@@ -45,12 +45,27 @@ final class ClawixKnownAppRoutesTests: XCTestCase {
 
     func testKnownAppRouteCollectionsPreserveMenuOrder() {
         XCTAssertEqual(
-            ClawixKnownAppRoutes.editorPickerOptions.map(\.name),
-            ["VS Code", "Cursor", "Finder", "Terminal", "Ghostty", "Xcode", "Android Studio"]
+            ClawixKnownAppRoutes.editorPickerOptions,
+            [
+                ClawixKnownAppRoutes.vsCode.editorOption,
+                ClawixKnownAppRoutes.cursor.editorOption,
+                ClawixKnownAppRoutes.finder.editorOption,
+                ClawixKnownAppRoutes.terminal.editorOption,
+                ClawixKnownAppRoutes.ghostty.editorOption,
+                ClawixKnownAppRoutes.xcode.editorOption,
+                ClawixKnownAppRoutes.androidStudio.editorOption,
+            ]
         )
         XCTAssertEqual(
-            ClawixKnownAppRoutes.changedFileEditorOptions.map(\.name),
-            ["VS Code", "Cursor", "Terminal", "Ghostty", "Xcode", "Android Studio"]
+            ClawixKnownAppRoutes.fileLinkEditorOptions,
+            [
+                ClawixKnownAppRoutes.vsCode.editorOption,
+                ClawixKnownAppRoutes.cursor.editorOption,
+                ClawixKnownAppRoutes.terminal.editorOption,
+                ClawixKnownAppRoutes.ghostty.editorOption,
+                ClawixKnownAppRoutes.xcode.editorOption,
+                ClawixKnownAppRoutes.androidStudio.editorOption,
+            ]
         )
         XCTAssertEqual(ClawixKnownAppRoutes.route(named: "Finder")?.fallbackPath, ClawixKnownAppRoutes.finder.fallbackPath)
         XCTAssertNil(ClawixKnownAppRoutes.route(named: "Unknown"))

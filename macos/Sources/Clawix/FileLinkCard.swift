@@ -1,11 +1,10 @@
 import SwiftUI
 import AppKit
 
-/// Pill card rendered under an assistant message for every file the agent
-/// touched during the turn (apply_patch). Layout matches Codex Desktop:
+/// Pill card rendered under an assistant message for a local file link.
 /// a square doc icon, the file name + "Document · MD" subtitle, and a
 /// trailing "Open ⌄" pill that pops a menu of editors.
-struct ChangedFileCard: View {
+struct FileLinkCard: View {
     let path: String
 
     @EnvironmentObject var appState: AppState
@@ -33,7 +32,7 @@ struct ChangedFileCard: View {
     }
 
     var body: some View {
-        let _ = RenderProbe.tick("ChangedFileCard")
+        let _ = RenderProbe.tick("FileLinkCard")
         HStack(spacing: 12) {
             Button {
                 appState.openFileInSidebar(path)
@@ -58,7 +57,7 @@ struct ChangedFileCard: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: "Open file \(fileName)"))
             .accessibilityValue(Text(verbatim: subtitle))
-            .accessibilityIdentifier("changed-file-card-\(fileName)")
+            .accessibilityIdentifier("file-link-card-\(fileName)")
             .accessibilityAddTraits(.isButton)
 
             openPill
@@ -74,7 +73,7 @@ struct ChangedFileCard: View {
                 .stroke(Color.overlay(0.18), lineWidth: 0.5)
         )
         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .background(ChangedFileWindowFrameReader(frame: $cardWindowFrame))
+        .background(FileLinkWindowFrameReader(frame: $cardWindowFrame))
         // Whole card opens the file in the sidebar preview. The "Open"
         // pill has its own identical tap handler so taps on the pill
         // body never get swallowed by intermediate hit-testing; the
@@ -86,7 +85,7 @@ struct ChangedFileCard: View {
         .onHover { hovered = $0 }
         .onAppear {
             RenderProbe.markPassive(
-                "ChangedFileCardAppeared",
+                "FileLinkCardAppeared",
                 fields: [
                     "hasExtension": "\(fileURL.pathExtension.isEmpty == false)"
                 ]
@@ -169,7 +168,7 @@ struct ChangedFileCard: View {
             let screenRect = window.convertToScreen(anchorFrame)
             anchorPoint = NSPoint(x: screenRect.minX, y: screenRect.minY)
         }
-        ChangedFileMenuPanel.present(leftTopAnchor: anchorPoint, path: path)
+        FileLinkMenuPanel.present(leftTopAnchor: anchorPoint, path: path)
     }
 }
 
@@ -204,11 +203,11 @@ private struct OpenPillClickTarget: NSViewRepresentable {
 
         private func popMenu() {
             let menu = NSMenu()
-            for action in ChangedFileOpenAction.editorActions {
-                menu.addItem(ChangedFileOpenActionMenuItem(action: action, path: path))
+            for action in FileLinkOpenAction.editorActions {
+                menu.addItem(FileLinkOpenActionMenuItem(action: action, path: path))
             }
             menu.addItem(.separator())
-            menu.addItem(ChangedFileOpenActionMenuItem(action: .openInFolder, path: path))
+            menu.addItem(FileLinkOpenActionMenuItem(action: .openInFolder, path: path))
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: bounds.minY - 4), in: self)
         }
 
@@ -229,7 +228,7 @@ private struct OpenPillClickTarget: NSViewRepresentable {
         }
 
         override func accessibilityIdentifier() -> String {
-            "changed-file-open-with-\(fileName)"
+            "file-link-open-with-\(fileName)"
         }
 
         override func accessibilityPerformPress() -> Bool {
@@ -241,7 +240,7 @@ private struct OpenPillClickTarget: NSViewRepresentable {
 
 // MARK: - Open pill frame reader
 
-private struct ChangedFileWindowFrameReader: NSViewRepresentable {
+private struct FileLinkWindowFrameReader: NSViewRepresentable {
     @Binding var frame: CGRect
 
     func makeNSView(context: Context) -> Reader {
@@ -334,14 +333,14 @@ private struct OpenPillWindowFrameReader: NSViewRepresentable {
 
 // MARK: - Menu content
 
-private struct ChangedFileMenuContent: View {
+private struct FileLinkMenuContent: View {
     let path: String
     let onPick: () -> Void
     @State private var hovered: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(ChangedFileOpenAction.editorActions) { action in
+            ForEach(FileLinkOpenAction.editorActions) { action in
                 row(action)
             }
             MenuStandardDivider()
@@ -356,7 +355,7 @@ private struct ChangedFileMenuContent: View {
     }
 
     @ViewBuilder
-    private func row(_ action: ChangedFileOpenAction) -> some View {
+    private func row(_ action: FileLinkOpenAction) -> some View {
         Button {
             action.run(path: path)
             onPick()
@@ -385,13 +384,13 @@ private struct ChangedFileMenuContent: View {
 
 // MARK: - Borderless panel host
 
-/// Hosts `ChangedFileMenuContent` in a borderless non-activating panel so
+/// Hosts `FileLinkMenuContent` in a borderless non-activating panel so
 /// the dropdown escapes the chat scroll view's clip and sibling z-order
 /// entirely. Click-outside, Escape and any selected item dismiss it,
 /// matching the sidebar's right-click context menu.
 @MainActor
-final class ChangedFileMenuPanel: NSObject {
-    private static var current: ChangedFileMenuPanel?
+final class FileLinkMenuPanel: NSObject {
+    private static var current: FileLinkMenuPanel?
 
     private let panel: NSPanel
     private let shadowMargin: CGFloat
@@ -427,10 +426,10 @@ final class ChangedFileMenuPanel: NSObject {
     static func present(leftTopAnchor: NSPoint, path: String) {
         current?.close()
 
-        var holder: ChangedFileMenuPanel!
+        var holder: FileLinkMenuPanel!
         let dismiss: () -> Void = { holder?.close() }
 
-        let content = ChangedFileMenuContent(path: path, onPick: dismiss)
+        let content = FileLinkMenuContent(path: path, onPick: dismiss)
 
         // Shadow on the menu chrome paints outside the SwiftUI bounds; pad
         // the hosting panel so the shadow isn't clipped at the edges.
@@ -446,7 +445,7 @@ final class ChangedFileMenuPanel: NSObject {
         let fitting = measureController.sizeThatFits(in: NSSize(width: 400, height: 1200))
         let size = NSSize(width: ceil(fitting.width), height: ceil(fitting.height))
 
-        let p = ChangedFileMenuPanel(
+        let p = FileLinkMenuPanel(
             rootView: padded,
             size: size,
             shadowMargin: shadowMargin
@@ -537,11 +536,11 @@ final class ChangedFileMenuPanel: NSObject {
 
 // MARK: - Open actions
 
-private final class ChangedFileOpenActionMenuItem: NSMenuItem {
-    private let openAction: ChangedFileOpenAction
+private final class FileLinkOpenActionMenuItem: NSMenuItem {
+    private let openAction: FileLinkOpenAction
     private let filePath: String
 
-    init(action: ChangedFileOpenAction, path: String) {
+    init(action: FileLinkOpenAction, path: String) {
         openAction = action
         filePath = path
         super.init(title: action.title, action: #selector(runAction), keyEquivalent: "")
@@ -557,7 +556,7 @@ private final class ChangedFileOpenActionMenuItem: NSMenuItem {
     }
 }
 
-private enum ChangedFileOpenAction: Identifiable {
+private enum FileLinkOpenAction: Identifiable {
     case editor(EditorOption)
     case openInFolder
 
@@ -597,7 +596,7 @@ private enum ChangedFileOpenAction: Identifiable {
         let fileURL = URL(fileURLWithPath: path)
         switch self {
         case .editor(let editor):
-            ChangedFileOpenAction.openInEditor(editor: editor, fileURL: fileURL)
+            FileLinkOpenAction.openInEditor(editor: editor, fileURL: fileURL)
         case .openInFolder:
             NSWorkspace.shared.activateFileViewerSelecting([fileURL])
         }
@@ -623,8 +622,8 @@ private enum ChangedFileOpenAction: Identifiable {
         )
     }
 
-    /// Editor entries shown in the dropdown, in the same order as Codex
-    /// Desktop's "Open with" menu.
-    static let editorActions: [ChangedFileOpenAction] =
-        ClawixKnownAppRoutes.changedFileEditorOptions.map { .editor($0) }
+    /// Editor entries shown in the dropdown, in the same order as the
+    /// local file preview's "Open with" menu.
+    static let editorActions: [FileLinkOpenAction] =
+        ClawixKnownAppRoutes.fileLinkEditorOptions.map { .editor($0) }
 }

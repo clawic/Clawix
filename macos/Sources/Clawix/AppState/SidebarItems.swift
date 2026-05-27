@@ -280,8 +280,8 @@ extension AppState {
     /// open in an existing tab of this chat, that tab is activated and
     /// reloaded instead of duplicating it. `file://` URLs are routed to
     /// the file viewer instead of the browser tab so a `[abrir markdown]
-    /// (/abs/path.md)` link from the assistant lands on the same preview
-    /// surface as the trailing `ChangedFileCard` pill.
+    /// (/abs/path.md)` link from the assistant lands on the in-app file
+    /// preview surface.
     func openLinkInBrowser(_ url: URL) {
         if url.isFileURL {
             openFileInSidebar(url.path)
@@ -334,9 +334,8 @@ extension AppState {
         currentSidebar = s
     }
 
-    /// Open an absolute file path in the active chat's sidebar. Used by
-    /// `ChangedFileCard`'s primary "Open" tap so the user can preview the
-    /// edited file in-app instead of bouncing out to an external editor.
+    /// Open an absolute file path in the active chat's sidebar so the user
+    /// can preview a file in-app instead of bouncing out to an external editor.
     /// Re-activates an existing file tab for the same path instead of
     /// duplicating it.
     func openFileInSidebar(_ path: String) {
