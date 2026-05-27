@@ -55,6 +55,31 @@ final class ToolTimelinePresentationTests: XCTestCase {
         XCTAssertEqual(updated.aggregateRows, ToolTimelinePresentation.aggregateRows(for: [completed]))
     }
 
+    func testIncrementalFileChangeRowsMatchFullSnapshotPhrasing() {
+        let groupID = UUID()
+        let command = WorkItem(
+            id: "cmd-1",
+            kind: .command(text: "swift test", actions: []),
+            status: .completed
+        )
+        let edit = WorkItem(
+            id: "edit-1",
+            kind: .fileChange(paths: ["Sources/App.swift"]),
+            status: .completed
+        )
+
+        let seed = ToolTimelinePresentation.snapshot(groupID: groupID, items: [command])
+        let updated = ToolTimelinePresentation.updatedSnapshot(
+            groupID: groupID,
+            previousItems: [command],
+            currentSnapshot: seed,
+            applying: edit
+        )
+
+        XCTAssertEqual(updated.aggregateRows, ToolTimelinePresentation.aggregateRows(for: [command, edit]))
+        XCTAssertEqual(updated.aggregateRows.first?.text, "Edited 1 file, ran 1 command")
+    }
+
     func testSameFamilyCommandGroupUsesVersionedAggregate() {
         let groupID = UUID()
         var items: [WorkItem] = [

@@ -528,18 +528,29 @@ private final class ToolTimelinePresentationCache {
         private func buildRows() -> [ToolTimelineRow] {
             var rows: [ToolTimelineRow] = []
 
-            if readFiles > 0 || listed > 0 || searchedItems > 0 || ranCommands > 0 {
+            if fileChanges > 0 || readFiles > 0 || listed > 0 || searchedItems > 0 || ranCommands > 0 {
                 var parts: [String] = []
-                if readFiles > 0 { parts.append(L10n.exploredFiles(readFiles)) }
+                if fileChanges > 0 { parts.append(L10n.editedFiles(fileChanges)) }
+                if readFiles > 0 {
+                    parts.append(parts.isEmpty
+                        ? L10n.exploredFiles(readFiles)
+                        : L10n.exploredFilesInline(readFiles))
+                }
                 if searchedItems > 0 { parts.append(L10n.searchedItems(searchedItems)) }
-                if listed > 0 { parts.append(L10n.listedItems(listed)) }
+                if listed > 0 {
+                    parts.append(parts.isEmpty
+                        ? L10n.listedItems(listed)
+                        : L10n.listedItemsInline(listed))
+                }
                 if ranCommands > 0 {
                     parts.append(parts.isEmpty
                         ? L10n.ranCommands(ranCommands)
                         : L10n.ranCommandsInline(ranCommands))
                 }
                 let icon: String
-                if listed > 0 {
+                if fileChanges > 0 {
+                    icon = "clawix.pencil"
+                } else if listed > 0 {
                     icon = "clawix.folderStack"
                 } else if readFiles > 0 || searchedItems > 0 {
                     icon = "magnifyingglass"
@@ -550,13 +561,6 @@ private final class ToolTimelinePresentationCache {
                     id: "exec",
                     icon: icon,
                     text: parts.joined(separator: ", ")
-                ))
-            }
-            if fileChanges > 0 {
-                rows.append(ToolTimelineRow(
-                    id: "files",
-                    icon: "clawix.pencil",
-                    text: L10n.modifiedFiles(fileChanges)
                 ))
             }
             let totalBrowser = jsBrowserCount + (dynamicBrowserIDs.isEmpty ? 0 : 1)
