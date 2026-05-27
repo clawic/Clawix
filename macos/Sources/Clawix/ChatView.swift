@@ -264,8 +264,8 @@ struct ChatView: View {
     /// at 80pt from the top gives the daemon a chance to deliver the
     /// next page before the user sees the gap.
     static let loadOlderThreshold: CGFloat = 80
-    static let initialVisibleMessageLimit = 8
-    static let visibleMessagePageSize = 6
+    static let initialVisibleMessageLimit = 24
+    static let visibleMessagePageSize = 12
     static let maxMountedScrollbackMessages = 80
     static let localRevealThrottle: TimeInterval = 0.05
     static let virtualizedTranscriptRowEstimate: CGFloat = 320
