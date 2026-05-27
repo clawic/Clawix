@@ -546,8 +546,10 @@ enum RolloutReader {
                 case "turn_completed":
                     sawClose = true
                 case "user_message":
-                    sawClose = true
-                    sawAnyAssistantWork = false
+                    if pending == nil || pending?.isClosed == true {
+                        sawClose = true
+                        sawAnyAssistantWork = false
+                    }
                 default:
                     break
                 }
@@ -570,10 +572,6 @@ enum RolloutReader {
             switch (kind, inner) {
 
             case ("event_msg", "user_message"):
-                if let p = pending {
-                    out.append(p.finalize())
-                    pending = nil
-                }
                 if let msg = payload["message"] as? String {
                     let trimmed = msg.trimmingCharacters(in: .whitespacesAndNewlines)
                     // Clawix re-injects internal scaffolding ("# In app
@@ -583,6 +581,18 @@ enum RolloutReader {
                         from: payload["images"],
                         localImages: payload["local_images"]
                     )
+                    if pending != nil, pending?.isClosed == false {
+                        if !trimmed.isEmpty,
+                           !trimmed.hasPrefix("<turn_aborted>"),
+                           !containsRequestMarker(trimmed) {
+                            pending?.appendSteeredConversation()
+                        }
+                        continue
+                    }
+                    if let p = pending {
+                        out.append(p.finalize())
+                        pending = nil
+                    }
                     if !trimmed.isEmpty,
                         !trimmed.hasPrefix("<turn_aborted>"),
                        !containsRequestMarker(trimmed) {
@@ -637,6 +647,7 @@ enum RolloutReader {
                 } else if let durationMs = payload["duration_ms"] as? Int {
                     pending?.setDuration(milliseconds: Double(durationMs))
                 }
+                pending?.markClosed()
 
             case ("event_msg", "thread_goal_updated"):
                 guard let outcome = Self.parseGoalOutcome(payload) else { continue }
@@ -1270,6 +1281,7 @@ private struct PendingAssistant {
     var timeline: [AssistantTimelineEntry] = []
     var finalText: String = ""
     var goalOutcome: GoalOutcome? = nil
+    var isClosed: Bool = false
 
     init(id: UUID, startOffset: UInt64, timestamp: Date) {
         self.id = id
@@ -1292,7 +1304,15 @@ private struct PendingAssistant {
         }
         if isFinal {
             finalText = text
+            isClosed = true
         }
+    }
+
+    mutating func appendSteeredConversation() {
+        if case .steered = timeline.last {
+            return
+        }
+        timeline.append(.steered(id: UUID()))
     }
 
     mutating func appendDivider(_ text: String) {
@@ -1300,6 +1320,10 @@ private struct PendingAssistant {
             return
         }
         timeline.append(.divider(id: UUID(), text: text))
+    }
+
+    mutating func markClosed() {
+        isClosed = true
     }
 
     mutating func setDuration(milliseconds: Double) {

@@ -94,7 +94,7 @@ enum ChatMarkdownPrewarmer {
                         result.texts.append(text)
                         result.timelineCount += 1
                     }
-                case .divider, .tools:
+                case .steered, .divider, .tools:
                     break
                 }
             }
@@ -404,10 +404,12 @@ struct MessageRow: View, Equatable {
         .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
         .padding(.leading, isUser ? chatRailMaxWidth * 0.2 : 0)
         .onChange(of: timelineExpanded) { _, expanded in
-            visibleTimelineEntryLimit = Self.initialTimelineEntryLimit
             lastTimelineRevealAt = .distantPast
             if expanded {
-                prewarmVisibleTimelineMarkdown()
+                visibleTimelineEntryLimit = message.timeline.count
+                prewarmVisibleTimelineMarkdown(limit: message.timeline.count)
+            } else {
+                visibleTimelineEntryLimit = Self.initialTimelineEntryLimit
             }
         }
         .onChange(of: message.id) { _, _ in
@@ -449,6 +451,8 @@ struct MessageRow: View, Equatable {
                 messageEntries += 1
             case .reasoning:
                 reasoningEntries += 1
+            case .steered:
+                break
             case .divider:
                 break
             case .tools(_, let items, _):
@@ -517,6 +521,8 @@ struct MessageRow: View, Equatable {
                 timelineMessageEntries += 1
             case .reasoning:
                 timelineReasoningEntries += 1
+            case .steered:
+                break
             case .divider:
                 break
             case .tools:
@@ -587,7 +593,7 @@ struct MessageRow: View, Equatable {
             switch entry {
             case .reasoning(_, let text), .message(_, let text):
                 return text.isEmpty ? nil : text
-            case .divider, .tools:
+            case .steered, .divider, .tools:
                 return nil
             }
         }
@@ -614,6 +620,10 @@ struct MessageRow: View, Equatable {
         case .message(let entryId, let text):
             messageEntryBody(entryId: entryId, text: text)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityHidden(!exposeMessageAccessibility)
+        case .steered:
+            SteeredConversationDivider()
+                .frame(maxWidth: .infinity)
                 .accessibilityHidden(!exposeMessageAccessibility)
         case .divider(_, let text):
             TimelineDivider(text: text)

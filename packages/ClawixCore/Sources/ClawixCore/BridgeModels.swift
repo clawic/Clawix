@@ -296,6 +296,7 @@ public struct WireWorkItem: Codable, Equatable, Sendable {
 public enum WireTimelineEntry: Codable, Equatable, Sendable {
     case reasoning(id: String, text: String)
     case message(id: String, text: String)
+    case steered(id: String)
     case divider(id: String, text: String)
     case tools(id: String, items: [WireWorkItem])
 
@@ -314,6 +315,8 @@ public enum WireTimelineEntry: Codable, Equatable, Sendable {
         case "message":
             let text = try c.decode(String.self, forKey: .text)
             self = .message(id: id, text: text)
+        case "steered":
+            self = .steered(id: id)
         case "divider":
             let text = try c.decode(String.self, forKey: .text)
             self = .divider(id: id, text: text)
@@ -340,6 +343,9 @@ public enum WireTimelineEntry: Codable, Equatable, Sendable {
             try c.encode("message", forKey: .type)
             try c.encode(id, forKey: .id)
             try c.encode(text, forKey: .text)
+        case .steered(let id):
+            try c.encode("steered", forKey: .type)
+            try c.encode(id, forKey: .id)
         case .divider(let id, let text):
             try c.encode("divider", forKey: .type)
             try c.encode(id, forKey: .id)

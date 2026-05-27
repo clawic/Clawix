@@ -247,6 +247,8 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
                 switch entry {
                 case .message(_, let text):
                     return "message:\(text)"
+                case .steered:
+                    return "steered"
                 case .divider(_, let text):
                     return "divider:\(text)"
                 case .reasoning:
@@ -259,6 +261,72 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
                 "message:First checkpoint.",
                 "divider:Context automatically compacted",
                 "message:Final checkpoint."
+            ]
+        )
+    }
+
+    func testRolloutReaderRendersMidTurnUserMessageAsSteeredConversation() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-27T09:10:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-27T09:10:01.000Z", type: "event_msg", payload: [
+                "type": "user_message",
+                "message": "Initial request."
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:10:02.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "First checkpoint.",
+                "phase": "commentary"
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:10:03.000Z", type: "event_msg", payload: [
+                "type": "user_message",
+                "message": "Also check another conversation."
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:10:04.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Second checkpoint.",
+                "phase": "commentary"
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:10:05.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Done.",
+                "phase": "final_answer"
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:10:06.000Z", type: "event_msg", payload: [
+                "type": "task_complete",
+                "duration_ms": 5_000
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout)
+
+        XCTAssertEqual(result.entries.map(\.text), ["Initial request.", "Done."])
+        XCTAssertEqual(result.entries.map(\.role), [.user, .assistant])
+        XCTAssertEqual(
+            result.entries[1].timeline.map { entry -> String in
+                switch entry {
+                case .message(_, let text):
+                    return "message:\(text)"
+                case .steered:
+                    return "steered"
+                case .divider(_, let text):
+                    return "divider:\(text)"
+                case .reasoning:
+                    return "reasoning"
+                case .tools(_, let items, _):
+                    return "tools:\(items.count)"
+                }
+            },
+            [
+                "message:First checkpoint.",
+                "steered",
+                "message:Second checkpoint.\n\nDone."
             ]
         )
     }

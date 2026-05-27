@@ -1289,6 +1289,8 @@ extension AppState {
             return UUID(uuidString: id).map { .reasoning(id: $0, text: text) }
         case .message(let id, let text):
             return UUID(uuidString: id).map { .message(id: $0, text: text) }
+        case .steered(let id):
+            return UUID(uuidString: id).map { .steered(id: $0) }
         case .divider(let id, let text):
             return UUID(uuidString: id).map { .divider(id: $0, text: text) }
         case .tools(let id, let items):
