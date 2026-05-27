@@ -138,7 +138,7 @@ struct ClawixApp: App {
     /// menu commands like Settings that act on the main window even when it's
     /// been closed to the menu bar.
     static func bringMainWindowToFront(openWindow: OpenWindowAction) {
-        for window in NSApp.windows where window.identifier?.rawValue == FileMenuActions.mainWindowID {
+        if let window = FileMenuActions.existingMainWindow() {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -374,7 +374,7 @@ private struct AgentInstanceMenuBarContent: View {
     }
 
     private func openMainWindow() {
-        for window in NSApp.windows where window.identifier?.rawValue == FileMenuActions.mainWindowID {
+        if let window = FileMenuActions.existingMainWindow() {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -846,7 +846,7 @@ private struct MenuBarContent: View {
     /// button); otherwise open a fresh window through the SwiftUI
     /// environment so the WindowGroup re-mounts ContentView.
     private func openMainWindow() {
-        for window in NSApp.windows where window.identifier?.rawValue == FileMenuActions.mainWindowID {
+        if let window = FileMenuActions.existingMainWindow() {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -1081,7 +1081,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // SwiftUI keeps the WindowGroup instance alive even after
             // the window is closed, so `makeKeyAndOrderFront` is the
             // correct call.
-            for window in NSApp.windows where window.identifier?.rawValue == FileMenuActions.mainWindowID {
+            if let window = FileMenuActions.existingMainWindow() {
                 window.makeKeyAndOrderFront(nil)
                 NSApp.activate(ignoringOtherApps: true)
                 return true
@@ -1098,8 +1098,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NotificationCenter.default.post(name: .clawixOpenURL, object: url)
         }
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.windows.first(where: { $0.identifier?.rawValue == FileMenuActions.mainWindowID })?
-            .makeKeyAndOrderFront(nil)
+        FileMenuActions.existingMainWindow()?.makeKeyAndOrderFront(nil)
     }
 
     // Custom inset for the native traffic lights. macOS plants them very
@@ -1110,6 +1109,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let trafficLightSpacing: CGFloat = 22.5
 
     private func configure(_ window: NSWindow) {
+        guard window.canBecomeMain,
+              window.identifier?.rawValue == FileMenuActions.mainWindowID || window.title == appDisplayName
+        else { return }
         window.title = appDisplayName
         window.identifier = NSUserInterfaceItemIdentifier(FileMenuActions.mainWindowID)
         window.isRestorable = false
@@ -1134,10 +1136,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func closeDuplicateMainWindows() {
         guard !ClawixApp.isToolRole else { return }
-        let mainWindows = NSApp.windows.filter { window in
-            window.identifier?.rawValue == FileMenuActions.mainWindowID
-                || window.title == appDisplayName
-        }
+        let mainWindows = NSApp.windows.filter(FileMenuActions.isMainWindow)
         guard mainWindows.count > 1 else { return }
         let keeper = mainWindows.first(where: \.isKeyWindow)
             ?? mainWindows.first(where: \.isMainWindow)

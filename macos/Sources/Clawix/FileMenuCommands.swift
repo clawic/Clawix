@@ -42,7 +42,7 @@ enum FileMenuActions {
 
     @MainActor
     static func showMainWindow(openWindow: OpenWindowAction) {
-        for window in NSApp.windows where window.identifier?.rawValue == mainWindowID {
+        if let window = existingMainWindow() {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -84,5 +84,14 @@ enum FileMenuActions {
             appState.selectedProject = project
         }
         appState.currentRoute = .project
+    }
+
+    static func existingMainWindow() -> NSWindow? {
+        NSApp.windows.first { isMainWindow($0) }
+    }
+
+    static func isMainWindow(_ window: NSWindow) -> Bool {
+        guard window.canBecomeMain else { return false }
+        return window.identifier?.rawValue == mainWindowID || window.title == appDisplayName
     }
 }
