@@ -21,6 +21,12 @@ struct ToolGroupView: View {
             ForEach(aggregateRows) { row in
                 aggregateRow(row)
             }
+            ForEach(previewImageRows) { row in
+                if let path = row.previewImagePath, !path.isEmpty {
+                    ToolImagePreview(path: path)
+                        .padding(.leading, aggregateRows.isEmpty ? 0 : 24)
+                }
+            }
             ForEach(runningRows) { row in
                 detailRow(row)
             }
@@ -55,6 +61,10 @@ struct ToolGroupView: View {
 
     private var detailRows: [ToolTimelineDetailRow] {
         ToolTimelinePresentation.detailRows(for: items)
+    }
+
+    private var previewImageRows: [ToolTimelineDetailRow] {
+        ToolTimelinePresentation.previewImageRows(for: items)
     }
 
     private var runningRows: [ToolTimelineDetailRow] {

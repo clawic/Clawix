@@ -118,6 +118,43 @@ final class ToolTimelinePresentationTests: XCTestCase {
         XCTAssertEqual(snapshot.aggregateRows, ToolTimelinePresentation.aggregateRows(for: items))
     }
 
+    func testPathBackedViewedImagesRenderAsPreviewsInsteadOfTextRows() {
+        let items = [
+            WorkItem(
+                id: "cmd-1",
+                kind: .command(text: "screencapture -x -R 20,39,1200,900 window.png", actions: []),
+                status: .completed
+            ),
+            WorkItem(
+                id: "img-1",
+                kind: .imageView,
+                status: .completed,
+                generatedImagePath: "/tmp/window.png"
+            )
+        ]
+
+        XCTAssertEqual(ToolTimelinePresentation.aggregateRows(for: items), [
+            ToolTimelineRow(id: "exec", icon: "clawix.terminal", text: "Ran 1 command")
+        ])
+
+        let previews = ToolTimelinePresentation.previewImageRows(for: items)
+        XCTAssertEqual(previews.map(\.id), ["img-1"])
+        XCTAssertEqual(previews.map(\.previewImagePath), ["/tmp/window.png"])
+    }
+
+    func testUnresolvedViewedImagesKeepTextSummary() {
+        let rows = ToolTimelinePresentation.aggregateRows(for: [
+            WorkItem(id: "img-1", kind: .imageView, status: .completed)
+        ])
+
+        XCTAssertEqual(rows, [
+            ToolTimelineRow(id: "imgView", icon: "eye", text: "Viewed 1 image")
+        ])
+        XCTAssertTrue(ToolTimelinePresentation.previewImageRows(for: [
+            WorkItem(id: "img-1", kind: .imageView, status: .completed)
+        ]).isEmpty)
+    }
+
     func testDetailRowsPreserveEveryCompletedCommandText() {
         let rows = ToolTimelinePresentation.detailRows(for: [
             WorkItem(

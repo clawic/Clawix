@@ -44,6 +44,13 @@ enum ToolTimelinePresentation {
         }
     }
 
+    static func previewImageRows(for items: [WorkItem]) -> [ToolTimelineDetailRow] {
+        items.enumerated().compactMap { index, item in
+            guard hasPreviewImage(item) else { return nil }
+            return detailRow(for: item, fallbackIndex: index)
+        }
+    }
+
     static func snapshot(for items: [WorkItem]) -> ToolTimelinePresentationSnapshot {
         buildSnapshot(version: 0, for: items)
     }
@@ -149,9 +156,13 @@ enum ToolTimelinePresentation {
                     dynamicTools.append(name)
                 }
             case .imageGeneration:
-                imageGenerations += 1
+                if !hasPreviewImage(item) {
+                    imageGenerations += 1
+                }
             case .imageView:
-                imageViews += 1
+                if !hasPreviewImage(item) {
+                    imageViews += 1
+                }
             case .jsCall(_, .browser):
                 jsBrowserCount += 1
             case .jsCall(_, .repl):
@@ -302,6 +313,18 @@ enum ToolTimelinePresentation {
                 status: item.status,
                 previewImagePath: item.generatedImagePath
             )
+        }
+    }
+
+    private static func hasPreviewImage(_ item: WorkItem) -> Bool {
+        guard let path = item.generatedImagePath?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty
+        else { return false }
+        switch item.kind {
+        case .imageGeneration, .imageView:
+            return true
+        default:
+            return false
         }
     }
 

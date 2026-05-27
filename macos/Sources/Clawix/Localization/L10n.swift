@@ -126,11 +126,17 @@ enum L10n {
     }
 
     static func generatedImages(_ count: Int) -> String {
-        String(localized: "Generated \(count) images", bundle: AppLocale.bundle, locale: AppLocale.current)
+        if count == 1 {
+            return String(localized: "Generated 1 image", bundle: AppLocale.bundle, locale: AppLocale.current)
+        }
+        return String(localized: "Generated \(count) images", bundle: AppLocale.bundle, locale: AppLocale.current)
     }
 
     static func viewedImages(_ count: Int) -> String {
-        String(localized: "Viewed \(count) images", bundle: AppLocale.bundle, locale: AppLocale.current)
+        if count == 1 {
+            return String(localized: "Viewed 1 image", bundle: AppLocale.bundle, locale: AppLocale.current)
+        }
+        return String(localized: "Viewed \(count) images", bundle: AppLocale.bundle, locale: AppLocale.current)
     }
 
     static func installedPlugins(_ count: Int) -> String {
