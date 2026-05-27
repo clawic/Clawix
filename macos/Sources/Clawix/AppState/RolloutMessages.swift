@@ -11,7 +11,8 @@ func rolloutChatMessages(from result: RolloutReader.ReadResult) -> [ChatMessage]
             timestamp: e.timestamp,
             workSummary: e.workSummary,
             timeline: e.timeline,
-            attachments: e.attachments
+            attachments: e.attachments,
+            goalOutcome: e.goalOutcome
         )
     }
 }

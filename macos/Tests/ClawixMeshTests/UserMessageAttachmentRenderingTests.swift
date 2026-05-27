@@ -315,6 +315,42 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertTrue(assistant.reasoningPendingTails.isEmpty)
     }
 
+    func testRolloutReaderPreservesGoalMarkers() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-27T09:00:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-27T09:00:01.000Z", type: "event_msg", payload: [
+                "type": "user_message",
+                "message": "/goal Ship the report."
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:05:00.000Z", type: "event_msg", payload: [
+                "type": "thread_goal_updated",
+                "threadId": "session-fixture",
+                "goal": [
+                    "status": "complete",
+                    "timeUsedSeconds": 1712
+                ]
+            ]),
+            jsonLine(timestamp: "2026-05-27T09:05:01.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Done.",
+                "phase": "final_answer"
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let messages = rolloutChatMessages(from: RolloutReader.readTailWithStatus(path: rollout))
+
+        XCTAssertEqual(messages.count, 2)
+        XCTAssertTrue(messages[0].sentAsGoal)
+        XCTAssertEqual(messages[1].goalOutcome?.label, "Goal achieved in 28m 32s")
+    }
+
     private func jsonLine(timestamp: String, type: String, payload: [String: Any]) -> String {
         let data = try! JSONSerialization.data(withJSONObject: [
             "timestamp": timestamp,

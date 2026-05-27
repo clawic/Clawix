@@ -48,6 +48,13 @@ struct ChatMessage: Identifiable, Equatable {
     /// annotations, which redirect the agent toward the pinned page
     /// elements. Drives the "Steered conversation" divider above the bubble.
     var steeredByAnnotation: Bool
+    /// Historical Codex goal result attached to the assistant turn that
+    /// completed it. nil for ordinary turns and active/incomplete goals.
+    var goalOutcome: GoalOutcome?
+
+    var sentAsGoal: Bool {
+        role == .user && content.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("/goal ")
+    }
 
     init(
         id: UUID = UUID(),
@@ -65,7 +72,8 @@ struct ChatMessage: Identifiable, Equatable {
         reasoningPendingTails: [UUID: String] = [:],
         audioRef: WireAudioRef? = nil,
         attachments: [WireAttachment] = [],
-        steeredByAnnotation: Bool = false
+        steeredByAnnotation: Bool = false,
+        goalOutcome: GoalOutcome? = nil
     ) {
         self.id = id
         self.role = role
@@ -83,9 +91,32 @@ struct ChatMessage: Identifiable, Equatable {
         self.audioRef = audioRef
         self.attachments = attachments
         self.steeredByAnnotation = steeredByAnnotation
+        self.goalOutcome = goalOutcome
     }
 
     enum MessageRole { case user, assistant }
+}
+
+enum GoalOutcome: Equatable {
+    case achieved(elapsedSeconds: Int?)
+
+    var label: String {
+        switch self {
+        case .achieved(let elapsedSeconds):
+            guard let elapsedSeconds else { return "Goal achieved" }
+            return "Goal achieved in \(Self.formatElapsed(elapsedSeconds))"
+        }
+    }
+
+    private static func formatElapsed(_ seconds: Int) -> String {
+        let clamped = max(0, seconds)
+        let minutes = clamped / 60
+        let remainingSeconds = clamped % 60
+        if minutes > 0 {
+            return "\(minutes)m \(remainingSeconds)s"
+        }
+        return "\(remainingSeconds)s"
+    }
 }
 
 struct StreamCheckpoint: Equatable {

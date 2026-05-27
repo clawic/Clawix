@@ -35,6 +35,8 @@ struct RolloutHistoryEntry {
     /// reload). `items` stays empty because the chronological tool
     /// rows already live in `timeline.tools`. Nil for user entries.
     let workSummary: WorkSummary?
+    /// Result of a Codex thread goal completed by this assistant turn.
+    let goalOutcome: GoalOutcome?
 
     init(
         id: UUID,
@@ -43,7 +45,8 @@ struct RolloutHistoryEntry {
         timestamp: Date,
         timeline: [AssistantTimelineEntry],
         attachments: [WireAttachment],
-        workSummary: WorkSummary? = nil
+        workSummary: WorkSummary? = nil,
+        goalOutcome: GoalOutcome? = nil
     ) {
         self.id = id
         self.role = role
@@ -52,6 +55,7 @@ struct RolloutHistoryEntry {
         self.timeline = timeline
         self.attachments = attachments
         self.workSummary = workSummary
+        self.goalOutcome = goalOutcome
     }
 }
 
@@ -102,6 +106,22 @@ enum RolloutReader {
             return PlanStep(step: step, status: status)
         }
         return steps.isEmpty ? nil : steps
+    }
+
+    private static func parseGoalOutcome(_ payload: [String: Any]) -> GoalOutcome? {
+        guard let goal = payload["goal"] as? [String: Any],
+              (goal["status"] as? String) == "complete" else {
+            return nil
+        }
+        let elapsed: Int?
+        if let seconds = goal["timeUsedSeconds"] as? NSNumber {
+            elapsed = seconds.intValue
+        } else if let seconds = goal["timeUsedSeconds"] as? Int {
+            elapsed = seconds
+        } else {
+            elapsed = nil
+        }
+        return .achieved(elapsedSeconds: elapsed)
     }
 
     /// Anything older than this without a closing event is treated as
@@ -440,6 +460,7 @@ enum RolloutReader {
         // which Codex stores under
         // `~/.codex/generated_images/<sessionId>/<callId>.png`.
         var sessionId: String? = nil
+        var deferredGoalOutcome: GoalOutcome? = nil
 
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -454,6 +475,15 @@ enum RolloutReader {
         var sawClose = false
         var sawAnyAssistantWork = false
         var parsedRecordCount = 0
+
+        func makePending(id: UUID, startOffset: UInt64, timestamp: Date) -> PendingAssistant {
+            var next = PendingAssistant(id: id, startOffset: startOffset, timestamp: timestamp)
+            if let outcome = deferredGoalOutcome {
+                next.goalOutcome = outcome
+                deferredGoalOutcome = nil
+            }
+            return next
+        }
 
         for slice in slices {
             var start = slice.data.startIndex
@@ -584,7 +614,7 @@ enum RolloutReader {
                 let trimmed = msg.trimmingCharacters(in: .whitespacesAndNewlines)
                 if trimmed.isEmpty { continue }
                 if pending == nil {
-                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendText(trimmed, isFinal: phase == "final_answer")
 
@@ -597,12 +627,20 @@ enum RolloutReader {
                     pending?.setDuration(milliseconds: Double(durationMs))
                 }
 
+            case ("event_msg", "thread_goal_updated"):
+                guard let outcome = Self.parseGoalOutcome(payload) else { continue }
+                if pending == nil {
+                    deferredGoalOutcome = outcome
+                } else {
+                    pending?.goalOutcome = outcome
+                }
+
             case ("event_msg", "exec_command_end"):
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 let actions = parseCommandActions(payload["parsed_cmd"])
                 let cmdText = (payload["command"] as? [String])?.last
                 if pending == nil {
-                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 if seenCallIds.contains(callId) {
                     // function_call already emitted a placeholder for this
@@ -622,7 +660,7 @@ enum RolloutReader {
                 case "exec_command":
                     if seenCallIds.contains(callId) { continue }
                     if pending == nil {
-                        pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                        pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                     }
                     pending?.appendCommand(id: callId, text: nil, actions: [])
                     seenCallIds.insert(callId)
@@ -645,7 +683,7 @@ enum RolloutReader {
                 case "view_image":
                     if seenCallIds.contains(callId) { continue }
                     if pending == nil {
-                        pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                        pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                     }
                     pending?.appendOther(
                         WorkItem(
@@ -667,7 +705,7 @@ enum RolloutReader {
                     // activity, not as repeated generic tool rows.
                     if seenCallIds.contains(callId) { continue }
                     if pending == nil {
-                        pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                        pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                     }
                     pending?.appendCommand(id: callId, text: nil, actions: [])
                     seenCallIds.insert(callId)
@@ -682,7 +720,7 @@ enum RolloutReader {
                 let paths = Self.parsePatchApplyPaths(stdout)
                 if paths.isEmpty { continue }
                 if pending == nil {
-                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendOther(
                     WorkItem(
@@ -709,7 +747,7 @@ enum RolloutReader {
                 let paths = raw.map { Self.resolveAgainstCwd($0, cwd: sessionCwd) }
                 if paths.isEmpty { continue }
                 if pending == nil {
-                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendOther(
                     WorkItem(
@@ -723,7 +761,7 @@ enum RolloutReader {
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 if !seenCallIds.insert(callId).inserted { continue }
                 if pending == nil {
-                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendOther(
                     WorkItem(id: callId, kind: .webSearch, status: .completed)
@@ -733,7 +771,7 @@ enum RolloutReader {
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 if !seenCallIds.insert(callId).inserted { continue }
                 if pending == nil {
-                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 let imagePath: String? = sessionId.map { sid in
                     ClawixAgentBackendRoutes.codexGeneratedImageURL(
@@ -754,7 +792,7 @@ enum RolloutReader {
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
                 if !seenCallIds.insert(callId).inserted { continue }
                 if pending == nil {
-                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 pending?.appendOther(
                     WorkItem(
@@ -772,7 +810,7 @@ enum RolloutReader {
                 let server = (invocation?["server"] as? String) ?? ""
                 let tool = (invocation?["tool"] as? String) ?? ""
                 if pending == nil {
-                    pending = PendingAssistant(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                    pending = makePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                 }
                 // The browser-use plugin runs every call (including
                 // js_reset) through the synthetic `node_repl` MCP server.
@@ -1214,6 +1252,7 @@ private struct PendingAssistant {
     var endedAt: Date
     var timeline: [AssistantTimelineEntry] = []
     var finalText: String = ""
+    var goalOutcome: GoalOutcome? = nil
 
     init(id: UUID, startOffset: UInt64, timestamp: Date) {
         self.id = id
@@ -1379,7 +1418,8 @@ private struct PendingAssistant {
                 startedAt: timestamp,
                 endedAt: endedAt,
                 items: []
-            )
+            ),
+            goalOutcome: goalOutcome
         )
     }
 }

@@ -227,6 +227,11 @@ struct MessageRow: View, Equatable {
                             onExpand: { onUserBubbleExpanded?(message.id) }
                         )
                     }
+                    if message.sentAsGoal {
+                        GoalMessageBadge(label: "Sent as goal", icon: .circleDot)
+                            .padding(.top, -14)
+                            .padding(.trailing, 2)
+                    }
                 }
             } else {
                 // One streaming-state header sits at the top of the
@@ -709,6 +714,13 @@ struct MessageRow: View, Equatable {
                 timestampLabel
                     .opacity(isLastAssistantMessage ? (rowHovered ? 1 : 0) : 1)
                     .animation(.easeOut(duration: 0.15), value: rowHovered)
+                if let outcome = message.goalOutcome {
+                    Rectangle()
+                        .fill(Color.overlay(0.16))
+                        .frame(width: 1, height: 12)
+                        .padding(.horizontal, 5)
+                    GoalMessageBadge(label: outcome.label, icon: .circleCheck)
+                }
             }
         }
         .padding(.leading, isUser ? 0 : 2)
@@ -814,6 +826,24 @@ struct MessageActionIcon: View {
             IconImage(name, size: 14.3)
                 .foregroundColor((hovered ? Color.gray(light: 0.23, dark: 0.82) : Color.gray(light: 0.50, dark: 0.45)))
         }
+    }
+}
+
+struct GoalMessageBadge: View {
+    let label: String
+    let icon: LucideIcon.Kind
+
+    var body: some View {
+        HStack(spacing: 4) {
+            LucideIcon(icon, size: 11)
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
+            Text(verbatim: label)
+                .font(BodyFont.system(size: 11, wght: 500))
+                .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
+                .fixedSize()
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(verbatim: label))
     }
 }
 

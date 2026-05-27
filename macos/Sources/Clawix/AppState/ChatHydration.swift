@@ -1270,7 +1270,8 @@ extension AppState {
             workSummary: resolvedSummary,
             timeline: resolvedTimeline,
             audioRef: wire.audioRef,
-            attachments: resolvedAttachments
+            attachments: resolvedAttachments,
+            goalOutcome: old?.goalOutcome
         )
     }
 
