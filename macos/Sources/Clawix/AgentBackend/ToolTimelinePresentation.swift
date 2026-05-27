@@ -6,6 +6,13 @@ struct ToolTimelineRow: Identifiable, Equatable {
     let text: String
 }
 
+struct ToolTimelineDetailRow: Identifiable, Equatable {
+    let id: String
+    let icon: String
+    let text: String
+    let status: WorkItemStatus
+}
+
 struct ToolTimelinePresentationSnapshot: Equatable {
     let version: Int
     let aggregateRows: [ToolTimelineRow]
@@ -28,6 +35,12 @@ struct ToolTimelinePresentationSnapshot: Equatable {
 enum ToolTimelinePresentation {
     static func aggregateRows(for items: [WorkItem]) -> [ToolTimelineRow] {
         snapshot(for: items).aggregateRows
+    }
+
+    static func detailRows(for items: [WorkItem]) -> [ToolTimelineDetailRow] {
+        items.enumerated().map { index, item in
+            detailRow(for: item, fallbackIndex: index)
+        }
     }
 
     static func snapshot(for items: [WorkItem]) -> ToolTimelinePresentationSnapshot {
@@ -241,6 +254,93 @@ enum ToolTimelinePresentation {
             ))
         }
         return rows
+    }
+
+    private static func detailRow(for item: WorkItem, fallbackIndex: Int) -> ToolTimelineDetailRow {
+        switch item.kind {
+        case .command(let text, _):
+            let command = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return ToolTimelineDetailRow(
+                id: item.id,
+                icon: iconForSingleItem(item) ?? "clawix.terminal",
+                text: commandLineText(status: item.status, command: command),
+                status: item.status
+            )
+        default:
+            let row = aggregateRows(for: [item]).first
+            return ToolTimelineDetailRow(
+                id: item.id.isEmpty ? "item-\(fallbackIndex)" : item.id,
+                icon: row?.icon ?? iconForSingleItem(item) ?? "wrench.and.screwdriver",
+                text: row?.text ?? fallbackDetailText(for: item),
+                status: item.status
+            )
+        }
+    }
+
+    private static func commandLineText(status: WorkItemStatus, command: String) -> String {
+        let prefix: String
+        switch status {
+        case .inProgress:
+            prefix = String(localized: "Running", bundle: AppLocale.bundle, locale: AppLocale.current)
+        case .completed:
+            prefix = String(localized: "Ran", bundle: AppLocale.bundle, locale: AppLocale.current)
+        case .failed:
+            prefix = String(localized: "Failed", bundle: AppLocale.bundle, locale: AppLocale.current)
+        }
+        return command.isEmpty ? L10n.ranCommands(1) : "\(prefix) \(command)"
+    }
+
+    private static func fallbackDetailText(for item: WorkItem) -> String {
+        switch item.kind {
+        case .webSearch:
+            return String(localized: "Searched the web", bundle: AppLocale.bundle, locale: AppLocale.current)
+        case .mcpTool(let server, let tool):
+            return L10n.usedTool(prettyMcpServer(mcpServerBucket(server: server, tool: tool)))
+        case .dynamicTool(let name):
+            return L10n.usedTool(name.isEmpty ? "tool" : name)
+        case .imageGeneration:
+            return L10n.generatedImages(1)
+        case .imageView:
+            return L10n.viewedImages(1)
+        case .jsCall(_, .browser):
+            return String(localized: "Used the browser", bundle: AppLocale.bundle, locale: AppLocale.current)
+        case .jsCall(_, .repl), .jsReset:
+            return L10n.usedTool("Node Repl")
+        case .fileChange(let paths):
+            return L10n.modifiedFiles(max(1, paths.count))
+        case .command:
+            return L10n.ranCommands(1)
+        }
+    }
+
+    private static func iconForSingleItem(_ item: WorkItem) -> String? {
+        switch item.kind {
+        case .command(_, let actions):
+            if actions.contains(.listFiles) { return "clawix.folderStack" }
+            if actions.contains(.read) || actions.contains(.search) { return "magnifyingglass" }
+            return "clawix.terminal"
+        case .fileChange:
+            return "clawix.pencil"
+        case .webSearch:
+            return "clawix.globe"
+        case .mcpTool(let server, let tool):
+            return isComputerUseMcpServer(mcpServerBucket(server: server, tool: tool))
+                ? "clawix.computerUse"
+                : "clawix.mcp"
+        case .dynamicTool(let name):
+            let lower = name.lowercased()
+            if lower.contains("browser") { return "clawix.cursor" }
+            if lower.contains("web") { return "clawix.globe" }
+            return "wrench.and.screwdriver"
+        case .imageGeneration:
+            return "photo"
+        case .imageView:
+            return "eye"
+        case .jsCall(_, .browser):
+            return "clawix.cursor"
+        case .jsCall(_, .repl), .jsReset:
+            return "command"
+        }
     }
 }
 

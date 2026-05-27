@@ -93,6 +93,41 @@ final class ToolTimelinePresentationTests: XCTestCase {
         XCTAssertEqual(snapshot.aggregateRows, ToolTimelinePresentation.aggregateRows(for: items))
     }
 
+    func testDetailRowsPreserveEveryCompletedCommandText() {
+        let rows = ToolTimelinePresentation.detailRows(for: [
+            WorkItem(
+                id: "cmd-1",
+                kind: .command(text: "sed -n '1p' README.md", actions: [.read]),
+                status: .completed
+            ),
+            WorkItem(
+                id: "cmd-2",
+                kind: .command(text: "rg timeline", actions: [.search]),
+                status: .completed
+            )
+        ])
+
+        XCTAssertEqual(rows.map(\.id), ["cmd-1", "cmd-2"])
+        XCTAssertEqual(rows.map(\.text), [
+            "Ran sed -n '1p' README.md",
+            "Ran rg timeline"
+        ])
+    }
+
+    func testDetailRowsKeepRepeatedMcpCallsSeparate() {
+        let rows = ToolTimelinePresentation.detailRows(for: [
+            WorkItem(id: "cu-1", kind: .mcpTool(server: "clawjs-mcp", tool: "computer_use.click"), status: .completed),
+            WorkItem(id: "cu-2", kind: .mcpTool(server: "clawjs-mcp", tool: "computer_use.type_text"), status: .completed)
+        ])
+
+        XCTAssertEqual(rows.map(\.id), ["cu-1", "cu-2"])
+        XCTAssertEqual(rows.map(\.icon), ["clawix.computerUse", "clawix.computerUse"])
+        XCTAssertEqual(rows.map(\.text), [
+            L10n.usedTool("Computer Use"),
+            L10n.usedTool("Computer Use")
+        ])
+    }
+
     func testComputerUseMcpServerGetsCanonicalRow() {
         let rows = ToolTimelinePresentation.aggregateRows(for: [
             WorkItem(
