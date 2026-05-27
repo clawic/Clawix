@@ -101,6 +101,40 @@ final class TimelineEntryWindowTests: XCTestCase {
         XCTAssertEqual(paths, ["README.md", "docs/notes.md"])
     }
 
+    func testDenseChangedFileCardsAreCappedInTranscriptPreview() {
+        let message = ChatMessage(
+            role: .assistant,
+            content: "Done.",
+            streamingFinished: true,
+            timeline: [
+                .tools(
+                    id: UUID(),
+                    items: [
+                        WorkItem(
+                            id: "file-1",
+                            kind: .fileChange(paths: [
+                                "one.md",
+                                "two.md",
+                                "three.md",
+                                "four.md",
+                                "five.md"
+                            ]),
+                            status: .completed
+                        )
+                    ]
+                )
+            ]
+        )
+
+        let preview = ChatTrailingCards.changedFilePreview(
+            for: message,
+            responseStreaming: false
+        )
+
+        XCTAssertEqual(preview.visiblePaths, ["one.md", "two.md", "three.md"])
+        XCTAssertEqual(preview.remainingCount, 2)
+    }
+
     func testStreamingAssistantMessageDefersChangedFileCards() {
         let message = ChatMessage(
             role: .assistant,

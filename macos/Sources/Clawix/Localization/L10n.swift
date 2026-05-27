@@ -40,11 +40,21 @@ enum L10n {
     // MARK: - Plurals
 
     static func exploredFiles(_ count: Int) -> String {
-        String(localized: "Explored \(count) files", bundle: AppLocale.bundle, locale: AppLocale.current)
+        if count == 1 {
+            return String(localized: "Explored 1 file", bundle: AppLocale.bundle, locale: AppLocale.current)
+        }
+        return String(localized: "Explored \(count) files", bundle: AppLocale.bundle, locale: AppLocale.current)
+    }
+
+    static func exploredFilesInline(_ count: Int) -> String {
+        lowercaseInitial(exploredFiles(count))
     }
 
     static func ranCommands(_ count: Int) -> String {
-        String(localized: "Ran \(count) commands", bundle: AppLocale.bundle, locale: AppLocale.current)
+        if count == 1 {
+            return String(localized: "Ran 1 command", bundle: AppLocale.bundle, locale: AppLocale.current)
+        }
+        return String(localized: "Ran \(count) commands", bundle: AppLocale.bundle, locale: AppLocale.current)
     }
 
     /// Inline tool-group label fragment. Clawix shows the lowercase
@@ -52,14 +62,21 @@ enum L10n {
     /// work-summary line. The L10n value keeps that exact phrasing so
     /// hydrated history matches Clawix.
     static func ranCommandsInline(_ count: Int) -> String {
-        String(localized: "ran \(count) commands", bundle: AppLocale.bundle, locale: AppLocale.current)
+        if count == 1 {
+            return String(localized: "ran 1 command", bundle: AppLocale.bundle, locale: AppLocale.current)
+        }
+        return String(localized: "ran \(count) commands", bundle: AppLocale.bundle, locale: AppLocale.current)
     }
 
     /// Inline tool-group label fragment for parsed list_files actions.
     /// Clawix shows just the count with no leading verb, so we mirror
     /// that to keep the comma-joined row readable.
     static func listedItems(_ count: Int) -> String {
-        String(localized: "\(count) lists", bundle: AppLocale.bundle, locale: AppLocale.current)
+        String(localized: "Listed files", bundle: AppLocale.bundle, locale: AppLocale.current)
+    }
+
+    static func listedItemsInline(_ count: Int) -> String {
+        String(localized: "listed files", bundle: AppLocale.bundle, locale: AppLocale.current)
     }
 
     /// Inline tool-group label fragment for parsed search actions.
@@ -77,6 +94,17 @@ enum L10n {
 
     static func modifiedFiles(_ count: Int) -> String {
         String(localized: "Modified \(count) files", bundle: AppLocale.bundle, locale: AppLocale.current)
+    }
+
+    static func editedFiles(_ count: Int) -> String {
+        if count == 1 {
+            return String(localized: "Edited 1 file", bundle: AppLocale.bundle, locale: AppLocale.current)
+        }
+        return String(localized: "Edited \(count) files", bundle: AppLocale.bundle, locale: AppLocale.current)
+    }
+
+    static func editedFilesInline(_ count: Int) -> String {
+        lowercaseInitial(editedFiles(count))
     }
 
     static func generatedImages(_ count: Int) -> String {
@@ -148,6 +176,11 @@ enum L10n {
             return "\(seconds / 60)m \(seconds % 60)s"
         }
         return "\(seconds)s"
+    }
+
+    private static func lowercaseInitial(_ value: String) -> String {
+        guard let first = value.first else { return value }
+        return String(first).lowercased(with: AppLocale.current) + String(value.dropFirst())
     }
 
     static func usedTool(_ name: String) -> String {

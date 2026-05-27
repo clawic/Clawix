@@ -102,7 +102,8 @@ enum ToolTimelinePresentation {
         var listed = 0
         var searchedItems = 0
         var ranCommands = 0
-        var fileChanges = 0
+        var changedPaths: Set<String> = []
+        var unpathableFileChanges = 0
         var browserUsed = false
         var webSearchCount = 0
         var mcpTools: [(server: String, tool: String)] = []
@@ -127,7 +128,12 @@ enum ToolTimelinePresentation {
                     ranCommands += 1
                 }
             case .fileChange(let paths):
-                fileChanges += max(1, paths.count)
+                let nonEmptyPaths = paths.filter { !$0.isEmpty }
+                if nonEmptyPaths.isEmpty {
+                    unpathableFileChanges += 1
+                } else {
+                    changedPaths.formUnion(nonEmptyPaths)
+                }
             case .webSearch:
                 webSearchCount += 1
             case .mcpTool(let server, let tool):
@@ -154,18 +160,30 @@ enum ToolTimelinePresentation {
             }
         }
 
-        if readFiles > 0 || listed > 0 || searchedItems > 0 || ranCommands > 0 {
+        let fileChanges = changedPaths.count + unpathableFileChanges
+        if fileChanges > 0 || readFiles > 0 || listed > 0 || searchedItems > 0 || ranCommands > 0 {
             var parts: [String] = []
-            if readFiles > 0 { parts.append(L10n.exploredFiles(readFiles)) }
+            if fileChanges > 0 { parts.append(L10n.editedFiles(fileChanges)) }
+            if readFiles > 0 {
+                parts.append(parts.isEmpty
+                    ? L10n.exploredFiles(readFiles)
+                    : L10n.exploredFilesInline(readFiles))
+            }
             if searchedItems > 0 { parts.append(L10n.searchedItems(searchedItems)) }
-            if listed > 0 { parts.append(L10n.listedItems(listed)) }
+            if listed > 0 {
+                parts.append(parts.isEmpty
+                    ? L10n.listedItems(listed)
+                    : L10n.listedItemsInline(listed))
+            }
             if ranCommands > 0 {
                 parts.append(parts.isEmpty
                     ? L10n.ranCommands(ranCommands)
                     : L10n.ranCommandsInline(ranCommands))
             }
             let icon: String
-            if listed > 0 {
+            if fileChanges > 0 {
+                icon = "clawix.pencil"
+            } else if listed > 0 {
                 icon = "clawix.folderStack"
             } else if readFiles > 0 || searchedItems > 0 {
                 icon = "magnifyingglass"
@@ -176,13 +194,6 @@ enum ToolTimelinePresentation {
                 id: "exec",
                 icon: icon,
                 text: parts.joined(separator: ", ")
-            ))
-        }
-        if fileChanges > 0 {
-            rows.append(ToolTimelineRow(
-                id: "files",
-                icon: "clawix.pencil",
-                text: L10n.modifiedFiles(fileChanges)
             ))
         }
         let totalBrowser = jsBrowserCount + (browserUsed ? 1 : 0)
@@ -307,7 +318,8 @@ enum ToolTimelinePresentation {
         case .jsCall(_, .repl), .jsReset:
             return L10n.usedTool("Node Repl")
         case .fileChange(let paths):
-            return L10n.modifiedFiles(max(1, paths.count))
+            let count = max(1, Set(paths.filter { !$0.isEmpty }).count)
+            return L10n.editedFiles(count)
         case .command:
             return L10n.ranCommands(1)
         }

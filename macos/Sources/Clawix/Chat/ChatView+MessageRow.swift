@@ -353,15 +353,21 @@ struct MessageRow: View, Equatable {
                 // attachment cards. Order matches first-touch, deduped.
                 // Only surfaces once the turn fully ends so the cards
                 // don't pop in beside the still-streaming reasoning.
-                let changedFiles = ChatTrailingCards.changedFilePaths(
+                let changedFiles = ChatTrailingCards.changedFilePreview(
                     for: message,
                     responseStreaming: responseStreaming
                 )
                 if !changedFiles.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        ForEach(changedFiles, id: \.self) { path in
+                        ForEach(changedFiles.visiblePaths, id: \.self) { path in
                             ChangedFileCard(path: path)
                                 .frame(maxWidth: chatRailMaxWidth * 0.7, alignment: .leading)
+                        }
+                        if changedFiles.remainingCount > 0 {
+                            Text(verbatim: "+ \(changedFiles.remainingCount) more changed files")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(Palette.textSecondary)
+                                .padding(.top, 1)
                         }
                     }
                     .padding(.top, 4)
@@ -824,7 +830,18 @@ struct MessageActionIcon: View {
     }
 }
 
+struct ChangedFilePreview: Equatable {
+    let visiblePaths: [String]
+    let remainingCount: Int
+
+    var isEmpty: Bool {
+        visiblePaths.isEmpty
+    }
+}
+
 enum ChatTrailingCards {
+    static let changedFilePreviewLimit = 3
+
     static func changedFilePaths(
         for message: ChatMessage,
         responseStreaming: Bool
@@ -833,6 +850,20 @@ enum ChatTrailingCards {
               message.streamingFinished
         else { return [] }
         return ChangedFilePathCache.shared.paths(for: message)
+    }
+
+    static func changedFilePreview(
+        for message: ChatMessage,
+        responseStreaming: Bool
+    ) -> ChangedFilePreview {
+        let paths = changedFilePaths(for: message, responseStreaming: responseStreaming)
+        guard paths.count > changedFilePreviewLimit else {
+            return ChangedFilePreview(visiblePaths: paths, remainingCount: 0)
+        }
+        return ChangedFilePreview(
+            visiblePaths: Array(paths.prefix(changedFilePreviewLimit)),
+            remainingCount: paths.count - changedFilePreviewLimit
+        )
     }
 }
 

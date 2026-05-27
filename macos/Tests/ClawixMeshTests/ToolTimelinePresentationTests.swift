@@ -128,6 +128,57 @@ final class ToolTimelinePresentationTests: XCTestCase {
         ])
     }
 
+    func testAggregateRowsFoldEditedFilesIntoActivityLine() {
+        let rows = ToolTimelinePresentation.aggregateRows(for: [
+            WorkItem(
+                id: "edit-1",
+                kind: .fileChange(paths: ["README.md", "README.md"]),
+                status: .completed
+            ),
+            WorkItem(
+                id: "read-1",
+                kind: .command(text: "sed -n '1p' README.md", actions: [.read]),
+                status: .completed
+            ),
+            WorkItem(
+                id: "cmd-1",
+                kind: .command(text: "swift test", actions: []),
+                status: .completed
+            )
+        ])
+
+        XCTAssertEqual(rows, [
+            ToolTimelineRow(
+                id: "exec",
+                icon: "clawix.pencil",
+                text: "Edited 1 file, explored 1 file, ran 1 command"
+            )
+        ])
+    }
+
+    func testAggregateRowsUseCodexListPhrasingWithoutCounts() {
+        let rows = ToolTimelinePresentation.aggregateRows(for: [
+            WorkItem(
+                id: "list-1",
+                kind: .command(text: "ls", actions: [.listFiles]),
+                status: .completed
+            ),
+            WorkItem(
+                id: "list-2",
+                kind: .command(text: "find . -maxdepth 1", actions: [.listFiles]),
+                status: .completed
+            )
+        ])
+
+        XCTAssertEqual(rows, [
+            ToolTimelineRow(
+                id: "exec",
+                icon: "clawix.folderStack",
+                text: "Listed files"
+            )
+        ])
+    }
+
     func testComputerUseMcpServerGetsCanonicalRow() {
         let rows = ToolTimelinePresentation.aggregateRows(for: [
             WorkItem(
