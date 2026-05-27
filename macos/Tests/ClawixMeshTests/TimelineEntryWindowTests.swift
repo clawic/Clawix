@@ -74,6 +74,46 @@ final class TimelineEntryWindowTests: XCTestCase {
         })
     }
 
+    func testFileLinkPreviewUsesOnlyAssistantMarkdownFileLinks() {
+        let message = ChatMessage(
+            role: .assistant,
+            content: """
+            See [one](/tmp/one.md), [two](/tmp/two.md), [duplicate](/tmp/one.md), \
+            [three](/tmp/three.md), [four](/tmp/four.md), and [web](https://example.com).
+            """,
+            streamingFinished: true
+        )
+
+        let preview = FileLinkPreviewCache.shared.preview(for: message)
+
+        XCTAssertEqual(preview.visiblePaths, ["/tmp/one.md", "/tmp/two.md", "/tmp/three.md"])
+        XCTAssertEqual(preview.remainingCount, 1)
+    }
+
+    func testFileChangeTimelineDoesNotCreateTrailingFileLinkPreview() {
+        let message = ChatMessage(
+            role: .assistant,
+            content: "Done.",
+            streamingFinished: true,
+            timeline: [
+                .tools(
+                    id: UUID(),
+                    items: [
+                        WorkItem(
+                            id: "file-1",
+                            kind: .fileChange(paths: ["README.md"]),
+                            status: .completed
+                        )
+                    ]
+                )
+            ]
+        )
+
+        let preview = FileLinkPreviewCache.shared.preview(for: message)
+
+        XCTAssertTrue(preview.isEmpty)
+    }
+
     private func entries(count: Int) -> [AssistantTimelineEntry] {
         (0..<count).map { index in
             .message(id: UUID(), text: String(index))
