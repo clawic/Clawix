@@ -2,6 +2,53 @@ import XCTest
 @testable import Clawix
 
 final class ClawJSRuntimeLensSupportPresentationTests: XCTestCase {
+    func testSupportAuditDomainPresentationExposesProductionTransportReceipts() throws {
+        let data = Data("""
+        [
+          {
+            "domain": "sessions",
+            "claim": "inventoried",
+            "status": "ready",
+            "writeBackAllowed": true,
+            "productionTransportReceipts": [
+              {
+                "domain": "sessions",
+                "action": "send",
+                "receiptId": "fixture-send-production-transport",
+                "receiptType": "production_transport_lifecycle_receipt",
+                "status": "production_transport_lifecycle_verified",
+                "officialTransportSurface": "api_server_http",
+                "verifiedEndpoints": ["GET /v1/capabilities", "POST /v1/runs", "GET /v1/runs/{run_id}"],
+                "capabilitiesEndpointVerified": true,
+                "runLifecycleEndpointsVerified": true,
+                "eventStreamVerified": true,
+                "approvalEndpointVerified": true,
+                "stopEndpointVerified": true,
+                "responsePersistenceVerified": true
+              }
+            ],
+            "implementedFacets": ["production_transport_receipt"]
+          }
+        ]
+        """.utf8)
+        let domains = try JSONDecoder().decode(
+            [ClawJSRuntimeLensSnapshot.SupportAudit.DomainAudit].self,
+            from: data
+        )
+
+        let presentation = ClawJSRuntimeLensSupportAuditDomainPresentation.make(domains: domains)
+        let row = try XCTUnwrap(presentation.rows.first)
+
+        XCTAssertEqual(presentation.productionTransportReceiptDomainCount, 1)
+        XCTAssertEqual(row.productionTransportReceiptCount, 1)
+        XCTAssertEqual(
+            row.productionTransportReceiptsLabel,
+            "send api_server_http endpoints GET /v1/capabilities, POST /v1/runs, +1 more"
+        )
+        XCTAssertTrue(row.accessibilityLabel.contains("production transport receipts 1"))
+        XCTAssertTrue(presentation.accessibilityLabel.contains("production transport receipt domains 1"))
+    }
+
     func testEvidenceReadinessPresentationMarksTruncatedRequirementIds() {
         let summary = ClawJSRuntimeLensSnapshot.SupportAudit.EvidenceReadinessSummary(
             statusCounts: nil,

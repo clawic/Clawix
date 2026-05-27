@@ -13,6 +13,8 @@ struct ClawJSRuntimeLensSupportAuditDomainPresentation: Equatable {
         let approvalGateFixtureStatus: String?
         let liveEvidenceFixtureStatus: String?
         let writeBackContractFixtureStatus: String?
+        let productionTransportReceiptCount: Int
+        let productionTransportReceiptsLabel: String?
         let authorityLabel: String?
         let policyLabel: String?
         let relationshipLabel: String?
@@ -35,6 +37,8 @@ struct ClawJSRuntimeLensSupportAuditDomainPresentation: Equatable {
                 approvalGateFixtureStatus.map { "approval gate fixture \($0)" },
                 liveEvidenceFixtureStatus.map { "live evidence fixture \($0)" },
                 writeBackContractFixtureStatus.map { "write back contract fixture \($0)" },
+                "production transport receipts \(productionTransportReceiptCount)",
+                productionTransportReceiptsLabel.map { "production transport receipts \($0)" },
                 authorityLabel.map { "authority \($0)" },
                 policyLabel.map { "policy \($0)" },
                 relationshipLabel.map { "relationship \($0)" },
@@ -54,6 +58,7 @@ struct ClawJSRuntimeLensSupportAuditDomainPresentation: Equatable {
     let externalPendingCount: Int
     let writeBackAllowedCount: Int
     let approvalGatedCount: Int
+    let productionTransportReceiptDomainCount: Int
     let evidenceDomainCount: Int
     let blockerDomainCount: Int
     let rows: [Row]
@@ -69,6 +74,7 @@ struct ClawJSRuntimeLensSupportAuditDomainPresentation: Equatable {
             "external pending \(externalPendingCount)",
             "write back allowed \(writeBackAllowedCount)",
             "approval gated \(approvalGatedCount)",
+            "production transport receipt domains \(productionTransportReceiptDomainCount)",
             "evidence domains \(evidenceDomainCount)",
             "blocker domains \(blockerDomainCount)",
             rows.map { "\($0.domain) \($0.status ?? "unknown")" }.joined(separator: ", ")
@@ -93,6 +99,11 @@ struct ClawJSRuntimeLensSupportAuditDomainPresentation: Equatable {
                 approvalGateFixtureStatus: domain.approvalGateFixtureStatus,
                 liveEvidenceFixtureStatus: domain.liveEvidenceFixtureStatus,
                 writeBackContractFixtureStatus: domain.writeBackContractFixtureStatus,
+                productionTransportReceiptCount: domain.productionTransportReceipts?.count ?? 0,
+                productionTransportReceiptsLabel: productionTransportReceiptLabel(
+                    domain.productionTransportReceipts,
+                    limit: 4
+                ),
                 authorityLabel: listLabel([domain.canonicalAuthority, domain.nativeAuthority].compactMap { $0 }, limit: 2),
                 policyLabel: listLabel([domain.writeBackPolicy, domain.validation, domain.freshness].compactMap { $0 }, limit: 3),
                 relationshipLabel: listLabel([domain.persistence, domain.relation, domain.lossPolicy].compactMap { $0 }, limit: 3),
@@ -110,6 +121,7 @@ struct ClawJSRuntimeLensSupportAuditDomainPresentation: Equatable {
             externalPendingCount: domains.filter { $0.externalPending == true }.count,
             writeBackAllowedCount: domains.filter { $0.writeBackAllowed == true }.count,
             approvalGatedCount: domains.filter { $0.writeBackApprovalGated == true }.count,
+            productionTransportReceiptDomainCount: domains.filter { !($0.productionTransportReceipts ?? []).isEmpty }.count,
             evidenceDomainCount: domains.filter { !($0.evidenceRequirementIds ?? []).isEmpty }.count,
             blockerDomainCount: domains.filter { !($0.blockerClasses ?? []).isEmpty }.count,
             rows: Array(rows)
@@ -125,5 +137,23 @@ struct ClawJSRuntimeLensSupportAuditDomainPresentation: Equatable {
             visible.append("+\(hiddenCount) more")
         }
         return visible.joined(separator: ", ")
+    }
+
+    private static func productionTransportReceiptLabel(
+        _ receipts: [ClawJSRuntimeLensSnapshot.ProductionTransportReceipt]?,
+        limit: Int
+    ) -> String? {
+        guard let receipts, !receipts.isEmpty else { return nil }
+        let labels = receipts.map { receipt in
+            let endpoints = listLabel(receipt.verifiedEndpoints, limit: 2)
+            return [
+                receipt.action,
+                receipt.officialTransportSurface,
+                endpoints.map { "endpoints \($0)" }
+            ]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        }
+        return listLabel(labels, limit: limit)
     }
 }

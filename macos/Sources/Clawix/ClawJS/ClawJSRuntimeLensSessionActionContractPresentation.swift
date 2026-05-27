@@ -17,6 +17,7 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
         let officialContractSource: String?
         let transportPolicyId: String?
         let officialTransportSurface: String?
+        let officialProductionTransportSurfacesLabel: String?
         let productionTransportBlocker: String?
         let productionTransportStatus: String?
         let lifecycleStatus: String?
@@ -37,6 +38,7 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 officialContractSource,
                 transportPolicyId.map { "transport policy \($0)" },
                 officialTransportSurface.map { "official transport \($0)" },
+                officialProductionTransportSurfacesLabel.map { "production surfaces \($0)" },
                 productionTransportBlocker.map { "production blocker \($0)" },
                 productionTransportStatus.map { "production transport \($0)" },
                 lifecycleStatus.map { "lifecycle \($0)" },
@@ -68,6 +70,7 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 officialContractSource.map { "official contract source \($0)" },
                 transportPolicyId.map { "transport policy \($0)" },
                 officialTransportSurface.map { "official transport \($0)" },
+                officialProductionTransportSurfacesLabel.map { "production surfaces \($0)" },
                 productionTransportBlocker.map { "production blocker \($0)" },
                 productionTransportStatus.map { "production transport \($0)" },
                 lifecycleStatus.map { "lifecycle \($0)" },
@@ -153,6 +156,11 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
                 officialContractSource: materialized?.officialContractSource ?? contract?.officialContractSource,
                 transportPolicyId: materialized?.transportPolicy?.id ?? contract?.transportPolicy?.id,
                 officialTransportSurface: materialized?.transportPolicy?.officialTransportSurface ?? contract?.transportPolicy?.officialTransportSurface,
+                officialProductionTransportSurfacesLabel: productionTransportSurfacesLabel(
+                    materialized?.transportPolicy?.officialProductionTransportSurfaces
+                        ?? contract?.transportPolicy?.officialProductionTransportSurfaces,
+                    limit: 2
+                ),
                 productionTransportBlocker: materialized?.transportPolicy?.productionTransportBlocker ?? contract?.transportPolicy?.productionTransportBlocker,
                 productionTransportStatus: materialized?.productionTransportStatus
                     ?? materialized?.transportPolicy?.productionTransportStatus
@@ -215,5 +223,13 @@ struct ClawJSRuntimeLensSessionActionContractPresentation: Equatable {
     private static func listLabel(_ values: [String], limit: Int) -> String? {
         guard !values.isEmpty else { return nil }
         return values.prefix(limit).joined(separator: ", ")
+    }
+
+    private static func productionTransportSurfacesLabel(
+        _ surfaces: [ClawJSRuntimeLensSnapshot.ProductionTransportSurface]?,
+        limit: Int
+    ) -> String? {
+        guard let surfaces, !surfaces.isEmpty else { return nil }
+        return listLabel(surfaces.map(\.id), limit: limit)
     }
 }

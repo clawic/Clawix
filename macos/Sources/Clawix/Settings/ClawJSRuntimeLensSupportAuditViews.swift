@@ -120,6 +120,9 @@ extension ClawJSRuntimeLensSection {
                 if presentation.blockerDomainCount > 0 {
                     statusPill(text: "blockers \(presentation.blockerDomainCount)", color: .orange)
                 }
+                if presentation.productionTransportReceiptDomainCount > 0 {
+                    statusPill(text: "transport receipts \(presentation.productionTransportReceiptDomainCount)", color: .green)
+                }
                 Spacer()
             }
             ForEach(slice.rows) { row in
@@ -146,6 +149,13 @@ extension ClawJSRuntimeLensSection {
                     }
                     if let policy = row.policyLabel {
                         Text("Policy: \(policy)")
+                            .font(BodyFont.system(size: 10.5))
+                            .foregroundColor(Palette.textSecondary.opacity(0.72))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    if let transportReceipts = row.productionTransportReceiptsLabel {
+                        Text("Transport receipts: \(transportReceipts)")
                             .font(BodyFont.system(size: 10.5))
                             .foregroundColor(Palette.textSecondary.opacity(0.72))
                             .lineLimit(1)

@@ -355,7 +355,8 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                 Row(id: "summary", label: "Support audit domains", value: presentation.totalLabel, pills: [
                     Pill(id: "domains", label: "domains \(presentation.domainCount)", tone: .info),
                     Pill(id: "evidence", label: "evidence \(presentation.evidenceDomainCount)", tone: presentation.evidenceDomainCount > 0 ? .warning : .success),
-                    Pill(id: "blockers", label: "blockers \(presentation.blockerDomainCount)", tone: presentation.blockerDomainCount > 0 ? .warning : .muted)
+                    Pill(id: "blockers", label: "blockers \(presentation.blockerDomainCount)", tone: presentation.blockerDomainCount > 0 ? .warning : .muted),
+                    Pill(id: "transport-receipts", label: "transport receipts \(presentation.productionTransportReceiptDomainCount)", tone: presentation.productionTransportReceiptDomainCount > 0 ? .success : .muted)
                 ], detailLines: [], accessibilityLabel: presentation.accessibilityLabel)
             ] + presentation.rows.map {
                 Row(
@@ -375,6 +376,7 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
                         $0.approvalGateFixtureStatus.map { "approval gate fixture \($0)" },
                         $0.liveEvidenceFixtureStatus.map { "live evidence fixture \($0)" },
                         $0.writeBackContractFixtureStatus.map { "write back contract fixture \($0)" },
+                        $0.productionTransportReceiptsLabel.map { "production transport receipts \($0)" },
                         $0.implementedFacetsLabel.map { "implemented facets \($0)" },
                         $0.blockingFacetsLabel.map { "blocking facets \($0)" },
                         $0.blockerClassesLabel.map { "blocker classes \($0)" },
@@ -639,6 +641,7 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
     private static func sessionActionDetailLines(_ row: ClawJSRuntimeLensSessionActionPresentation.Row) -> [String] {
         optionalLines([
             row.officialTransportSurface.map { "official transport \($0)" },
+            row.officialProductionTransportSurfacesLabel.map { "production surfaces \($0)" },
             row.productionTransportBlocker.map { "production blocker \($0)" },
             row.requiredEvidenceLabel,
             row.userVisibleContract.map { "user visible contract \($0)" },
@@ -671,6 +674,7 @@ struct ClawJSRuntimeLensSettingsPresentation: Equatable {
             row.officialContractSource.map { "official contract source \($0)" },
             row.transportPolicyId.map { "transport policy \($0)" },
             row.officialTransportSurface.map { "official transport \($0)" },
+            row.officialProductionTransportSurfacesLabel.map { "production surfaces \($0)" },
             row.productionTransportBlocker.map { "production blocker \($0)" },
             row.productionTransportStatus.map { "production transport \($0)" },
             row.lifecycleStatus.map { "lifecycle \($0)" },

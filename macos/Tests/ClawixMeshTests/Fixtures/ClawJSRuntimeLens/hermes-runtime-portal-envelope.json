@@ -3358,7 +3358,43 @@
                 "non_destructive_fixture",
                 "no_plaintext_credential_token_evidence"
               ],
-              "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+              "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+              "officialProductionTransportSurfaces": [
+                {
+                  "id": "api_server_http",
+                  "label": "Hermes API server HTTP",
+                  "protocol": "http_json_and_sse",
+                  "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                  "endpoints": [
+                    "GET /v1/capabilities",
+                    "POST /v1/runs",
+                    "GET /v1/runs/{run_id}",
+                    "GET /v1/runs/{run_id}/events",
+                    "POST /v1/runs/{run_id}/approval",
+                    "POST /v1/runs/{run_id}/stop",
+                    "POST /v1/responses",
+                    "GET /v1/responses/{response_id}"
+                  ],
+                  "authPolicy": "api_key_required_for_network_accessible_bindings",
+                  "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+                },
+                {
+                  "id": "tui_gateway_websocket_json_rpc",
+                  "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                  "protocol": "websocket_json_rpc",
+                  "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                  "endpoints": [
+                    "gateway.ready",
+                    "session.create",
+                    "session.list",
+                    "session.history",
+                    "session.interrupt",
+                    "approval.respond"
+                  ],
+                  "authPolicy": "approved_local_or_managed_endpoint_required",
+                  "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+                }
+              ]
             }
           },
           {
@@ -3414,7 +3450,43 @@
                 "non_destructive_fixture",
                 "no_plaintext_credential_token_evidence"
               ],
-              "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+              "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+              "officialProductionTransportSurfaces": [
+                {
+                  "id": "api_server_http",
+                  "label": "Hermes API server HTTP",
+                  "protocol": "http_json_and_sse",
+                  "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                  "endpoints": [
+                    "GET /v1/capabilities",
+                    "POST /v1/runs",
+                    "GET /v1/runs/{run_id}",
+                    "GET /v1/runs/{run_id}/events",
+                    "POST /v1/runs/{run_id}/approval",
+                    "POST /v1/runs/{run_id}/stop",
+                    "POST /v1/responses",
+                    "GET /v1/responses/{response_id}"
+                  ],
+                  "authPolicy": "api_key_required_for_network_accessible_bindings",
+                  "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+                },
+                {
+                  "id": "tui_gateway_websocket_json_rpc",
+                  "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                  "protocol": "websocket_json_rpc",
+                  "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                  "endpoints": [
+                    "gateway.ready",
+                    "session.create",
+                    "session.list",
+                    "session.history",
+                    "session.interrupt",
+                    "approval.respond"
+                  ],
+                  "authPolicy": "approved_local_or_managed_endpoint_required",
+                  "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+                }
+              ]
             }
           },
           {
@@ -3470,7 +3542,43 @@
                 "non_destructive_fixture",
                 "no_plaintext_credential_token_evidence"
               ],
-              "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+              "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+              "officialProductionTransportSurfaces": [
+                {
+                  "id": "api_server_http",
+                  "label": "Hermes API server HTTP",
+                  "protocol": "http_json_and_sse",
+                  "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                  "endpoints": [
+                    "GET /v1/capabilities",
+                    "POST /v1/runs",
+                    "GET /v1/runs/{run_id}",
+                    "GET /v1/runs/{run_id}/events",
+                    "POST /v1/runs/{run_id}/approval",
+                    "POST /v1/runs/{run_id}/stop",
+                    "POST /v1/responses",
+                    "GET /v1/responses/{response_id}"
+                  ],
+                  "authPolicy": "api_key_required_for_network_accessible_bindings",
+                  "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+                },
+                {
+                  "id": "tui_gateway_websocket_json_rpc",
+                  "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                  "protocol": "websocket_json_rpc",
+                  "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                  "endpoints": [
+                    "gateway.ready",
+                    "session.create",
+                    "session.list",
+                    "session.history",
+                    "session.interrupt",
+                    "approval.respond"
+                  ],
+                  "authPolicy": "approved_local_or_managed_endpoint_required",
+                  "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+                }
+              ]
             }
           },
           {
@@ -3526,7 +3634,43 @@
                 "non_destructive_fixture",
                 "no_plaintext_credential_token_evidence"
               ],
-              "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+              "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+              "officialProductionTransportSurfaces": [
+                {
+                  "id": "api_server_http",
+                  "label": "Hermes API server HTTP",
+                  "protocol": "http_json_and_sse",
+                  "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                  "endpoints": [
+                    "GET /v1/capabilities",
+                    "POST /v1/runs",
+                    "GET /v1/runs/{run_id}",
+                    "GET /v1/runs/{run_id}/events",
+                    "POST /v1/runs/{run_id}/approval",
+                    "POST /v1/runs/{run_id}/stop",
+                    "POST /v1/responses",
+                    "GET /v1/responses/{response_id}"
+                  ],
+                  "authPolicy": "api_key_required_for_network_accessible_bindings",
+                  "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+                },
+                {
+                  "id": "tui_gateway_websocket_json_rpc",
+                  "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                  "protocol": "websocket_json_rpc",
+                  "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                  "endpoints": [
+                    "gateway.ready",
+                    "session.create",
+                    "session.list",
+                    "session.history",
+                    "session.interrupt",
+                    "approval.respond"
+                  ],
+                  "authPolicy": "approved_local_or_managed_endpoint_required",
+                  "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+                }
+              ]
             }
           },
           {
@@ -7110,7 +7254,43 @@
                 "non_destructive_fixture",
                 "no_plaintext_credential_token_evidence"
               ],
-              "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+              "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+              "officialProductionTransportSurfaces": [
+                {
+                  "id": "api_server_http",
+                  "label": "Hermes API server HTTP",
+                  "protocol": "http_json_and_sse",
+                  "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                  "endpoints": [
+                    "GET /v1/capabilities",
+                    "POST /v1/runs",
+                    "GET /v1/runs/{run_id}",
+                    "GET /v1/runs/{run_id}/events",
+                    "POST /v1/runs/{run_id}/approval",
+                    "POST /v1/runs/{run_id}/stop",
+                    "POST /v1/responses",
+                    "GET /v1/responses/{response_id}"
+                  ],
+                  "authPolicy": "api_key_required_for_network_accessible_bindings",
+                  "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+                },
+                {
+                  "id": "tui_gateway_websocket_json_rpc",
+                  "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                  "protocol": "websocket_json_rpc",
+                  "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                  "endpoints": [
+                    "gateway.ready",
+                    "session.create",
+                    "session.list",
+                    "session.history",
+                    "session.interrupt",
+                    "approval.respond"
+                  ],
+                  "authPolicy": "approved_local_or_managed_endpoint_required",
+                  "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+                }
+              ]
             },
             "provenance": {
               "source": "runtime-portal-hermes-tui-gateway-policy",
@@ -7159,7 +7339,43 @@
             "non_destructive_fixture",
             "no_plaintext_credential_token_evidence"
           ],
-          "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+          "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+          "officialProductionTransportSurfaces": [
+            {
+              "id": "api_server_http",
+              "label": "Hermes API server HTTP",
+              "protocol": "http_json_and_sse",
+              "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+              "endpoints": [
+                "GET /v1/capabilities",
+                "POST /v1/runs",
+                "GET /v1/runs/{run_id}",
+                "GET /v1/runs/{run_id}/events",
+                "POST /v1/runs/{run_id}/approval",
+                "POST /v1/runs/{run_id}/stop",
+                "POST /v1/responses",
+                "GET /v1/responses/{response_id}"
+              ],
+              "authPolicy": "api_key_required_for_network_accessible_bindings",
+              "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+            },
+            {
+              "id": "tui_gateway_websocket_json_rpc",
+              "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+              "protocol": "websocket_json_rpc",
+              "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+              "endpoints": [
+                "gateway.ready",
+                "session.create",
+                "session.list",
+                "session.history",
+                "session.interrupt",
+                "approval.respond"
+              ],
+              "authPolicy": "approved_local_or_managed_endpoint_required",
+              "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+            }
+          ]
         },
         "supportContract": {
           "claim": "inventoried",
@@ -7836,7 +8052,43 @@
               "non_destructive_fixture",
               "no_plaintext_credential_token_evidence"
             ],
-            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+            "officialProductionTransportSurfaces": [
+              {
+                "id": "api_server_http",
+                "label": "Hermes API server HTTP",
+                "protocol": "http_json_and_sse",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                "endpoints": [
+                  "GET /v1/capabilities",
+                  "POST /v1/runs",
+                  "GET /v1/runs/{run_id}",
+                  "GET /v1/runs/{run_id}/events",
+                  "POST /v1/runs/{run_id}/approval",
+                  "POST /v1/runs/{run_id}/stop",
+                  "POST /v1/responses",
+                  "GET /v1/responses/{response_id}"
+                ],
+                "authPolicy": "api_key_required_for_network_accessible_bindings",
+                "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+              },
+              {
+                "id": "tui_gateway_websocket_json_rpc",
+                "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                "protocol": "websocket_json_rpc",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                "endpoints": [
+                  "gateway.ready",
+                  "session.create",
+                  "session.list",
+                  "session.history",
+                  "session.interrupt",
+                  "approval.respond"
+                ],
+                "authPolicy": "approved_local_or_managed_endpoint_required",
+                "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+              }
+            ]
           },
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
@@ -7913,7 +8165,43 @@
               "non_destructive_fixture",
               "no_plaintext_credential_token_evidence"
             ],
-            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+            "officialProductionTransportSurfaces": [
+              {
+                "id": "api_server_http",
+                "label": "Hermes API server HTTP",
+                "protocol": "http_json_and_sse",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                "endpoints": [
+                  "GET /v1/capabilities",
+                  "POST /v1/runs",
+                  "GET /v1/runs/{run_id}",
+                  "GET /v1/runs/{run_id}/events",
+                  "POST /v1/runs/{run_id}/approval",
+                  "POST /v1/runs/{run_id}/stop",
+                  "POST /v1/responses",
+                  "GET /v1/responses/{response_id}"
+                ],
+                "authPolicy": "api_key_required_for_network_accessible_bindings",
+                "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+              },
+              {
+                "id": "tui_gateway_websocket_json_rpc",
+                "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                "protocol": "websocket_json_rpc",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                "endpoints": [
+                  "gateway.ready",
+                  "session.create",
+                  "session.list",
+                  "session.history",
+                  "session.interrupt",
+                  "approval.respond"
+                ],
+                "authPolicy": "approved_local_or_managed_endpoint_required",
+                "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+              }
+            ]
           },
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
@@ -7990,7 +8278,43 @@
               "non_destructive_fixture",
               "no_plaintext_credential_token_evidence"
             ],
-            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+            "officialProductionTransportSurfaces": [
+              {
+                "id": "api_server_http",
+                "label": "Hermes API server HTTP",
+                "protocol": "http_json_and_sse",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                "endpoints": [
+                  "GET /v1/capabilities",
+                  "POST /v1/runs",
+                  "GET /v1/runs/{run_id}",
+                  "GET /v1/runs/{run_id}/events",
+                  "POST /v1/runs/{run_id}/approval",
+                  "POST /v1/runs/{run_id}/stop",
+                  "POST /v1/responses",
+                  "GET /v1/responses/{response_id}"
+                ],
+                "authPolicy": "api_key_required_for_network_accessible_bindings",
+                "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+              },
+              {
+                "id": "tui_gateway_websocket_json_rpc",
+                "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                "protocol": "websocket_json_rpc",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                "endpoints": [
+                  "gateway.ready",
+                  "session.create",
+                  "session.list",
+                  "session.history",
+                  "session.interrupt",
+                  "approval.respond"
+                ],
+                "authPolicy": "approved_local_or_managed_endpoint_required",
+                "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+              }
+            ]
           },
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
@@ -8067,7 +8391,43 @@
               "non_destructive_fixture",
               "no_plaintext_credential_token_evidence"
             ],
-            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+            "officialProductionTransportSurfaces": [
+              {
+                "id": "api_server_http",
+                "label": "Hermes API server HTTP",
+                "protocol": "http_json_and_sse",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                "endpoints": [
+                  "GET /v1/capabilities",
+                  "POST /v1/runs",
+                  "GET /v1/runs/{run_id}",
+                  "GET /v1/runs/{run_id}/events",
+                  "POST /v1/runs/{run_id}/approval",
+                  "POST /v1/runs/{run_id}/stop",
+                  "POST /v1/responses",
+                  "GET /v1/responses/{response_id}"
+                ],
+                "authPolicy": "api_key_required_for_network_accessible_bindings",
+                "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+              },
+              {
+                "id": "tui_gateway_websocket_json_rpc",
+                "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                "protocol": "websocket_json_rpc",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                "endpoints": [
+                  "gateway.ready",
+                  "session.create",
+                  "session.list",
+                  "session.history",
+                  "session.interrupt",
+                  "approval.respond"
+                ],
+                "authPolicy": "approved_local_or_managed_endpoint_required",
+                "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+              }
+            ]
           },
           "productionTransportStatus": "blocked_until_production_transport_lifecycle_policy",
           "lifecycleStatus": "external_user_managed_not_started_by_claw",
@@ -10606,7 +10966,43 @@
               "non_destructive_fixture",
               "no_plaintext_credential_token_evidence"
             ],
-            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+            "officialProductionTransportSurfaces": [
+              {
+                "id": "api_server_http",
+                "label": "Hermes API server HTTP",
+                "protocol": "http_json_and_sse",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                "endpoints": [
+                  "GET /v1/capabilities",
+                  "POST /v1/runs",
+                  "GET /v1/runs/{run_id}",
+                  "GET /v1/runs/{run_id}/events",
+                  "POST /v1/runs/{run_id}/approval",
+                  "POST /v1/runs/{run_id}/stop",
+                  "POST /v1/responses",
+                  "GET /v1/responses/{response_id}"
+                ],
+                "authPolicy": "api_key_required_for_network_accessible_bindings",
+                "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+              },
+              {
+                "id": "tui_gateway_websocket_json_rpc",
+                "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                "protocol": "websocket_json_rpc",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                "endpoints": [
+                  "gateway.ready",
+                  "session.create",
+                  "session.list",
+                  "session.history",
+                  "session.interrupt",
+                  "approval.respond"
+                ],
+                "authPolicy": "approved_local_or_managed_endpoint_required",
+                "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+              }
+            ]
           },
           "officialTransportSurface": "stdio_or_websocket_json_rpc",
           "officialTransportClasses": [
@@ -10706,7 +11102,43 @@
               "non_destructive_fixture",
               "no_plaintext_credential_token_evidence"
             ],
-            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+            "officialProductionTransportSurfaces": [
+              {
+                "id": "api_server_http",
+                "label": "Hermes API server HTTP",
+                "protocol": "http_json_and_sse",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                "endpoints": [
+                  "GET /v1/capabilities",
+                  "POST /v1/runs",
+                  "GET /v1/runs/{run_id}",
+                  "GET /v1/runs/{run_id}/events",
+                  "POST /v1/runs/{run_id}/approval",
+                  "POST /v1/runs/{run_id}/stop",
+                  "POST /v1/responses",
+                  "GET /v1/responses/{response_id}"
+                ],
+                "authPolicy": "api_key_required_for_network_accessible_bindings",
+                "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+              },
+              {
+                "id": "tui_gateway_websocket_json_rpc",
+                "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                "protocol": "websocket_json_rpc",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                "endpoints": [
+                  "gateway.ready",
+                  "session.create",
+                  "session.list",
+                  "session.history",
+                  "session.interrupt",
+                  "approval.respond"
+                ],
+                "authPolicy": "approved_local_or_managed_endpoint_required",
+                "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+              }
+            ]
           },
           "officialTransportSurface": "stdio_or_websocket_json_rpc",
           "officialTransportClasses": [
@@ -10806,7 +11238,43 @@
               "non_destructive_fixture",
               "no_plaintext_credential_token_evidence"
             ],
-            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+            "officialProductionTransportSurfaces": [
+              {
+                "id": "api_server_http",
+                "label": "Hermes API server HTTP",
+                "protocol": "http_json_and_sse",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                "endpoints": [
+                  "GET /v1/capabilities",
+                  "POST /v1/runs",
+                  "GET /v1/runs/{run_id}",
+                  "GET /v1/runs/{run_id}/events",
+                  "POST /v1/runs/{run_id}/approval",
+                  "POST /v1/runs/{run_id}/stop",
+                  "POST /v1/responses",
+                  "GET /v1/responses/{response_id}"
+                ],
+                "authPolicy": "api_key_required_for_network_accessible_bindings",
+                "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+              },
+              {
+                "id": "tui_gateway_websocket_json_rpc",
+                "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                "protocol": "websocket_json_rpc",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                "endpoints": [
+                  "gateway.ready",
+                  "session.create",
+                  "session.list",
+                  "session.history",
+                  "session.interrupt",
+                  "approval.respond"
+                ],
+                "authPolicy": "approved_local_or_managed_endpoint_required",
+                "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+              }
+            ]
           },
           "officialTransportSurface": "stdio_or_websocket_json_rpc",
           "officialTransportClasses": [
@@ -10906,7 +11374,43 @@
               "non_destructive_fixture",
               "no_plaintext_credential_token_evidence"
             ],
-            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use"
+            "reentryCondition": "attach_production_transport_lifecycle_policy_before_claim_promotion_or_non_loopback_gateway_use",
+            "officialProductionTransportSurfaces": [
+              {
+                "id": "api_server_http",
+                "label": "Hermes API server HTTP",
+                "protocol": "http_json_and_sse",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/gateway/platforms/api_server.py",
+                "endpoints": [
+                  "GET /v1/capabilities",
+                  "POST /v1/runs",
+                  "GET /v1/runs/{run_id}",
+                  "GET /v1/runs/{run_id}/events",
+                  "POST /v1/runs/{run_id}/approval",
+                  "POST /v1/runs/{run_id}/stop",
+                  "POST /v1/responses",
+                  "GET /v1/responses/{response_id}"
+                ],
+                "authPolicy": "api_key_required_for_network_accessible_bindings",
+                "lifecyclePolicy": "managed_http_server_with_explicit_start_stop_health_and_redacted_receipts"
+              },
+              {
+                "id": "tui_gateway_websocket_json_rpc",
+                "label": "Hermes TUI Gateway WebSocket JSON-RPC",
+                "protocol": "websocket_json_rpc",
+                "source": "https://github.com/NousResearch/hermes-agent/blob/main/tui_gateway/ws.py",
+                "endpoints": [
+                  "gateway.ready",
+                  "session.create",
+                  "session.list",
+                  "session.history",
+                  "session.interrupt",
+                  "approval.respond"
+                ],
+                "authPolicy": "approved_local_or_managed_endpoint_required",
+                "lifecyclePolicy": "wire_compatible_with_stdio_gateway_without_claw_owned_runtime_mutation"
+              }
+            ]
           },
           "officialTransportSurface": "stdio_or_websocket_json_rpc",
           "officialTransportClasses": [

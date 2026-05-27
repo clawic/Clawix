@@ -285,6 +285,18 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(snapshot.domainData?.gateway?.tuiGatewayTransportPolicy?.officialTransportSurface, "stdio_or_websocket_json_rpc")
         XCTAssertEqual(snapshot.domainData?.gateway?.tuiGatewayTransportPolicy?.officialTransportClasses, ["stdio_json_rpc", "websocket_json_rpc"])
         XCTAssertEqual(snapshot.domainData?.gateway?.tuiGatewayTransportPolicy?.officialTransportSource, "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration")
+        XCTAssertEqual(snapshot.domainData?.gateway?.tuiGatewayTransportPolicy?.officialProductionTransportSurfaces?.map(\.id), [
+            "api_server_http",
+            "tui_gateway_websocket_json_rpc"
+        ])
+        XCTAssertEqual(
+            snapshot.domainData?.gateway?.tuiGatewayTransportPolicy?.officialProductionTransportSurfaces?.first?.endpoints?.contains("POST /v1/runs"),
+            true
+        )
+        XCTAssertEqual(
+            snapshot.domainData?.gateway?.tuiGatewayTransportPolicy?.officialProductionTransportSurfaces?.first?.authPolicy,
+            "api_key_required_for_network_accessible_bindings"
+        )
         XCTAssertEqual(snapshot.domainData?.gateway?.tuiGatewayTransportPolicy?.productionTransportStatus, "blocked_until_production_transport_lifecycle_policy")
         XCTAssertEqual(snapshot.domainData?.gateway?.tuiGatewayTransportPolicy?.productionTransportBlocker, "approval_required_for_non_loopback_endpoint_and_lifecycle_management")
         XCTAssertEqual(snapshot.domainData?.gateway?.tuiGatewayTransportPolicy?.credentialPolicy, "no_credential_or_token_emission")
@@ -316,6 +328,10 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
         XCTAssertEqual(sessionActionPresentation.statusLabel, "blocked 4, implemented 5, local_overlay_only 2")
         XCTAssertEqual(sessionActionPresentation.localOverlayActionsLabel, "pin, unpin")
         XCTAssertEqual(sessionActionPresentation.blockedActionsLabel, "send, inject, abort, create")
+        XCTAssertEqual(
+            sessionActionPresentation.rows.first { $0.action == "send" }?.officialProductionTransportSurfacesLabel,
+            "api_server_http, tui_gateway_websocket_json_rpc"
+        )
         XCTAssertTrue(sessionActionPresentation.accessibilityLabel.contains("Runtime session actions"))
     }
 

@@ -170,6 +170,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             let liveEvidenceFixtureReceipt: LiveEvidenceFixtureReceipt?
             let writeBackContractFixtureStatus: String?
             let writeBackContractFixtureReceipt: OfficialContractFixtureReceipt?
+            let productionTransportReceipts: [ProductionTransportReceipt]?
             let validation: String?
             let externalPending: Bool?
             let persistence: String?
@@ -416,6 +417,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let officialTransportSurface: String?
         let officialTransportClasses: [String]?
         let officialTransportSource: String?
+        let officialProductionTransportSurfaces: [ProductionTransportSurface]?
         let fixtureTransport: String?
         let productionTransportStatus: String?
         let productionTransportBlocker: String?
@@ -439,6 +441,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             case officialTransportSurface
             case officialTransportClasses
             case officialTransportSource
+            case officialProductionTransportSurfaces
             case fixtureTransport
             case productionTransportStatus
             case productionTransportBlocker
@@ -455,6 +458,26 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
             case supportClaimEffect
             case requiredEvidence
             case reentryCondition
+        }
+    }
+
+    struct ProductionTransportSurface: Decodable, Equatable, Identifiable {
+        let id: String
+        let label: String?
+        let protocolName: String?
+        let source: String?
+        let endpoints: [String]?
+        let authPolicy: String?
+        let lifecyclePolicy: String?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case label
+            case protocolName = "protocol"
+            case source
+            case endpoints
+            case authPolicy
+            case lifecyclePolicy
         }
     }
 
@@ -491,6 +514,7 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         let liveEvidenceFixtureReceipt: LiveEvidenceFixtureReceipt?
         let writeBackContractFixtureStatus: String?
         let writeBackContractFixtureReceipt: OfficialContractFixtureReceipt?
+        let productionTransportReceipts: [ProductionTransportReceipt]?
         let validation: String?
         let externalPending: Bool?
         let freshness: String?
@@ -502,6 +526,37 @@ struct ClawJSRuntimeLensSnapshot: Decodable, Equatable {
         var displayLabel: String {
             ClawJSRuntimeLensSnapshot.displayLabel(for: domain)
         }
+    }
+
+    struct ProductionTransportReceipt: Decodable, Equatable, Identifiable {
+        var id: String { receiptId ?? "\(domain ?? "unknown").\(action ?? "unknown")" }
+        let domain: String?
+        let action: String?
+        let receiptId: String?
+        let receiptType: String?
+        let status: String?
+        let approved: Bool?
+        let redacted: Bool?
+        let plaintextSecretLeak: Bool?
+        let lifecyclePolicyApproved: Bool?
+        let productionTransportLifecycleManaged: Bool?
+        let nonLoopbackEndpointApproved: Bool?
+        let nativeRoundTripVerified: Bool?
+        let officialTransportSurface: String?
+        let officialTransportSurfaceLabel: String?
+        let officialTransportSource: String?
+        let verifiedEndpoints: [String]?
+        let capabilitiesEndpointVerified: Bool?
+        let runLifecycleEndpointsVerified: Bool?
+        let eventStreamVerified: Bool?
+        let approvalEndpointVerified: Bool?
+        let stopEndpointVerified: Bool?
+        let responsePersistenceVerified: Bool?
+        let websocketJsonRpcReadyVerified: Bool?
+        let sessionMethodEnvelopeVerified: Bool?
+        let transportDisconnectHandled: Bool?
+        let evidenceSafetyPolicy: String?
+        let source: String?
     }
 
     final class DomainData: Decodable, Equatable {
