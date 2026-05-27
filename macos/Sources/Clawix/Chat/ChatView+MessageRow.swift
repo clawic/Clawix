@@ -857,7 +857,11 @@ final class FileLinkPreviewCache {
             .extractLinkURLs(in: message.content)
             .filter(\.isFileURL)
             .map(\.path)
-            .filter { !$0.isEmpty && seen.insert($0).inserted }
+            .filter {
+                !$0.isEmpty
+                    && Self.shouldPreviewFileLink(path: $0)
+                    && seen.insert($0).inserted
+            }
         let preview: FileLinkPreview
         if paths.count > previewLimit {
             preview = FileLinkPreview(
@@ -869,6 +873,11 @@ final class FileLinkPreviewCache {
         }
         store(preview, for: key)
         return preview
+    }
+
+    private static func shouldPreviewFileLink(path: String) -> Bool {
+        let ext = URL(fileURLWithPath: path).pathExtension.lowercased()
+        return ["md", "markdown", "mdx"].contains(ext)
     }
 
     private func store(_ value: FileLinkPreview, for key: Key) {

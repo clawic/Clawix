@@ -90,6 +90,22 @@ final class TimelineEntryWindowTests: XCTestCase {
         XCTAssertEqual(preview.remainingCount, 1)
     }
 
+    func testFileLinkPreviewSkipsSourceCodeLinks() {
+        let message = ChatMessage(
+            role: .assistant,
+            content: """
+            Updated [view](/tmp/ChatView+MessageRow.swift) and \
+            [state](/tmp/ChatHydration.swift), see [doc](/tmp/notes.md).
+            """,
+            streamingFinished: true
+        )
+
+        let preview = FileLinkPreviewCache.shared.preview(for: message)
+
+        XCTAssertEqual(preview.visiblePaths, ["/tmp/notes.md"])
+        XCTAssertEqual(preview.remainingCount, 0)
+    }
+
     func testFileChangeTimelineDoesNotCreateTrailingFileLinkPreview() {
         let message = ChatMessage(
             role: .assistant,
