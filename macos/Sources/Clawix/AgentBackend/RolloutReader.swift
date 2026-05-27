@@ -460,6 +460,8 @@ enum RolloutReader {
         // events arrive in order on the same call_id, so we stash the
         // function_call payload here and resolve at mcp_tool_call_end.
         var pendingJS: [String: PendingJSCall] = [:]
+        var webCommandCallIds = Set<String>()
+        var webCommandSessionIds = Set<Int>()
         var latestPlan: [PlanStep]? = nil
         // cwd captured from `session_meta`. Used to resolve relative
         // paths emitted by `apply_patch` (the new custom_tool_call shape
@@ -679,6 +681,14 @@ enum RolloutReader {
                 let actions = parseCommandActions(payload["parsed_cmd"])
                 let cmdText = (payload["command"] as? [String])?.last
                 ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
+                if Self.isWebRequestCommand(cmdText) {
+                    webCommandCallIds.insert(callId)
+                    if !seenCallIds.contains(callId) {
+                        pending?.appendOther(WorkItem(id: callId, kind: .webSearch, status: .completed))
+                        seenCallIds.insert(callId)
+                    }
+                    continue
+                }
                 if seenCallIds.contains(callId) {
                     // function_call already emitted a placeholder for this
                     // command; replace it with the rich parsed_cmd payload
@@ -698,11 +708,16 @@ enum RolloutReader {
                     if seenCallIds.contains(callId) { continue }
                     ensurePending(id: stableMessageId(offset: lineOffset), startOffset: lineOffset, timestamp: timestamp)
                     let command = decodeExecCommandArguments(payload["arguments"])
-                    pending?.appendCommand(
-                        id: callId,
-                        text: command,
-                        actions: parseCommandActions(fromCommandText: command)
-                    )
+                    if Self.isWebRequestCommand(command) {
+                        webCommandCallIds.insert(callId)
+                        pending?.appendOther(WorkItem(id: callId, kind: .webSearch, status: .completed))
+                    } else {
+                        pending?.appendCommand(
+                            id: callId,
+                            text: command,
+                            actions: parseCommandActions(fromCommandText: command)
+                        )
+                    }
                     seenCallIds.insert(callId)
                 case "js":
                     // Stash the args; the mcp_tool_call_end branch is
@@ -738,7 +753,13 @@ enum RolloutReader {
                     if let steps = Self.parseUpdatePlan(payload["arguments"]) {
                         latestPlan = steps
                     }
-                case "write_stdin", "read_thread_terminal":
+                case "write_stdin":
+                    if Self.isPollingWebCommand(arguments: payload["arguments"], webCommandSessionIds: webCommandSessionIds) {
+                        seenCallIds.insert(callId)
+                        continue
+                    }
+                    fallthrough
+                case "read_thread_terminal":
                     // Codex presents terminal polling/input as command
                     // activity, not as repeated generic tool rows.
                     if seenCallIds.contains(callId) { continue }
@@ -748,6 +769,14 @@ enum RolloutReader {
                 default:
                     continue
                 }
+
+            case ("response_item", "function_call_output"):
+                guard let callId = payload["call_id"] as? String,
+                      webCommandCallIds.contains(callId),
+                      let output = payload["output"] as? String,
+                      let sessionId = Self.parseRunningSessionID(output)
+                else { continue }
+                webCommandSessionIds.insert(sessionId)
 
             case ("event_msg", "patch_apply_end"):
                 let callId = payload["call_id"] as? String ?? UUID().uuidString
@@ -941,10 +970,60 @@ enum RolloutReader {
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    private static func isWebRequestCommand(_ command: String?) -> Bool {
+        guard let command else { return false }
+        let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        let lower = trimmed.lowercased()
+        let firstToken = lower
+            .split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "\n" })
+            .first
+            .map(String.init) ?? lower
+        guard ["curl", "wget", "http", "https"].contains(firstToken) else {
+            return false
+        }
+        return lower.contains("http://") || lower.contains("https://")
+    }
+
+    private static func isPollingWebCommand(arguments: Any?, webCommandSessionIds: Set<Int>) -> Bool {
+        guard !webCommandSessionIds.isEmpty else { return false }
+        let data: Data?
+        if let string = arguments as? String {
+            data = string.data(using: .utf8)
+        } else if let dict = arguments as? [String: Any] {
+            data = try? JSONSerialization.data(withJSONObject: dict)
+        } else {
+            data = nil
+        }
+        guard let data,
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return false }
+        if let sessionId = obj["session_id"] as? Int {
+            return webCommandSessionIds.contains(sessionId)
+        }
+        if let sessionId = obj["session_id"] as? NSNumber {
+            return webCommandSessionIds.contains(sessionId.intValue)
+        }
+        return false
+    }
+
+    private static func parseRunningSessionID(_ output: String) -> Int? {
+        let pattern = #"Process running with session ID (\d+)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: output, range: NSRange(output.startIndex..., in: output)),
+              match.numberOfRanges > 1,
+              let range = Range(match.range(at: 1), in: output)
+        else { return nil }
+        return Int(output[range])
+    }
+
     private static func parseCommandActions(fromCommandText command: String?) -> [CommandActionKind] {
         guard let command else { return [] }
         let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return [] }
+        if isWebRequestCommand(trimmed) {
+            return []
+        }
         let lower = trimmed.lowercased()
         let firstToken = lower
             .split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "\n" })
@@ -1459,7 +1538,13 @@ private struct PendingAssistant {
     /// imageGen/View). Historical Codex rows group all tool activity between
     /// visible assistant messages into one row.
     mutating func appendOther(_ item: WorkItem) {
-        if !forceNewToolGroup,
+        let shouldRespectReasoningBoundary: Bool
+        if case .webSearch = item.kind {
+            shouldRespectReasoningBoundary = false
+        } else {
+            shouldRespectReasoningBoundary = true
+        }
+        if (!forceNewToolGroup || !shouldRespectReasoningBoundary),
            case .tools(let gid, let items, let presentation) = timeline.last {
             let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
                 groupID: gid,

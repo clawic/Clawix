@@ -567,6 +567,105 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertEqual(tools[1].aggregateRows.map(\.text), ["Ran 1 command"])
     }
 
+    func testRolloutReaderGroupsWebSearchesAndCurlLikeCodex() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-27T10:00:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-27T10:00:01.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "I will search locally and on the web.",
+                "phase": "commentary"
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:02.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "exec_command",
+                "call_id": "local-1",
+                "arguments": #"{"cmd":"rg -n \"https?://\" .","workdir":"/tmp"}"#
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:03.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "exec_command",
+                "call_id": "local-2",
+                "arguments": #"{"cmd":"find . -name '*Link*'","workdir":"/tmp"}"#
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:04.000Z", type: "response_item", payload: [
+                "type": "reasoning"
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:05.000Z", type: "response_item", payload: [
+                "type": "web_search_call",
+                "call_id": "web-1",
+                "status": "completed"
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:06.000Z", type: "response_item", payload: [
+                "type": "reasoning"
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:07.000Z", type: "response_item", payload: [
+                "type": "web_search_call",
+                "call_id": "web-2",
+                "status": "completed"
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:08.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "I found the deployment URLs.",
+                "phase": "commentary"
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:09.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "exec_command",
+                "call_id": "curl-1",
+                "arguments": #"{"cmd":"curl -L -s https://example.com | head -c 100","workdir":"/tmp"}"#
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:10.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "exec_command",
+                "call_id": "curl-2",
+                "arguments": #"{"cmd":"curl -L -s https://example.org | head -c 100","workdir":"/tmp"}"#
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:11.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "exec_command",
+                "call_id": "curl-3",
+                "arguments": #"{"cmd":"curl -L -s https://example.net/robots.txt","workdir":"/tmp"}"#
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:12.000Z", type: "response_item", payload: [
+                "type": "function_call_output",
+                "call_id": "curl-1",
+                "output": "Chunk ID: abc\nProcess running with session ID 42\n"
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:13.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "write_stdin",
+                "call_id": "poll-1",
+                "arguments": #"{"session_id":42,"chars":""}"#
+            ]),
+            jsonLine(timestamp: "2026-05-27T10:00:14.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Done.",
+                "phase": "final_answer"
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout)
+        let assistant = try XCTUnwrap(result.entries.first)
+        let rows = assistant.timeline.compactMap { entry -> [String]? in
+            if case .tools(_, _, let presentation) = entry {
+                return presentation?.aggregateRows.map(\.text)
+            }
+            return nil
+        }
+
+        XCTAssertEqual(rows, [
+            ["Explored 2 searches, searched web 2 times"],
+            ["Searched web 3 times"]
+        ])
+    }
+
     func testRolloutChatMessagesAreSettledForHistoricalRendering() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

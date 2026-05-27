@@ -174,7 +174,11 @@ enum ToolTimelinePresentation {
                     ? L10n.exploredFiles(readFiles)
                     : L10n.exploredFilesInline(readFiles))
             }
-            if searchedItems > 0 { parts.append(L10n.searchedItems(searchedItems)) }
+            if searchedItems > 0 {
+                parts.append(parts.isEmpty
+                    ? L10n.exploredSearches(searchedItems)
+                    : L10n.searchedItems(searchedItems))
+            }
             if listed > 0 {
                 parts.append(parts.isEmpty
                     ? L10n.listedItems(listed)
@@ -187,6 +191,9 @@ enum ToolTimelinePresentation {
             }
             if totalBrowser > 0 {
                 parts.append(String(localized: "used the browser", bundle: AppLocale.bundle, locale: AppLocale.current))
+            }
+            if webSearchCount > 0 {
+                parts.append(L10n.searchedWebInline(webSearchCount))
             }
             for server in uniquePreservingOrder(mcpTools.map(\.server)) {
                 parts.append(L10n.usedToolInline(prettyMcpServer(server)))
@@ -230,10 +237,8 @@ enum ToolTimelinePresentation {
                 text: text
             ))
         }
-        if webSearchCount > 0 {
-            let text = webSearchCount == 1
-                ? String(localized: "Searched the web", bundle: AppLocale.bundle, locale: AppLocale.current)
-                : String(localized: "Searched the web \(webSearchCount) times", bundle: AppLocale.bundle, locale: AppLocale.current)
+        if webSearchCount > 0 && !hasPrimaryWork {
+            let text = L10n.searchedWeb(webSearchCount)
             rows.append(ToolTimelineRow(id: "webSearch", icon: "clawix.globe", text: text))
         }
 
@@ -316,7 +321,7 @@ enum ToolTimelinePresentation {
     private static func fallbackDetailText(for item: WorkItem) -> String {
         switch item.kind {
         case .webSearch:
-            return String(localized: "Searched the web", bundle: AppLocale.bundle, locale: AppLocale.current)
+            return L10n.searchedWeb(1)
         case .mcpTool(let server, let tool):
             return L10n.usedTool(prettyMcpServer(mcpServerBucket(server: server, tool: tool)))
         case .dynamicTool(let name):
@@ -560,7 +565,11 @@ private final class ToolTimelinePresentationCache {
                         ? L10n.exploredFiles(readFiles)
                         : L10n.exploredFilesInline(readFiles))
                 }
-                if searchedItems > 0 { parts.append(L10n.searchedItems(searchedItems)) }
+                if searchedItems > 0 {
+                    parts.append(parts.isEmpty
+                        ? L10n.exploredSearches(searchedItems)
+                        : L10n.searchedItems(searchedItems))
+                }
                 if listed > 0 {
                     parts.append(parts.isEmpty
                         ? L10n.listedItems(listed)
@@ -573,6 +582,9 @@ private final class ToolTimelinePresentationCache {
                 }
                 if totalBrowser > 0 {
                     parts.append(String(localized: "used the browser", bundle: AppLocale.bundle, locale: AppLocale.current))
+                }
+                if webSearchCount > 0 {
+                    parts.append(L10n.searchedWebInline(webSearchCount))
                 }
                 for server in mcpServerOrder {
                     parts.append(L10n.usedToolInline(prettyMcpServer(server)))
@@ -616,10 +628,8 @@ private final class ToolTimelinePresentationCache {
                     text: text
                 ))
             }
-            if webSearchCount > 0 {
-                let text = webSearchCount == 1
-                    ? String(localized: "Searched the web", bundle: AppLocale.bundle, locale: AppLocale.current)
-                    : String(localized: "Searched the web \(webSearchCount) times", bundle: AppLocale.bundle, locale: AppLocale.current)
+            if webSearchCount > 0 && !hasPrimaryWork {
+                let text = L10n.searchedWeb(webSearchCount)
                 rows.append(ToolTimelineRow(id: "webSearch", icon: "clawix.globe", text: text))
             }
             for (idx, server) in mcpServerOrder.enumerated() {

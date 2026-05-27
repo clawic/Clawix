@@ -204,6 +204,47 @@ final class ToolTimelinePresentationTests: XCTestCase {
         ])
     }
 
+    func testAggregateRowsInlineWebSearchesWithLocalSearchesLikeCodex() {
+        let rows = ToolTimelinePresentation.aggregateRows(for: [
+            WorkItem(
+                id: "search-1",
+                kind: .command(text: "rg url .", actions: [.search]),
+                status: .completed
+            ),
+            WorkItem(
+                id: "search-2",
+                kind: .command(text: "find . -name '*.tsx'", actions: [.search]),
+                status: .completed
+            ),
+            WorkItem(id: "web-1", kind: .webSearch, status: .completed),
+            WorkItem(id: "web-2", kind: .webSearch, status: .completed)
+        ])
+
+        XCTAssertEqual(rows, [
+            ToolTimelineRow(
+                id: "exec",
+                icon: "magnifyingglass",
+                text: "Explored 2 searches, searched web 2 times"
+            )
+        ])
+    }
+
+    func testAggregateRowsUseCodexWebSearchPhrasing() {
+        let rows = ToolTimelinePresentation.aggregateRows(for: [
+            WorkItem(id: "web-1", kind: .webSearch, status: .completed),
+            WorkItem(id: "web-2", kind: .webSearch, status: .completed),
+            WorkItem(id: "web-3", kind: .webSearch, status: .completed)
+        ])
+
+        XCTAssertEqual(rows, [
+            ToolTimelineRow(
+                id: "webSearch",
+                icon: "clawix.globe",
+                text: "Searched web 3 times"
+            )
+        ])
+    }
+
     func testComputerUseMcpServerGetsCanonicalRow() {
         let rows = ToolTimelinePresentation.aggregateRows(for: [
             WorkItem(
