@@ -128,6 +128,54 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertEqual(result.entries[0].workSummary?.elapsedSeconds(asOf: Date.distantFuture), 273)
     }
 
+    func testRolloutReaderStartsNewTurnAfterClosedAssistantWithoutUserMessageEvent() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-23T17:20:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-23T17:22:13.030Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Previous done.",
+                "phase": "final_answer"
+            ]),
+            jsonLine(timestamp: "2026-05-23T17:22:13.139Z", type: "event_msg", payload: [
+                "type": "task_complete",
+                "duration_ms": 282_584
+            ]),
+            jsonLine(timestamp: "2026-05-23T17:26:46.670Z", type: "response_item", payload: [
+                "type": "message",
+                "role": "user",
+                "content": [["type": "input_text", "text": "<goal_context>Continue</goal_context>"]]
+            ]),
+            jsonLine(timestamp: "2026-05-23T17:22:28.062Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Working.",
+                "phase": "commentary"
+            ]),
+            jsonLine(timestamp: "2026-05-23T17:26:46.247Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Current done.",
+                "phase": "final_answer"
+            ]),
+            jsonLine(timestamp: "2026-05-23T17:26:46.495Z", type: "event_msg", payload: [
+                "type": "task_complete",
+                "duration_ms": 273_225
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout)
+
+        XCTAssertEqual(result.entries.count, 2)
+        XCTAssertEqual(result.entries.map(\.text), ["Previous done.", "Current done."])
+        XCTAssertEqual(result.entries[0].workSummary?.elapsedSeconds(asOf: Date.distantFuture), 282)
+        XCTAssertEqual(result.entries[1].workSummary?.elapsedSeconds(asOf: Date.distantFuture), 273)
+    }
+
     func testRolloutReaderWindowReadsOlderMessagesBeforeCursor() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
