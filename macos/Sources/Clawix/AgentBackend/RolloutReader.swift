@@ -758,6 +758,10 @@ enum RolloutReader {
                         seenCallIds.insert(callId)
                         continue
                     }
+                    if Self.isEmptySessionPoll(arguments: payload["arguments"]) {
+                        seenCallIds.insert(callId)
+                        continue
+                    }
                     fallthrough
                 case "read_thread_terminal":
                     // Codex presents terminal polling/input as command
@@ -1005,6 +1009,23 @@ enum RolloutReader {
             return webCommandSessionIds.contains(sessionId.intValue)
         }
         return false
+    }
+
+    private static func isEmptySessionPoll(arguments: Any?) -> Bool {
+        let data: Data?
+        if let string = arguments as? String {
+            data = string.data(using: .utf8)
+        } else if let dict = arguments as? [String: Any] {
+            data = try? JSONSerialization.data(withJSONObject: dict)
+        } else {
+            data = nil
+        }
+        guard let data,
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              obj["session_id"] != nil
+        else { return false }
+        let chars = obj["chars"] as? String
+        return chars?.isEmpty ?? true
     }
 
     private static func parseRunningSessionID(_ output: String) -> Int? {

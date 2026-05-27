@@ -461,6 +461,57 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertEqual(tools.first?.1?.aggregateRows.first?.text, "Ran 2 commands")
     }
 
+    func testRolloutReaderSkipsEmptyWriteStdinPollsForRunningCommands() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-26T20:55:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-26T20:55:01.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "exec_command",
+                "call_id": "cmd-1",
+                "arguments": #"{"cmd":"npm run test:docs -- --report-all"}"#
+            ]),
+            jsonLine(timestamp: "2026-05-26T20:55:02.000Z", type: "response_item", payload: [
+                "type": "function_call_output",
+                "call_id": "cmd-1",
+                "output": "Process running with session ID 11222"
+            ]),
+            jsonLine(timestamp: "2026-05-26T20:55:03.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "write_stdin",
+                "call_id": "poll-1",
+                "arguments": #"{"session_id":11222,"chars":"","yield_time_ms":1000,"max_output_tokens":12000}"#
+            ]),
+            jsonLine(timestamp: "2026-05-26T20:55:04.000Z", type: "response_item", payload: [
+                "type": "function_call",
+                "name": "write_stdin",
+                "call_id": "poll-2",
+                "arguments": #"{"session_id":11222,"chars":"","yield_time_ms":1000,"max_output_tokens":12000}"#
+            ]),
+            jsonLine(timestamp: "2026-05-26T20:55:05.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Done.",
+                "phase": "final_answer"
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout)
+        let assistant = try XCTUnwrap(result.entries.first)
+        let tools = assistant.timeline.compactMap { entry -> ToolTimelinePresentationSnapshot? in
+            if case .tools(_, _, let presentation) = entry { return presentation }
+            return nil
+        }
+
+        XCTAssertEqual(tools.count, 1)
+        XCTAssertEqual(tools.first?.aggregateRows.first?.text, "Ran 1 command")
+    }
+
     func testRolloutReaderPreservesViewImageFunctionCallPreviewPath() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
