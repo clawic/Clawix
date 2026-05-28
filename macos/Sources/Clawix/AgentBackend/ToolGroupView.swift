@@ -180,6 +180,8 @@ struct ToolGroupView: View {
             McpIcon(size: 14)
         case "clawix.computerUse":
             LucideIcon(.appWindow, size: 13)
+        case "clawix.package":
+            LucideIcon(.package, size: 13)
         case "clawix.pencil":
             PencilIconView(color: Color.gray(light: 0.50, dark: 0.45), lineWidth: 1.0)
                 .frame(width: 15, height: 15)

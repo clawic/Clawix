@@ -264,17 +264,32 @@ enum ToolTimelinePresentation {
 
         var serverOrder: [String] = []
         var serverCounts: [String: Int] = [:]
+        var serverFirstTool: [String: String] = [:]
         for mcp in mcpTools where !mcp.server.isEmpty && !inlineMcpServers.contains(mcp.server) {
             if serverCounts[mcp.server] == nil { serverOrder.append(mcp.server) }
+            if serverFirstTool[mcp.server] == nil { serverFirstTool[mcp.server] = mcp.tool }
             serverCounts[mcp.server, default: 0] += 1
         }
         for (idx, server) in serverOrder.enumerated() {
             let count = serverCounts[server] ?? 1
             let pretty = prettyMcpServer(server)
-            let text = count <= 1 ? L10n.usedTool(pretty) : L10n.usedToolTimes(pretty, count)
+            let text: String
+            if count <= 1, isComputerUseMcpServer(server),
+               let actionTitle = computerUseActionTitle(tool: serverFirstTool[server] ?? "") {
+                text = actionTitle
+            } else {
+                text = count <= 1 ? L10n.usedTool(pretty) : L10n.usedToolTimes(pretty, count)
+            }
+            let icon: String
+            if count <= 1, isComputerUseMcpServer(server),
+               computerUseActionTitle(tool: serverFirstTool[server] ?? "") != nil {
+                icon = "command"
+            } else {
+                icon = isComputerUseMcpServer(server) ? "clawix.computerUse" : "clawix.mcp"
+            }
             rows.append(ToolTimelineRow(
                 id: "mcp\(idx)",
-                icon: isComputerUseMcpServer(server) ? "clawix.computerUse" : "clawix.mcp",
+                icon: icon,
                 text: text
             ))
         }
@@ -315,8 +330,11 @@ enum ToolTimelinePresentation {
         if listed > 0 {
             return "clawix.folderStack"
         }
-        if readFiles > 0 || searchedItems > 0 {
+        if searchedItems > 0 {
             return "magnifyingglass"
+        }
+        if readFiles > 0 {
+            return "clawix.package"
         }
         if fileChanges > 0 {
             return "clawix.pencil"
@@ -503,6 +521,10 @@ enum ToolTimelinePresentation {
         case .webSearch:
             return L10n.searchedWeb(1)
         case .mcpTool(let server, let tool):
+            if isComputerUseMcpServer(mcpServerBucket(server: server, tool: tool)),
+               let actionTitle = computerUseActionTitle(tool: tool) {
+                return actionTitle
+            }
             return L10n.usedTool(prettyMcpServer(mcpServerBucket(server: server, tool: tool)))
         case .dynamicTool(let name):
             return L10n.usedTool(name.isEmpty ? "tool" : name)
@@ -526,7 +548,8 @@ enum ToolTimelinePresentation {
         switch item.kind {
         case .command(_, let actions):
             if actions.contains(.listFiles) { return "clawix.folderStack" }
-            if actions.contains(.read) || actions.contains(.search) { return "magnifyingglass" }
+            if actions.contains(.search) { return "magnifyingglass" }
+            if actions.contains(.read) { return "clawix.package" }
             return "clawix.terminal"
         case .fileChange:
             return "clawix.pencil"
@@ -813,10 +836,29 @@ private final class ToolTimelinePresentationCache {
                 if inlineMcpServers.contains(server) { continue }
                 let count = mcpServerCounts[server] ?? 1
                 let pretty = prettyMcpServer(server)
-                let text = count <= 1 ? L10n.usedTool(pretty) : L10n.usedToolTimes(pretty, count)
+                let firstTool = itemOrder.compactMap { id -> String? in
+                    guard let contribution = contributionsByID[id],
+                          contribution.mcpServer == server
+                    else { return nil }
+                    return contribution.mcpTool
+                }.first
+                let text: String
+                if count <= 1, isComputerUseMcpServer(server),
+                   let actionTitle = computerUseActionTitle(tool: firstTool ?? "") {
+                    text = actionTitle
+                } else {
+                    text = count <= 1 ? L10n.usedTool(pretty) : L10n.usedToolTimes(pretty, count)
+                }
+                let icon: String
+                if count <= 1, isComputerUseMcpServer(server),
+                   computerUseActionTitle(tool: firstTool ?? "") != nil {
+                    icon = "command"
+                } else {
+                    icon = isComputerUseMcpServer(server) ? "clawix.computerUse" : "clawix.mcp"
+                }
                 rows.append(ToolTimelineRow(
                     id: "mcp\(idx)",
-                    icon: isComputerUseMcpServer(server) ? "clawix.computerUse" : "clawix.mcp",
+                    icon: icon,
                     text: text
                 ))
             }
@@ -858,6 +900,7 @@ private final class ToolTimelinePresentationCache {
         var dynamicBrowserUsed = false
         var webSearchCount = 0
         var mcpServer: String?
+        var mcpTool: String?
         var dynamicToolName: String?
         var imageGenerations = 0
         var imageViews = 0
@@ -889,6 +932,7 @@ private final class ToolTimelinePresentationCache {
                 webSearchCount = 1
             case .mcpTool(let server, let tool):
                 mcpServer = mcpServerBucket(server: server, tool: tool)
+                mcpTool = tool
             case .dynamicTool(let name):
                 let lower = name.lowercased()
                 if lower.contains("browser") {

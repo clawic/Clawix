@@ -292,6 +292,24 @@ final class ToolTimelinePresentationTests: XCTestCase {
         ])
     }
 
+    func testAggregateRowsUsePackageIconForReadOnlyExploration() {
+        let rows = ToolTimelinePresentation.aggregateRows(for: [
+            WorkItem(
+                id: "read-1",
+                kind: .command(text: "sed -n '1p' AGENTS.md", actions: [.read]),
+                status: .completed
+            )
+        ])
+
+        XCTAssertEqual(rows, [
+            ToolTimelineRow(
+                id: "exec",
+                icon: "clawix.package",
+                text: "Explored 1 file"
+            )
+        ])
+    }
+
     func testAggregateRowsUseCodexListPhrasingWithoutCounts() {
         let rows = ToolTimelinePresentation.aggregateRows(for: [
             WorkItem(
@@ -370,6 +388,24 @@ final class ToolTimelinePresentationTests: XCTestCase {
                 id: "mcp0",
                 icon: "clawix.computerUse",
                 text: L10n.usedTool("Computer Use")
+            )
+        ])
+    }
+
+    func testComputerUseListAppsUsesCodexActionTitle() {
+        let rows = ToolTimelinePresentation.aggregateRows(for: [
+            WorkItem(
+                id: "computer-1",
+                kind: .mcpTool(server: "computer-use", tool: "list_apps"),
+                status: .completed
+            )
+        ])
+
+        XCTAssertEqual(rows, [
+            ToolTimelineRow(
+                id: "mcp0",
+                icon: "command",
+                text: "List Mac apps"
             )
         ])
     }

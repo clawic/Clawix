@@ -145,6 +145,19 @@ func computerUseActionVerb(tool: String, active: Bool) -> String {
     }
 }
 
+func computerUseActionTitle(tool: String) -> String? {
+    var action = tool.lowercased()
+    if let dot = action.lastIndex(of: ".") {
+        action = String(action[action.index(after: dot)...])
+    }
+    switch action {
+    case "list_apps", "list":
+        return "List Mac apps"
+    default:
+        return nil
+    }
+}
+
 private func normalizedMcpServer(_ server: String) -> String {
     var value = server
         .lowercased()
