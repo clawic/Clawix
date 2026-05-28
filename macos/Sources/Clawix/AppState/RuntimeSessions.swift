@@ -144,7 +144,7 @@ extension AppState {
     }
 
     private func openChatRuntimeSession(chatId: UUID) {
-        daemonBridgeClient?.openSession(chatId)
+        daemonBridgeClient?.openSession(bridgeSessionId(forChatId: chatId))
     }
 
     func scheduleChatRuntimeDemandIfReady(chatId: UUID) {

@@ -27,12 +27,7 @@ struct ChatTranscriptEmptyStatePresentation: Equatable {
                 controlRole: "status"
             )
         }
-        return ChatTranscriptEmptyStatePresentation(
-            kind: .loading,
-            message: UserFacingEmptyState.chatTranscriptLoading.message,
-            showsProgress: true,
-            controlRole: "loader"
-        )
+        return nil
     }
 }
 

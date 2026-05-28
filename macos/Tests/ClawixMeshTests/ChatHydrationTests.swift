@@ -141,19 +141,11 @@ final class ChatHydrationTests: XCTestCase {
     }
 
     func testTranscriptEmptyStatePresentationTracksHydrationState() {
-        XCTAssertEqual(
-            ChatTranscriptEmptyStatePresentation.make(
-                messageCount: 0,
-                historyHydrated: false,
-                hasHistorySource: true
-            ),
-            ChatTranscriptEmptyStatePresentation(
-                kind: .loading,
-                message: UserFacingEmptyState.chatTranscriptLoading.message,
-                showsProgress: true,
-                controlRole: "loader"
-            )
-        )
+        XCTAssertNil(ChatTranscriptEmptyStatePresentation.make(
+            messageCount: 0,
+            historyHydrated: false,
+            hasHistorySource: true
+        ))
         XCTAssertEqual(
             ChatTranscriptEmptyStatePresentation.make(
                 messageCount: 0,
@@ -217,6 +209,93 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.id, existingId)
         XCTAssertEqual(state.chats.first?.title, "Newer duplicate")
         XCTAssertEqual(state.chats.first?.clawixThreadId, "thread-dup")
+    }
+
+    func testBridgeSessionIdUsesCurrentDaemonIdForPreservedLocalThread() {
+        let state = AppState()
+        let localId = UUID()
+        let daemonId = UUID()
+        state.chats = [
+            Chat(
+                id: localId,
+                title: "Existing",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-preserved",
+                historyHydrated: false
+            )
+        ]
+
+        state.applyDaemonChats([
+            WireSession(
+                id: daemonId.uuidString,
+                title: "Existing",
+                createdAt: Date(),
+                threadId: "thread-preserved"
+            )
+        ])
+
+        XCTAssertEqual(state.chats.first?.id, localId)
+        XCTAssertEqual(state.bridgeSessionId(forChatId: localId), daemonId.uuidString)
+    }
+
+    func testDaemonMessagesMapCurrentDaemonIdBackToPreservedLocalThread() {
+        let state = AppState()
+        let localId = UUID()
+        let daemonId = UUID()
+        let messageId = UUID()
+        state.chats = [
+            Chat(
+                id: localId,
+                title: "Existing",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-preserved",
+                historyHydrated: false
+            )
+        ]
+        state.applyDaemonChats([
+            WireSession(
+                id: daemonId.uuidString,
+                title: "Existing",
+                createdAt: Date(),
+                threadId: "thread-preserved"
+            )
+        ])
+
+        state.applyDaemonMessages(chatId: daemonId.uuidString, messages: [
+            WireMessage(
+                id: messageId.uuidString,
+                role: .assistant,
+                content: "Loaded tail",
+                streamingFinished: true,
+                timestamp: Date()
+            )
+        ], hasMore: false)
+
+        XCTAssertEqual(state.chatStore.transcript(for: localId)?.messages.map(\.content), ["Loaded tail"])
+        XCTAssertEqual(state.chats.first?.id, localId)
+        XCTAssertEqual(state.chats.first?.historyHydrated, true)
+    }
+
+    func testEmptyDaemonSnapshotForHistoricalSourceDoesNotMarkThreadHydrated() {
+        let state = AppState()
+        let chatId = UUID()
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Historical",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-empty-race",
+                historyHydrated: false
+            )
+        ]
+
+        state.applyDaemonMessages(chatId: chatId.uuidString, messages: [], hasMore: false)
+
+        XCTAssertEqual(state.chatStore.transcript(for: chatId)?.messages.count, 0)
+        XCTAssertEqual(state.chats.first?.historyHydrated, false)
     }
 
     func testApplyDaemonChatsBoundsSidebarSnapshot() {

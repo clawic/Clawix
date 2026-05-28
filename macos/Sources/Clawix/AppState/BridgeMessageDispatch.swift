@@ -18,7 +18,8 @@ extension AppState {
             return false
         }
 
-        if openSessionBeforeSend, !daemonBridgeClient.openSession(chatId) {
+        let bridgeSessionId = bridgeSessionId(forChatId: chatId)
+        if openSessionBeforeSend, !daemonBridgeClient.openSession(bridgeSessionId) {
             appendErrorBubble(
                 chatId: chatId,
                 message: "Background bridge is not ready. Try again once it reconnects."
@@ -27,7 +28,7 @@ extension AppState {
         }
 
         trackOptimisticUserMessage(chatId: chatId, messageId: optimisticMessageId)
-        guard daemonBridgeClient.sendMessage(chatId: chatId, text: text, attachments: attachments) else {
+        guard daemonBridgeClient.sendMessage(sessionId: bridgeSessionId, text: text, attachments: attachments) else {
             appendErrorBubble(
                 chatId: chatId,
                 message: "Background bridge is not ready. Try again once it reconnects."

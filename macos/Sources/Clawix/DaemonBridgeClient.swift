@@ -55,6 +55,11 @@ final class DaemonBridgeClient {
 
     @discardableResult
     func openSession(_ sessionId: UUID) -> Bool {
+        openSession(sessionId.uuidString)
+    }
+
+    @discardableResult
+    func openSession(_ sessionId: String) -> Bool {
         // Always opt into pagination, same as the iPhone client. The
         // initial paint only needs the trailing window
         // (`bridgeInitialPageLimit`); older history streams in via
@@ -62,7 +67,7 @@ final class DaemonBridgeClient {
         // transcript on every session tap was the dominant cost behind
         // the "transcript reanchors visibly while building from the
         // top" symptom on Mac, even over loopback.
-        return send(.openSession(sessionId: sessionId.uuidString, limit: bridgeInitialPageLimit))
+        return send(.openSession(sessionId: sessionId, limit: bridgeInitialPageLimit))
     }
 
     /// Fetch the next page of older messages for `chatId`. The cursor
@@ -71,8 +76,13 @@ final class DaemonBridgeClient {
     /// it (oldest first). No-op until authenticated.
     @discardableResult
     func loadOlderMessages(chatId: UUID, beforeMessageId: String) -> Bool {
+        loadOlderMessages(sessionId: chatId.uuidString, beforeMessageId: beforeMessageId)
+    }
+
+    @discardableResult
+    func loadOlderMessages(sessionId: String, beforeMessageId: String) -> Bool {
         send(.loadOlderMessages(
-            sessionId: chatId.uuidString,
+            sessionId: sessionId,
             beforeMessageId: beforeMessageId,
             limit: bridgeOlderPageLimit
         ))
@@ -80,7 +90,12 @@ final class DaemonBridgeClient {
 
     @discardableResult
     func sendMessage(chatId: UUID, text: String, attachments: [WireAttachment] = []) -> Bool {
-        return send(.sendMessage(sessionId: chatId.uuidString, text: text, attachments: attachments))
+        sendMessage(sessionId: chatId.uuidString, text: text, attachments: attachments)
+    }
+
+    @discardableResult
+    func sendMessage(sessionId: String, text: String, attachments: [WireAttachment] = []) -> Bool {
+        return send(.sendMessage(sessionId: sessionId, text: text, attachments: attachments))
     }
 
     @discardableResult

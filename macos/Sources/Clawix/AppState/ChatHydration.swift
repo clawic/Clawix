@@ -622,6 +622,26 @@ extension AppState {
         syncLegacyChatFromStore(chatId: chatId)
     }
 
+    func bridgeSessionId(forChatId chatId: UUID) -> String {
+        guard let chat = chat(byId: chatId),
+              let threadId = chat.clawixThreadId,
+              let wire = cachedWireSessions.first(where: { $0.threadId == threadId })
+        else { return chatId.uuidString }
+        return wire.id
+    }
+
+    private func localChatId(forBridgeSessionId sessionId: String) -> UUID? {
+        if let id = UUID(uuidString: sessionId), chatStore.summary(id: id) != nil {
+            return id
+        }
+        guard let threadId = cachedWireSessions.first(where: { $0.id == sessionId })?.threadId else {
+            return UUID(uuidString: sessionId)
+        }
+        return chatByThreadId(chats)[threadId]?.id
+            ?? chatByThreadId(archivedChats)[threadId]?.id
+            ?? UUID(uuidString: sessionId)
+    }
+
 
     /// Bridge entry point. Hydrates a chat's history from its rollout
     /// file the first time the iPhone opens it, mirroring what the Mac
@@ -762,7 +782,7 @@ extension AppState {
 
     func applyDaemonMessages(chatId: String, messages: [WireMessage], hasMore: Bool? = nil) {
         cachedWireMessagesByChat[chatId] = messages
-        guard let id = UUID(uuidString: chatId) else { return }
+        guard let id = localChatId(forBridgeSessionId: chatId) else { return }
         // Reset pagination state regardless of where the chat lives:
         // the snapshot is the new baseline. Treat absent metadata as
         // "no older history known" so incomplete snapshots stay eager.
@@ -794,6 +814,11 @@ extension AppState {
                 summary.historyHydrated = true
             }
             syncLegacyChatFromStore(chatId: id)
+            return
+        }
+        if messages.isEmpty,
+           transcript.messages.isEmpty,
+           (chatStore.summary(id: id)?.rolloutPath != nil || chatStore.summary(id: id)?.clawixThreadId != nil) {
             return
         }
         // The daemon's `RolloutHistory` reader is intentionally minimal
@@ -828,7 +853,7 @@ extension AppState {
         } else {
             cachedWireMessagesByChat[chatId, default: []].append(message)
         }
-        guard let id = UUID(uuidString: chatId),
+        guard let id = localChatId(forBridgeSessionId: chatId),
               let transcript = chatStore.transcript(for: id)
         else { return }
         // Same fallback as `applyDaemonMessages`: preserve any local
@@ -924,7 +949,7 @@ extension AppState {
         reasoningText: String,
         finished: Bool
     ) {
-        guard let id = UUID(uuidString: chatId),
+        guard let id = localChatId(forBridgeSessionId: chatId),
               let msgId = UUID(uuidString: messageId),
               let transcript = chatStore.transcript(for: id)
         else { return }
@@ -967,7 +992,7 @@ extension AppState {
     /// cursor + clears the in-flight flag so the scroll-up sentinel
     /// can fire again. Mirrors `BridgeStore.applyMessagesPage`.
     func applyDaemonMessagesPage(chatId: String, messages: [WireMessage], hasMore: Bool) {
-        guard let id = UUID(uuidString: chatId) else { return }
+        guard let id = localChatId(forBridgeSessionId: chatId) else { return }
         let beforeCount = chatStore.transcript(for: id)?.messageIds.count ?? 0
         var pag = messagesPaginationByChat[id] ?? ChatPagination(oldestKnownId: nil, hasMore: hasMore, loadingOlder: false)
         pag.loadingOlder = false
@@ -1050,7 +1075,7 @@ extension AppState {
             return
         }
         guard let client = daemonBridgeClient,
-              client.loadOlderMessages(chatId: chatId, beforeMessageId: cursor)
+              client.loadOlderMessages(sessionId: bridgeSessionId(forChatId: chatId), beforeMessageId: cursor)
         else {
             if let threadId = chat(byId: chatId)?.clawixThreadId {
                 Task { @MainActor [weak self] in
