@@ -103,6 +103,17 @@ private struct ThreadSummaryContent: View {
         items.filter { if case .imageGeneration = $0.kind { return true } else { return false } }
     }
 
+    private var fileOutputs: [String] {
+        var seen = Set<String>()
+        var out: [String] = []
+        for message in transcript.messages {
+            for path in AssistantFileLinkOutputs.paths(in: message) where seen.insert(path).inserted {
+                out.append(path)
+            }
+        }
+        return out
+    }
+
     private var webSearchCount: Int {
         items.filter { if case .webSearch = $0.kind { return true } else { return false } }.count
     }
@@ -125,7 +136,7 @@ private struct ThreadSummaryContent: View {
     }
 
     private var isEmpty: Bool {
-        plan.isEmpty && changedPaths.isEmpty && generatedImages.isEmpty
+        plan.isEmpty && changedPaths.isEmpty && generatedImages.isEmpty && fileOutputs.isEmpty
             && webSearchCount == 0 && browserCount == 0 && terminalCount == 0
     }
 
@@ -140,7 +151,7 @@ private struct ThreadSummaryContent: View {
                     VStack(alignment: .leading, spacing: 18) {
                         if !plan.isEmpty { progressSection }
                         if !changedPaths.isEmpty { changesSection }
-                        if !generatedImages.isEmpty { outputsSection }
+                        if !fileOutputs.isEmpty || !generatedImages.isEmpty { outputsSection }
                         if webSearchCount > 0 || browserCount > 0 { sourcesSection }
                         if terminalCount > 0 { terminalSection }
                     }
@@ -252,6 +263,24 @@ private struct ThreadSummaryContent: View {
     private var outputsSection: some View {
         section(L10n.t("Outputs")) {
             VStack(alignment: .leading, spacing: 6) {
+                ForEach(fileOutputs.prefix(40), id: \.self) { path in
+                    Button { appState.openFileInSidebar(absolute(path)) } label: {
+                        HStack(spacing: 7) {
+                            FileChipIcon(size: 12)
+                                .foregroundColor(Color.gray(light: 0.42, dark: 0.6))
+                                .frame(width: 14, height: 14)
+                            Text((path as NSString).lastPathComponent)
+                                .font(BodyFont.system(size: 12.5))
+                                .foregroundColor(Palette.textPrimary.opacity(0.9))
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.vertical, 3)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
                 ForEach(Array(generatedImages.enumerated()), id: \.offset) { idx, item in
                     Button {
                         if let path = item.generatedImagePath {

@@ -198,6 +198,28 @@ final class TimelineEntryWindowTests: XCTestCase {
         XCTAssertEqual(preview.remainingCount, 0)
     }
 
+    func testAssistantFileLinkOutputsSkipUserMessagesAndSourceCodeLinks() {
+        let user = ChatMessage(
+            role: .user,
+            content: "Open [report](/tmp/report.md).",
+            streamingFinished: true
+        )
+        let assistant = ChatMessage(
+            role: .assistant,
+            content: """
+            Wrote [report](/tmp/report.md:1), skipped [source](/tmp/App.swift), \
+            and attached [image](/tmp/window.png).
+            """,
+            streamingFinished: true
+        )
+
+        XCTAssertEqual(AssistantFileLinkOutputs.paths(in: user), [])
+        XCTAssertEqual(AssistantFileLinkOutputs.paths(in: assistant), [
+            "/tmp/report.md",
+            "/tmp/window.png"
+        ])
+    }
+
     func testFileLinkPreviewAcceptsMarkdownLinksWithLineSuffixes() {
         let message = ChatMessage(
             role: .assistant,
