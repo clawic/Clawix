@@ -267,7 +267,7 @@ struct ChatView: View {
     static let initialVisibleMessageLimit = 24
     static let visibleMessagePageSize = 12
     static let maxMountedScrollbackMessages = 80
-    static let localRevealThrottle: TimeInterval = 0.05
+    static let localRevealThrottle: TimeInterval = 0.25
     static let virtualizedTranscriptRowEstimate: CGFloat = 320
 
     var body: some View {

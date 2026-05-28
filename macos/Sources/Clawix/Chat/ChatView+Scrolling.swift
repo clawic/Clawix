@@ -28,13 +28,18 @@ struct ChatScrollUpSentinel: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(macOS 15, *) {
-            content.onScrollGeometryChange(for: Bool.self) { geom in
-                guard isEnabled else { return false }
+            content.onScrollGeometryChange(for: ChatScrollTopGeometryState.self) { geom in
                 let realOverflow = geom.contentSize.height
                     > geom.containerSize.height - geom.contentInsets.top - geom.contentInsets.bottom + 1
-                return geom.contentOffset.y < threshold && realOverflow
-            } action: { wasNearTop, isNearTop in
-                if isEnabled, isNearTop && !wasNearTop {
+                return ChatScrollTopGeometryState(
+                    isNearTop: isEnabled && geom.contentOffset.y < threshold && realOverflow,
+                    offsetY: geom.contentOffset.y
+                )
+            } action: { oldState, newState in
+                if isEnabled,
+                   newState.isNearTop,
+                   !oldState.isNearTop,
+                   newState.offsetY < oldState.offsetY {
                     onTrigger()
                 }
             }
@@ -42,6 +47,11 @@ struct ChatScrollUpSentinel: ViewModifier {
             content
         }
     }
+}
+
+private struct ChatScrollTopGeometryState: Equatable {
+    let isNearTop: Bool
+    let offsetY: CGFloat
 }
 
 /// Reports whether the reader has scrolled meaningfully away from the
@@ -134,6 +144,7 @@ final class ChatTopScrollTriggerInstallerView: NSView {
     private weak var installedScrollView: NSScrollView?
     private var wheelMonitor: Any?
     private var lastTriggerTime: CFTimeInterval = 0
+    private var topBoundaryTriggered = false
 
     init(controlId: String, isEnabled: Bool) {
         self.controlId = controlId
@@ -205,9 +216,15 @@ final class ChatTopScrollTriggerInstallerView: NSView {
               let scrollView = installedScrollView,
               event.window === scrollView.window,
               event.scrollingDeltaY > 0,
-              isEventInsideScrollView(event, scrollView: scrollView),
-              isNativeScrollAtTop(scrollView)
+              isEventInsideScrollView(event, scrollView: scrollView)
         else { return }
+
+        guard isNativeScrollAtTop(scrollView) else {
+            topBoundaryTriggered = false
+            return
+        }
+        guard !topBoundaryTriggered else { return }
+        topBoundaryTriggered = true
         triggerIfAllowed(source: "wheel")
     }
 
