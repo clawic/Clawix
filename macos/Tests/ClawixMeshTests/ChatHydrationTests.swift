@@ -140,6 +140,63 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
+    func testUnavailableSessionHydrationDoesNotAppendErrorBubbleWhenOpeningMacConversations() async throws {
+        let buckets: [(name: String, isArchived: Bool, isPinned: Bool)] = [
+            ("active", false, false),
+            ("pinned", false, true),
+            ("archived", true, false),
+        ]
+
+        for bucket in buckets {
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+            let session = URLSession(configuration: configuration)
+            let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+            let chatId = UUID()
+            let threadId = "thread-missing-\(bucket.name)-\(UUID().uuidString)"
+            var attempts = 0
+            SessionsHistoryURLProtocol.handler = { _ in
+                attempts += 1
+                throw URLError(.cannotConnectToHost)
+            }
+            defer { SessionsHistoryURLProtocol.handler = nil }
+
+            let state = AppState()
+            let chat = Chat(
+                id: chatId,
+                title: bucket.name,
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: threadId,
+                historyHydrated: false,
+                isArchived: bucket.isArchived,
+                isPinned: bucket.isPinned
+            )
+            if bucket.isArchived {
+                state.archivedChats = [chat]
+            } else {
+                state.chats = [chat]
+            }
+            state.currentRoute = .chat(chatId)
+            state.missingCodexRolloutPathThreadIds.insert(threadId)
+            state.sessionHistoryHydrationAttempts = 1
+            state.sessionHistoryHydrationInitialDelayNanos = 1_000_000
+            state.clawJSSessionsClientFactory = {
+                ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+            }
+
+            state.hydrateHistoryIfNeeded(chatId: chatId)
+
+            try await waitUntil {
+                attempts == 1 && state.sessionHistoryHydrationTasks[chatId] == nil
+            }
+
+            let transcript = try XCTUnwrap(state.chatStore.transcript(for: chatId))
+            XCTAssertTrue(transcript.messages.isEmpty, "Expected no error bubble for \(bucket.name) conversation")
+            XCTAssertEqual(state.chat(byId: chatId)?.historyHydrated, false)
+        }
+    }
+
     func testTranscriptEmptyStatePresentationTracksHydrationState() {
         XCTAssertNil(ChatTranscriptEmptyStatePresentation.make(
             messageCount: 0,

@@ -479,9 +479,26 @@ extension AppState {
                     return
                 }
                 guard self.chat(byId: chatId)?.historyHydrated == false else { return }
-                self.appendRuntimeStatusError("Could not load ClawJS session history: \(error.localizedDescription)")
+                self.recordClawJSSessionHydrationFailure(
+                    threadId: threadId,
+                    chatId: chatId,
+                    error: error
+                )
             }
         }
+    }
+
+    private func recordClawJSSessionHydrationFailure(threadId: String, chatId: UUID, error: Error) {
+        let message = "Could not load ClawJS session history: \(error.localizedDescription)"
+        UserFacingFailure.classify(message).log(surface: "chat.historyHydration")
+        RenderProbe.mark(
+            "ChatHydrationSessionFailed",
+            fields: [
+                "chat": chatId.uuidString,
+                "thread": threadId,
+                "error": String(describing: type(of: error))
+            ]
+        )
     }
 
     private func hydrateFromCodexRolloutFallback(threadId: String, chatId: UUID) async -> Bool {
