@@ -221,16 +221,13 @@ enum ToolTimelinePresentation {
             for server in uniquePreservingOrder(mcpTools.map(\.server)) {
                 parts.append(L10n.usedToolInline(prettyMcpServer(server)))
             }
-            let icon: String
-            if fileChanges > 0 {
-                icon = "clawix.pencil"
-            } else if listed > 0 {
-                icon = "clawix.folderStack"
-            } else if readFiles > 0 || searchedItems > 0 {
-                icon = "magnifyingglass"
-            } else {
-                icon = "clawix.terminal"
-            }
+            let icon = aggregateIcon(
+                fileChanges: fileChanges,
+                listed: listed,
+                readFiles: readFiles,
+                searchedItems: searchedItems,
+                ranCommands: ranCommands
+            )
             rows.append(ToolTimelineRow(
                 id: "exec",
                 icon: icon,
@@ -303,6 +300,28 @@ enum ToolTimelinePresentation {
             ))
         }
         return rows
+    }
+
+    fileprivate static func aggregateIcon(
+        fileChanges: Int,
+        listed: Int,
+        readFiles: Int,
+        searchedItems: Int,
+        ranCommands: Int
+    ) -> String {
+        if ranCommands > 0 {
+            return "clawix.terminal"
+        }
+        if listed > 0 {
+            return "clawix.folderStack"
+        }
+        if readFiles > 0 || searchedItems > 0 {
+            return "magnifyingglass"
+        }
+        if fileChanges > 0 {
+            return "clawix.pencil"
+        }
+        return "clawix.terminal"
     }
 
     private static func detailRow(for item: WorkItem, fallbackIndex: Int) -> ToolTimelineDetailRow {
@@ -750,16 +769,13 @@ private final class ToolTimelinePresentationCache {
                 for server in mcpServerOrder {
                     parts.append(L10n.usedToolInline(prettyMcpServer(server)))
                 }
-                let icon: String
-                if fileChanges > 0 {
-                    icon = "clawix.pencil"
-                } else if listed > 0 {
-                    icon = "clawix.folderStack"
-                } else if readFiles > 0 || searchedItems > 0 {
-                    icon = "magnifyingglass"
-                } else {
-                    icon = "clawix.terminal"
-                }
+                let icon = ToolTimelinePresentation.aggregateIcon(
+                    fileChanges: fileChanges,
+                    listed: listed,
+                    readFiles: readFiles,
+                    searchedItems: searchedItems,
+                    ranCommands: ranCommands
+                )
                 rows.append(ToolTimelineRow(
                     id: "exec",
                     icon: icon,

@@ -258,8 +258,36 @@ final class ToolTimelinePresentationTests: XCTestCase {
         XCTAssertEqual(rows, [
             ToolTimelineRow(
                 id: "exec",
-                icon: "clawix.pencil",
+                icon: "clawix.terminal",
                 text: "Edited 1 file, explored 1 file, ran 1 command"
+            )
+        ])
+    }
+
+    func testAggregateRowsUseSearchIconForEditedExplorationWithoutCommands() {
+        let rows = ToolTimelinePresentation.aggregateRows(for: [
+            WorkItem(
+                id: "edit-1",
+                kind: .fileChange(paths: ["AGENTS.md"]),
+                status: .completed
+            ),
+            WorkItem(
+                id: "read-1",
+                kind: .command(text: "sed -n '1p' AGENTS.md", actions: [.read]),
+                status: .completed
+            ),
+            WorkItem(
+                id: "search-1",
+                kind: .command(text: "rg \"Desktop Control\" AGENTS.md", actions: [.search]),
+                status: .completed
+            )
+        ])
+
+        XCTAssertEqual(rows, [
+            ToolTimelineRow(
+                id: "exec",
+                icon: "magnifyingglass",
+                text: "Edited 1 file, explored 1 file, 1 search"
             )
         ])
     }

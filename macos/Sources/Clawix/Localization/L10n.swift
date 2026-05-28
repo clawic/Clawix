@@ -90,7 +90,10 @@ enum L10n {
     }
 
     static func searchedItems(_ count: Int) -> String {
-        String(localized: "\(count) searches", bundle: AppLocale.bundle, locale: AppLocale.current)
+        if count == 1 {
+            return String(localized: "1 search", bundle: AppLocale.bundle, locale: AppLocale.current)
+        }
+        return String(localized: "\(count) searches", bundle: AppLocale.bundle, locale: AppLocale.current)
     }
 
     static func searchedWeb(_ count: Int) -> String {
