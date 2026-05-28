@@ -339,11 +339,11 @@ struct MessageRow: View, Equatable {
 
                 // After the turn ends and the chevron is collapsed, the
                 // timeline is hidden and the bubble shows only the
-                // canonical assistant body. The timeline already contains
-                // every `.message` entry that streamed in, so don't
-                // render `content` a second time while the timeline is on
-                // screen — that would duplicate the prose.
-                if !showTimeline, !message.content.isEmpty {
+                // canonical assistant body. When the user expands the
+                // timeline, keep that body visible after the historical
+                // work log to match the desktop "Worked for" view.
+                let showCanonicalBody = !showTimeline || (!isStreaming && timelineExpanded)
+                if showCanonicalBody, !message.content.isEmpty {
                     let segments = PlanSegmenter.segments(from: message.content)
                     let onlyTextSegment: Bool = {
                         guard segments.count == 1, case .text = segments[0] else { return false }
