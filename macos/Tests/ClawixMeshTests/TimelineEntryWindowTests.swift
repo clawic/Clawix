@@ -233,6 +233,40 @@ final class TimelineEntryWindowTests: XCTestCase {
         XCTAssertTrue(preview.isEmpty)
     }
 
+    func testExpandedTimelineSuppressesDuplicatedCanonicalBody() {
+        let finalId = UUID()
+        let timeline: [AssistantTimelineEntry] = [
+            .message(id: UUID(), text: "I checked the app."),
+            .message(id: finalId, text: "Done.")
+        ]
+
+        XCTAssertFalse(TimelineEntryWindow.shouldShowCanonicalBody(
+            in: timeline,
+            content: "Done.",
+            isStreaming: false,
+            timelineExpanded: true
+        ))
+        XCTAssertTrue(TimelineEntryWindow.shouldShowCanonicalBody(
+            in: timeline,
+            content: "Done.",
+            isStreaming: false,
+            timelineExpanded: false
+        ))
+    }
+
+    func testExpandedTimelineSuppressesCanonicalBodyWhenFinalIsInCombinedMessage() {
+        let timeline: [AssistantTimelineEntry] = [
+            .message(id: UUID(), text: "I checked the app.\n\nDone.")
+        ]
+
+        XCTAssertFalse(TimelineEntryWindow.shouldShowCanonicalBody(
+            in: timeline,
+            content: "Done.",
+            isStreaming: false,
+            timelineExpanded: true
+        ))
+    }
+
     private func entries(count: Int) -> [AssistantTimelineEntry] {
         (0..<count).map { index in
             .message(id: UUID(), text: String(index))

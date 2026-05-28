@@ -150,6 +150,30 @@ enum TimelineEntryWindow {
         flushPendingTools()
         return result
     }
+
+    static func shouldShowCanonicalBody(
+        in timeline: [AssistantTimelineEntry],
+        content: String,
+        isStreaming: Bool,
+        timelineExpanded: Bool
+    ) -> Bool {
+        let canonical = normalizedTimelineText(content)
+        guard !canonical.isEmpty else { return false }
+        guard !isStreaming else { return false }
+        guard timelineExpanded else { return true }
+        return !timeline.contains { entry in
+            guard case .message(_, let text) = entry else { return false }
+            let timelineText = normalizedTimelineText(text)
+            return timelineText == canonical
+                || timelineText.hasSuffix("\n\n\(canonical)")
+        }
+    }
+
+    private static func normalizedTimelineText(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 struct MessageRow: View, Equatable {
@@ -342,7 +366,12 @@ struct MessageRow: View, Equatable {
                 // canonical assistant body. When the user expands the
                 // timeline, keep that body visible after the historical
                 // work log to match the desktop "Worked for" view.
-                let showCanonicalBody = !showTimeline || (!isStreaming && timelineExpanded)
+                let showCanonicalBody = TimelineEntryWindow.shouldShowCanonicalBody(
+                    in: message.timeline,
+                    content: message.content,
+                    isStreaming: isStreaming,
+                    timelineExpanded: timelineExpanded
+                )
                 if showCanonicalBody, !message.content.isEmpty {
                     let segments = PlanSegmenter.segments(from: message.content)
                     let onlyTextSegment: Bool = {
