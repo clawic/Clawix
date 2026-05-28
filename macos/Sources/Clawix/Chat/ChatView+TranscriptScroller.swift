@@ -2,6 +2,40 @@ import AppKit
 import SwiftUI
 import ClawixCore
 
+struct ChatTranscriptEmptyStatePresentation: Equatable {
+    enum Kind: Equatable {
+        case loading
+        case empty
+    }
+
+    let kind: Kind
+    let message: String
+    let showsProgress: Bool
+    let controlRole: String
+
+    static func make(
+        messageCount: Int,
+        historyHydrated: Bool,
+        hasHistorySource: Bool
+    ) -> ChatTranscriptEmptyStatePresentation? {
+        guard messageCount == 0, hasHistorySource else { return nil }
+        if historyHydrated {
+            return ChatTranscriptEmptyStatePresentation(
+                kind: .empty,
+                message: UserFacingEmptyState.chatTranscriptEmpty.message,
+                showsProgress: false,
+                controlRole: "status"
+            )
+        }
+        return ChatTranscriptEmptyStatePresentation(
+            kind: .loading,
+            message: UserFacingEmptyState.chatTranscriptLoading.message,
+            showsProgress: true,
+            controlRole: "loader"
+        )
+    }
+}
+
 struct ChatTranscriptScrollerView: View {
     let appState: AppState
     let chatId: UUID
@@ -55,11 +89,24 @@ struct ChatTranscriptScrollerView: View {
             && pagination.oldestKnownId != nil
     }
 
+    private var emptyState: ChatTranscriptEmptyStatePresentation? {
+        ChatTranscriptEmptyStatePresentation.make(
+            messageCount: transcript.messageIds.count,
+            historyHydrated: chat.historyHydrated,
+            hasHistorySource: chat.clawixThreadId != nil || chat.rolloutPath != nil
+        )
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
                     VStack(alignment: .leading, spacing: 44) {
+                        if let emptyState {
+                            ChatTranscriptEmptyStateView(presentation: emptyState)
+                                .frame(maxWidth: .infinity, minHeight: 360, alignment: .center)
+                                .transition(.opacity)
+                        }
                         if appState.messagesPaginationByChat[chatId]?.loadingOlder == true {
                             HStack {
                                 Spacer()
@@ -649,6 +696,28 @@ struct ChatTranscriptScrollerView: View {
 
     private static func format(_ value: CGFloat) -> String {
         String(format: "%.2f", Double(value))
+    }
+}
+
+private struct ChatTranscriptEmptyStateView: View {
+    let presentation: ChatTranscriptEmptyStatePresentation
+
+    var body: some View {
+        VStack(spacing: 10) {
+            if presentation.showsProgress {
+                ProgressView()
+                    .controlSize(.small)
+            }
+            Text(presentation.message)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(Palette.textTertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .clxControl(
+            "chat.transcript.emptyState",
+            role: presentation.controlRole,
+            label: presentation.message
+        )
     }
 }
 

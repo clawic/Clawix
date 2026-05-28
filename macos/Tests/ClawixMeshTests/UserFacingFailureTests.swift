@@ -66,6 +66,8 @@ final class UserFacingFailureTests: XCTestCase {
         XCTAssertEqual(UserFacingEmptyState.chats.message, L10n.t("No chats"))
         XCTAssertEqual(UserFacingEmptyState.chatsFiltered.message, L10n.t("No chats match the filter"))
         XCTAssertEqual(UserFacingEmptyState.projectChats.message, L10n.t("No chats in this project yet"))
+        XCTAssertEqual(UserFacingEmptyState.chatTranscriptLoading.message, L10n.t("Loading conversation..."))
+        XCTAssertEqual(UserFacingEmptyState.chatTranscriptEmpty.message, L10n.t("No messages loaded"))
         XCTAssertEqual(UserFacingEmptyState.searchPrompt.message, L10n.t("Search by chat title"))
         XCTAssertEqual(UserFacingEmptyState.mcpServers.message, L10n.t("No MCP servers connected yet."))
         XCTAssertEqual(UserFacingEmptyState.providers.message, L10n.t("No providers match."))

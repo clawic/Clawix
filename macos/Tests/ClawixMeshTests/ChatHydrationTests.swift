@@ -140,6 +140,45 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.messages.count, 0)
     }
 
+    func testTranscriptEmptyStatePresentationTracksHydrationState() {
+        XCTAssertEqual(
+            ChatTranscriptEmptyStatePresentation.make(
+                messageCount: 0,
+                historyHydrated: false,
+                hasHistorySource: true
+            ),
+            ChatTranscriptEmptyStatePresentation(
+                kind: .loading,
+                message: UserFacingEmptyState.chatTranscriptLoading.message,
+                showsProgress: true,
+                controlRole: "loader"
+            )
+        )
+        XCTAssertEqual(
+            ChatTranscriptEmptyStatePresentation.make(
+                messageCount: 0,
+                historyHydrated: true,
+                hasHistorySource: true
+            ),
+            ChatTranscriptEmptyStatePresentation(
+                kind: .empty,
+                message: UserFacingEmptyState.chatTranscriptEmpty.message,
+                showsProgress: false,
+                controlRole: "status"
+            )
+        )
+        XCTAssertNil(ChatTranscriptEmptyStatePresentation.make(
+            messageCount: 1,
+            historyHydrated: false,
+            hasHistorySource: true
+        ))
+        XCTAssertNil(ChatTranscriptEmptyStatePresentation.make(
+            messageCount: 0,
+            historyHydrated: false,
+            hasHistorySource: false
+        ))
+    }
+
     func testApplyDaemonChatsDeduplicatesThreadIdsWithoutCrashing() {
         let state = AppState()
         let existingId = UUID()
