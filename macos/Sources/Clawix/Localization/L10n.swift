@@ -195,14 +195,18 @@ enum L10n {
         return String(localized: "Worked for \(elapsed)", bundle: AppLocale.bundle, locale: AppLocale.current)
     }
 
-    /// Compact "2m 21s" / "21s" elapsed format used by the work-summary
-    /// header. Stays locale-agnostic on purpose: the unit letters match
-    /// the values most users encounter in the app's reference designs.
+    /// Compact "1h 2m 3s" / "2m 21s" / "21s" elapsed format used by the
+    /// work-summary header. Stays locale-agnostic on purpose: the unit
+    /// letters match the values most users encounter in the reference app.
     private static func formatElapsed(_ seconds: Int) -> String {
-        if seconds >= 60 {
-            return "\(seconds / 60)m \(seconds % 60)s"
+        let clamped = max(0, seconds)
+        if clamped >= 3_600 {
+            return "\(clamped / 3_600)h \((clamped % 3_600) / 60)m \(clamped % 60)s"
         }
-        return "\(seconds)s"
+        if clamped >= 60 {
+            return "\(clamped / 60)m \(clamped % 60)s"
+        }
+        return "\(clamped)s"
     }
 
     private static func lowercaseInitial(_ value: String) -> String {
