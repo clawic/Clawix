@@ -957,50 +957,22 @@ struct FileLinkPreview: Equatable {
     }
 }
 
-final class FileLinkPreviewCache {
-    static let shared = FileLinkPreviewCache()
+enum AssistantFileLinkOutputs {
+    static func paths(in message: ChatMessage) -> [String] {
+        guard message.role == .assistant else { return [] }
+        return paths(in: message.content)
+    }
 
-    private var values: [Key: FileLinkPreview] = [:]
-    private var order: [Key] = []
-    private let limit = 256
-    private let previewLimit = 3
-
-    private init() {}
-
-    func preview(for message: ChatMessage) -> FileLinkPreview {
-        let key = Key(message: message)
-        if let cached = values[key] {
-            return cached
-        }
-
-        RenderProbe.mark(
-            "FileLinkPreviewExtract",
-            fields: [
-                "message": message.id.uuidString,
-                "bytes": "\(message.content.utf8.count)"
-            ]
-        )
-
+    static func paths(in text: String) -> [String] {
         var seen: Set<String> = []
-        let paths = AssistantMarkdown
-            .extractLinkURLs(in: message.content)
+        return AssistantMarkdown
+            .extractLinkURLs(in: text)
             .filter(\.isFileURL)
             .map(\.path)
-            .compactMap(Self.previewableFileLinkPath)
+            .compactMap(previewableFileLinkPath)
             .filter {
                 seen.insert($0).inserted
             }
-        let preview: FileLinkPreview
-        if paths.count > previewLimit {
-            preview = FileLinkPreview(
-                visiblePaths: Array(paths.prefix(previewLimit)),
-                remainingCount: paths.count - previewLimit
-            )
-        } else {
-            preview = FileLinkPreview(visiblePaths: paths, remainingCount: 0)
-        }
-        store(preview, for: key)
-        return preview
     }
 
     private static func previewableFileLinkPath(_ path: String) -> String? {
@@ -1029,6 +1001,45 @@ final class FileLinkPreviewCache {
             normalized = String(normalized[..<colon])
         }
         return normalized
+    }
+}
+
+final class FileLinkPreviewCache {
+    static let shared = FileLinkPreviewCache()
+
+    private var values: [Key: FileLinkPreview] = [:]
+    private var order: [Key] = []
+    private let limit = 256
+    private let previewLimit = 3
+
+    private init() {}
+
+    func preview(for message: ChatMessage) -> FileLinkPreview {
+        let key = Key(message: message)
+        if let cached = values[key] {
+            return cached
+        }
+
+        RenderProbe.mark(
+            "FileLinkPreviewExtract",
+            fields: [
+                "message": message.id.uuidString,
+                "bytes": "\(message.content.utf8.count)"
+            ]
+        )
+
+        let paths = AssistantFileLinkOutputs.paths(in: message)
+        let preview: FileLinkPreview
+        if paths.count > previewLimit {
+            preview = FileLinkPreview(
+                visiblePaths: Array(paths.prefix(previewLimit)),
+                remainingCount: paths.count - previewLimit
+            )
+        } else {
+            preview = FileLinkPreview(visiblePaths: paths, remainingCount: 0)
+        }
+        store(preview, for: key)
+        return preview
     }
 
     private func store(_ value: FileLinkPreview, for key: Key) {
