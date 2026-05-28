@@ -492,6 +492,64 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.messagesPaginationByChat[chatId]?.oldestOffset, 0)
     }
 
+    func testLocalRolloutOlderPagesContinueUntilAllMessagesLoaded() async throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-local-rollout-pages-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout-thread-local-pages.jsonl")
+        let totalMessages = ClawixCore.bridgeInitialPageLimit + (ClawixCore.bridgeOlderPageLimit * 2) + 7
+        var lines = [
+            #"{"timestamp":"2026-05-27T09:00:00.000Z","type":"session_meta","payload":{"id":"thread-local-pages","cwd":"/tmp"}}"#
+        ]
+        for idx in 0..<totalMessages {
+            lines.append(Self.rolloutUserMessageLine(index: idx))
+        }
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let state = AppState()
+        let chatId = UUID()
+        state.currentRoute = .chat(chatId)
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Local pages",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-local-pages",
+                rolloutPath: rollout,
+                historyHydrated: false
+            )
+        ]
+
+        state.hydrateHistoryIfNeeded(chatId: chatId)
+
+        try await waitUntil {
+            state.chatStore.transcript(for: chatId)?.messageIds.count == ClawixCore.bridgeInitialPageLimit
+        }
+        XCTAssertEqual(state.messagesPaginationByChat[chatId]?.hasMore, true)
+
+        var previousCount = ClawixCore.bridgeInitialPageLimit
+        for _ in 0..<10 {
+            guard state.messagesPaginationByChat[chatId]?.hasMore == true else { break }
+            state.requestOlderIfNeeded(chatId: chatId)
+            try await waitUntil {
+                let pagination = state.messagesPaginationByChat[chatId]
+                let count = state.chatStore.transcript(for: chatId)?.messageIds.count ?? 0
+                return pagination?.loadingOlder == false && (count > previousCount || pagination?.hasMore == false)
+            }
+            previousCount = state.chatStore.transcript(for: chatId)?.messageIds.count ?? 0
+        }
+
+        let messages = try XCTUnwrap(state.chatStore.transcript(for: chatId)?.messages)
+        XCTAssertEqual(messages.count, totalMessages)
+        XCTAssertEqual(messages.first?.content, "message 0")
+        XCTAssertEqual(messages.last?.content, "message \(totalMessages - 1)")
+        XCTAssertEqual(state.messagesPaginationByChat[chatId]?.hasMore, false)
+        XCTAssertEqual(state.messagesPaginationByChat[chatId]?.loadingOlder, false)
+    }
+
     func testClawJSSessionsStartupLoadsOnlyBoundedPinnedAndRecentSessions() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
@@ -804,6 +862,12 @@ final class ChatHydrationTests: XCTestCase {
         return Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).compactMap { item in
             item.value.map { (item.name, $0) }
         })
+    }
+
+    nonisolated private static func rolloutUserMessageLine(index: Int) -> String {
+        """
+        {"timestamp":"2026-05-27T09:00:\(String(format: "%02d", index % 60)).000Z","type":"event_msg","payload":{"type":"user_message","message":"message \(index)"}}
+        """
     }
 
     nonisolated private static func sessionRecordJSON(
