@@ -427,12 +427,6 @@ struct MessageRow: View, Equatable {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                // The runtime shows a "Website · Open" preview card under the
-                // final answer whenever the message embeds a URL. Limit it
-                // to the very last assistant message so older turns stay
-                // tight. Skip when the message carries a Plan card so a
-                // URL inside the plan body doesn't double up as a separate
-                // trailing card.
                 if isLastAssistantMessage,
                    !responseStreaming,
                    message.streamingFinished,
@@ -543,7 +537,7 @@ struct MessageRow: View, Equatable {
     }
 
     private var finalAssistantLinkPreviewURL: URL? {
-        LinkPreviewURLCache.shared.url(for: message)
+        AssistantWebLinkPreviewPolicy.url(for: message)
     }
 
     private var finalAssistantFileLinkPreview: FileLinkPreview {
@@ -1060,59 +1054,8 @@ final class FileLinkPreviewCache {
     }
 }
 
-final class LinkPreviewURLCache {
-    static let shared = LinkPreviewURLCache()
-
-    private var values: [Key: Value] = [:]
-    private var order: [Key] = []
-    private let limit = 256
-
-    private init() {}
-
-    func url(for message: ChatMessage) -> URL? {
-        let key = Key(message: message)
-        if let cached = values[key] {
-            return cached.url
-        }
-
-        RenderProbe.mark(
-            "LinkPreviewURLExtract",
-            fields: [
-                "message": message.id.uuidString,
-                "bytes": "\(message.content.utf8.count)"
-            ]
-        )
-
-        let url = AssistantMarkdown
-            .extractLinkURLs(in: message.content)
-            .last(where: { !$0.isFileURL })
-        store(Value(url: url), for: key)
-        return url
-    }
-
-    private func store(_ value: Value, for key: Key) {
-        values[key] = value
-        order.append(key)
-        if order.count > limit {
-            let removeCount = order.count - limit
-            for old in order.prefix(removeCount) {
-                values.removeValue(forKey: old)
-            }
-            order.removeFirst(removeCount)
-        }
-    }
-
-    private struct Value {
-        let url: URL?
-    }
-
-    private struct Key: Hashable {
-        let id: UUID
-        let contentHash: Int
-
-        init(message: ChatMessage) {
-            id = message.id
-            contentHash = message.content.hashValue
-        }
+enum AssistantWebLinkPreviewPolicy {
+    static func url(for message: ChatMessage) -> URL? {
+        nil
     }
 }

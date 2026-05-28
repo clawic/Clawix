@@ -151,6 +151,16 @@ final class TimelineEntryWindowTests: XCTestCase {
         XCTAssertEqual(preview.remainingCount, 1)
     }
 
+    func testWebLinksStayInlineWithoutTrailingPreviewCard() {
+        let message = ChatMessage(
+            role: .assistant,
+            content: "Open https://example.com and [docs](https://example.com/docs).",
+            streamingFinished: true
+        )
+
+        XCTAssertNil(AssistantWebLinkPreviewPolicy.url(for: message))
+    }
+
     func testFileLinkPreviewIncludesImageLinks() {
         let message = ChatMessage(
             role: .assistant,
