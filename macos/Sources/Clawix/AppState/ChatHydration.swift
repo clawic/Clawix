@@ -377,9 +377,10 @@ extension AppState {
                 self.sessionHistoryHydrationTasks[chatId] = nil
                 guard self.chat(byId: chatId)?.historyHydrated == false else { return }
                 self.codexRolloutPathByThreadId[threadId] = path
-                self.mutateChat(id: chatId) { c in
-                    c.rolloutPath = path
+                self.chatStore.updateSummary(id: chatId) { summary in
+                    summary.rolloutPath = path
                 }
+                self.syncLegacyChatFromStoreIfRenderedSummaryChanged(chatId: chatId)
                 RenderProbe.mark(
                     "ChatHydrationLocalFallbackBeforeSession",
                     fields: [
@@ -603,7 +604,11 @@ extension AppState {
             summary.historyHydrated = true
             summary.lastMessageAt = messages.last?.timestamp ?? summary.lastMessageAt
         }
-        syncLegacyChatFromStore(chatId: chatId)
+        if messages.isEmpty {
+            syncLegacyChatFromStore(chatId: chatId)
+        } else {
+            syncLegacyChatFromStoreIfRenderedSummaryChanged(chatId: chatId)
+        }
     }
 
     func bridgeSessionId(forChatId chatId: UUID) -> String {
@@ -817,7 +822,7 @@ extension AppState {
             chatStore.updateSummary(id: id) { summary in
                 summary.historyHydrated = true
             }
-            syncLegacyChatFromStore(chatId: id)
+            syncLegacyChatFromStoreIfRenderedSummaryChanged(chatId: id)
             return
         }
         if messages.isEmpty,
@@ -826,7 +831,7 @@ extension AppState {
             chatStore.updateSummary(id: id) { summary in
                 summary.historyHydrated = true
             }
-            syncLegacyChatFromStore(chatId: id)
+            syncLegacyChatFromStoreIfRenderedSummaryChanged(chatId: id)
             return
         }
         if messages.isEmpty,
@@ -849,7 +854,7 @@ extension AppState {
         chatStore.updateSummary(id: id) { summary in
             summary.historyHydrated = true
         }
-        syncLegacyChatFromStore(chatId: id)
+        syncLegacyChatFromStoreIfRenderedSummaryChanged(chatId: id)
     }
 
     func trackOptimisticUserMessage(chatId: UUID, messageId: UUID) {

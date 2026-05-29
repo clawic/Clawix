@@ -27,11 +27,15 @@ extension AppState {
         syncingLegacyChatsFromStore = true
         if snapshot.isArchived {
             if let idx = archivedChats.firstIndex(where: { $0.id == chatId }) {
-                archivedChats[idx] = snapshot
+                if archivedChats[idx] != snapshot {
+                    archivedChats[idx] = snapshot
+                }
             } else {
                 archivedChats.insert(snapshot, at: 0)
             }
-            chats.removeAll { $0.id == chatId }
+            if chats.contains(where: { $0.id == chatId }) {
+                chats.removeAll { $0.id == chatId }
+            }
         } else {
             var nextChats = chats
             if let idx = nextChats.firstIndex(where: { $0.id == chatId }) {
@@ -39,10 +43,51 @@ extension AppState {
             } else {
                 nextChats.insert(snapshot, at: 0)
             }
-            chats = boundedSidebarChats(nextChats, preserving: chatId)
-            archivedChats.removeAll { $0.id == chatId }
+            let boundedChats = boundedSidebarChats(nextChats, preserving: chatId)
+            if chats != boundedChats {
+                chats = boundedChats
+            }
+            if archivedChats.contains(where: { $0.id == chatId }) {
+                archivedChats.removeAll { $0.id == chatId }
+            }
         }
         syncingLegacyChatsFromStore = false
+    }
+
+    func syncLegacyChatFromStoreIfRenderedSummaryChanged(chatId: UUID) {
+        guard let snapshot = chatStore.summarySnapshot(id: chatId) else { return }
+        guard let existing = chats.first(where: { $0.id == chatId })
+            ?? archivedChats.first(where: { $0.id == chatId })
+        else {
+            syncLegacyChatFromStore(chatId: chatId)
+            return
+        }
+        guard legacyRenderedSummaryDiffers(existing, snapshot) else { return }
+        syncLegacyChatFromStore(chatId: chatId)
+    }
+
+    private func legacyRenderedSummaryDiffers(_ lhs: Chat, _ rhs: Chat) -> Bool {
+        lhs.id != rhs.id
+            || lhs.title != rhs.title
+            || lhs.createdAt != rhs.createdAt
+            || lhs.clawixThreadId != rhs.clawixThreadId
+            || lhs.hasActiveTurn != rhs.hasActiveTurn
+            || lhs.contextUsage != rhs.contextUsage
+            || lhs.projectId != rhs.projectId
+            || lhs.isArchived != rhs.isArchived
+            || lhs.isPinned != rhs.isPinned
+            || lhs.hasUnreadCompletion != rhs.hasUnreadCompletion
+            || lhs.cwd != rhs.cwd
+            || lhs.hasGitRepo != rhs.hasGitRepo
+            || lhs.branch != rhs.branch
+            || lhs.availableBranches != rhs.availableBranches
+            || lhs.uncommittedFiles != rhs.uncommittedFiles
+            || lhs.forkedFromChatId != rhs.forkedFromChatId
+            || lhs.forkedFromTitle != rhs.forkedFromTitle
+            || lhs.forkBannerAfterMessageId != rhs.forkBannerAfterMessageId
+            || lhs.isQuickAskTemporary != rhs.isQuickAskTemporary
+            || lhs.isSideChat != rhs.isSideChat
+            || lhs.agentId != rhs.agentId
     }
 
     func replaceLegacyChatsFromStore() {
@@ -53,8 +98,14 @@ extension AppState {
         } else {
             preservingId = nil
         }
-        chats = boundedSidebarChats(chatStore.activeSnapshots, preserving: preservingId)
-        archivedChats = chatStore.archivedSnapshots
+        let nextChats = boundedSidebarChats(chatStore.activeSnapshots, preserving: preservingId)
+        let nextArchived = chatStore.archivedSnapshots
+        if chats != nextChats {
+            chats = nextChats
+        }
+        if archivedChats != nextArchived {
+            archivedChats = nextArchived
+        }
         syncingLegacyChatsFromStore = false
     }
 }
