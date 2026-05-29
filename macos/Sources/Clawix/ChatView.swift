@@ -40,21 +40,18 @@ private struct ChatVisibleWindowMessageEvidence: Equatable {
 enum ChatVisibleWindowRenderLog {
     private static let lock = NSLock()
     nonisolated(unsafe) private static var lastEvidence: ChatVisibleWindowEvidence?
-    nonisolated(unsafe) private static var lastLoggedAt: CFAbsoluteTime = 0
-    private static let duplicateWindow: TimeInterval = 0.25
     private static let detailedMessageLimit = 12
 
     fileprivate static func record(_ evidence: ChatVisibleWindowEvidence, reason: String) {
         guard evidence.visibleCount > 0 else { return }
         let now = CFAbsoluteTimeGetCurrent()
         lock.lock()
-        if lastEvidence == evidence, now - lastLoggedAt < duplicateWindow {
+        if lastEvidence == evidence {
             lock.unlock()
             return
         }
         let previousEvidence = lastEvidence
         lastEvidence = evidence
-        lastLoggedAt = now
         lock.unlock()
 
         PerfSignpost.uiChat.event("visible.window", evidence.visibleCount)
