@@ -421,6 +421,41 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertTrue(state.chats.contains { $0.clawixThreadId == "thread-\(activeCount - 1)" })
     }
 
+    func testPartialDaemonSnapshotDoesNotReplaceLargerLocalSidebar() {
+        let state = AppState()
+        let baseDate = Date(timeIntervalSince1970: 1_710_000_000)
+        state.applyThreads((0..<20).map { index in
+            AgentThreadSummary(
+                id: "thread-\(index)",
+                cwd: "/tmp",
+                name: "Thread \(index)",
+                preview: "",
+                path: nil,
+                createdAt: 1_710_000_000 + Int64(index),
+                updatedAt: 1_710_000_000 + Int64(index),
+                archived: false
+            )
+        })
+
+        let existingCount = state.chats.count
+        state.applyDaemonChats([
+            WireSession(
+                id: UUID().uuidString,
+                title: "Updated Thread 19",
+                createdAt: baseDate.addingTimeInterval(19),
+                lastMessageAt: baseDate.addingTimeInterval(30),
+                threadId: "thread-19"
+            )
+        ])
+
+        XCTAssertEqual(state.chats.count, existingCount)
+        XCTAssertTrue(state.chats.contains { $0.clawixThreadId == "thread-0" })
+        XCTAssertEqual(
+            state.chats.first(where: { $0.clawixThreadId == "thread-19" })?.title,
+            "Updated Thread 19"
+        )
+    }
+
     func testApplyThreadsBoundsRuntimeSidebarSnapshot() {
         let state = AppState()
         let activeCount = AppState.sidebarBootstrapRecentLimit + 150
@@ -511,6 +546,48 @@ final class ChatHydrationTests: XCTestCase {
         XCTAssertEqual(state.chats.first?.messages.count, 0)
         XCTAssertEqual(state.chats.first?.rolloutPath, rollout)
         XCTAssertEqual(attempts, 0)
+    }
+
+    func testCodexRolloutFallbackDoesNotBlockChatNavigation() async throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-chat-navigation-latency-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let rollout = tmp.appendingPathComponent("rollout-thread-slow.jsonl")
+        let lines = [
+            #"{"timestamp":"2026-05-20T10:00:00.000Z","type":"session_meta","payload":{"id":"thread-slow","cwd":"/tmp"}}"#,
+            #"{"timestamp":"2026-05-20T10:00:01.000Z","type":"event_msg","payload":{"type":"user_message","message":"Slow prompt"}}"#,
+            #"{"timestamp":"2026-05-20T10:00:02.000Z","type":"event_msg","payload":{"type":"agent_message","message":"Loaded later","phase":"final_answer"}}"#
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let state = AppState()
+        let chatId = UUID()
+        state.currentRoute = .home
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Thread",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-slow",
+                historyHydrated: false
+            )
+        ]
+        state.codexRolloutLocator = { threadId in
+            Thread.sleep(forTimeInterval: 0.15)
+            return threadId == "thread-slow" ? rollout : nil
+        }
+
+        let started = CFAbsoluteTimeGetCurrent()
+        state.navigate(to: .chat(chatId))
+        let elapsedMs = (CFAbsoluteTimeGetCurrent() - started) * 1000
+
+        XCTAssertEqual(state.currentRoute, .chat(chatId))
+        XCTAssertLessThan(elapsedMs, 50)
+        try await waitUntil {
+            state.chatStore.transcript(for: chatId)?.messages.map(\.content) == ["Slow prompt", "Loaded later"]
+        }
     }
 
     func testClawJSSessionHydrationLoadsOnlyTailWindowAndKeepsLegacyChatsSummaryOnly() async throws {

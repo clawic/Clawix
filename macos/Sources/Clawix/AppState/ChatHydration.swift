@@ -343,44 +343,11 @@ extension AppState {
             return false
         }
 
-        if let path = CodexRolloutLocator.findLikelyDayMatch(threadId: threadId) {
-            let readStarted = CFAbsoluteTimeGetCurrent()
-            let result = RolloutReader.readTailWithStatus(path: path)
-            let messages = rolloutChatMessages(from: result)
-            let readMs = (CFAbsoluteTimeGetCurrent() - readStarted) * 1000
-            codexRolloutPathByThreadId[threadId] = path
-            mutateChat(id: chatId) { c in
-                c.rolloutPath = path
-            }
-            RenderProbe.mark(
-                "ChatHydrationLocalFallbackImmediate",
-                fields: [
-                    "chat": chatId.uuidString,
-                    "thread": threadId,
-                    "readMs": String(format: "%.1f", readMs)
-                ]
-            )
-            messagesPaginationByChat[chatId] = ChatPagination(
-                oldestKnownId: result.entries.first?.id.uuidString,
-                hasMore: result.hasMoreBefore,
-                loadingOlder: false
-            )
-            if let plan = result.latestPlan {
-                planByChat[chatId] = plan
-            }
-            applyRolloutMessages(
-                messages,
-                lastTurnInterrupted: result.lastTurnInterrupted,
-                chatId: chatId
-            )
-            scheduleChatMarkdownPrewarm(messages: messages)
-            return true
-        }
-
         let locator = codexRolloutLocator
         sessionHistoryHydrationTasks[chatId] = Task.detached(priority: .userInitiated) { [weak self] in
             let locateStarted = CFAbsoluteTimeGetCurrent()
-            guard let path = locator(threadId) else {
+            let path = CodexRolloutLocator.findLikelyDayMatch(threadId: threadId) ?? locator(threadId)
+            guard let path else {
                 let locateMs = (CFAbsoluteTimeGetCurrent() - locateStarted) * 1000
                 await MainActor.run { [weak self] in
                     guard let self else { return }
@@ -679,6 +646,12 @@ extension AppState {
         if uniqueWireChats.isEmpty, shouldPreserveLocalSidebarAgainstEmptyCanonicalSource() {
             return
         }
+        if shouldMergePartialDaemonChatSnapshot(uniqueWireChats) {
+            for wire in uniqueWireChats {
+                applyDaemonChat(wire)
+            }
+            return
+        }
         cachedWireSessions = uniqueWireChats
         // Refresh `projects` from the latest backendState before
         // resolving each wire chat's project: the daemon may have
@@ -765,9 +738,32 @@ extension AppState {
         pinnedOrder = pinIds.compactMap { threadToChat[$0] }
     }
 
+    private func shouldMergePartialDaemonChatSnapshot(_ wireChats: [WireSession]) -> Bool {
+        let incomingActiveCount = wireChats.lazy.filter { !$0.isArchived }.count
+        guard incomingActiveCount > 0 else { return false }
+        let existingActiveCount = chats.lazy.filter { !$0.isArchived }.count
+        guard existingActiveCount > incomingActiveCount else { return false }
+        return shouldPreserveLocalSidebarAgainstEmptyCanonicalSource()
+    }
+
     func applyDaemonChat(_ wire: WireSession) {
         guard let id = UUID(uuidString: wire.id) else { return }
-        if let idx = cachedWireSessions.firstIndex(where: { $0.id == wire.id }) {
+        func sameWireIdentity(_ other: WireSession) -> Bool {
+            if other.id == wire.id { return true }
+            guard let incomingThreadId = wire.threadId,
+                  let existingThreadId = other.threadId
+            else { return false }
+            return incomingThreadId.caseInsensitiveCompare(existingThreadId) == .orderedSame
+        }
+        func sameChatIdentity(_ chat: Chat) -> Bool {
+            if chat.id == id { return true }
+            guard let incomingThreadId = wire.threadId,
+                  let existingThreadId = chat.clawixThreadId
+            else { return false }
+            return incomingThreadId.caseInsensitiveCompare(existingThreadId) == .orderedSame
+        }
+
+        if let idx = cachedWireSessions.firstIndex(where: sameWireIdentity) {
             cachedWireSessions[idx] = wire
         } else {
             cachedWireSessions.append(wire)
@@ -775,24 +771,24 @@ extension AppState {
         cachedWireSessions = boundedSidebarWireSessions(deduplicatedWireSessions(cachedWireSessions))
         withAnimation(.easeOut(duration: 0.20)) {
             if wire.isArchived {
-                let old = chats.first(where: { $0.id == id }) ?? archivedChats.first(where: { $0.id == id })
-                chats.removeAll { $0.id == id }
+                let old = chats.first(where: sameChatIdentity) ?? archivedChats.first(where: sameChatIdentity)
+                chats.removeAll(where: sameChatIdentity)
                 let chat = chat(from: wire, old: old)
-                if let idx = archivedChats.firstIndex(where: { $0.id == id }) {
+                if let idx = archivedChats.firstIndex(where: sameChatIdentity) {
                     archivedChats[idx] = chat
                 } else {
                     archivedChats.insert(chat, at: 0)
                 }
-            } else if let archivedIndex = archivedChats.firstIndex(where: { $0.id == id }) {
+            } else if let archivedIndex = archivedChats.firstIndex(where: sameChatIdentity) {
                 let chat = chat(from: wire, old: archivedChats[archivedIndex])
                 archivedChats.remove(at: archivedIndex)
                 chats.insert(chat, at: 0)
-            } else if let idx = chats.firstIndex(where: { $0.id == id }) {
+            } else if let idx = chats.firstIndex(where: sameChatIdentity) {
                 chats[idx] = chat(from: wire, old: chats[idx])
             } else {
                 chats.insert(chat(from: wire, old: nil), at: 0)
             }
-            chats = boundedSidebarChats(chats, preserving: id)
+            chats = boundedSidebarChats(chats, preserving: chats.first(where: sameChatIdentity)?.id ?? id)
             archivedChats = Array(archivedChats.prefix(Self.archivedSidebarLimit))
         }
     }
