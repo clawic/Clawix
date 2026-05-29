@@ -146,7 +146,6 @@ struct PinnedReorderableList: View, Equatable {
         // so the row insertion lands instant without any extra
         // transaction trickery.
         .background(EnclosingScrollViewLocator(box: scrollBox).allowsHitTesting(false))
-        .onAppear { installMouseUpMonitor() }
         .onDisappear {
             cancelPendingClear()
             cleanupDragChip()
@@ -269,6 +268,7 @@ struct PinnedReorderableList: View, Equatable {
 
     private func handleDragStart(chat: Chat) {
         cancelPendingClear()
+        installMouseUpMonitor()
         let src = pinned.firstIndex(where: { $0.id == chat.id })
         // Instant: source row collapses to 0 + gap opens at its slot in
         // the same render. The drag preview takes over with no fade.
@@ -344,6 +344,7 @@ struct PinnedReorderableList: View, Equatable {
         dragChipPanel = nil
         autoScroller?.stop()
         autoScroller = nil
+        removeMouseUpMonitor()
     }
 
     private func setTarget(slot: Int) {
