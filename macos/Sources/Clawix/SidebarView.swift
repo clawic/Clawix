@@ -237,7 +237,7 @@ struct SidebarView: View {
                             + SidebarRowMetrics.sectionEdgePadding
                 ) {
                     VStack(alignment: .leading, spacing: 0) {
-                        VStack(alignment: .leading, spacing: 0) {
+                        LazyVStack(alignment: .leading, spacing: 0) {
                             if showEmptyState {
                                 Text((chronoFilterActive && !snapshot.chrono.isEmpty
                                       ? UserFacingEmptyState.chatsFiltered
