@@ -363,47 +363,45 @@ struct ContentBodyWithTerminal<Content: View>: View {
         VStack(spacing: 0) {
             content()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            if let chatId {
+            if let chatId, panelOpen {
                 TerminalPanel(chatId: chatId, onLastTabClosed: {
                     withAnimation(.easeInOut(duration: 0.22)) {
                         panelOpenRaw = false
                     }
                 })
-                    .frame(height: panelOpen ? clampedPanelHeight : 0)
-                    .allowsHitTesting(panelOpen)
+                    .frame(height: clampedPanelHeight)
+                    .allowsHitTesting(true)
                     .clipped()
                     .overlay(alignment: .top) {
-                        if panelOpen {
+                        ZStack(alignment: .top) {
                             ZStack(alignment: .top) {
-                                ZStack(alignment: .top) {
-                                    Rectangle()
-                                        .fill(Color.overlay(0.18))
-                                        .frame(height: 0.7)
-                                        .mask(terminalSeparatorMask)
-                                    Rectangle()
-                                        .fill(Color.overlay(0.38))
-                                        .frame(height: 0.7)
-                                        .mask(terminalSeparatorMask)
-                                        .opacity(resizeHovered ? 1 : 0)
-                                        .animation(.easeOut(duration: 0.14), value: resizeHovered)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .top)
-                                .allowsHitTesting(false)
-                                TerminalResizeHandle(
-                                    heightRaw: $panelHeightRaw,
-                                    hovered: $resizeHovered,
-                                    maxHeightOverride: maxPanelHeight,
-                                    onClose: {
-                                        withAnimation(.easeInOut(duration: 0.22)) {
-                                            panelOpenRaw = false
-                                        }
-                                    }
-                                )
-                                .frame(height: 10)
-                                .offset(y: -5)
+                                Rectangle()
+                                    .fill(Color.overlay(0.18))
+                                    .frame(height: 0.7)
+                                    .mask(terminalSeparatorMask)
+                                Rectangle()
+                                    .fill(Color.overlay(0.38))
+                                    .frame(height: 0.7)
+                                    .mask(terminalSeparatorMask)
+                                    .opacity(resizeHovered ? 1 : 0)
+                                    .animation(.easeOut(duration: 0.14), value: resizeHovered)
                             }
                             .frame(maxWidth: .infinity, alignment: .top)
+                            .allowsHitTesting(false)
+                            TerminalResizeHandle(
+                                heightRaw: $panelHeightRaw,
+                                hovered: $resizeHovered,
+                                maxHeightOverride: maxPanelHeight,
+                                onClose: {
+                                    withAnimation(.easeInOut(duration: 0.22)) {
+                                        panelOpenRaw = false
+                                    }
+                                }
+                            )
+                            .frame(height: 10)
+                            .offset(y: -5)
                         }
+                        .frame(maxWidth: .infinity, alignment: .top)
                     }
             }
         }
