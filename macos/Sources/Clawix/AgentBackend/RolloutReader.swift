@@ -80,6 +80,8 @@ enum RolloutReader {
         var readBytes: Int = 0
         var alignedOffset: UInt64 = 0
         var parsedRecordCount: Int = 0
+        var tailReadAttempts: Int = 0
+        var needsSparseContextExpansion: Bool = false
         /// Most recent `update_plan` checklist in the parsed window, if any.
         /// Drives the thread-summary panel's Progress section. Last wins.
         var latestPlan: [PlanStep]? = nil
@@ -208,6 +210,7 @@ enum RolloutReader {
             sessionMetaLine: sessionMetaLine,
             now: now
         )
+        var tailReadAttempts = 1
         while shouldExpandTailRead(lastResult, tailBytes: targetTailBytes, maxTailBytes: maxTailBytes, limit: limit) {
             targetTailBytes = min(maxTailBytes, max(targetTailBytes * 2, targetTailBytes + 1))
             lastResult = readTailSlice(
@@ -218,7 +221,9 @@ enum RolloutReader {
                 sessionMetaLine: sessionMetaLine,
                 now: now
             )
+            tailReadAttempts += 1
         }
+        lastResult.tailReadAttempts = tailReadAttempts
         if lastResult.entries.count > limit {
             lastResult.entries = Array(lastResult.entries.suffix(limit))
             lastResult.hasMoreBefore = true
@@ -234,7 +239,7 @@ enum RolloutReader {
     ) -> Bool {
         guard tailBytes < maxTailBytes else { return false }
         if result.entries.isEmpty { return true }
-        return result.entries.count < min(limit, 3)
+        return result.needsSparseContextExpansion && result.entries.count < min(limit, 3)
     }
 
     private static func readTailSlice(
@@ -279,7 +284,20 @@ enum RolloutReader {
         result.readBytes = slices.reduce(0) { $0 + $1.data.count }
         result.alignedOffset = alignedOffset
         result.hasMoreBefore = alignedOffset > 0
+        result.needsSparseContextExpansion = alignedOffset > 0 && Self.needsSparseContextExpansion(result)
         return result
+    }
+
+    private static func needsSparseContextExpansion(_ result: ReadResult) -> Bool {
+        guard let first = result.entries.first, first.role == .assistant else {
+            return false
+        }
+        return first.timeline.contains { item in
+            if case .divider = item {
+                return true
+            }
+            return false
+        }
     }
 
     private static func parseVisibleEventMessages(slices: [ParseSlice], now: Date) -> ReadResult {

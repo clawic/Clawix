@@ -246,6 +246,41 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertLessThan(UInt64(result.readBytes), result.totalFileBytes)
     }
 
+    func testRolloutReaderDoesNotExpandFinalAnswerTail() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        let largeOutput = String(repeating: "diagnostic output ", count: 45_000)
+        let lines = [
+            #"{"timestamp":"2026-05-28T10:00:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            jsonLine(timestamp: "2026-05-28T10:00:01.000Z", type: "event_msg", payload: [
+                "type": "user_message",
+                "message": "Check this."
+            ]),
+            jsonLine(timestamp: "2026-05-28T10:00:02.000Z", type: "response_item", payload: [
+                "type": "function_call_output",
+                "call_id": "call-large",
+                "output": largeOutput
+            ]),
+            jsonLine(timestamp: "2026-05-28T10:00:03.000Z", type: "event_msg", payload: [
+                "type": "agent_message",
+                "message": "Done.",
+                "phase": "final_answer"
+            ])
+        ]
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        let result = RolloutReader.readTailWithStatus(path: rollout, maxBytes: 512 * 1024)
+
+        XCTAssertEqual(result.entries.map(\.text), ["Done."])
+        XCTAssertEqual(result.tailReadAttempts, 1)
+        XCTAssertTrue(result.hasMoreBefore)
+        XCTAssertFalse(result.readEntireFile)
+    }
+
     func testRolloutReaderReadsWholeShortRolloutBeforeTailWindow() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
