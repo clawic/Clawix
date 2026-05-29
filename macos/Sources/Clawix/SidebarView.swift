@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -587,7 +588,7 @@ struct SidebarView: View {
                     if sidebarStore.snapshot.archived.isEmpty {
                         HStack(spacing: 6) {
                             if sidebarStore.snapshot.archivedLoading {
-                                SidebarChatRowSpinner()
+                                SidebarArchivedLoadingSpinner()
                                     .frame(width: 9, height: 9)
                             }
                             Text(sidebarStore.snapshot.archivedLoading ? "Loading…" : "No archived chats")
@@ -1154,6 +1155,23 @@ struct SidebarView: View {
             appState.currentRoute = .home
             expandedProjects.insert(project.id)
         }
+    }
+}
+
+private struct SidebarArchivedLoadingSpinner: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSProgressIndicator {
+        let indicator = NSProgressIndicator()
+        indicator.style = .spinning
+        indicator.controlSize = .small
+        indicator.isIndeterminate = true
+        indicator.isDisplayedWhenStopped = false
+        indicator.usesThreadedAnimation = true
+        indicator.startAnimation(nil)
+        return indicator
+    }
+
+    func updateNSView(_ nsView: NSProgressIndicator, context: Context) {
+        nsView.startAnimation(nil)
     }
 }
 
