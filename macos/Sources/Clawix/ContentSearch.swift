@@ -17,6 +17,7 @@ struct SearchContentHeightKey: PreferenceKey {
 struct SearchPopoverOverlay: View {
     @EnvironmentObject var appState: AppState
     @State private var queryFocused: Bool = false
+    @State private var localSearchQuery: String = ""
     /// Natural height of the inner content (rows or empty message),
     /// measured via `SearchContentHeightKey`. The popup's content slot
     /// renders at this height, capped at `contentAreaMaxHeight`. Anchored
@@ -26,6 +27,7 @@ struct SearchPopoverOverlay: View {
     @State private var quickSwitchHeaders: [AppState.QuickSwitchChatHeader] = []
     @State private var quickSwitchRequestKey: String = ""
     @State private var quickSwitchTask: Task<Void, Never>?
+    @State private var searchQuerySyncTask: Task<Void, Never>?
 
     private static let popupCornerRadius: CGFloat = 26
     private static let popupStrokeColor = Color.overlay(0.18)
@@ -45,7 +47,7 @@ struct SearchPopoverOverlay: View {
     }
 
     private var filteredPinnedChats: [Chat] {
-        let q = appState.searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
+        let q = localSearchQuery.trimmingCharacters(in: .whitespaces).lowercased()
         guard !q.isEmpty else { return pinnedChats }
         return searchableChats.filter { $0.title.lowercased().contains(q) }
     }
@@ -64,7 +66,7 @@ struct SearchPopoverOverlay: View {
 
     private func filteredScopedChats(for project: Project) -> [Chat] {
         let all = scopedChats(for: project)
-        let q = appState.searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
+        let q = localSearchQuery.trimmingCharacters(in: .whitespaces).lowercased()
         guard !q.isEmpty else { return all }
         return all.filter { $0.title.lowercased().contains(q) }
     }
@@ -75,7 +77,7 @@ struct SearchPopoverOverlay: View {
     }
 
     private var trimmedSearchQuery: String {
-        appState.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        localSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func quickSwitchKey(for project: Project?) -> String {
@@ -127,7 +129,7 @@ struct SearchPopoverOverlay: View {
         )
         .background(MenuOutsideClickWatcher(isPresented: searchOpenBinding))
         .background(SearchKeyMonitor(
-            query: $appState.searchQuery,
+            query: $localSearchQuery,
             onEscape: { closePopover() },
             onSelectIndex: { index in selectResult(at: index) },
             onSubmitFirst: { selectResult(at: 0) }
@@ -138,15 +140,25 @@ struct SearchPopoverOverlay: View {
             // same route, where onAppear sometimes fires before the
             // field is in the responder chain.
             queryFocused = true
+            localSearchQuery = appState.searchQuery
             triggerScopedHistoryLoadIfNeeded()
             refreshQuickSwitchHeaders()
         }
         .onDisappear {
             quickSwitchTask?.cancel()
             quickSwitchTask = nil
+            searchQuerySyncTask?.cancel()
+            searchQuerySyncTask = nil
+            syncSearchQueryNow()
         }
-        .onChange(of: appState.searchQuery) { _, _ in
+        .onChange(of: localSearchQuery) { _, _ in
             refreshQuickSwitchHeaders()
+            scheduleSearchQuerySync()
+        }
+        .onChange(of: appState.searchQuery) { _, newValue in
+            if newValue != localSearchQuery {
+                localSearchQuery = newValue
+            }
         }
         .onChange(of: appState.searchScopedProjectId) { _, _ in
             queryFocused = true
@@ -192,7 +204,7 @@ struct SearchPopoverOverlay: View {
                 placeholder: scopedProject == nil
                     ? "Search chats"
                     : "Search in \(scopedProject!.name)",
-                text: $appState.searchQuery,
+                text: $localSearchQuery,
                 wantsFocus: queryFocused,
                 onEscape: { closePopover() },
                 onSelectIndex: { index in selectResult(at: index) },
@@ -202,9 +214,9 @@ struct SearchPopoverOverlay: View {
             if scopedProject == nil, !sortedProjects.isEmpty {
                 projectFilterMenu
             }
-            if !appState.searchQuery.isEmpty {
+            if !localSearchQuery.isEmpty {
                 Button {
-                    appState.searchQuery = ""
+                    localSearchQuery = ""
                 } label: {
                     LucideIcon(.circleX, size: 13)
                         .foregroundColor(Color.gray(light: 0.50, dark: 0.45))
@@ -259,7 +271,7 @@ struct SearchPopoverOverlay: View {
         } else if !pinned.isEmpty {
             ScrollView(showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(appState.searchQuery.trimmingCharacters(in: .whitespaces).isEmpty ? "Pinned chats" : "Matches")
+                    Text(localSearchQuery.trimmingCharacters(in: .whitespaces).isEmpty ? "Pinned chats" : "Matches")
                         .font(BodyFont.system(size: 11.5, wght: 500))
                         .foregroundColor(MenuStyle.headerText)
                         .padding(.horizontal, 18)
@@ -272,7 +284,7 @@ struct SearchPopoverOverlay: View {
                                 title: chat.title,
                                 projectName: projectName(for: chat),
                                 shortcutNumber: index + 1,
-                                isFirst: index == 0 && appState.searchQuery.isEmpty,
+                                isFirst: index == 0 && localSearchQuery.isEmpty,
                                 onSelect: { appState.navigate(to: .chat(chat.id)) }
                             )
                         }
@@ -285,7 +297,7 @@ struct SearchPopoverOverlay: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .thinScrollers()
         } else {
-            emptyContent(message: appState.searchQuery.isEmpty
+            emptyContent(message: localSearchQuery.isEmpty
                          ? UserFacingEmptyState.searchPrompt.message
                          : UserFacingEmptyState.searchNoMatches.message)
         }
@@ -298,7 +310,7 @@ struct SearchPopoverOverlay: View {
         if !quickMatches.isEmpty {
             quickSwitchContent(quickMatches, header: "Matches")
         } else if chats.isEmpty {
-            emptyContent(message: appState.searchQuery.isEmpty
+            emptyContent(message: localSearchQuery.isEmpty
                          ? UserFacingEmptyState.projectChats.message
                          : UserFacingEmptyState.searchNoMatches.message)
         } else {
@@ -419,6 +431,25 @@ struct SearchPopoverOverlay: View {
             )
             guard !Task.isCancelled, quickSwitchRequestKey == key else { return }
             quickSwitchHeaders = headers
+        }
+    }
+
+    private func scheduleSearchQuerySync() {
+        searchQuerySyncTask?.cancel()
+        let query = localSearchQuery
+        searchQuerySyncTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            guard !Task.isCancelled else { return }
+            if appState.searchQuery != query {
+                appState.searchQuery = query
+            }
+            searchQuerySyncTask = nil
+        }
+    }
+
+    private func syncSearchQueryNow() {
+        if appState.searchQuery != localSearchQuery {
+            appState.searchQuery = localSearchQuery
         }
     }
 }
