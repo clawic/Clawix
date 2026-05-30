@@ -97,6 +97,7 @@ enum SidebarToolsCatalog {
 
     static func gatedFeature(for id: String) -> AppFeature? {
         switch id {
+        case "network":          return .networkControl
         case "home":             return .iotHome
         case "calendar":         return .calendar
         case "contacts":         return .contacts
@@ -108,7 +109,6 @@ enum SidebarToolsCatalog {
         case "personalities":    return .agents
         case "skillCollections": return .skillCollections
         case "connections":      return .agents
-        case "network":          return nil
         case "publishing":           return .publishing
         default:                 return nil
         }

@@ -9,7 +9,7 @@ struct DatabaseWorkbenchCommands: View {
     @ObservedObject private var flags = FeatureFlags.shared
 
     var body: some View {
-        if flags.isVisible(.databaseWorkbench) {
+        if flags.isVisible(.tools) {
             commandsBody
         }
     }

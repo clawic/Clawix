@@ -68,13 +68,21 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
             ClawJSServiceDemandPolicy.services(for: .home, isVisible: { _ in false }),
             []
         )
+        XCTAssertEqual(
+            ClawJSServiceDemandPolicy.services(for: .databaseCollection("tasks"), isVisible: { _ in false }),
+            []
+        )
+        XCTAssertEqual(
+            ClawJSServiceDemandPolicy.services(for: .drivePhotos, isVisible: { _ in false }),
+            []
+        )
     }
 
     func testPublishingStaysOnDemandOnly() {
         XCTAssertFalse(ClawJSServiceDemandPolicy.startupCoreServices.contains(.publishing))
         XCTAssertFalse(ClawJSServiceDemandPolicy.startupServices(for: .main).contains(.publishing))
         XCTAssertEqual(
-            ClawJSServiceDemandPolicy.services(for: .publishingHome, isVisible: { $0 == .publishing }),
+            ClawJSServiceDemandPolicy.services(for: .publishingHome, isVisible: { $0 == .tools }),
             [.publishing]
         )
         XCTAssertEqual(ClawJSServiceDemandPolicy.onDemandTrigger(for: .publishing), "Publishing opens")
@@ -84,15 +92,15 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         let reviewed: [(ClawJSService, ClawJSServiceVisibilityGate)] = [
             (.runtime, .stableCore),
             (.sessions, .stableCore),
-            (.database, .appFeature(.database)),
-            (.memory, .stableCore),
-            (.drive, .stableCore),
-            (.secrets, .appFeature(.secrets)),
-            (.telegram, .appFeature(.telegram)),
+            (.database, .appFeature(.tools)),
+            (.memory, .appFeature(.tools)),
+            (.drive, .appFeature(.tools)),
+            (.secrets, .appFeature(.tools)),
+            (.telegram, .appFeature(.tools)),
             (.audio, .stableCore),
-            (.iot, .appFeature(.iotHome)),
-            (.index, .appFeature(.index)),
-            (.publishing, .appFeature(.publishing)),
+            (.iot, .appFeature(.tools)),
+            (.index, .appFeature(.tools)),
+            (.publishing, .appFeature(.tools)),
         ]
 
         XCTAssertEqual(Set(reviewed.map(\.0)), Set(ClawJSService.allCases))
@@ -107,8 +115,8 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
             [.runtime]
         )
         XCTAssertEqual(
-            ClawJSServiceDemandPolicy.visibleServices([.publishing, .iot], isVisible: { $0 == .publishing }),
-            [.publishing]
+            ClawJSServiceDemandPolicy.visibleServices([.publishing, .iot], isVisible: { $0 == .tools }),
+            [.publishing, .iot]
         )
     }
 

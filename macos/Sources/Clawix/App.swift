@@ -64,12 +64,17 @@ enum ClawixSingleInstanceGuard {
         guard let bundleID = Bundle.main.bundleIdentifier else { return }
 
         let currentPID = ProcessInfo.processInfo.processIdentifier
+        let currentBundleURL = Bundle.main.bundleURL.resolvingSymlinksInPath()
         let olderMainInstances = NSRunningApplication
             .runningApplications(withBundleIdentifier: bundleID)
             .filter { app in
-                app.processIdentifier != currentPID
-                    && app.processIdentifier < currentPID
-                    && !app.isTerminated
+                isExistingMainInstanceCandidate(
+                    bundleURL: app.bundleURL,
+                    processIdentifier: app.processIdentifier,
+                    isTerminated: app.isTerminated,
+                    currentPID: currentPID,
+                    currentBundleURL: currentBundleURL
+                )
             }
 
         guard let existing = olderMainInstances.min(by: { $0.processIdentifier < $1.processIdentifier }) else {
@@ -77,6 +82,22 @@ enum ClawixSingleInstanceGuard {
         }
         existing.activate(options: [.activateAllWindows])
         exit(0)
+    }
+
+    static func isExistingMainInstanceCandidate(
+        bundleURL: URL?,
+        processIdentifier: pid_t,
+        isTerminated: Bool,
+        currentPID: pid_t,
+        currentBundleURL: URL
+    ) -> Bool {
+        guard processIdentifier != currentPID,
+              processIdentifier < currentPID,
+              !isTerminated,
+              let bundleURL else {
+            return false
+        }
+        return bundleURL.resolvingSymlinksInPath() == currentBundleURL.resolvingSymlinksInPath()
     }
 }
 
@@ -277,18 +298,22 @@ struct ClawixApp: App {
             }
             CommandGroup(after: .windowSize) {
                 Divider()
-                Button("Pair iPhone…") {
-                    openWindow(id: "clawix-pair")
+                if featureFlags.isVisible(.remoteMesh) {
+                    Button("Pair iPhone…") {
+                        openWindow(id: "clawix-pair")
+                    }
+                    .keyboardShortcut("p", modifiers: [.command, .shift])
                 }
-                .keyboardShortcut("p", modifiers: [.command, .shift])
-                Button("Quick Upload to Drive…") {
-                    appState.requestDriveQuickUpload()
+                if featureFlags.isVisible(.tools) {
+                    Button("Quick Upload to Drive…") {
+                        appState.requestDriveQuickUpload()
+                    }
+                    .keyboardShortcut("u", modifiers: [.command, .shift])
+                    Button("Open Drive Photos") {
+                        appState.navigate(to: .drivePhotos)
+                    }
+                    .keyboardShortcut("l", modifiers: [.command, .shift, .option])
                 }
-                .keyboardShortcut("u", modifiers: [.command, .shift])
-                Button("Open Drive Photos") {
-                    appState.currentRoute = .drivePhotos
-                }
-                .keyboardShortcut("l", modifiers: [.command, .shift, .option])
                 Divider()
                 DatabaseWorkbenchCommands(appState: appState)
             }
@@ -693,25 +718,27 @@ private struct MenuBarContent: View {
             }
         }
 
-        if flags.isVisible(.databaseWorkbench) {
+        if flags.isVisible(.tools) {
             DatabaseWorkbenchMenuBarSection(
                 appState: appState,
                 openMainWindow: openMainWindow
             )
         }
 
-        Section {
-            Button {
-                openWindow(id: "clawix-pair")
-                NSApp.activate(ignoringOtherApps: true)
-            } label: {
-                Label(L10n.t("Pair iPhone…"), systemImage: "iphone")
+        if flags.isVisible(.remoteMesh) {
+            Section {
+                Button {
+                    openWindow(id: "clawix-pair")
+                    NSApp.activate(ignoringOtherApps: true)
+                } label: {
+                    Label(L10n.t("Pair iPhone…"), systemImage: "iphone")
+                }
+            } header: {
+                Text(L10n.t("Connect"))
             }
-        } header: {
-            Text(L10n.t("Connect"))
         }
 
-        if bridge.isEnabled {
+        if flags.isVisible(.remoteMesh), bridge.isEnabled {
             Section {
                 Menu {
                     Text("Running on port \(String(BridgeAgentControl.bridgePort))")
@@ -996,12 +1023,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // mid-install, the LaunchAgent was unregistered to release
         // file handles. Restore it now so the user does not have to
         // re-enable "Run bridge in background" after every update.
-        BackgroundBridgeService.shared.restoreAfterUpdateIfNeeded()
+        if FeatureFlags.shared.isVisible(.remoteMesh) {
+            BackgroundBridgeService.shared.restoreAfterUpdateIfNeeded()
+        }
         // Suppress the standalone `clawix-menubar` icon while the GUI
         // owns its own MenuBarExtra: two near-identical icons next to
         // each other confuse users. The CLI agent is restored on
         // applicationWillTerminate if the bridge daemon is still alive.
-        BridgeAgentControl.bootoutMenubarAgent()
+        if FeatureFlags.shared.isVisible(.remoteMesh) {
+            BridgeAgentControl.bootoutMenubarAgent()
+        }
         // Register the system-wide QuickAsk hotkey. The default combo
         // (⌃Space) is set in `QuickAskHotkey.defaultValue`; the user
         // can change it from Settings → QuickAsk.
@@ -1049,7 +1080,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // the GUI (the LaunchAgent kept it up across Cmd+Q). If the
         // daemon is also gone, an empty CLI menubar saying "Bridge:
         // not running" would just be noise, so we leave it alone.
-        if BridgeAgentControl.isMenubarAgentInstalled(),
+        if FeatureFlags.shared.isVisible(.remoteMesh),
+           BridgeAgentControl.isMenubarAgentInstalled(),
            BridgeAgentControl.isBridgeAgentLoaded() {
             BridgeAgentControl.bootstrapMenubarAgent()
         }

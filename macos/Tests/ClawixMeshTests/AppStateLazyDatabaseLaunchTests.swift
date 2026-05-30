@@ -47,6 +47,16 @@ final class AppStateLazyDatabaseLaunchTests: XCTestCase {
     }
 
     func testSkillsActiveSnapshotLoadsOnlyCompactActiveRecord() async {
+        let flags = FeatureFlags.shared
+        let wasExperimental = flags.experimentalSurfaces
+        let wasDeveloper = flags.developerSurfaces
+        flags.experimentalSurfaces = true
+        flags.developerSurfaces = false
+        defer {
+            flags.experimentalSurfaces = wasExperimental
+            flags.developerSurfaces = wasDeveloper
+        }
+
         var calls: [[String]] = []
         let client = ClawJSFrameworkRecordsClient(runner: .init { args in
             calls.append(args)
@@ -83,6 +93,31 @@ final class AppStateLazyDatabaseLaunchTests: XCTestCase {
         XCTAssertEqual(snapshot?.first?.scope, "global")
         XCTAssertEqual(snapshot?.first?.priority, 10)
         XCTAssertEqual(calls, [["skills", "get", "clawix-active-skills", "--json"]])
+    }
+
+    func testSkillsActiveSnapshotDoesNotLoadWhenSkillsAreHidden() async {
+        let flags = FeatureFlags.shared
+        let wasExperimental = flags.experimentalSurfaces
+        let wasDeveloper = flags.developerSurfaces
+        flags.experimentalSurfaces = false
+        flags.developerSurfaces = false
+        defer {
+            flags.experimentalSurfaces = wasExperimental
+            flags.developerSurfaces = wasDeveloper
+        }
+
+        let chatId = UUID()
+        let state = AppState()
+        state.chats = [Chat(id: chatId, title: "Prompt prep")]
+        state.makeSkillsStore = { _, _ in
+            XCTFail("Hidden Skills must not construct the framework-backed store.")
+            return SkillsStore(loadMode: .none)
+        }
+
+        let snapshot = await state.skillsActiveSnapshot(for: chatId)
+
+        XCTAssertNil(snapshot)
+        XCTAssertNil(state.skillsStore)
     }
 
     func testFirstPaintCachePopulatesSidebarState() throws {

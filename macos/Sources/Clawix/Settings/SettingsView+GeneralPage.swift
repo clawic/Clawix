@@ -31,6 +31,15 @@ struct GeneralPage: View {
                         set: { flags.developerSurfaces = $0 }
                     )
                 )
+                CardDivider()
+                ToggleRow(
+                    title: "Experimental surfaces",
+                    detail: "Show unfinished sidebar areas such as Tools, Network, Skills, Agents, Apps, Design, and Life. Off by default.",
+                    isOn: Binding(
+                        get: { flags.experimentalSurfaces },
+                        set: { flags.experimentalSurfaces = $0 }
+                    )
+                )
             }
             .padding(.bottom, 8)
 #endif
@@ -63,18 +72,20 @@ struct GeneralPage: View {
                         set: { appState.preferredLanguage = $0 }
                     )
                 )
-                CardDivider()
-                ToggleRow(
-                    title: "Run bridge in background",
-                    detail: "Registers the LaunchAgent bridge so the daemon can stay alive after Clawix quits. Status: \(backgroundBridge.statusLabel)\(backgroundBridge.lastError.map { " — \($0)" } ?? "")",
-                    isOn: Binding(
-                        get: { backgroundBridge.isEnabled },
-                        set: {
-                            backgroundBridge.toggle($0)
-                            appState.reconcileBridgeTransport(reason: "background-setting")
-                        }
+                if flags.isVisible(.remoteMesh) {
+                    CardDivider()
+                    ToggleRow(
+                        title: "Run bridge in background",
+                        detail: "Registers the LaunchAgent bridge so the daemon can stay alive after Clawix quits. Status: \(backgroundBridge.statusLabel)\(backgroundBridge.lastError.map { " — \($0)" } ?? "")",
+                        isOn: Binding(
+                            get: { backgroundBridge.isEnabled },
+                            set: {
+                                backgroundBridge.toggle($0)
+                                appState.reconcileBridgeTransport(reason: "background-setting")
+                            }
+                        )
                     )
-                )
+                }
                 CardDivider()
                 SegmentedRow(
                     title: "Agent runtime",

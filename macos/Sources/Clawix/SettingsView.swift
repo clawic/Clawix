@@ -104,7 +104,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         switch self {
         case .dictation:        return .voiceToText
         case .quickAsk:         return .quickAsk
-        case .secrets:          return .secrets
+        case .secrets:          return .tools
         case .mcp:              return .mcp
         case .localModels:      return .localModels
         case .browserUsage:     return .browserUsage
@@ -115,10 +115,10 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .macUtilities:     return .macUtilities
         case .macControl:       return .macControl
         case .computerUse:      return .computerUse
-        case .databaseWorkbench: return .databaseWorkbench
+        case .databaseWorkbench: return .tools
         case .identity:         return .identity
         case .claw:           return .claw
-        case .telegram:         return .telegram
+        case .telegram:         return .tools
         case .apps:             return .apps
         case .legalSafety:      return nil
         default:                return nil
@@ -147,6 +147,7 @@ struct SettingsSidebar: View {
     var body: some View {
         VStack(spacing: 0) {
             Button {
+                CriticalUIActivity.mark("settings.route.back")
                 appState.currentRoute = .home
             } label: {
                 HStack(spacing: 11) {

@@ -40,6 +40,21 @@ final class DeepLinkRoutingTests: XCTestCase {
         XCTAssertEqual(state.currentRoute.visibleRoute(isVisible: { _ in false }), .rescue)
     }
 
+    func testExperimentalSidebarRoutesFallBackWhenFeaturesAreHidden() {
+        let hidden: (AppFeature) -> Bool = { _ in false }
+
+        XCTAssertEqual(SidebarRoute.skills.visibleRoute(isVisible: hidden), .home)
+        XCTAssertEqual(SidebarRoute.networkControl.visibleRoute(isVisible: hidden), .home)
+        XCTAssertEqual(SidebarRoute.plugins.visibleRoute(isVisible: hidden), .home)
+        XCTAssertEqual(SidebarRoute.automations.visibleRoute(isVisible: hidden), .home)
+        XCTAssertEqual(SidebarRoute.databaseWorkbench.visibleRoute(isVisible: hidden), .home)
+        XCTAssertEqual(SidebarRoute.databaseCollection("tasks").visibleRoute(isVisible: hidden), .home)
+        XCTAssertEqual(SidebarRoute.agentsHome.visibleRoute(isVisible: hidden), .home)
+        XCTAssertEqual(SidebarRoute.appsHome.visibleRoute(isVisible: hidden), .home)
+        XCTAssertEqual(SidebarRoute.designStylesHome.visibleRoute(isVisible: hidden), .home)
+        XCTAssertEqual(SidebarRoute.lifeHome.visibleRoute(isVisible: hidden), .home)
+    }
+
     func testRejectsNestedRescueDeepLink() throws {
         let url = try XCTUnwrap(URL(string: "clawix://rescue/extra"))
         XCTAssertNil(ClawixDeepLink.parse(url))

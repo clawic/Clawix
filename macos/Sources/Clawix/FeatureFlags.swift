@@ -68,6 +68,9 @@ enum AppFeature: Equatable, CaseIterable {
     case git
     case remoteMesh
     case publishing
+    case composerExperiments
+    case tools
+    case networkControl
     case apps
     case design
     case life
@@ -94,12 +97,16 @@ enum AppFeature: Equatable, CaseIterable {
     var maturity: FeatureMaturity {
         switch self {
         case .voiceToText, .quickAsk, .secrets, .mcp, .localModels,
-             .browserUsage, .git, .remoteMesh, .apps,
-             .design, .life, .skills, .skillCollections, .claw,
-             .identity, .telegram, .screenTools, .macUtilities, .macControl,
+             .browserUsage, .git,
+             .identity, .screenTools, .macUtilities, .macControl,
              .computerUse, .databaseWorkbench, .marketplace, .calendar, .contacts,
-             .database, .index, .iotHome, .agents, .openCode:
+             .database, .index, .iotHome, .openCode:
             return .stable
+        case .composerExperiments, .remoteMesh,
+             .tools, .networkControl, .apps,
+             .design, .life, .skills, .skillCollections, .claw,
+             .agents, .telegram:
+            return .experimental
         case .publishing:
             return .beta
         case .simulators:
@@ -129,6 +136,9 @@ enum AppFeature: Equatable, CaseIterable {
         case .git: return "clawix.feature.git"
         case .remoteMesh: return "clawix.feature.remoteMesh"
         case .publishing: return "clawix.feature.publishing"
+        case .composerExperiments: return "clawix.feature.composerExperiments"
+        case .tools: return "clawix.feature.tools"
+        case .networkControl: return "clawix.feature.networkControl"
         case .apps: return "clawix.feature.apps"
         case .design: return "clawix.feature.design"
         case .life: return "clawix.feature.life"
@@ -158,6 +168,7 @@ enum AppFeature: Equatable, CaseIterable {
 @MainActor
 final class FeatureFlags: ObservableObject {
     static let shared = FeatureFlags()
+    static let experimentalSurfacesCapabilityID = "clawix.feature.experimentalSurfaces"
 
 #if DEBUG
     @Published var developerSurfaces: Bool {
@@ -167,7 +178,7 @@ final class FeatureFlags: ObservableObject {
     private let store: UserDefaults = UserDefaults(suiteName: appPrefsSuite) ?? .standard
     private let developerSurfacesKey = ClawixPersistentSurfaceKeys.featureFlagsDeveloperSurfaces
     private let enabledCapabilityIDsKey = ClawixPersistentSurfaceKeys.featureFlagsEnabledCapabilityIDs
-    private var enabledCapabilityIDs: Set<String>
+    @Published private var enabledCapabilityIDs: Set<String>
 
     private init() {
         let s = UserDefaults(suiteName: appPrefsSuite) ?? .standard
@@ -176,7 +187,16 @@ final class FeatureFlags: ObservableObject {
     }
 
     var maturityProfile: FeatureMaturityProfile {
-        developerSurfaces ? .dev : .stable
+        if developerSurfaces { return .dev }
+        if experimentalSurfaces { return .experimental }
+        return .stable
+    }
+
+    var experimentalSurfaces: Bool {
+        get { enabledCapabilityIDs.contains(Self.experimentalSurfacesCapabilityID) }
+        set {
+            setCapabilityOptIn(newValue, capabilityID: Self.experimentalSurfacesCapabilityID)
+        }
     }
 
     func setCapabilityOptIn(_ enabled: Bool, capabilityID: String) {
@@ -191,6 +211,7 @@ final class FeatureFlags: ObservableObject {
     let developerSurfaces: Bool = false
     private let enabledCapabilityIDs: Set<String> = []
     private init() {}
+    var experimentalSurfaces: Bool { false }
 
     var maturityProfile: FeatureMaturityProfile {
         .stable
@@ -217,6 +238,8 @@ final class FeatureFlags: ObservableObject {
         case .enabled:
             return true
         case .optIn:
+            if maturityProfile == .dev { return true }
+            if maturityProfile == .experimental, maturity == .experimental { return true }
             return enabledCapabilityIDs.contains(capabilityID)
         case .devAllowlist:
             return maturityProfile == .dev && developerSurfaces

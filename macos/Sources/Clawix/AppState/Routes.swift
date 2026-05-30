@@ -39,6 +39,10 @@ extension AppState {
     }
 
     func requestDriveQuickUpload() {
+        guard FeatureFlags.shared.isVisible(.tools) else {
+            navigate(to: .driveAdmin)
+            return
+        }
         currentRoute = .driveAdmin
         driveQuickUploadRequestID = UUID()
     }
@@ -301,28 +305,26 @@ extension SidebarRoute {
 
     var gatedFeature: AppFeature? {
         switch self {
-        case .appsHome, .app:
+        case .plugins, .appsHome, .app:
             return .apps
+        case .automations:
+            return .tools
         case .secretsHome:
-            return .secrets
-        case .databaseHome:
-            return .database
+            return .tools
+        case .databaseHome, .databaseCollection, .memoryHome, .macCare,
+             .driveAdmin, .drivePhotos, .driveDocuments, .driveRecent,
+             .driveFolder, .calendarHome, .contactsHome, .marketplaceHome:
+            return .tools
         case .databaseWorkbench:
-            return .databaseWorkbench
+            return .tools
         case .indexHome:
-            return .index
-        case .marketplaceHome:
-            return .marketplace
-        case .calendarHome:
-            return .calendar
-        case .contactsHome:
-            return .contacts
+            return .tools
         case .networkControl:
-            return nil
+            return .networkControl
         case .skills, .skillDetail:
             return .skills
         case .iotHome, .iotDeviceDetail:
-            return .iotHome
+            return .tools
         case .designStylesHome, .designStyleDetail, .designTemplatesHome,
              .designTemplateDetail, .designReferencesHome, .designEditor:
             return .design
@@ -332,12 +334,10 @@ extension SidebarRoute {
         case .skillCollectionsHome, .skillCollectionDetail:
             return .skillCollections
         case .publishingHome, .publishingComposer, .publishingChannels:
-            return .publishing
+            return .tools
         case .lifeHome, .lifeVertical, .lifeSettings:
             return .life
-        case .home, .search, .plugins, .automations, .project, .chat, .settings, .rescue,
-             .databaseCollection, .memoryHome, .macCare, .driveAdmin, .drivePhotos,
-             .driveDocuments, .driveRecent, .driveFolder:
+        case .home, .search, .project, .chat, .settings, .rescue:
             return nil
         }
     }

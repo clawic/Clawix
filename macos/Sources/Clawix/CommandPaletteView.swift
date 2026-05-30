@@ -90,6 +90,7 @@ private enum PaletteCatalog {
                         }),
             PaletteItem(id: "skills", icon: "wrench.and.screwdriver",
                         title: "Skills", shortcut: nil,
+                        gatedFeature: .skills,
                         action: {
                             $0.settingsCategory = .skills
                             $0.currentRoute = .settings
@@ -110,21 +111,27 @@ private enum PaletteCatalog {
         PaletteSection(id: "navegacion", title: "Navigation", items: [
             PaletteItem(id: "go-plugins", icon: "puzzlepiece.extension",
                         title: "Plugins", shortcut: nil,
+                        gatedFeature: .apps,
                         action: { $0.navigate(to: .plugins) }),
             PaletteItem(id: "go-apps", icon: "square.grid.2x2",
                         title: "Apps", shortcut: nil,
+                        gatedFeature: .apps,
                         action: { $0.navigate(to: .appsHome) }),
             PaletteItem(id: "go-memories", icon: "brain",
                         title: "Memories", shortcut: nil,
+                        gatedFeature: .tools,
                         action: { $0.navigate(to: .memoryHome) }),
             PaletteItem(id: "go-marketplace", icon: "bag",
                         title: "Marketplace", shortcut: nil,
+                        gatedFeature: .tools,
                         action: { $0.navigate(to: .marketplaceHome) }),
             PaletteItem(id: "go-drive", icon: "internaldrive",
                         title: "Drive", shortcut: nil,
+                        gatedFeature: .tools,
                         action: { $0.navigate(to: .driveAdmin) }),
             PaletteItem(id: "go-database", icon: "cylinder",
                         title: "Database", shortcut: nil,
+                        gatedFeature: .tools,
                         action: { $0.navigate(to: .databaseHome) }),
         ]),
         PaletteSection(id: "aplicacion", title: "App", items: [

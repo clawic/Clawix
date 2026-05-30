@@ -85,6 +85,7 @@ extension AppState {
     /// the compact active-state record unless the full Skills catalog has
     /// already been opened.
     func skillsActiveSnapshot(for chatId: UUID) async -> [ActiveSkill]? {
+        guard FeatureFlags.shared.isVisible(.skills) else { return nil }
         let store = await ensureSkillsActiveStateLoaded()
         let projectId = chat(byId: chatId)?.projectId?.uuidString
         let states = store.resolveActive(projectId: projectId, chatId: chatId)

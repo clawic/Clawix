@@ -370,9 +370,10 @@ struct ComposerView: View {
 
             permissionsPill
 
-            IDEContextChip()
-
-            AttemptsSelector()
+            if flags.isVisible(.composerExperiments) {
+                IDEContextChip()
+                AttemptsSelector()
+            }
 
             if chatMode, flags.isVisible(.remoteMesh) {
                 MeshTargetPill(style: .toolbarCompact, menuOpen: $meshTargetMenuOpen)

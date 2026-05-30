@@ -100,20 +100,12 @@ enum ClawJSServiceDemandPolicy {
 
     static func visibilityGate(for service: ClawJSService) -> ClawJSServiceVisibilityGate {
         switch service {
-        case .runtime, .sessions, .memory, .drive, .audio:
+        case .runtime, .sessions, .audio:
             return .stableCore
-        case .database:
-            return .appFeature(.database)
-        case .secrets:
-            return .appFeature(.secrets)
+        case .database, .secrets, .memory, .drive, .iot, .index, .publishing:
+            return .appFeature(.tools)
         case .telegram:
-            return .appFeature(.telegram)
-        case .iot:
-            return .appFeature(.iotHome)
-        case .index:
-            return .appFeature(.index)
-        case .publishing:
-            return .appFeature(.publishing)
+            return .appFeature(.tools)
         }
     }
 
