@@ -305,7 +305,13 @@ PY
         copy_overlay_package "$OVERLAY_CLI" "$CLAWJS_DEST/node_modules/@clawjs/cli"
         copy_overlay_core "$CLAWJS_DEST/node_modules/@clawjs/cli/node_modules/@clawjs/core"
     fi
-    if [[ "${CLAWIX_DEV_MINIMAL_CLAWJS_OVERLAY:-0}" == "1" ]]; then
+    if [[ "${CLAWIX_DEV_EXPERIMENTAL_CLAWJS_OVERLAY:-0}" == "1" ]]; then
+        CLAWIX_DEV_MINIMAL_CLAWJS_OVERLAY=0
+    else
+        CLAWIX_DEV_MINIMAL_CLAWJS_OVERLAY=1
+    fi
+
+    if [[ "${CLAWIX_DEV_MINIMAL_CLAWJS_OVERLAY:-1}" == "1" ]]; then
         copy_overlay_package "$CLAWJS_DEV_OVERLAY/packages/signals-core" "$CLAWJS_DEST/node_modules/@clawjs/signals-core"
         copy_overlay_package "$CLAWJS_DEV_OVERLAY/packages/signals" "$CLAWJS_DEST/node_modules/@clawjs/signals"
         copy_overlay_package "$CLAWJS_DEV_OVERLAY/packages/clawjs-search" "$CLAWJS_DEST/node_modules/@clawjs/search"
