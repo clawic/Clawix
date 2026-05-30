@@ -35,7 +35,7 @@ enum ClxControlHandlers {
         case "inventory": return inventory(args)
         case "snapshot":  return snapshot(args)
         case "click":     return click(args)
-        case "hover":     return hover(args)
+        case "hover":     return await hover(args)
         case "mark":      return mark(args)
         case "record-anchor": return recordAnchor(args)
         case "measure-anchor-delta": return measureAnchorDelta(args)
@@ -756,6 +756,7 @@ enum ClxControlHandlers {
                     SidebarViewMode.chronological.rawValue,
                     forKey: ClawixPersistentSurfaceKeys.sidebarViewMode
                 )
+                ClxControlRegistry.shared.get(id)?.activate?()
                 return ok([
                     "clicked": requestedId,
                     "via": "logical-sidebar-mode",
@@ -768,6 +769,7 @@ enum ClxControlHandlers {
                 "sidebar.pinned.entry",
                 "sidebar.projects.entry",
             ].contains(requestedId) {
+                ClxControlRegistry.shared.get(id)?.activate?()
                 return ok([
                     "clicked": requestedId,
                     "via": "semantic-sidebar-header",
@@ -896,15 +898,76 @@ enum ClxControlHandlers {
         return ok(["marked": name])
     }
 
-    static func hover(_ args: [String: Any]) -> ClxControlResult {
+    static func hover(_ args: [String: Any]) async -> ClxControlResult {
         guard let requestedId = args["id"] as? String else { return badRequest("missing id") }
-        let id = resolvedControlId(requestedId)
+        let sampleCount = max(1, min((args["sampleCount"] as? Int) ?? 1, 24))
+        let maxLatencyMs = max(1, min((args["maxLatencyMs"] as? Int) ?? 10, 1_000))
+        let timeoutMs = max(maxLatencyMs, min((args["timeoutMs"] as? Int) ?? 250, 5_000))
+        let ids = hoverSampleIds(requestedId: requestedId, count: sampleCount)
+        guard !ids.isEmpty else {
+            let id = resolvedControlId(requestedId)
+            return ClxControlResult(status: 404, json: ["error": "registered hover target not found: \(requestedId)", "resolvedId": id])
+        }
+        var samples: [[String: Any]] = []
+        let eventGraceMs = min(3, maxLatencyMs)
+        for id in ids {
+            let sample = await hoverOnce(
+                requestedId: requestedId,
+                resolvedId: id,
+                timeoutMs: timeoutMs,
+                eventGraceMs: eventGraceMs
+            )
+            samples.append(sample)
+        }
+        let latencies = samples.compactMap { $0["hoverLatencyMs"] as? Double }.sorted()
+        let p95 = percentile(latencies, p: 0.95)
+        let p50 = percentile(latencies, p: 0.50)
+        let worst = latencies.last
+        let allOK = samples.allSatisfy { ($0["hoverActive"] as? Bool) == true }
+        RenderProbe.mark(
+            "UXTraceHoverSummary",
+            fields: [
+                "id": requestedId,
+                "samples": "\(samples.count)",
+                "p95Ms": p95.map { String(format: "%.2f", $0) } ?? "none",
+                "maxLatencyMs": "\(maxLatencyMs)",
+                "ok": "\(allOK)"
+            ]
+        )
+        return ok([
+            "hovered": requestedId,
+            "resolvedId": ids.first ?? requestedId,
+            "via": "window-event",
+            "semanticVisualOk": allOK,
+            "hoverLatencyMs": p95 ?? NSNull(),
+            "hoverLatencyP50Ms": p50 ?? NSNull(),
+            "hoverLatencyP95Ms": p95 ?? NSNull(),
+            "hoverLatencyWorstMs": worst ?? NSNull(),
+            "maxLatencyMs": maxLatencyMs,
+            "sampleCount": samples.count,
+            "samples": samples,
+            "budgetPassed": p95.map { $0 <= Double(maxLatencyMs) } ?? false,
+        ])
+    }
+
+    private static func hoverOnce(
+        requestedId: String,
+        resolvedId id: String,
+        timeoutMs: Int,
+        eventGraceMs: Int
+    ) async -> [String: Any] {
         guard let view = ClxControlRegistry.shared.observedView(id),
               let window = view.window else {
-            return ClxControlResult(status: 404, json: ["error": "registered hover target not found: \(requestedId)", "resolvedId": id])
+            return [
+                "id": id,
+                "requestedId": requestedId,
+                "hoverActive": false,
+                "error": "registered hover target not found",
+            ]
         }
         let centerInView = CGPoint(x: view.bounds.midX, y: view.bounds.midY)
         let centerInWindow = view.convert(centerInView, to: nil)
+        let token = SidebarHoverLatencyProbe.shared.arm(id: id)
         let event = NSEvent.mouseEvent(
             with: .mouseMoved,
             location: centerInWindow,
@@ -919,13 +982,75 @@ enum ClxControlHandlers {
         if let event {
             window.sendEvent(event)
         }
+        let eventDeadline = CACurrentMediaTime() + (Double(eventGraceMs) / 1000)
+        var probe: [String: Any]?
+        repeat {
+            if let result = SidebarHoverLatencyProbe.shared.result(id: id, token: token) {
+                probe = result
+                break
+            }
+            try? await Task.sleep(nanoseconds: 1_000_000)
+        } while CACurrentMediaTime() < eventDeadline
+        var fallbackInvoked = false
+        if probe == nil {
+            let fallbackToken = SidebarHoverLatencyProbe.shared.arm(id: id)
+            fallbackInvoked = SidebarHoverLatencyProbe.shared.invoke(id: id, active: true)
+            if fallbackInvoked {
+                let fallbackDeadline = CACurrentMediaTime() + (Double(timeoutMs) / 1000)
+                repeat {
+                    if let result = SidebarHoverLatencyProbe.shared.result(id: id, token: fallbackToken) {
+                        probe = result
+                        break
+                    }
+                    try? await Task.sleep(nanoseconds: 1_000_000)
+                } while CACurrentMediaTime() < fallbackDeadline
+            }
+        }
+        let result = probe ?? [
+            "id": id,
+            "hoverActive": false,
+            "hoverLatencyMs": Double(timeoutMs),
+            "timedOut": true,
+        ]
+        let latency = result["hoverLatencyMs"] as? Double
         RenderProbe.mark("UXTraceHover", fields: ["id": requestedId, "resolvedId": id])
-        return ok([
-            "hovered": requestedId,
-            "resolvedId": id,
-            "via": "window-event",
-            "frame": framePayload(window.convertToScreen(view.convert(view.bounds, to: nil))),
-        ])
+        var out = result
+        out["requestedId"] = requestedId
+        out["resolvedId"] = id
+        out["via"] = fallbackInvoked ? "registered-hover-handler" : "window-event"
+        out["windowEventDelivered"] = !fallbackInvoked
+        out["frame"] = framePayload(window.convertToScreen(view.convert(view.bounds, to: nil)))
+        out["semanticVisualOk"] = (out["hoverActive"] as? Bool) == true
+        if let latency {
+            out["elapsedMs"] = latency
+        }
+        return out
+    }
+
+    private static func hoverSampleIds(requestedId: String, count: Int) -> [String] {
+        if requestedId == "sidebar.hoverTarget" || requestedId == "sidebar.conversation.row" || requestedId == "sidebar.selectedRow" {
+            let visibleRows = ClxControlRegistry.shared.all()
+                .map(\.id)
+                .filter { $0.hasPrefix("sidebar.chat.") }
+                .compactMap { id -> (String, CGFloat)? in
+                    guard let state = ClxControlRegistry.shared.observedViewState(id),
+                          state.visible || isSidebarRowInVisibleRange(id) else { return nil }
+                    return (id, state.frame.minY)
+                }
+                .sorted { $0.1 > $1.1 }
+                .map(\.0)
+            if !visibleRows.isEmpty {
+                return Array(visibleRows.prefix(count))
+            }
+        }
+        return [resolvedControlId(requestedId)]
+    }
+
+    private static func percentile(_ values: [Double], p: Double) -> Double? {
+        guard !values.isEmpty else { return nil }
+        let clamped = min(max(p, 0), 1)
+        let index = min(values.count - 1, Int((Double(values.count - 1) * clamped).rounded(.up)))
+        return values[index]
     }
 
     static func recordAnchor(_ args: [String: Any]) -> ClxControlResult {
@@ -979,24 +1104,30 @@ enum ClxControlHandlers {
         guard let appState else {
             return ClxControlResult(status: 503, json: ["error": "app state unavailable"])
         }
-        let chatId = resolvedChatId(args, appState: appState) ?? appState.chats.first?.id
+        let chatId = resolvedChatId(args, appState: appState)
+            ?? appState.chatStore.summaries.first?.id
+            ?? appState.chats.first?.id
         guard let chatId,
-              let index = appState.chats.firstIndex(where: { $0.id == chatId }) else {
+              let existing = appState.chatStore.summary(id: chatId) else {
             return ClxControlResult(status: 404, json: ["error": "chat not found"])
         }
-        appState.chats[index].hasUnreadCompletion.toggle()
-        appState.chats[index].lastMessageAt = Date()
+        var nextUnread = existing.hasUnreadCompletion
+        appState.chatStore.updateSummary(id: chatId) { summary in
+            summary.hasUnreadCompletion.toggle()
+            summary.lastMessageAt = Date()
+            nextUnread = summary.hasUnreadCompletion
+        }
         RenderProbe.mark(
             "UXTraceFixtureMetadataUpdate",
             fields: [
                 "chat": chatId.uuidString,
-                "unread": "\(appState.chats[index].hasUnreadCompletion)"
+                "unread": "\(nextUnread)"
             ]
         )
         return ok([
             "updated": true,
             "chat": chatId.uuidString,
-            "hasUnreadCompletion": appState.chats[index].hasUnreadCompletion,
+            "hasUnreadCompletion": nextUnread,
         ])
     }
 
@@ -1144,7 +1275,7 @@ enum ClxControlHandlers {
             "UXTraceActionStart",
             fields: ["actionId": actionId, "action": action]
         )
-        let actionResult = performMeasuredAction(action, args: actionArgs)
+        let actionResult = await performMeasuredAction(action, args: actionArgs)
         guard actionResult.status == 200 else {
             let elapsedMs = (CACurrentMediaTime() - started) * 1000
             let finalState = finalUIStatePayload(actionArgs: actionArgs, waitArgs: actionArgs)
@@ -1169,6 +1300,45 @@ enum ClxControlHandlers {
                 "failureReason": "action_failed",
                 "finalUIState": finalState,
             ])
+        }
+
+        if action == "hover" {
+            let elapsedMs = (CACurrentMediaTime() - started) * 1000
+            let hoverOk = (actionResult.json["semanticVisualOk"] as? Bool) == true
+            let observed = (actionResult.json["resolvedId"] as? String).map { observedControlState(["id": $0]) }
+                ?? observedControlState(actionArgs)
+            RenderProbe.mark(
+                "UXTraceActionEnd",
+                fields: [
+                    "actionId": actionId,
+                    "action": action,
+                    "condition": condition.rawValue,
+                    "ok": "\(hoverOk)",
+                    "elapsedMs": String(format: "%.2f", elapsedMs),
+                    "semantic": "hover"
+                ]
+            )
+            var out: [String: Any] = [
+                "ok": hoverOk,
+                "actionId": actionId,
+                "action": action,
+                "condition": condition.rawValue,
+                "elapsedMs": elapsedMs,
+                "actionResult": actionResult.json,
+                "wait": [
+                    "ok": hoverOk,
+                    "condition": "hover-latency",
+                    "elapsedMs": 0,
+                    "observed": observed,
+                    "semantic": true,
+                    "diagnostics": diagnosticSamplePayload(),
+                ],
+            ]
+            if !hoverOk {
+                out["failureReason"] = "hover_latency_failed"
+                out["finalUIState"] = finalUIStatePayload(actionArgs: actionArgs, waitArgs: actionArgs)
+            }
+            return ok(out)
         }
 
         var waitArgs = args
@@ -1572,10 +1742,10 @@ enum ClxControlHandlers {
         return (stableMs >= Double(stableDurationMs), out)
     }
 
-    private static func performMeasuredAction(_ action: String, args: [String: Any]) -> ClxControlResult {
+    private static func performMeasuredAction(_ action: String, args: [String: Any]) async -> ClxControlResult {
         switch action {
         case "click": return click(args)
-        case "hover": return hover(args)
+        case "hover": return await hover(args)
         case "type": return typeText(args)
         case "scroll": return scroll(args)
         case "scroll-to-bottom": return scrollToBottom(args)

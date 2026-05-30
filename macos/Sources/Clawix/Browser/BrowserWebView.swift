@@ -172,7 +172,7 @@ final class BrowserTabController: NSObject, ObservableObject {
             title = ""
             lastNavigationError = nil
             appState?.updateBrowserTab(id, url: Self.blankURL, title: "")
-            appState?.browserTabsLoading.remove(id)
+            appState?.setBrowserTabLoading(id, loading: false)
             appState?.browserPageBackgroundColors[id] = .black
             webView.loadHTMLString(Self.blankPageHTML, baseURL: Self.blankURL)
             return
@@ -491,11 +491,7 @@ final class BrowserTabController: NSObject, ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 self.isLoading = value
-                if value {
-                    self.appState?.browserTabsLoading.insert(self.id)
-                } else {
-                    self.appState?.browserTabsLoading.remove(self.id)
-                }
+                self.appState?.setBrowserTabLoading(self.id, loading: value)
             }
         })
         observers.append(webView.observe(\.url, options: [.new]) { [weak self] wv, _ in

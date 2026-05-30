@@ -1,3 +1,4 @@
+import Combine
 import XCTest
 @testable import Clawix
 
@@ -218,6 +219,53 @@ final class ChatSidebarStateTests: XCTestCase {
             AppState.visibleSidebarFaviconURLs(from: items, limit: 8),
             [first, second, third]
         )
+    }
+
+    @MainActor
+    func testNoOpBrowserTabUpdateDoesNotPublishSidebarState() throws {
+        let state = AppState()
+        let chatId = UUID()
+        let webId = UUID()
+        let url = try XCTUnwrap(URL(string: "https://example.com/docs"))
+        state.currentRoute = .chat(chatId)
+        state.chatSidebars = [
+            chatId: ChatSidebarState(
+                isOpen: true,
+                items: [
+                    .web(.init(
+                        id: webId,
+                        url: url,
+                        title: "Docs"
+                    ))
+                ],
+                activeItemId: webId
+            )
+        ]
+
+        var publishes = 0
+        let cancellable = state.objectWillChange.sink { publishes += 1 }
+        state.updateBrowserTab(webId, url: url, title: "Docs")
+
+        XCTAssertEqual(publishes, 0)
+        withExtendedLifetime(cancellable) {}
+    }
+
+    @MainActor
+    func testNoOpBrowserLoadingUpdateDoesNotPublish() {
+        let state = AppState()
+        let webId = UUID()
+        state.browserTabsLoading = [webId]
+
+        var publishes = 0
+        let cancellable = state.objectWillChange.sink { publishes += 1 }
+
+        state.setBrowserTabLoading(webId, loading: true)
+        XCTAssertEqual(publishes, 0)
+
+        state.setBrowserTabLoading(webId, loading: false)
+        XCTAssertEqual(publishes, 1)
+        XCTAssertFalse(state.browserTabsLoading.contains(webId))
+        withExtendedLifetime(cancellable) {}
     }
 
     private func restore(_ value: Any?, key: String, defaults: UserDefaults) {

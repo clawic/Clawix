@@ -27,6 +27,8 @@ struct LifeSidebarSection: View {
                 title: "Life",
                 expanded: $expanded,
                 leadingIcon: AnyView(UserIcon(size: 16)),
+                controlId: "sidebar.section.life",
+                controlLabel: "Life",
                 trailingIcon: AnyView(configureButton)
             )
             SidebarAccordion(

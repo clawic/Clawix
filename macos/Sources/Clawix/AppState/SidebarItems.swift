@@ -504,6 +504,16 @@ extension AppState {
         return payload
     }
 
+    func setBrowserTabLoading(_ id: UUID, loading: Bool) {
+        let isTracked = browserTabsLoading.contains(id)
+        guard isTracked != loading else { return }
+        if loading {
+            browserTabsLoading.insert(id)
+        } else {
+            browserTabsLoading.remove(id)
+        }
+    }
+
     /// Remove an item (web or file) from the active chat's sidebar. If
     /// the closed tab was the active one, focus snaps to its neighbour.
     /// Closing the last item collapses the panel so the column animates
@@ -514,7 +524,7 @@ extension AppState {
         let wasActive = s.activeItemId == id
         s.items.remove(at: idx)
         browserPageBackgroundColors.removeValue(forKey: id)
-        browserTabsLoading.remove(id)
+        setBrowserTabLoading(id, loading: false)
         if wasActive && !s.items.isEmpty {
             let next = min(idx, s.items.count - 1)
             s.activeItemId = s.items[next].id
@@ -543,30 +553,66 @@ extension AppState {
                   let idx = s.items.firstIndex(where: { $0.id == id }),
                   case .web(var payload) = s.items[idx]
             else { continue }
-            if let url { payload.url = url }
-            if let title { payload.title = title }
+            var changed = false
+            if let url, payload.url != url {
+                payload.url = url
+                changed = true
+            }
+            if let title, payload.title != title {
+                payload.title = title
+                changed = true
+            }
             if let faviconURL {
-                payload.faviconURL = faviconURL
+                if payload.faviconURL != faviconURL {
+                    payload.faviconURL = faviconURL
+                    changed = true
+                }
                 recordHostFavicon(faviconURL, for: payload.url)
             }
-            if let pageZoom { payload.pageZoom = pageZoom }
-            if let mobileMode { payload.mobileMode = mobileMode }
+            if let pageZoom, payload.pageZoom != pageZoom {
+                payload.pageZoom = pageZoom
+                changed = true
+            }
+            if let mobileMode, payload.mobileMode != mobileMode {
+                payload.mobileMode = mobileMode
+                changed = true
+            }
+            guard changed else { return }
             s.items[idx] = .web(payload)
             chatSidebars[chatId] = s
             persistChatSidebars()
             return
         }
-        if let idx = globalSidebar.items.firstIndex(where: { $0.id == id }),
-           case .web(var payload) = globalSidebar.items[idx] {
-            if let url { payload.url = url }
-            if let title { payload.title = title }
+        var s = globalSidebar
+        if let idx = s.items.firstIndex(where: { $0.id == id }),
+           case .web(var payload) = s.items[idx] {
+            var changed = false
+            if let url, payload.url != url {
+                payload.url = url
+                changed = true
+            }
+            if let title, payload.title != title {
+                payload.title = title
+                changed = true
+            }
             if let faviconURL {
-                payload.faviconURL = faviconURL
+                if payload.faviconURL != faviconURL {
+                    payload.faviconURL = faviconURL
+                    changed = true
+                }
                 recordHostFavicon(faviconURL, for: payload.url)
             }
-            if let pageZoom { payload.pageZoom = pageZoom }
-            if let mobileMode { payload.mobileMode = mobileMode }
-            globalSidebar.items[idx] = .web(payload)
+            if let pageZoom, payload.pageZoom != pageZoom {
+                payload.pageZoom = pageZoom
+                changed = true
+            }
+            if let mobileMode, payload.mobileMode != mobileMode {
+                payload.mobileMode = mobileMode
+                changed = true
+            }
+            guard changed else { return }
+            s.items[idx] = .web(payload)
+            globalSidebar = s
             persistGlobalSidebar()
         }
     }

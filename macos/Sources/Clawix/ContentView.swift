@@ -132,7 +132,7 @@ struct ContentView: View {
         case .plugins: return "plugins"
         case .automations: return "automations"
         case .project: return "project"
-        case .chat: return "chat"
+        case .chat(let id): return "chat-\(id.uuidString)"
         case .settings: return "settings"
         case .rescue: return "rescue"
         case .secretsHome: return "secrets"

@@ -531,6 +531,8 @@ function requestBodyForStep(step, options) {
   if (step.minCount) body.minCount = step.minCount;
   if (step.minVisibleMessages) body.minVisibleMessages = step.minVisibleMessages;
   if (step.route) body.route = step.route;
+  if (step.sampleCount) body.sampleCount = boundedInteger(step.sampleCount, 1, 1, 24);
+  if (step.maxLatencyMs) body.maxLatencyMs = boundedInteger(step.maxLatencyMs, 10, 1, 1_000);
   return body;
 }
 
@@ -621,6 +623,15 @@ function elapsedFromPayload(payload, fallbackMs) {
 
 function sampleValueForKpi(kpiId, payload, fallbackMs) {
   const resource = payload?.diagnostics?.resource ?? payload?.wait?.diagnostics?.resource;
+  if (kpiId === "p0.sidebar.hover_to_highlight_ms") {
+    const value = Number(
+      payload?.actionResult?.hoverLatencyP95Ms
+        ?? payload?.actionResult?.hoverLatencyMs
+        ?? payload?.hoverLatencyP95Ms
+        ?? payload?.hoverLatencyMs
+    );
+    if (Number.isFinite(value)) return value;
+  }
   if (kpiId.includes("hitch")) {
     const total = Number(payload?.diagnostics?.hitches?.total ?? payload?.wait?.diagnostics?.hitches?.total);
     return Number.isFinite(total) ? total : null;

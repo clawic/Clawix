@@ -6,7 +6,6 @@ struct SidebarView: View {
     let appState: AppState
     @EnvironmentObject var flags: FeatureFlags
     @StateObject private var sidebarStore: SidebarStore
-    @State private var settingsPopoverOpen: Bool = false
     @State private var projectEditor: ProjectEditorContext?
     @State private var projectRenameTarget: Project?
     @State private var projectMenuOpenId: UUID?
@@ -40,6 +39,10 @@ struct SidebarView: View {
     @State private var projectsExpanded: Bool = SidebarPrefs.bool(forKey: ClawixPersistentSurfaceKeys.sidebarProjectsExpanded, default: true)
     @State private var archivedExpanded: Bool = false
     @State private var toolsExpanded: Bool = SidebarPrefs.bool(forKey: ClawixPersistentSurfaceKeys.sidebarToolsExpanded, default: true)
+    @State private var projectsLoadTask: Task<Void, Never>?
+    @State private var archivedLoadTask: Task<Void, Never>?
+    @State private var visibleProjectRefreshTasks: [UUID: Task<Void, Never>] = [:]
+    @State private var expandedProjectRefreshTasks: [UUID: Task<Void, Never>] = [:]
     /// Master switch for the Apps surface. Mirrors the Settings toggle
     /// that lives on `SidebarPrefs.store`; defaults on for new users.
     @AppStorage(ClawixPersistentSurfaceKeys.appsFeatureEnabled, store: SidebarPrefs.store)
@@ -72,8 +75,81 @@ struct SidebarView: View {
         ProjectSortMode(rawValue: projectSortModeRaw) ?? .recent
     }
 
+    private static let deferredSidebarLoadDelayNanos: UInt64 = 120_000_000
+
     private func recentChatCallbacks(for chat: Chat, archived: Bool) -> RecentChatRowCallbacks {
         makeRecentChatCallbacks(appState: appState, chat: chat, archived: archived)
+    }
+
+    private func scheduleExpandedProjectRefresh(_ project: Project) {
+        expandedProjectRefreshTasks[project.id]?.cancel()
+        expandedProjectRefreshTasks[project.id] = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: Self.deferredSidebarLoadDelayNanos)
+            guard !Task.isCancelled, expandedProjects.contains(project.id) else { return }
+            appState.requestExpandedProjectRefresh(project)
+            expandedProjectRefreshTasks[project.id] = nil
+        }
+    }
+
+    private func cancelExpandedProjectRefresh(_ projectId: UUID) {
+        expandedProjectRefreshTasks[projectId]?.cancel()
+        expandedProjectRefreshTasks[projectId] = nil
+    }
+
+    private func scheduleVisibleProjectRefresh(_ project: Project) {
+        visibleProjectRefreshTasks[project.id]?.cancel()
+        visibleProjectRefreshTasks[project.id] = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: Self.deferredSidebarLoadDelayNanos)
+            guard !Task.isCancelled, projectsExpanded else { return }
+            appState.requestVisibleProjectRefresh(project)
+            visibleProjectRefreshTasks[project.id] = nil
+        }
+    }
+
+    private func cancelVisibleProjectRefresh(_ projectId: UUID) {
+        visibleProjectRefreshTasks[projectId]?.cancel()
+        visibleProjectRefreshTasks[projectId] = nil
+    }
+
+    private func scheduleProjectsLoad(_ expanded: Bool) {
+        projectsLoadTask?.cancel()
+        guard expanded else {
+            projectsLoadTask = nil
+            visibleProjectRefreshTasks.values.forEach { $0.cancel() }
+            visibleProjectRefreshTasks.removeAll()
+            return
+        }
+        projectsLoadTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: Self.deferredSidebarLoadDelayNanos)
+            guard !Task.isCancelled, projectsExpanded else { return }
+            await appState.loadCanonicalProjectsIfNeeded()
+            projectsLoadTask = nil
+        }
+    }
+
+    private func scheduleArchivedLoad(_ expanded: Bool) {
+        archivedLoadTask?.cancel()
+        guard expanded else {
+            archivedLoadTask = nil
+            return
+        }
+        archivedLoadTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: Self.deferredSidebarLoadDelayNanos)
+            guard !Task.isCancelled, archivedExpanded else { return }
+            await appState.loadArchivedChats()
+            archivedLoadTask = nil
+        }
+    }
+
+    private func cancelDeferredSidebarWork() {
+        projectsLoadTask?.cancel()
+        projectsLoadTask = nil
+        archivedLoadTask?.cancel()
+        archivedLoadTask = nil
+        visibleProjectRefreshTasks.values.forEach { $0.cancel() }
+        visibleProjectRefreshTasks.removeAll()
+        expandedProjectRefreshTasks.values.forEach { $0.cancel() }
+        expandedProjectRefreshTasks.removeAll()
     }
 
     /// One project row inside the sidebar's grouped view: the existing
@@ -105,7 +181,7 @@ struct SidebarView: View {
                         projectsShowingExtended.remove(project.id)
                     } else {
                         expandedProjects.insert(project.id)
-                        appState.requestExpandedProjectRefresh(project)
+                        scheduleExpandedProjectRefresh(project)
                     }
                 },
                 onMenuToggle: {
@@ -130,10 +206,12 @@ struct SidebarView: View {
             )
             .equatable()
             .onAppear {
-                appState.requestVisibleProjectRefresh(project)
+                scheduleVisibleProjectRefresh(project)
             }
             .onDisappear {
+                cancelVisibleProjectRefresh(project.id)
                 if !expandedProjects.contains(project.id) {
+                    cancelExpandedProjectRefresh(project.id)
                     appState.cancelProjectRefresh(project)
                 }
             }
@@ -148,7 +226,7 @@ struct SidebarView: View {
     @ViewBuilder
     private func sidebarScrollContent(snapshot: SidebarSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            if flags.isVisible(.secrets) {
+            if flags.isVisible(.tools) {
                 toolsSection
             }
 
@@ -176,10 +254,16 @@ struct SidebarView: View {
                     title: "Pinned",
                     expanded: $pinnedExpanded,
                     leadingIcon: AnyView(PinIcon(size: 15.0, lineWidth: 1.5)),
+                    controlId: "sidebar.section.pinned",
+                    controlLabel: "Pinned",
                     trailingIcon: canFilterPinned ? AnyView(pinnedFilterButton) : nil,
                     trailingForceVisible: pinnedFilterMenuOpen
                 )
-                .clxControl("sidebar.pinned.entry", role: "button", label: "Pinned")
+                .clxControl("sidebar.pinned.entry", role: "button", label: "Pinned") {
+                    if !pinnedExpanded {
+                        withAnimation(SidebarSection.toggleAnimation) { pinnedExpanded = true }
+                    }
+                }
                 SidebarAccordion(
                     expanded: pinnedExpanded,
                     targetHeight: visiblePinned.isEmpty
@@ -217,7 +301,12 @@ struct SidebarView: View {
 
             if viewMode == .chronological {
                 chronoHeader
-                    .clxControl("sidebar.allChats.entry", role: "button", label: "All chats")
+                    .clxControl("sidebar.allChats.entry", role: "button", label: "All chats") {
+                        viewModeRaw = SidebarViewMode.chronological.rawValue
+                        if !chronoExpanded {
+                            withAnimation(SidebarSection.toggleAnimation) { chronoExpanded = true }
+                        }
+                    }
                     .padding(.leading, 16)
                     .padding(.trailing, 9)
                     .padding(.top, 6)
@@ -274,7 +363,9 @@ struct SidebarView: View {
                         expanded: $noProjectExpanded,
                         leadingIcon: AnyView(
                             LucideIcon(.messageCircle, size: 16)
-                        )
+                        ),
+                        controlId: "sidebar.section.chats",
+                        controlLabel: "Chats"
                     )
                     SidebarAccordion(
                         expanded: noProjectExpanded,
@@ -301,7 +392,12 @@ struct SidebarView: View {
                 }
 
                 projectsHeader
-                    .clxControl("sidebar.projects.entry", role: "button", label: "Projects")
+                    .clxControl("sidebar.projects.entry", role: "button", label: "Projects") {
+                        viewModeRaw = SidebarViewMode.grouped.rawValue
+                        if !projectsExpanded {
+                            withAnimation(SidebarSection.toggleAnimation) { projectsExpanded = true }
+                        }
+                    }
                     .padding(.leading, 16)
                     .padding(.trailing, 9)
                     .padding(.top, 6)
@@ -399,11 +495,11 @@ struct SidebarView: View {
         .onChange(of: noProjectExpanded) { _, v in SidebarPrefs.store.set(v, forKey: ClawixPersistentSurfaceKeys.sidebarNoProjectExpanded) }
         .onChange(of: projectsExpanded) { _, v in
             SidebarPrefs.store.set(v, forKey: ClawixPersistentSurfaceKeys.sidebarProjectsExpanded)
-            if v { Task { await appState.loadCanonicalProjectsIfNeeded() } }
+            scheduleProjectsLoad(v)
         }
         .onChange(of: archivedExpanded) { _, v in
             SidebarPrefs.store.set(v, forKey: ClawixPersistentSurfaceKeys.sidebarArchivedExpanded)
-            if v { Task { await appState.loadArchivedChats() } }
+            scheduleArchivedLoad(v)
         }
         .onChange(of: toolsExpanded) { _, v in SidebarPrefs.store.set(v, forKey: ClawixPersistentSurfaceKeys.sidebarToolsExpanded) }
         .task {
@@ -574,7 +670,9 @@ struct SidebarView: View {
         sectionHeader(
             "Archived",
             expanded: $archivedExpanded,
-            leadingIcon: AnyView(ArchiveIcon(size: 16.5, lineWidth: 1.28))
+            leadingIcon: AnyView(ArchiveIcon(size: 16.5, lineWidth: 1.28)),
+            controlId: "sidebar.section.archived",
+            controlLabel: "Archived"
         )
         SidebarAccordion(
             expanded: archivedExpanded,
@@ -630,6 +728,8 @@ struct SidebarView: View {
             title: "Tools",
             expanded: $toolsExpanded,
             leadingIcon: AnyView(WrenchLineIcon(size: 18)),
+            controlId: "sidebar.section.tools",
+            controlLabel: "Tools",
             trailingIcon: SidebarToolsCatalog.entries.count >= 2 ? AnyView(toolsFilterButton) : nil,
             trailingForceVisible: toolsFilterMenuOpen
         )
@@ -699,9 +799,11 @@ struct SidebarView: View {
                                       route: .skills,
                                       shortcut: "⌘⇧K")
                     }
-                    SidebarButton(title: "Network",
-                                  icon: "network",
-                                  route: .networkControl)
+                    if flags.isVisible(.networkControl) {
+                        SidebarButton(title: "Network",
+                                      icon: "network",
+                                      route: .networkControl)
+                    }
                     RescueRepairSidebarStatus(appState: appState)
                     /*
                     SidebarButton(title: "Plugins",
@@ -727,27 +829,8 @@ struct SidebarView: View {
                 }
                 .clxControl("sidebar.conversationList", role: "list", label: "Conversation list")
 
-                // Settings button at bottom (toggles account popover above it)
-                SettingsBottomButton(open: $settingsPopoverOpen)
-                    .padding(.leading, 6)
-                    .padding(.trailing, 22)
-                    .padding(.bottom, 10)
-                    .padding(.top, 6)
             }
             .frame(maxHeight: .infinity)
-
-            // Account popover floats above the settings button
-            if settingsPopoverOpen {
-                SettingsAccountPopover(isOpen: $settingsPopoverOpen)
-                    .background(MenuOutsideClickWatcher(isPresented: $settingsPopoverOpen))
-                    .padding(.leading, 6)
-                    .padding(.bottom, 50)
-                    .transition(.softNudgeSymmetric(y: 4))
-            }
-        }
-        .animation(.easeOut(duration: 0.20), value: settingsPopoverOpen)
-        .onChange(of: sidebarStore.selectedRoute) { _, _ in
-            settingsPopoverOpen = false
         }
         .sheet(item: $projectEditor) { ctx in
             ProjectEditorSheet(context: ctx) { projectEditor = nil }
@@ -941,15 +1024,26 @@ struct SidebarView: View {
             .allowsHitTesting(toolsFilterMenuOpen)
             .animation(MenuStyle.openAnimation, value: toolsFilterMenuOpen)
         }
+        .onDisappear {
+            cancelDeferredSidebarWork()
+        }
         .clxControl("sidebar.container", role: "panel", label: "Sidebar")
     }
 
     private func sectionHeader(
         _ title: LocalizedStringKey,
         expanded: Binding<Bool>,
-        leadingIcon: AnyView? = nil
+        leadingIcon: AnyView? = nil,
+        controlId: String? = nil,
+        controlLabel: String? = nil
     ) -> some View {
-        BasicSectionHeader(title: title, expanded: expanded, leadingIcon: leadingIcon)
+        BasicSectionHeader(
+            title: title,
+            expanded: expanded,
+            leadingIcon: leadingIcon,
+            controlId: controlId,
+            controlLabel: controlLabel
+        )
     }
 
     private var projectsHeader: some View {
@@ -957,7 +1051,9 @@ struct SidebarView: View {
                       showCollapseAll: true,
                       showNewChat: false,
                       leadingIcon: AnyView(FolderMorphIcon(size: 14.5, progress: 0, lineWidthScale: 1.027)),
-                      expanded: $projectsExpanded)
+                      expanded: $projectsExpanded,
+                      controlId: "sidebar.section.projects",
+                      controlLabel: "Projects")
     }
 
     private var chronoHeader: some View {
@@ -968,7 +1064,9 @@ struct SidebarView: View {
                       leadingIcon: AnyView(
                           LucideIcon(.messageCircle, size: 16)
                       ),
-                      expanded: $chronoExpanded)
+                      expanded: $chronoExpanded,
+                      controlId: "sidebar.section.allChats",
+                      controlLabel: "All chats")
     }
 
     @ViewBuilder
@@ -979,7 +1077,9 @@ struct SidebarView: View {
         showNewChat: Bool,
         alwaysShow: Bool = false,
         leadingIcon: AnyView? = nil,
-        expanded: Binding<Bool>? = nil
+        expanded: Binding<Bool>? = nil,
+        controlId: String? = nil,
+        controlLabel: String? = nil
     ) -> some View {
         // Fixed-height header. Icons are always laid out (so the row never
         // changes height) and toggled with opacity + hit-testing only.
@@ -1028,6 +1128,7 @@ struct SidebarView: View {
         .onTapGesture {
             if expanded != nil { toggle() }
         }
+        .modifier(SidebarSectionControl(id: controlId, label: controlLabel))
         // Action icons live as a trailing overlay so they don't reserve
         // layout space when invisible: the right hairline inside the
         // label fills the row to its trailing edge, then animates a

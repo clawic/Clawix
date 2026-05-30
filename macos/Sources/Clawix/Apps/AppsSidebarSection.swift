@@ -42,6 +42,8 @@ struct AppsSidebarSection: View {
                 title: "Apps",
                 expanded: $expanded,
                 leadingIcon: AnyView(BlocksIcon(size: 16)),
+                controlId: "sidebar.section.apps",
+                controlLabel: "Apps",
                 trailingIcon: AnyView(allAppsButton)
             )
             SidebarAccordion(expanded: expanded, targetHeight: bodyHeight) {

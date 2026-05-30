@@ -159,6 +159,8 @@ struct ComposeIcon: Shape {
 
 enum SidebarSection {
     static let toggleAnimation: Animation = .easeInOut(duration: 0.28)
+    static let toggleAnimationDuration: TimeInterval = 0.28
+    static let collapseContentRetentionDelay: TimeInterval = toggleAnimationDuration + 0.04
     /// Disclosure chevron rotation. Strong ease-out so the arrow snaps
     /// most of the way to its target quickly, then brakes hard at the
     /// end. Decoupled from `toggleAnimation` on purpose: the section
@@ -315,6 +317,8 @@ struct BasicSectionHeader: View {
     let title: LocalizedStringKey
     @Binding var expanded: Bool
     let leadingIcon: AnyView?
+    var controlId: String? = nil
+    var controlLabel: String? = nil
     /// Optional view rendered in a 22pt slot at the trailing edge. Fades
     /// in on hover or when `trailingForceVisible` is true. The view is
     /// responsible for its own click handler.
@@ -368,8 +372,23 @@ struct BasicSectionHeader: View {
                     .disabled(!iconsVisible)
             }
         }
+        .modifier(SidebarSectionControl(id: controlId, label: controlLabel))
         .sidebarHover { hovered = $0 }
         .animation(.easeOut(duration: 0.12), value: hovered)
+    }
+}
+
+struct SidebarSectionControl: ViewModifier {
+    let id: String?
+    let label: String?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let id {
+            content.clxControl(id, role: "button", label: label ?? id)
+        } else {
+            content
+        }
     }
 }
 
@@ -565,22 +584,21 @@ struct RecentChatRow: View, Equatable {
             .animation(.smooth(duration: 0.55, extraBounce: 0), value: chat.hasActiveTurn)
             .animation(.spring(response: 0.55, dampingFraction: 0.62), value: chat.hasUnreadCompletion)
 
-            if !archivedRow && archiveVisible {
-                // Render only while visible so hidden row actions do not
-                // flood the accessibility tree during sidebar navigation.
-                // The 22x22 frame around the 15.5pt icon gives a generous
-                // halo so the cursor catches the button before it lands
-                // on the glyph.
-                Button(action: callbacks.onArchive) {
-                    ArchiveIcon(size: 15.5)
-                        .foregroundColor(archiveHovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.46, dark: 0.5))
-                        .frame(width: 28, height: 22)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .sidebarHover { archiveHovered = $0 }
-                .help(L10n.t("Archive"))
+            // Keep the row action structurally mounted and gate it with
+            // opacity/disabled state. Inserting/removing a Button on every
+            // row hover is visible as hover latency in dense sidebars.
+            Button(action: callbacks.onArchive) {
+                ArchiveIcon(size: 15.5)
+                    .foregroundColor(archiveHovered ? Color.gray(light: 0.12, dark: 0.94) : Color.gray(light: 0.46, dark: 0.5))
+                    .frame(width: 28, height: 22)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .sidebarHover { archiveHovered = $0 }
+            .disabled(!archiveVisible)
+            .accessibilityHidden(!archiveVisible)
+            .opacity(archiveVisible ? 1 : 0)
+            .help(L10n.t("Archive"))
         }
         .animation(.easeOut(duration: 0.12), value: archiveHovered)
     }
@@ -609,8 +627,13 @@ struct RecentChatRow: View, Equatable {
         )
         .padding(.trailing, 3)
         .onTapGesture(perform: selectChat)
-        .sidebarHover { hovered = $0 }
+        .sidebarHover(id: "sidebar.chat.\(chat.clawixThreadId ?? chat.id.uuidString)") { hovered = $0 }
         .animation(.easeOut(duration: 0.12), value: pinHovered)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: title))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityAction(named: Text("Open"), selectChat)
         .clxControl(
             "sidebar.chat.\(chat.clawixThreadId ?? chat.id.uuidString)",
             role: "button",

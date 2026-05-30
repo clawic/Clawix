@@ -38,6 +38,68 @@ final class SidebarScrollState {
     }
 }
 
+@MainActor
+final class SidebarHoverLatencyProbe {
+    static let shared = SidebarHoverLatencyProbe()
+
+    private struct ArmedProbe {
+        let token: UUID
+        let startedAt: CFTimeInterval
+    }
+
+    private struct RecordedProbe {
+        let token: UUID
+        let elapsedMs: Double
+        let active: Bool
+    }
+
+    private var armed: [String: ArmedProbe] = [:]
+    private var recorded: [String: RecordedProbe] = [:]
+    private var handlers: [String: (Bool) -> Void] = [:]
+
+    private init() {}
+
+    func arm(id: String) -> UUID {
+        let token = UUID()
+        armed[id] = ArmedProbe(token: token, startedAt: CACurrentMediaTime())
+        recorded[id] = nil
+        return token
+    }
+
+    func record(id: String, active: Bool) {
+        guard let probe = armed[id] else { return }
+        recorded[id] = RecordedProbe(
+            token: probe.token,
+            elapsedMs: (CACurrentMediaTime() - probe.startedAt) * 1000,
+            active: active
+        )
+    }
+
+    func result(id: String, token: UUID) -> [String: Any]? {
+        guard let value = recorded[id], value.token == token else { return nil }
+        return [
+            "id": id,
+            "hoverActive": value.active,
+            "hoverLatencyMs": value.elapsedMs,
+        ]
+    }
+
+    func register(id: String, handler: @escaping (Bool) -> Void) {
+        guard ClxAgentInstance.isAgent else { return }
+        handlers[id] = handler
+    }
+
+    func unregister(id: String) {
+        handlers[id] = nil
+    }
+
+    func invoke(id: String, active: Bool) -> Bool {
+        guard let handler = handlers[id] else { return false }
+        handler(active)
+        return true
+    }
+}
+
 /// Drop this as a `.background(...)` inside the sidebar's scroll content.
 /// On attach it walks up the AppKit hierarchy to find the surrounding
 /// `NSScrollView`, then bumps `SidebarScrollState.shared` from three
@@ -145,29 +207,54 @@ extension View {
     /// after scroll settles, so feedback returns without waiting for another
     /// physical mouse movement.
     func sidebarHover(_ action: @escaping (Bool) -> Void) -> some View {
-        modifier(SidebarHoverModifier(action: action))
+        modifier(SidebarHoverModifier(probeId: nil, action: action))
+    }
+
+    func sidebarHover(id: String, _ action: @escaping (Bool) -> Void) -> some View {
+        modifier(SidebarHoverModifier(probeId: id, action: action))
     }
 }
 
 private struct SidebarHoverModifier: ViewModifier {
+    let probeId: String?
     let action: (Bool) -> Void
     @State private var pending: Task<Void, Never>?
 
     func body(content: Content) -> some View {
-        content.onHover { entered in
-            pending?.cancel()
-            if SidebarScrollState.shared.isScrolling {
-                let delay = SidebarScrollState.shared.remainingCooldown + 0.01
-                pending = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                    guard !Task.isCancelled else { return }
-                    if !SidebarScrollState.shared.isScrolling {
-                        action(entered)
-                    }
+        content
+            .onAppear {
+                guard let probeId else { return }
+                SidebarHoverLatencyProbe.shared.register(id: probeId) { entered in
+                    handleHover(entered)
                 }
-            } else {
-                action(entered)
             }
+            .onDisappear {
+                guard let probeId else { return }
+                SidebarHoverLatencyProbe.shared.unregister(id: probeId)
+            }
+            .onHover(perform: handleHover)
+    }
+
+    private func handleHover(_ entered: Bool) {
+        pending?.cancel()
+        if SidebarScrollState.shared.isScrolling {
+            let delay = SidebarScrollState.shared.remainingCooldown + 0.01
+            pending = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+                if !SidebarScrollState.shared.isScrolling {
+                    action(entered)
+                    recordProbe(entered)
+                }
+            }
+        } else {
+            action(entered)
+            recordProbe(entered)
         }
+    }
+
+    private func recordProbe(_ entered: Bool) {
+        guard let probeId else { return }
+        SidebarHoverLatencyProbe.shared.record(id: probeId, active: entered)
     }
 }

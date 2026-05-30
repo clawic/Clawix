@@ -130,7 +130,7 @@ struct PinnedReorderableList: View, Equatable {
 
     var body: some View {
         RenderProbe.tick("PinnedReorderableList")
-        return VStack(alignment: .leading, spacing: 0) {
+        return LazyVStack(alignment: .leading, spacing: 0) {
             ForEach(Array(pinned.enumerated()), id: \.element.id) { (i, chat) in
                 slotZone(chat: chat, slot: i)
             }

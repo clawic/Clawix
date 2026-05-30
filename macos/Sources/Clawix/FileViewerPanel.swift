@@ -576,7 +576,7 @@ private struct RawTextView: View {
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        LazyVStack(alignment: .leading, spacing: 2) {
             ForEach(Array(lines.enumerated()), id: \.offset) { idx, line in
                 HStack(alignment: .top, spacing: 14) {
                     Text(verbatim: "\(idx + 1)")

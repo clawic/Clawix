@@ -75,7 +75,7 @@
         { "id": "wait-list", "action": "observe", "wait": "wait-visible", "target": "sidebar.conversationList", "kpi": "p0.sidebar.first_paint_ready_ms" },
         { "id": "scroll-down", "action": "scroll", "wait": "wait-scroll-stable", "target": "sidebar.conversationList", "kpi": "p0.sidebar.scroll_frame_p95_ms" },
         { "id": "scroll-up", "action": "scroll", "wait": "wait-scroll-stable", "target": "sidebar.conversationList", "kpi": "p0.sidebar.scroll_hitch_count" },
-        { "id": "hover-row", "action": "hover", "wait": "wait-frame-stable", "target": "sidebar.hoverTarget", "kpi": "p0.sidebar.hover_to_highlight_ms" },
+        { "id": "hover-row", "action": "hover", "wait": "wait-frame-stable", "target": "sidebar.hoverTarget", "sampleCount": 8, "maxLatencyMs": 10, "kpi": "p0.sidebar.hover_to_highlight_ms" },
         { "id": "click-all-chats", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.allChats.entry", "kpi": "none" },
         { "id": "click-pinned", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.pinned.entry", "kpi": "none" },
         { "id": "click-projects", "action": "measure-action", "wait": "wait-visible", "target": "sidebar.projects.entry", "kpi": "none" },

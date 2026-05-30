@@ -322,22 +322,37 @@ struct SidebarAccordion<Content: View>: View {
     let targetHeight: CGFloat
     @ViewBuilder let content: () -> Content
     @State private var measuredHeight: CGFloat = 0
+    @State private var rendersContent: Bool
+    @State private var pendingUnmount: DispatchWorkItem?
+
+    init(
+        expanded: Bool,
+        targetHeight: CGFloat,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.expanded = expanded
+        self.targetHeight = targetHeight
+        self.content = content
+        _rendersContent = State(initialValue: expanded)
+    }
 
     var body: some View {
         let h = max(targetHeight, measuredHeight)
         VStack(spacing: 0) {
-            content()
-                .background(
-                    GeometryReader { proxy in
-                        Color.clear
-                            .onAppear {
-                                measuredHeight = proxy.size.height
-                            }
-                            .onChange(of: proxy.size.height) { _, newH in
-                                measuredHeight = newH
-                            }
-                    }
-                )
+            if rendersContent {
+                content()
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear
+                                .onAppear {
+                                    measuredHeight = proxy.size.height
+                                }
+                                .onChange(of: proxy.size.height) { _, newH in
+                                    measuredHeight = newH
+                                }
+                        }
+                    )
+            }
         }
         .frame(height: expanded ? h : 0, alignment: .top)
         .clipped()
@@ -345,6 +360,29 @@ struct SidebarAccordion<Content: View>: View {
         .accessibilityHidden(!expanded)
         .animation(nil, value: expanded)
         .animation(nil, value: h)
+        .onAppear {
+            if expanded {
+                rendersContent = true
+            }
+        }
+        .onChange(of: expanded) { _, next in
+            pendingUnmount?.cancel()
+            if next {
+                rendersContent = true
+                return
+            }
+            let work = DispatchWorkItem {
+                rendersContent = false
+            }
+            pendingUnmount = work
+            DispatchQueue.main.asyncAfter(
+                deadline: .now() + SidebarSection.collapseContentRetentionDelay,
+                execute: work
+            )
+        }
+        .onDisappear {
+            pendingUnmount?.cancel()
+        }
     }
 }
 
