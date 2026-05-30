@@ -5,27 +5,27 @@ final class BackgroundBridgeRecoveryPolicyTests: XCTestCase {
     func testRecoveryBootstrapBacksOffAfterRepeatedFailures() {
         XCTAssertEqual(
             BackgroundBridgeService.recoveryRetryDelaySeconds(afterConsecutiveFailures: 0),
-            5
+            30
         )
         XCTAssertEqual(
             BackgroundBridgeService.recoveryRetryDelaySeconds(afterConsecutiveFailures: 1),
-            10
+            60
         )
         XCTAssertEqual(
             BackgroundBridgeService.recoveryRetryDelaySeconds(afterConsecutiveFailures: 2),
-            20
+            120
         )
         XCTAssertEqual(
             BackgroundBridgeService.recoveryRetryDelaySeconds(afterConsecutiveFailures: 3),
-            40
+            240
         )
         XCTAssertEqual(
             BackgroundBridgeService.recoveryRetryDelaySeconds(afterConsecutiveFailures: 4),
-            60
+            300
         )
         XCTAssertEqual(
             BackgroundBridgeService.recoveryRetryDelaySeconds(afterConsecutiveFailures: 12),
-            60
+            300
         )
     }
 

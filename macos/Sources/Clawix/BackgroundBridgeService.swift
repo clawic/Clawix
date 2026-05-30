@@ -31,8 +31,8 @@ final class BackgroundBridgeService: ObservableObject {
     private var recoveryFailureCount = 0
     private var nextRecoveryBootstrapAt: Date = .distantPast
     private static let recoveryBootstrapStartDelayNanoseconds: UInt64 = 1_000_000_000
-    private static let criticalInteractionRecoveryGraceSeconds: TimeInterval = 2
-    private static let criticalInteractionRecoveryDeferSeconds: TimeInterval = 5
+    private static let criticalInteractionRecoveryGraceSeconds: TimeInterval = 8
+    private static let criticalInteractionRecoveryDeferSeconds: TimeInterval = 30
 
     private init() {
         self.agent = SMAppService.agent(plistName: plistName)
@@ -141,12 +141,12 @@ final class BackgroundBridgeService: ObservableObject {
     /// letting the GUI route to a daemon that will never start.
     func recoverRegisteredDaemonIfNeeded() {
         refresh()
-        guard isEnabled, !isDaemonReachable else { return }
+        guard !ClxAgentInstance.isAgent, isEnabled, !isDaemonReachable else { return }
         scheduleRecoveryBootstrap()
     }
 
     private func updateRecoveryTimer() {
-        guard isEnabled else {
+        guard isEnabled, !ClxAgentInstance.isAgent else {
             recoveryTimer?.invalidate()
             recoveryTimer = nil
             recoveryFailureCount = 0
@@ -239,7 +239,7 @@ final class BackgroundBridgeService: ObservableObject {
 
     nonisolated static func recoveryRetryDelaySeconds(afterConsecutiveFailures failures: Int) -> TimeInterval {
         let clampedFailures = max(0, min(failures, 4))
-        return min(60, 5 * pow(2, Double(clampedFailures)))
+        return min(300, 30 * pow(2, Double(clampedFailures)))
     }
 
     nonisolated static func shouldBackOffRecovery(isEnabled: Bool, daemonReachable: Bool) -> Bool {
