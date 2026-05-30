@@ -32,7 +32,7 @@ final class DatabaseManager: ObservableObject {
     @Published private(set) var state: State = .loading
     @Published private(set) var lastError: String?
     @Published private(set) var collections: [DBCollection] = []
-    @Published private(set) var currentNamespace: String = "clawix-local"
+    @Published private(set) var currentNamespace: String = "main"
     @Published private(set) var lastEventAt: Date?
 
     /// Per-collection visible record windows. Keys are collection names; values
@@ -171,7 +171,7 @@ final class DatabaseManager: ObservableObject {
         }
         do {
             client.bearerToken = try adminTokenOperation()
-            _ = try await client.ensureNamespace(id: currentNamespace, displayName: "Clawix Local")
+            _ = try await client.ensureNamespace(id: currentNamespace, displayName: "Main")
             try Task.checkCancellation()
             guard isCurrentBootstrap(generation) else { return }
             let listedCollections = try await client.listCollections(namespaceId: currentNamespace)
