@@ -16,22 +16,15 @@ final class ComposerAttemptsStore: ObservableObject {
 
     @Published var attempts: Int = 1
 
-    private let defaultsKey = "clawix.composer.attempts"
-
-    private init() {
-        let saved = UserDefaults.standard.integer(forKey: defaultsKey)
-        if (1...Self.maxAttempts).contains(saved) { attempts = saved }
-    }
+    private init() {}
 
     func cycle() {
         attempts = attempts >= Self.maxAttempts ? 1 : attempts + 1
-        UserDefaults.standard.set(attempts, forKey: defaultsKey)
     }
 
     func reset() {
         guard attempts != 1 else { return }
         attempts = 1
-        UserDefaults.standard.set(1, forKey: defaultsKey)
     }
 }
 
