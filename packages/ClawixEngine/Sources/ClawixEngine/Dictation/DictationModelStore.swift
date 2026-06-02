@@ -55,7 +55,7 @@ public final class DictationModelStore: ObservableObject {
         } else {
             self.activeModel = .default
         }
-        refreshInstalled()
+        refreshInstalledAsync()
         invalidationObserver = NotificationCenter.default.addObserver(
             forName: Self.modelInvalidatedNotification,
             object: nil,
@@ -249,10 +249,19 @@ public final class DictationModelStore: ObservableObject {
     }
 
     public func refreshInstalled() {
-        var found: Set<DictationModel> = []
-        for model in DictationModel.allCases where Self.installedFolder(for: model) != nil {
-            found.insert(model)
+        applyInstalledModels(Self.findInstalledModels())
+    }
+
+    private func refreshInstalledAsync() {
+        Task.detached(priority: .utility) {
+            let found = Self.findInstalledModels()
+            await MainActor.run { [weak self] in
+                self?.applyInstalledModels(found)
+            }
         }
+    }
+
+    private func applyInstalledModels(_ found: Set<DictationModel>) {
         installedModels = found
         // If the persisted active model isn't on disk but another one
         // is, adopt that one. Without this fallback the user gets a
@@ -267,6 +276,14 @@ public final class DictationModelStore: ObservableObject {
             activeModel = fallback
             defaults.set(fallback.rawValue, forKey: Self.activeModelDefaultsKey)
         }
+    }
+
+    private nonisolated static func findInstalledModels() -> Set<DictationModel> {
+        var found: Set<DictationModel> = []
+        for model in DictationModel.allCases where installedFolder(for: model) != nil {
+            found.insert(model)
+        }
+        return found
     }
 
     // MARK: - Helpers
