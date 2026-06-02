@@ -55,6 +55,7 @@ struct IndexScreen: View {
                 for: .indexHome,
                 isVisible: FeatureFlags.shared.isVisible
             )
+            guard !services.isEmpty else { return }
             let lease = await ClawJSServiceManager.shared.acquire(
                 services: services,
                 reason: .route("index"),

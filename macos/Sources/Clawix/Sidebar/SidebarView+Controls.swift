@@ -1,6 +1,61 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+private enum SidebarRowTextStyle {
+    static let title = BodyFont.system(size: 13.5, wght: 500)
+    static let metadata = BodyFont.system(size: 11, wght: 500)
+}
+
+private enum SidebarRelativeAgeLabelCache {
+    private struct Key: Hashable {
+        let localeIdentifier: String
+        let unit: UInt8
+        let value: Int
+    }
+
+    private static let lock = NSLock()
+    private static var values: [Key: String] = [:]
+
+    static func label(from date: Date) -> String {
+        let elapsed = max(0, Date().timeIntervalSince(date))
+        let key = key(for: elapsed, localeIdentifier: AppLocale.current.identifier)
+        lock.lock()
+        if let cached = values[key] {
+            lock.unlock()
+            return cached
+        }
+        lock.unlock()
+
+        let label = L10n.relativeAge(elapsed: elapsed)
+        lock.lock()
+        if values.count > 256 {
+            values.removeAll(keepingCapacity: true)
+        }
+        values[key] = label
+        lock.unlock()
+        return label
+    }
+
+    private static func key(for elapsed: TimeInterval, localeIdentifier: String) -> Key {
+        if elapsed < 60 {
+            return Key(localeIdentifier: localeIdentifier, unit: 0, value: 0)
+        }
+        if elapsed < 3_600 {
+            return Key(localeIdentifier: localeIdentifier, unit: 1, value: Int(elapsed / 60))
+        }
+        if elapsed < 86_400 {
+            return Key(localeIdentifier: localeIdentifier, unit: 2, value: Int(elapsed / 3_600))
+        }
+        if elapsed < 604_800 {
+            return Key(localeIdentifier: localeIdentifier, unit: 3, value: Int(elapsed / 86_400))
+        }
+        if elapsed < 2_629_800 {
+            return Key(localeIdentifier: localeIdentifier, unit: 4, value: Int(elapsed / 604_800))
+        }
+        return Key(localeIdentifier: localeIdentifier, unit: 5, value: Int(elapsed / 2_629_800))
+    }
+}
+
 struct SidebarButton: View {
     let title: String
     let icon: String
@@ -25,7 +80,7 @@ struct SidebarButton: View {
 
     var body: some View {
         Button {
-            appState.currentRoute = route
+            appState.navigate(to: route)
         } label: {
             HStack(spacing: 11) {
                 Group {
@@ -42,12 +97,12 @@ struct SidebarButton: View {
                     }
                 }
                 Text(localizedTitle)
-                    .font(BodyFont.system(size: 13.5, wght: 500))
+                    .font(SidebarRowTextStyle.title)
                     .foregroundColor(labelColor)
                 Spacer(minLength: 6)
                 if let shortcut {
                     Text(shortcut)
-                        .font(BodyFont.system(size: 11, wght: 500))
+                        .font(SidebarRowTextStyle.metadata)
                         .foregroundColor(Color.gray(light: 0.27, dark: 0.78))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 2)
@@ -571,7 +626,7 @@ struct RecentChatRow: View, Equatable {
                         .transition(.scale(scale: 0.0, anchor: .center).combined(with: .opacity))
                 } else {
                     Text(ageLabel)
-                        .font(BodyFont.system(size: 11, wght: 500))
+                        .font(SidebarRowTextStyle.metadata)
                         .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                         .lineLimit(1)
                         .fixedSize(horizontal: true, vertical: false)
@@ -611,7 +666,7 @@ struct RecentChatRow: View, Equatable {
         return HStack(spacing: 10) {
             leadingIconView
             Text(verbatim: title)
-                .font(BodyFont.system(size: 13.5, wght: 500))
+                .font(SidebarRowTextStyle.title)
                 .foregroundColor(isSelected ? .white : Color.gray(light: 0.23, dark: 0.82))
                 .lineLimit(1)
             Spacer(minLength: 8)
@@ -786,7 +841,7 @@ struct RecentChatRow: View, Equatable {
     }
 
     private static func relative(from date: Date) -> String {
-        L10n.relativeAge(elapsed: Date().timeIntervalSince(date))
+        SidebarRelativeAgeLabelCache.label(from: date)
     }
 }
 

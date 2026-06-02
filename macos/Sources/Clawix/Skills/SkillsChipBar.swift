@@ -14,8 +14,12 @@ struct SkillsChipBar: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var flags: FeatureFlags
 
+    private var skillsVisible: Bool {
+        flags.isVisible(.skills)
+    }
+
     private var states: [ActiveSkillState] {
-        guard flags.isVisible(.skills) else { return [] }
+        guard skillsVisible else { return [] }
         guard let store = appState.skillsStore else { return [] }
         let projectId: String? = {
             if let chatId,
@@ -45,7 +49,8 @@ struct SkillsChipBar: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .task(id: chatId) {
+        .task(id: "\(chatId?.uuidString ?? "none"):\(skillsVisible)") {
+            guard skillsVisible else { return }
             await appState.ensureSkillsActiveStateLoaded()
         }
     }

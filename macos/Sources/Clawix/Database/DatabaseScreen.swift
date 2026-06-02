@@ -38,6 +38,8 @@ struct DatabaseScreen: View {
                 [.database],
                 isVisible: FeatureFlags.shared.isVisible
             )
+            guard !services.isEmpty else { return }
+            manager.activateSupervisorObserverIfVisible()
             let lease = await ClawJSServiceManager.shared.acquire(
                 services: services,
                 reason: .route("database"),

@@ -519,6 +519,11 @@ final class AppCustomSurfaceSDKBridgeTests: AppCustomSurfaceCapabilityTestCase {
         }
         let handler = AppBridgeMessageHandler(
             slug: "dashboard",
+            appsStore: AppsStore(
+                rootURL: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+                autoLoad: false,
+                startPolling: false
+            ),
             appState: nil,
             surfaceReporter: reporter
         )

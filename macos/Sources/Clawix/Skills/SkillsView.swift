@@ -49,6 +49,7 @@ struct SkillsView: View {
             storeRefreshToken &+= 1
         }
         .onAppear {
+            guard FeatureFlags.shared.isVisible(.skills) else { return }
             appState.ensureSkillsStoreLoaded()
             storeRefreshToken &+= 1
         }

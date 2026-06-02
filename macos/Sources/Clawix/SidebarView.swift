@@ -287,10 +287,14 @@ struct SidebarView: View {
                             Color.clear.frame(height: SidebarRowMetrics.sectionEdgePadding)
                         }
                     } else {
+                        let selectedPinnedChatId: UUID? = {
+                            guard let selectedChatId else { return nil }
+                            return visiblePinned.contains { $0.id == selectedChatId } ? selectedChatId : nil
+                        }()
                         PinnedReorderableList(
                             appState: appState,
                             pinned: visiblePinned,
-                            selectedChatId: selectedChatId
+                            selectedChatId: selectedPinnedChatId
                         )
                         .equatable()
                         .padding(.leading, 8)
@@ -804,7 +808,9 @@ struct SidebarView: View {
                                       icon: "network",
                                       route: .networkControl)
                     }
-                    RescueRepairSidebarStatus(appState: appState)
+                    if flags.isVisible(.tools) {
+                        RescueRepairSidebarStatus(appState: appState)
+                    }
                     /*
                     SidebarButton(title: "Plugins",
                                   icon: "circle.grid.2x2",

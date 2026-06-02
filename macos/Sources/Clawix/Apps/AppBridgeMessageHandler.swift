@@ -84,7 +84,7 @@ final class AppBridgeMessageHandler: NSObject, WKScriptMessageHandler {
 
     init(
         slug: String,
-        appsStore: AppsStore = .shared,
+        appsStore: AppsStore,
         appState: AppState?,
         databaseManager: DatabaseManager? = nil,
         resourceRegistry: AppResourceRegistryStore = AppResourceRegistryStore(directory: AppResourceRegistryStore.defaultDirectory()),

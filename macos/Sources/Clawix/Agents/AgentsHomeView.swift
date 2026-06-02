@@ -19,6 +19,10 @@ struct AgentsHomeView: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .task {
+            guard FeatureFlags.shared.isVisible(.agents) else { return }
+            await store.refresh()
+        }
         .sheet(item: $editorAgent) { draft in
             AgentEditorSheet(initial: draft, isPresented: Binding(
                 get: { editorAgent != nil },

@@ -106,12 +106,18 @@ final class DatabaseManager: ObservableObject {
         }
     }
 
+    func activateSupervisorObserverIfVisible() {
+        guard FeatureFlags.shared.isVisible(.database) else { return }
+        attachSupervisorObserver()
+    }
+
     /// Observes `ClawJSServiceManager.shared.snapshots[.database]` and
     /// kicks off `bootstrap()` whenever the supervisor flips that service
     /// to `.ready`. If the daemon crashes and gets restarted, we re-issue
     /// `bootstrap()` so we get a fresh JWT, recover the WS subscription,
     /// and reload collections. Cheap: bootstrap is idempotent.
     private func attachSupervisorObserver() {
+        guard supervisorObserver == nil else { return }
         let supervisor = ClawJSServiceManager.shared
         supervisorObserver = supervisor.$snapshots.sink { [weak self] snapshots in
             guard let self else { return }

@@ -68,6 +68,10 @@ struct AgentsSidebarSection: View {
                 .padding(.leading, 8)
             }
         }
+        .task {
+            guard FeatureFlags.shared.isVisible(.agents) else { return }
+            await store.refresh()
+        }
     }
 
     private var bodyHeight: CGFloat {

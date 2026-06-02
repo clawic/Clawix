@@ -55,7 +55,7 @@ struct SearchView: View {
                         ForEach(appState.searchResults, id: \.self) { result in
                             SearchResultRow(text: result) {
                                 if let route = appState.searchResultRoutes[result] {
-                                    appState.currentRoute = route
+                                    appState.navigate(to: route)
                                 }
                             }
                         }

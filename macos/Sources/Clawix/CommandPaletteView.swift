@@ -97,6 +97,7 @@ private enum PaletteCatalog {
                         }),
             PaletteItem(id: "mcp-servers", icon: "puzzlepiece.extension",
                         title: "MCP servers", shortcut: nil,
+                        gatedFeature: .networkControl,
                         action: {
                             $0.settingsCategory = .mcp
                             $0.currentRoute = .settings

@@ -64,21 +64,24 @@ struct AppFrameworkHighRiskActionDispatcher: AppHighRiskActionDispatcher {
     }
 
     func dispatch(_ request: AppHighRiskActionDispatchRequest) async -> AppHighRiskActionDispatchResult {
+        guard FeatureFlags.shared.isVisible(.apps) else {
+            return .unavailable("Apps dispatch is experimental and disabled in stable mode.")
+        }
         switch request.descriptor.id {
         case "jobs.start":
-            await dispatchJobsStart(request)
+            return await dispatchJobsStart(request)
         case "jobs.cancel":
-            await dispatchJobsCancel(request)
+            return await dispatchJobsCancel(request)
         case "mac.action.plan":
-            dispatchMacActionPlan(request)
+            return dispatchMacActionPlan(request)
         case "iot.device.action.invoke":
-            await dispatchIoTAction(request)
+            return await dispatchIoTAction(request)
         case "actions.invoke":
-            .unavailable("Generic framework action dispatch is unavailable until an allowlisted safe runner is registered")
+            return .unavailable("Generic framework action dispatch is unavailable until an allowlisted safe runner is registered")
         case "secrets.broker":
-            .unavailable("Secrets broker dispatch is unavailable until a safe non-plaintext lease/ref runner is registered")
+            return .unavailable("Secrets broker dispatch is unavailable until a safe non-plaintext lease/ref runner is registered")
         default:
-            .unavailable("No safe framework dispatcher is registered for capability: \(request.descriptor.id)")
+            return .unavailable("No safe framework dispatcher is registered for capability: \(request.descriptor.id)")
         }
     }
 

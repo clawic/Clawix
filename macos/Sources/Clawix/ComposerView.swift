@@ -37,7 +37,6 @@ struct ComposerView: View {
     @State private var mentionHighlightID: String? = nil
     @State private var meshTargetMenuOpen = false
     @State private var composerContentHeight: CGFloat = 52
-    @State private var planSuggestionDismissed = false
     @State private var mentionFilePickerActive = false
     @State private var showInbox = false
     @State private var showStatus = false
@@ -159,31 +158,6 @@ struct ComposerView: View {
             appState.sendMessage(forChatId: target, composer: composer)
         } else {
             appState.sendMessage()
-        }
-    }
-
-    /// True when the draft contains the standalone word "plan"
-    /// (case-insensitive, separated by word boundaries) so we can offer
-    /// the plan-mode shortcut. We deliberately keep this English-only
-    /// per spec: "plan" is the same word in EN/ES and the suggestion
-    /// is intentionally a literal trigger, not localised.
-    private var draftMentionsPlan: Bool {
-        let text = composer.text
-        guard !text.isEmpty else { return false }
-        return text.range(of: #"(?i)\bplan\b"#, options: .regularExpression) != nil
-    }
-
-    private var showsPlanSuggestion: Bool {
-        draftMentionsPlan
-            && !appState.planMode
-            && !planSuggestionDismissed
-    }
-
-    private func activatePlanModeFromSuggestion() {
-        guard !appState.planMode else { return }
-        withAnimation(.easeOut(duration: 0.18)) {
-            appState.togglePlanMode()
-            planSuggestionDismissed = false
         }
     }
 
@@ -774,24 +748,6 @@ struct ComposerView: View {
             // user always knows what's loading into the system prompt.
             SkillsChipBar(chatId: currentComposerChatId)
 
-            if showsPlanSuggestion {
-                PlanSuggestionBar(
-                    onUsePlanMode: { activatePlanModeFromSuggestion() },
-                    onDismiss: {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            planSuggestionDismissed = true
-                        }
-                    }
-                )
-                .padding(.horizontal, 4)
-                .transition(.asymmetric(
-                    insertion: AnyTransition.opacity
-                        .combined(with: AnyTransition.offset(y: 6)),
-                    removal: AnyTransition.opacity
-                        .combined(with: AnyTransition.offset(y: 4))
-                ))
-            }
-
             mainComposerStack
         }
         .sheet(isPresented: $showInbox) {
@@ -816,7 +772,6 @@ struct ComposerView: View {
         .sheet(isPresented: $showPersonality) {
             PersonalityPickerSheet(appState: appState) { showPersonality = false }
         }
-        .animation(.easeOut(duration: 0.20), value: showsPlanSuggestion)
         .onChange(of: composer.text) {
             // With a project, "@" opens the inline mention menu (see
             // `mentionOpen`); without one there are no files to mention, so
@@ -824,19 +779,6 @@ struct ComposerView: View {
             if !chatMode, composer.text == "@", !mentionFilePickerActive,
                appState.selectedProject == nil {
                 openFilePickerFromMentionTrigger()
-            }
-            // Reset the user's "X" once the trigger word leaves the
-            // draft, so the next time they re-type "plan" the hint
-            // surfaces again.
-            if !draftMentionsPlan, planSuggestionDismissed {
-                planSuggestionDismissed = false
-            }
-        }
-        .onChange(of: appState.planMode) {
-            // Plan mode just turned on (via shortcut, pill, slash menu,
-            // or this suggestion), so the hint has done its job.
-            if appState.planMode, planSuggestionDismissed {
-                planSuggestionDismissed = false
             }
         }
         // Menu-driven composer actions (⌃⇧M model picker, ⌃⇧D dictation,

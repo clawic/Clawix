@@ -10,6 +10,14 @@ enum ClawixToolRole: String, CaseIterable {
     case secrets, memory, database
     case photos, documents, recent, drive
 
+    var requiredFeature: AppFeature {
+        .tools
+    }
+
+    @MainActor var isStandaloneBundleAllowed: Bool {
+        return FeatureFlags.shared.isVisible(requiredFeature)
+    }
+
     var windowTitle: String {
         switch self {
         case .tasks:     return "Tasks"

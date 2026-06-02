@@ -93,7 +93,13 @@ final class IoTManager: NSObject, ObservableObject {
 
     // MARK: - Supervisor wiring
 
+    func activateSupervisorObserverIfVisible() {
+        guard FeatureFlags.shared.isVisible(.iotHome) else { return }
+        attachSupervisorObserver()
+    }
+
     private func attachSupervisorObserver() {
+        guard supervisorObserver == nil else { return }
         let supervisor = ClawJSServiceManager.shared
         supervisorObserver = supervisor.$snapshots.sink { [weak self] snapshots in
             guard let self else { return }

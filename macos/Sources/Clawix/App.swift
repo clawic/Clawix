@@ -21,6 +21,15 @@ let appPrefsSuite: String = {
     if let suite = ProcessInfo.processInfo.environment["CLAWIX_DEFAULTS_SUITE"], !suite.isEmpty {
         return suite
     }
+    if let bundleID = Bundle.main.bundleIdentifier,
+       let role = Bundle.main.infoDictionary?["CLXAppRole"] as? String,
+       role.hasPrefix("tool:") {
+        let slug = String(role.dropFirst("tool:".count))
+        let suffix = ".tools.\(slug)"
+        if bundleID.hasSuffix(suffix) {
+            return String(bundleID.dropLast(suffix.count))
+        }
+    }
     return Bundle.main.bundleIdentifier ?? "clawix.desktop"
 }()
 
@@ -43,6 +52,7 @@ enum ClawixAppRole {
 
 @main
 enum ClawixAppEntry {
+    @MainActor
     static func main() {
         // Translate `open -n --args …` agent flags into the environment before
         // anything reads it, so a provisioned instance isolates its state and
@@ -51,8 +61,11 @@ enum ClawixAppEntry {
         ClawixSingleInstanceGuard.activateExistingMainInstanceAndExitIfNeeded()
         LaunchMilestones.mark(.processStart)
         switch ClawixAppRole.current {
-        case .main:    ClawixApp.main()
-        case .tool:    ClawixToolApp.main()
+        case .main:
+            ClawixApp.main()
+        case .tool(let tool):
+            guard tool.isStandaloneBundleAllowed else { exit(0) }
+            ClawixToolApp.main()
         }
     }
 }
@@ -138,7 +151,7 @@ struct ClawixApp: App {
     @StateObject private var windowState = WindowState()
     @StateObject private var dictation = DictationCoordinator.shared
     @StateObject private var vaultManager = SecretsManager.shared
-    @StateObject private var databaseManager = DatabaseManager()
+    @StateObject private var databaseManager = DatabaseManager(attachSupervisor: FeatureFlags.shared.isVisible(.database))
     @StateObject private var featureFlags = FeatureFlags.shared
     @StateObject private var terminalStore = TerminalSessionStore.shared
     @StateObject private var iotManager: IoTManager
@@ -217,11 +230,13 @@ struct ClawixApp: App {
         _appState = StateObject(wrappedValue: state)
         // IoT observable surface: the manager observes ClawJSServiceManager
         // for the .iot service and the registry aggregates the catalog
-        // for Codex. Wired before SwiftUI takes over so the registry
-        // catches the IoTManager's first publish.
-        let iot = IoTManager()
+        // for agent integrations. Wired before SwiftUI takes over so the
+        // registry catches the IoTManager's first publish.
+        let iot = IoTManager(attachSupervisor: FeatureFlags.shared.isVisible(.iotHome))
         let registry = RemoteToolsRegistry()
-        registry.attach(feature: "iot", tools: iot.$availableTools)
+        if FeatureFlags.shared.isVisible(.iotHome) {
+            registry.attach(feature: "iot", tools: iot.$availableTools)
+        }
         _iotManager = StateObject(wrappedValue: iot)
         _remoteToolsRegistry = StateObject(wrappedValue: registry)
         if !Self.isToolRole {
@@ -415,7 +430,7 @@ struct ClawixToolApp: App {
     @StateObject private var windowState = WindowState()
     @StateObject private var dictation = DictationCoordinator.shared
     @StateObject private var vaultManager = SecretsManager.shared
-    @StateObject private var databaseManager = DatabaseManager()
+    @StateObject private var databaseManager = DatabaseManager(attachSupervisor: FeatureFlags.shared.isVisible(.database))
     @StateObject private var featureFlags = FeatureFlags.shared
     @StateObject private var terminalStore = TerminalSessionStore.shared
     @StateObject private var agentStore = AgentStore.shared

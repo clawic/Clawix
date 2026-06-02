@@ -114,6 +114,11 @@ final class SecretsManager: ObservableObject {
         self.client = client ?? ClawJSSecretsClient.local()
         self.serviceStateOperation = serviceStateOperation
         self.lifecycle = SecretsLifecycle(attaching: self)
+        if serviceStateOperation == nil, !FeatureFlags.shared.isVisible(.secrets) {
+            self.state = .openFailed("Secrets is experimental and disabled in stable mode.")
+            self.lastError = "Secrets is experimental and disabled in stable mode."
+            return
+        }
         if Self.isDisabledForLaunch {
             self.state = .openFailed("Secrets service disabled for this launch.")
             self.lastError = "Secrets service disabled for this launch."

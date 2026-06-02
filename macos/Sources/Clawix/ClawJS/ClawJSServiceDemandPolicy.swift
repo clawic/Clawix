@@ -32,10 +32,18 @@ enum ClawJSServiceDemandPolicy {
     static let startupCoreServices: Set<ClawJSService> = []
 
     static func startupServices(for role: ClawixAppRole) -> Set<ClawJSService> {
+        startupServices(for: role, isVisible: { _ in true })
+    }
+
+    static func startupServices(
+        for role: ClawixAppRole,
+        isVisible: (AppFeature) -> Bool
+    ) -> Set<ClawJSService> {
         switch role {
         case .main:
             return startupCoreServices
         case .tool(let tool):
+            guard isVisible(tool.requiredFeature) else { return [] }
             return services(for: tool)
         }
     }
@@ -157,7 +165,10 @@ enum ClawJSServiceDemandPolicy {
 @MainActor
 enum ClawixStartupCore {
     static func run(role: ClawixAppRole) async {
-        let services = ClawJSServiceDemandPolicy.startupServices(for: role)
+        let services = ClawJSServiceDemandPolicy.startupServices(
+            for: role,
+            isVisible: FeatureFlags.shared.isVisible
+        )
         let reason: ClawJSServiceStartReason
         switch role {
         case .main:

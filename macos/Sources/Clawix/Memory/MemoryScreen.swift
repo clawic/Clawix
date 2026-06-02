@@ -45,8 +45,13 @@ struct MemoryScreen: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task {
+            let services = ClawJSServiceDemandPolicy.visibleServices(
+                [.memory],
+                isVisible: FeatureFlags.shared.isVisible
+            )
+            guard !services.isEmpty else { return }
             let lease = await ClawJSServiceManager.shared.acquire(
-                services: [.memory],
+                services: services,
                 reason: .route("memory"),
                 consumer: "route.memory"
             )

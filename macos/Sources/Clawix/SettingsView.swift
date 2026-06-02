@@ -105,7 +105,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .dictation:        return .voiceToText
         case .quickAsk:         return .quickAsk
         case .secrets:          return .tools
-        case .mcp:              return .mcp
+        case .mcp:              return .networkControl
         case .localModels:      return .localModels
         case .browserUsage:     return .browserUsage
         case .git:              return .git

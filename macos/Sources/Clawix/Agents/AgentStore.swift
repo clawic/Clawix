@@ -32,7 +32,7 @@ final class AgentStore: ObservableObject {
         let connections: [Connection]
     }
 
-    static let shared = AgentStore()
+    static let shared = AgentStore(autoLoad: FeatureFlags.shared.isVisible(.agents))
 
     // MARK: - Published state
 

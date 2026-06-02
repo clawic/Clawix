@@ -74,6 +74,43 @@ source "$SCRIPT_DIR/_emit_version.sh"
 
 mkdir -p "$DEV_DIR"
 
+cleanup_disabled_experimental_tool_apps() {
+    [[ "${CLAWIX_DEV_SKIP_TOOLS:-0}" == "1" || "${CLAWIX_DEV_EXPERIMENTAL_TOOL_APPS:-0}" != "1" ]] || return 0
+    local entries=(
+        "tasks:Tasks"
+        "goals:Goals"
+        "notes:Notes"
+        "projects:Projects"
+        "secrets:Secrets"
+        "memory:Memory"
+        "database:Database"
+        "photos:Photos"
+        "documents:Documents"
+        "recent:Recent"
+        "drive:Drive"
+    )
+    local entry slug display role_value staging_default install_target existing_role
+    for entry in "${entries[@]}"; do
+        slug="${entry%%:*}"
+        display="${entry##*:}"
+        role_value="tool:$slug"
+        staging_default="$DEV_DIR/${display}.app"
+
+        if [[ -d "$staging_default" ]]; then
+            rm -rf "$staging_default"
+        fi
+
+        [[ -n "${INSTALL_BUNDLE:-}" ]] || continue
+        install_target="$(dirname "$INSTALL_BUNDLE")/${display}.app"
+        [[ -d "$install_target" ]] || continue
+        existing_role="$(/usr/libexec/PlistBuddy -c 'Print :CLXAppRole' "$install_target/Contents/Info.plist" 2>/dev/null || true)"
+        if [[ "$existing_role" == "$role_value" ]]; then
+            echo "==> Removing disabled experimental mini-app: $install_target"
+            rm -rf "$install_target"
+        fi
+    done
+}
+
 # Serialize: only one dev.sh runs at a time. Two parallel agents would
 # otherwise race on the build/kill/launch sequence and leave duplicate
 # windows. Wait politely instead of failing.
@@ -87,6 +124,8 @@ while ! ( set -C; echo $$ > "$LOCK_FILE" ) 2>/dev/null; do
     sleep 0.4
 done
 trap 'rm -f "$LOCK_FILE"' EXIT
+
+cleanup_disabled_experimental_tool_apps
 
 # 0) Lint: squircle enforcement. Every corner radius in the app must be
 #    rendered with style: .continuous (Apple's superellipse). Circular
@@ -732,16 +771,19 @@ if [[ -n "$INSTALL_BUNDLE" ]]; then
     echo "==> Installed canonical app: $LAUNCH_BUNDLE"
 fi
 
-# 4.5) Optional: assemble and install one .app bundle per sidebar tool.
+# 4.5) Optional experimental: assemble and install one .app bundle per
+#      sidebar tool.
 #      Each mini-app reuses the SAME compiled binary as Clawix.app but
 #      ships in its own .app with a distinct bundle id and name. The
 #      binary detects the role at launch via the CLXAppRole Info.plist
 #      key (read by ClawixToolRole.fromBundle) and renders only that
-#      tool's view. The full set can be skipped via
-#      CLAWIX_DEV_SKIP_TOOLS=1; a comma-separated subset can be selected via
+#      tool's view. They are skipped and cleaned up by default; set
+#      CLAWIX_DEV_EXPERIMENTAL_TOOL_APPS=1 to opt into building them.
+#      The full set can still be skipped via CLAWIX_DEV_SKIP_TOOLS=1; a
+#      comma-separated subset can be selected via
 #      CLAWIX_DEV_TOOLS_ONLY="tasks,notes". Bundle ids default to
-#      ${BUNDLE_ID}.tools.<slug>; a per-tool override
-#      BUNDLE_ID_<UPPER_SLUG> takes precedence.
+#      ${BUNDLE_ID}.tools.<slug>; a per-tool override BUNDLE_ID_<UPPER_SLUG>
+#      takes precedence.
 
 assemble_tool_app() {
     local slug="$1"      # "tasks", "goals", ...
@@ -856,7 +898,29 @@ TOOLS_CATALOG=(
     "drive:Drive"
 )
 
-if [[ "${CLAWIX_DEV_SKIP_TOOLS:-0}" != "1" ]]; then
+remove_owned_tool_app() {
+    local slug="$1"
+    local display="$2"
+    local staging_default="$DEV_DIR/${display}.app"
+    local install_target role_value existing_role
+    role_value="tool:$slug"
+
+    if [[ -d "$staging_default" ]]; then
+        rm -rf "$staging_default"
+    fi
+
+    [[ -n "${INSTALL_BUNDLE:-}" ]] || return 0
+    install_target="$(dirname "$INSTALL_BUNDLE")/${display}.app"
+    [[ -d "$install_target" ]] || return 0
+
+    existing_role="$(/usr/libexec/PlistBuddy -c 'Print :CLXAppRole' "$install_target/Contents/Info.plist" 2>/dev/null || true)"
+    if [[ "$existing_role" == "$role_value" ]]; then
+        echo "==> Removing disabled experimental mini-app: $install_target"
+        rm -rf "$install_target"
+    fi
+}
+
+if [[ "${CLAWIX_DEV_SKIP_TOOLS:-0}" != "1" && "${CLAWIX_DEV_EXPERIMENTAL_TOOL_APPS:-0}" == "1" ]]; then
     declare -a TOOLS_ONLY=()
     if [[ -n "${CLAWIX_DEV_TOOLS_ONLY:-}" ]]; then
         IFS=',' read -ra TOOLS_ONLY <<< "${CLAWIX_DEV_TOOLS_ONLY}"
@@ -882,6 +946,12 @@ if [[ "${CLAWIX_DEV_SKIP_TOOLS:-0}" != "1" ]]; then
         role_value="tool:$slug"
 
         assemble_tool_app "$slug" "$display" "$bid" "$role_value"
+    done
+else
+    for entry in "${TOOLS_CATALOG[@]}"; do
+        slug="${entry%%:*}"
+        display="${entry##*:}"
+        remove_owned_tool_app "$slug" "$display"
     done
 fi
 

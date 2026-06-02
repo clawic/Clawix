@@ -15,6 +15,16 @@ final class FeatureFlagsTests: XCTestCase {
             [
                 .tools,
                 .networkControl,
+                .secrets,
+                .mcp,
+                .databaseWorkbench,
+                .marketplace,
+                .calendar,
+                .contacts,
+                .database,
+                .index,
+                .iotHome,
+                .publishing,
                 .composerExperiments,
                 .remoteMesh,
                 .agents,
@@ -65,6 +75,16 @@ final class FeatureFlagsTests: XCTestCase {
         }
 
         XCTAssertTrue(flags.isVisible(.tools))
+        XCTAssertTrue(flags.isVisible(.secrets))
+        XCTAssertTrue(flags.isVisible(.mcp))
+        XCTAssertTrue(flags.isVisible(.databaseWorkbench))
+        XCTAssertTrue(flags.isVisible(.marketplace))
+        XCTAssertTrue(flags.isVisible(.calendar))
+        XCTAssertTrue(flags.isVisible(.contacts))
+        XCTAssertTrue(flags.isVisible(.database))
+        XCTAssertTrue(flags.isVisible(.index))
+        XCTAssertTrue(flags.isVisible(.iotHome))
+        XCTAssertTrue(flags.isVisible(.publishing))
         XCTAssertTrue(flags.isVisible(.composerExperiments))
         XCTAssertTrue(flags.isVisible(.remoteMesh))
         XCTAssertTrue(flags.isVisible(.networkControl))
@@ -84,12 +104,45 @@ final class FeatureFlagsTests: XCTestCase {
         }
 
         XCTAssertFalse(visible.contains(.skills))
+        XCTAssertFalse(visible.contains(.mcp))
         XCTAssertFalse(visible.contains(.apps))
         XCTAssertFalse(visible.contains(.claw))
         XCTAssertFalse(visible.contains(.machines))
         XCTAssertFalse(visible.contains(.secrets))
         XCTAssertFalse(visible.contains(.databaseWorkbench))
         XCTAssertFalse(visible.contains(.telegram))
+    }
+
+    func test_experimentalSurfacesDoNotEagerLoadRootManagers() throws {
+        let appSource = try readSource("App.swift")
+        let agentStoreSource = try readSource("Agents/AgentStore.swift")
+        let databaseManagerSource = try readSource("Database/DatabaseManager.swift")
+        let iotManagerSource = try readSource("IoT/IoTManager.swift")
+        let routerSource = try readSource("SurfaceRouterView.swift")
+
+        XCTAssertTrue(agentStoreSource.contains("static let shared = AgentStore(autoLoad: FeatureFlags.shared.isVisible(.agents))"))
+        XCTAssertTrue(appSource.contains("DatabaseManager(attachSupervisor: FeatureFlags.shared.isVisible(.database))"))
+        XCTAssertTrue(appSource.contains("IoTManager(attachSupervisor: FeatureFlags.shared.isVisible(.iotHome))"))
+        XCTAssertTrue(databaseManagerSource.contains("func activateSupervisorObserverIfVisible()"))
+        XCTAssertTrue(iotManagerSource.contains("func activateSupervisorObserverIfVisible()"))
+        XCTAssertTrue(routerSource.contains("if isRouteVisible {"))
+        XCTAssertTrue(routerSource.contains("guard FeatureFlags.shared.isVisible(.apps) else { return nil }"))
+    }
+
+    func test_composerExperimentalControlsAreHiddenBehindFeatureFlags() throws {
+        let composerSource = try readSource("ComposerView.swift")
+
+        XCTAssertTrue(composerSource.contains("if flags.isVisible(.composerExperiments) {"))
+        XCTAssertTrue(composerSource.contains("IDEContextChip()"))
+        XCTAssertTrue(composerSource.contains("AttemptsSelector()"))
+        XCTAssertTrue(composerSource.contains("if chatMode, flags.isVisible(.remoteMesh) {"))
+        XCTAssertTrue(composerSource.contains("if flags.isVisible(.remoteMesh) {"))
+
+        XCTAssertFalse(composerSource.contains("PlanSuggestionBar"))
+        XCTAssertFalse(composerSource.contains("showsPlanSuggestion"))
+        XCTAssertFalse(composerSource.contains("draftMentionsPlan"))
+        XCTAssertFalse(composerSource.contains("Plan my day"))
+        XCTAssertFalse(composerSource.contains("around one goal"))
     }
 
     func test_openCodeRuntimePersistsAsStableSurface() {
@@ -121,5 +174,14 @@ final class FeatureFlagsTests: XCTestCase {
         } else {
             defaults.removeObject(forKey: key)
         }
+    }
+
+    private func readSource(_ relativePath: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/Clawix")
+        return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
     }
 }

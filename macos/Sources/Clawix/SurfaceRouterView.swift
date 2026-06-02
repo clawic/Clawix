@@ -4,12 +4,19 @@ struct SurfaceRouterView: View {
     let route: SidebarRoute
 
     @EnvironmentObject private var appState: AppState
-    @ObservedObject private var appsStore: AppsStore = .shared
-    @ObservedObject private var variantDefaults: AppVariantDefaultsStore = .shared
     @State private var preferredOriginalTargets: Set<String> = []
     @State private var supervisionState: SurfaceRouteSupervisionState = .ready(surfaceID: "initial")
 
     var body: some View {
+        if isRouteVisible {
+            routedSurface
+        } else {
+            MainContentView()
+        }
+    }
+
+    @ViewBuilder
+    private var routedSurface: some View {
         let entry = routeRegistryEntry
         let resolution = activeVariantResolution
         let readinessMode = SurfaceRouteReadinessPolicy.mode(
@@ -23,6 +30,7 @@ struct SurfaceRouterView: View {
         ZStack(alignment: .topTrailing) {
             SurfaceRouteHost(
                 descriptor: entry.descriptor,
+                viewIdentity: surfaceViewIdentity,
                 readinessMode: readinessMode,
                 demandedServices: demandedServices,
                 state: $supervisionState
@@ -48,6 +56,16 @@ struct SurfaceRouterView: View {
         }
     }
 
+    private var isRouteVisible: Bool {
+        guard let feature = route.gatedFeature else { return true }
+        return FeatureFlags.shared.isVisible(feature)
+    }
+
+    private var surfaceViewIdentity: String {
+        if case .chat = route { return "chat" }
+        return routeRegistryEntry.descriptor.id
+    }
+
     @MainActor
     private var routeRegistryEntry: SurfaceRouteRegistryEntry {
         SurfaceRouteRegistry.entry(for: route)
@@ -62,11 +80,12 @@ struct SurfaceRouterView: View {
     }
 
     private var defaultVariantResolution: AppVariantResolution? {
+        guard FeatureFlags.shared.isVisible(.apps) else { return nil }
         guard let target = normalizedVariantTarget else { return nil }
-        return variantDefaults.resolution(
+        return AppVariantDefaultsStore.shared.resolution(
             for: target,
             workspaceId: appState.selectedProject?.id,
-            appsStore: appsStore
+            appsStore: AppsStore.shared
         )
     }
 
@@ -80,7 +99,7 @@ struct SurfaceRouterView: View {
               resolution.originalRouteAvailable else {
             return nil
         }
-        let record = appsStore.record(forId: resolution.appId)
+        let record = AppsStore.shared.record(forId: resolution.appId)
         return AppVariantOriginalRouteControlModel(
             resolution: resolution,
             appName: displayName(for: record),
@@ -96,6 +115,7 @@ struct SurfaceRouterView: View {
 
 private struct SurfaceRouteHost<Content: View>: View {
     let descriptor: SurfaceRouteDescriptor
+    let viewIdentity: String
     let readinessMode: SurfaceRouteReadinessMode
     let demandedServices: Set<ClawJSService>
     @Binding var state: SurfaceRouteSupervisionState
@@ -106,7 +126,7 @@ private struct SurfaceRouteHost<Content: View>: View {
     var body: some View {
         ZStack {
             content()
-                .id(descriptor.id)
+                .id(viewIdentity)
                 .environment(\.surfaceRouteReporter, reporter)
 
             overlay

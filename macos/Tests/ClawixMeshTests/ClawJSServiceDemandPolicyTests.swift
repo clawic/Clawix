@@ -32,6 +32,18 @@ final class ClawJSServiceDemandPolicyTests: XCTestCase {
         }
     }
 
+    func testToolStartupServicesRequireToolsFeatureVisibility() {
+        XCTAssertEqual(
+            ClawJSServiceDemandPolicy.startupServices(for: .tool(.database), isVisible: { _ in false }),
+            []
+        )
+        XCTAssertEqual(
+            ClawJSServiceDemandPolicy.startupServices(for: .tool(.database), isVisible: { $0 == .tools }),
+            [.database]
+        )
+        XCTAssertEqual(ClawixToolRole.database.requiredFeature, .tools)
+    }
+
     func testRouteDemandServicesStayOffCoreSurvivalRoutes() {
         XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .home), [])
         XCTAssertEqual(ClawJSServiceDemandPolicy.services(for: .search), [])

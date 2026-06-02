@@ -47,8 +47,13 @@ struct DriveScreen: View {
             presentPendingQuickUploadIfReady()
         }
         .task {
+            let services = ClawJSServiceDemandPolicy.visibleServices(
+                [.drive],
+                isVisible: FeatureFlags.shared.isVisible
+            )
+            guard !services.isEmpty else { return }
             let lease = await ClawJSServiceManager.shared.acquire(
-                services: [.drive],
+                services: services,
                 reason: .route("drive"),
                 consumer: "route.drive"
             )
