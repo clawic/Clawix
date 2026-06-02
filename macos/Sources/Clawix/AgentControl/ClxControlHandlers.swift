@@ -652,7 +652,14 @@ enum ClxControlHandlers {
         let requestedCategory = (args["target"] as? String)
             ?? (args["category"] as? String)
             ?? (args["id"] as? String)
-        let category = requestedCategory.flatMap(SettingsCategory.init(rawValue:)) ?? .general
+        let requested = requestedCategory.flatMap(SettingsCategory.init(rawValue:)) ?? .general
+        let category: SettingsCategory
+        if let feature = requested.gatedFeature,
+           !FeatureFlags.shared.isVisible(feature) {
+            category = .general
+        } else {
+            category = requested
+        }
         appState.settingsCategory = category
         appState.currentRoute = .settings
         return ok([
@@ -1270,12 +1277,19 @@ enum ClxControlHandlers {
             actionArgs["id"] = target
         }
 
+        RenderProbe.resetMeasurementWindow()
         let started = CACurrentMediaTime()
+        let startedWallClock = CFAbsoluteTimeGetCurrent()
         RenderProbe.mark(
             "UXTraceActionStart",
             fields: ["actionId": actionId, "action": action]
         )
+        let actionStarted = CACurrentMediaTime()
         let actionResult = await performMeasuredAction(action, args: actionArgs)
+        var actionPayload = actionResult.json
+        if actionPayload["elapsedMs"] == nil {
+            actionPayload["elapsedMs"] = (CACurrentMediaTime() - actionStarted) * 1000
+        }
         guard actionResult.status == 200 else {
             let elapsedMs = (CACurrentMediaTime() - started) * 1000
             let finalState = finalUIStatePayload(actionArgs: actionArgs, waitArgs: actionArgs)
@@ -1296,7 +1310,7 @@ enum ClxControlHandlers {
                 "action": action,
                 "condition": condition.rawValue,
                 "elapsedMs": elapsedMs,
-                "actionResult": actionResult.json,
+                "actionResult": actionPayload,
                 "failureReason": "action_failed",
                 "finalUIState": finalState,
             ])
@@ -1304,8 +1318,8 @@ enum ClxControlHandlers {
 
         if action == "hover" {
             let elapsedMs = (CACurrentMediaTime() - started) * 1000
-            let hoverOk = (actionResult.json["semanticVisualOk"] as? Bool) == true
-            let observed = (actionResult.json["resolvedId"] as? String).map { observedControlState(["id": $0]) }
+            let hoverOk = (actionPayload["semanticVisualOk"] as? Bool) == true
+            let observed = (actionPayload["resolvedId"] as? String).map { observedControlState(["id": $0]) }
                 ?? observedControlState(actionArgs)
             RenderProbe.mark(
                 "UXTraceActionEnd",
@@ -1324,14 +1338,14 @@ enum ClxControlHandlers {
                 "action": action,
                 "condition": condition.rawValue,
                 "elapsedMs": elapsedMs,
-                "actionResult": actionResult.json,
+                "actionResult": actionPayload,
                 "wait": [
                     "ok": hoverOk,
                     "condition": "hover-latency",
                     "elapsedMs": 0,
                     "observed": observed,
                     "semantic": true,
-                    "diagnostics": diagnosticSamplePayload(),
+                    "diagnostics": lightweightDiagnosticPayload(),
                 ],
             ]
             if !hoverOk {
@@ -1342,6 +1356,7 @@ enum ClxControlHandlers {
         }
 
         var waitArgs = args
+        waitArgs["actionStartedAt"] = startedWallClock
         waitArgs["actionId"] = actionId
         if let waitTarget = args["waitTarget"] as? String {
             waitArgs["id"] = waitTarget
@@ -1349,10 +1364,10 @@ enum ClxControlHandlers {
             waitArgs["id"] = target
         }
 
-        if (actionResult.json["semanticVisualOk"] as? Bool) == true,
+        if (actionPayload["semanticVisualOk"] as? Bool) == true,
            condition == .visible {
             let elapsedMs = (CACurrentMediaTime() - started) * 1000
-            let observed = (actionResult.json["resolvedId"] as? String).map { observedControlState(["id": $0]) }
+            let observed = (actionPayload["resolvedId"] as? String).map { observedControlState(["id": $0]) }
                 ?? observedControlState(waitArgs)
             RenderProbe.mark(
                 "UXTraceActionEnd",
@@ -1371,14 +1386,14 @@ enum ClxControlHandlers {
                 "action": action,
                 "condition": condition.rawValue,
                 "elapsedMs": elapsedMs,
-                "actionResult": actionResult.json,
+                "actionResult": actionPayload,
                 "wait": [
                     "ok": true,
                     "condition": condition.rawValue,
                     "elapsedMs": 0,
                     "observed": observed,
                     "semantic": true,
-                    "diagnostics": diagnosticSamplePayload(),
+                    "diagnostics": lightweightDiagnosticPayload(),
                 ],
             ])
         }
@@ -1401,7 +1416,7 @@ enum ClxControlHandlers {
             "action": action,
             "condition": condition.rawValue,
             "elapsedMs": elapsedMs,
-            "actionResult": actionResult.json,
+            "actionResult": actionPayload,
             "wait": waitResult.json,
         ]
         if !waitResult.ok {
@@ -1554,7 +1569,7 @@ enum ClxControlHandlers {
                     "elapsedMs": elapsedMs,
                     "samples": samples,
                     "observed": evaluation.observed,
-                    "diagnostics": diagnosticSamplePayload(),
+                    "diagnostics": lightweightDiagnosticPayload(),
                 ])
             }
             if (now - started) * 1000 >= Double(timeoutMs) {
@@ -1655,18 +1670,22 @@ enum ClxControlHandlers {
             return (bottomDistance <= tolerancePx, observed)
         case .chatFinalWindow:
             let id = (args["id"] as? String) ?? "chat.visibleWindow.latest"
-            var observed = observedControlState(["id": id])
+            var observed: [String: Any] = [
+                "id": id,
+                "semantic": true,
+            ]
             let minVisibleMessages = boundedInt(args["minVisibleMessages"], defaultValue: 1, min: 1, max: 1_000)
             let requestedChatId = (args["chatId"] as? String).flatMap(UUID.init(uuidString:))
                 ?? appState?.currentChatId
+            let actionStartedAt = numeric(args["actionStartedAt"])
             if let evidence = ChatVisibleWindowRenderLog.latestPayload(
                 chatId: requestedChatId,
-                minVisibleMessages: minVisibleMessages
+                minVisibleMessages: minVisibleMessages,
+                recordedAfter: actionStartedAt
             ) {
                 observed["chatFinalWindow"] = evidence
-                let controlVisible = (observed["visible"] as? Bool) == true
                 let windowComplete = (evidence["windowComplete"] as? Bool) == true
-                return (controlVisible && windowComplete, observed)
+                return (windowComplete, observed)
             }
             observed["requiredVisibleMessages"] = minVisibleMessages
             observed["chatId"] = requestedChatId?.uuidString ?? ""
@@ -1689,6 +1708,7 @@ enum ClxControlHandlers {
         let resource = diagnostic.sample
         let renderCounts = RenderProbe.snapshotCounts()
         let hitchCounts = renderCounts.filter { key, _ in key.hasPrefix("hitch>") }
+        let measurementHitchCounts = RenderProbe.snapshotMeasurementHitches()
         var resourcePayload: [String: Any] = [
             "residentBytes": Int64(resource.residentBytes),
             "residentMB": Double(resource.residentBytes) / 1024.0 / 1024.0,
@@ -1714,6 +1734,24 @@ enum ClxControlHandlers {
             "hitches": [
                 "total": hitchCounts.values.reduce(0, +),
                 "buckets": hitchCounts,
+                "measurementTotal": measurementHitchCounts.values.reduce(0, +),
+                "measurementBuckets": measurementHitchCounts,
+            ],
+        ]
+    }
+
+    private static func lightweightDiagnosticPayload() -> [String: Any] {
+        let renderCounts = RenderProbe.snapshotCounts()
+        let hitchCounts = renderCounts.filter { key, _ in key.hasPrefix("hitch>") }
+        let measurementHitchCounts = RenderProbe.snapshotMeasurementHitches()
+        let measuredRenderCounts = renderCounts.filter { key, _ in !key.hasPrefix("hitch>") }
+        return [
+            "renderCounts": measuredRenderCounts,
+            "hitches": [
+                "buckets": hitchCounts,
+                "total": hitchCounts.values.reduce(0, +),
+                "measurementBuckets": measurementHitchCounts,
+                "measurementTotal": measurementHitchCounts.values.reduce(0, +),
             ],
         ]
     }
@@ -1840,7 +1878,10 @@ enum ClxControlHandlers {
             }
         }
 
-        let captureData = ClxWindowCapture.capturePNG(windowNumber: nil, controlId: controlId)
+        let shouldCapture = (args["capture"] as? Bool) ?? true
+        let captureData = shouldCapture
+            ? ClxWindowCapture.capturePNG(windowNumber: nil, controlId: controlId)
+            : nil
         var capturePath: String? = nil
         if let data = captureData {
             let outURL: URL

@@ -21,9 +21,11 @@ import ClawixCore
 // / typed". Reset by deleting the file on disk.
 enum RenderProbe {
     private static let queue = DispatchQueue(label: "RenderProbe")
+    private static let ioQueue = DispatchQueue(label: "RenderProbeIO")
     nonisolated(unsafe) private static var counts: [String: Int] = [:]
     nonisolated(unsafe) private static var totalMs: [String: Double] = [:]
     nonisolated(unsafe) private static var maxMs: [String: Double] = [:]
+    nonisolated(unsafe) private static var measurementHitches: [String: Int] = [:]
     nonisolated(unsafe) private static var didStart = false
     nonisolated(unsafe) private static var flushTimer: Timer?
     nonisolated(unsafe) private static var windowStart = CFAbsoluteTimeGetCurrent()
@@ -119,6 +121,7 @@ enum RenderProbe {
                   counts.keys.contains(where: { !$0.hasPrefix("hitch>") })
             else { return }
             counts[name, default: 0] += 1
+            measurementHitches[name, default: 0] += 1
             startIfNeeded()
         }
     }
@@ -126,6 +129,24 @@ enum RenderProbe {
     static func snapshotCounts() -> [String: Int] {
         guard isEnabled else { return [:] }
         return queue.sync { counts }
+    }
+
+    static func resetMeasurementWindow() {
+        guard isEnabled else { return }
+        queue.sync {
+            counts.removeAll(keepingCapacity: true)
+            totalMs.removeAll(keepingCapacity: true)
+            maxMs.removeAll(keepingCapacity: true)
+            measurementHitches.removeAll(keepingCapacity: true)
+            windowStart = CFAbsoluteTimeGetCurrent()
+            lastActivityAt = windowStart
+        }
+        HitchProbe.resetMeasurementTick()
+    }
+
+    static func snapshotMeasurementHitches() -> [String: Int] {
+        guard isEnabled else { return [:] }
+        return queue.sync { measurementHitches }
     }
 
     private static func recordActivityIfNeeded(_ name: String) {
@@ -185,11 +206,14 @@ enum RenderProbe {
     }
 
     private static func writeLine(_ line: String) {
-        if let data = line.data(using: .utf8),
-           let handle = try? FileHandle(forWritingTo: URL(fileURLWithPath: path)) {
-            handle.seekToEndOfFile()
-            handle.write(data)
-            try? handle.close()
+        guard let data = line.data(using: .utf8) else { return }
+        ioQueue.async {
+            prepareLogFile(at: path)
+            if let handle = try? FileHandle(forWritingTo: URL(fileURLWithPath: path)) {
+                handle.seekToEndOfFile()
+                handle.write(data)
+                try? handle.close()
+            }
         }
     }
 
@@ -262,5 +286,10 @@ enum HitchProbe {
         timer = nil
         didStart = false
         lastTick = 0
+    }
+
+    static func resetMeasurementTick() {
+        guard didStart else { return }
+        lastTick = CFAbsoluteTimeGetCurrent()
     }
 }
