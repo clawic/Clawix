@@ -613,19 +613,56 @@ PY
     fi
 fi
 
-(
-    cd "$CLAWJS_DEST"
-    # Rebuilding every nested better-sqlite3 copy can otherwise fan out
-    # multiple clang/sqlite compilations at once and starve the desktop while
-    # the developer launcher is trying to install the app.
-    MAKEFLAGS="-j1" \
-    npm_config_jobs=1 \
-    npm_config_nodedir="$NODE_DIR" \
-    npm_config_arch=arm64 \
-    npm_config_target_arch=arm64 \
-    npm_config_target_platform=darwin \
-    PATH="$CLAWJS_DEST:$PATH" "$CLAWJS_DEST/node" "$NPM_CLI" rebuild better-sqlite3 --build-from-source --jobs=1 2>&1 | tail -3
-)
+NODE_GYP_CLI="$(cd "$(dirname "$NPM_CLI")/.." && pwd)/node_modules/node-gyp/bin/node-gyp.js"
+if [[ ! -f "$NODE_GYP_CLI" ]]; then
+    echo "ERROR: node-gyp not found next to npm: $NODE_GYP_CLI" >&2
+    exit 1
+fi
+
+while IFS= read -r better_sqlite_dir; do
+    [[ -n "$better_sqlite_dir" ]] || continue
+    echo "==> Rebuilding better-sqlite3 native module: ${better_sqlite_dir#$CLAWJS_DEST/}"
+    rebuild_log="$(mktemp "${TMPDIR:-/tmp}/clawix-better-sqlite3.XXXXXX.log")"
+    rebuild_status=0
+    for attempt in 1 2; do
+        if (
+            cd "$better_sqlite_dir"
+            rm -rf build
+            # Rebuild each better-sqlite3 copy directly and sequentially. `npm
+            # rebuild better-sqlite3` fans out matching packages concurrently
+            # and can fall back to Homebrew Python 3.14 through node-gyp; the
+            # direct path keeps desktop resource use bounded and uses Xcode's
+            # Python.
+            MAKEFLAGS="-j1" \
+            npm_config_jobs=1 \
+            npm_config_python=/usr/bin/python3 \
+            npm_config_nodedir="$NODE_DIR" \
+            npm_config_arch=arm64 \
+            npm_config_target_arch=arm64 \
+            npm_config_target_platform=darwin \
+            PATH="$CLAWJS_DEST:$PATH" "$CLAWJS_DEST/node" "$NODE_GYP_CLI" rebuild --release
+        ) >"$rebuild_log" 2>&1; then
+            rebuild_status=0
+            break
+        fi
+        rebuild_status=$?
+        if [[ "$attempt" == "1" && "$rebuild_status" == "137" ]]; then
+            echo "WARN: better-sqlite3 rebuild was killed; retrying once after clean build dir" >>"$rebuild_log"
+            sleep 2
+            continue
+        fi
+        break
+    done
+    tail -20 "$rebuild_log"
+    if [[ "$rebuild_status" != "0" ]]; then
+        if [[ ! -f "$better_sqlite_dir/build/Release/better_sqlite3.node" ]]; then
+            rm -f "$rebuild_log"
+            exit 1
+        fi
+        echo "WARN: node-gyp exited non-zero after producing better_sqlite3.node; continuing"
+    fi
+    rm -f "$rebuild_log"
+done < <(find "$CLAWJS_DEST/node_modules" -path "*/better-sqlite3/package.json" -print | sort | xargs -n1 dirname)
 
 # 5) Re-sign every nested native module and the Node binary. npm-installed
 #    .node prebuilds ship as linker-signed adhoc; the outer .app codesign
