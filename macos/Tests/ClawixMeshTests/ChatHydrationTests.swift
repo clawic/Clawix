@@ -590,6 +590,157 @@ final class ChatHydrationTests: XCTestCase {
         }
     }
 
+    func testInitialTailMissFallsBackToSessionHydration() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SessionsHistoryURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let origin = try XCTUnwrap(URL(string: "http://sessions.test"))
+        let threadId = "thread-initial-tail-miss-\(UUID().uuidString)"
+        var attempts = 0
+        SessionsHistoryURLProtocol.handler = { request in
+            attempts += 1
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            let body = Data(Self.hydratedSessionJSON(
+                id: threadId,
+                title: "Thread",
+                messageCount: 1,
+                messagesJSON: """
+                [
+                  {
+                  "id": "msg-1",
+                  "sessionId": "\(threadId)",
+                  "role": "assistant",
+                  "contentText": "Recovered after tail miss",
+                  "timestamp": 1710000000000,
+                  "streamingState": "finished"
+                  }
+                ]
+                """,
+                hasOlderMessages: false
+            ).utf8)
+            return (response, body)
+        }
+
+        let state = AppState()
+        let chatId = UUID()
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Thread",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: threadId,
+                historyHydrated: false
+            )
+        ]
+        state.sessionHistoryHydrationInitialDelayNanos = 1_000_000
+        state.clawJSSessionsClientFactory = {
+            ClawJSSessionsClient(bearerToken: "test-token", origin: origin, session: session)
+        }
+        state.codexRolloutLocator = { _ in nil }
+
+        state.hydrateInitialTailForNavigation(chatId: chatId)
+
+        try await waitUntil {
+            state.chatStore.transcript(for: chatId)?.messages.map(\.content) == ["Recovered after tail miss"]
+        }
+
+        XCTAssertEqual(attempts, 1)
+        XCTAssertEqual(state.chats.first?.historyHydrated, true)
+    }
+
+    func testEmptyInitialTailCompletesWithoutLoadingState() async throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-empty-initial-tail-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let rollout = tmp.appendingPathComponent("rollout-thread-empty.jsonl")
+        try (#"{"timestamp":"2026-05-20T10:00:00.000Z","type":"session_meta","payload":{"id":"thread-empty","cwd":"/tmp"}}"# + "\n")
+            .write(to: rollout, atomically: true, encoding: .utf8)
+
+        let state = AppState()
+        let chatId = UUID()
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Thread",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-empty",
+                rolloutPath: rollout,
+                historyHydrated: false
+            )
+        ]
+
+        state.hydrateInitialTailForNavigation(chatId: chatId)
+
+        try await waitUntil {
+            state.chats.first?.historyHydrated == true
+        }
+
+        XCTAssertEqual(state.chatStore.transcript(for: chatId)?.messages.count, 0)
+        XCTAssertEqual(
+            ChatTranscriptEmptyStatePresentation.make(
+                messageCount: 0,
+                historyHydrated: state.chats.first?.historyHydrated ?? false,
+                hasHistorySource: true
+            ),
+            ChatTranscriptEmptyStatePresentation(
+                kind: .empty,
+                message: UserFacingEmptyState.chatTranscriptEmpty.message,
+                showsProgress: false,
+                controlRole: "status"
+            )
+        )
+    }
+
+    func testInitialTailExpandsWhenNoVisibleMessagesAreInFirstTailSlice() async throws {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("clawix-noisy-initial-tail-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let rollout = tmp.appendingPathComponent("rollout-thread-noisy-tail.jsonl")
+        let filler = String(repeating: "x", count: 4096)
+        var lines = [
+            #"{"timestamp":"2026-05-20T10:00:00.000Z","type":"session_meta","payload":{"id":"thread-noisy-tail","cwd":"/tmp"}}"#,
+            #"{"timestamp":"2026-05-20T10:00:01.000Z","type":"event_msg","payload":{"type":"user_message","message":"Visible prompt before noisy tail"}}"#
+        ]
+        for idx in 0..<80 {
+            lines.append(
+                #"{"timestamp":"2026-05-20T10:00:02.000Z","type":"event_msg","payload":{"type":"thread_goal_updated","goal":{"status":"active"},"padding":"\#(filler)-\#(idx)"}}"#
+            )
+        }
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+        XCTAssertGreaterThan(try Data(contentsOf: rollout).count, RolloutReader.initialTailBytes)
+
+        let state = AppState()
+        let chatId = UUID()
+        state.chats = [
+            Chat(
+                id: chatId,
+                title: "Thread",
+                messages: [],
+                createdAt: Date(),
+                clawixThreadId: "thread-noisy-tail",
+                rolloutPath: rollout,
+                historyHydrated: false
+            )
+        ]
+
+        state.hydrateInitialTailForNavigation(chatId: chatId)
+
+        try await waitUntil {
+            state.chatStore.transcript(for: chatId)?.messages.map(\.content) == ["Visible prompt before noisy tail"]
+        }
+
+        XCTAssertEqual(state.chatStore.transcript(for: chatId)?.messages.count, 1)
+    }
+
     func testClawJSSessionHydrationLoadsOnlyTailWindowAndKeepsLegacyChatsSummaryOnly() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [SessionsHistoryURLProtocol.self]

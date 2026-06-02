@@ -121,14 +121,21 @@ extension AppState {
     }
 
     func noteChatFirstVisibleForRuntimeDemand(chatId: UUID) {
-        guard chatRuntimeDemandWaitingForFirstVisible.remove(chatId) != nil else { return }
-        guard case let .chat(currentChatId) = currentRoute, currentChatId == chatId else { return }
-        RenderProbe.mark(
-            "ChatRuntimeDemandAfterFirstVisible",
-            fields: ["chat": chatId.uuidString]
-        )
-        openChatRuntimeSession(chatId: chatId)
-        scheduleChatRuntimeDemandIfReady(chatId: chatId)
+        guard chatRuntimeDemandWaitingForFirstVisible.contains(chatId),
+              chatRuntimeDemandFirstVisibleTasks[chatId] == nil
+        else { return }
+        chatRuntimeDemandFirstVisibleTasks[chatId] = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled, let self else { return }
+            self.chatRuntimeDemandFirstVisibleTasks[chatId] = nil
+            guard self.chatRuntimeDemandWaitingForFirstVisible.remove(chatId) != nil else { return }
+            guard case let .chat(currentChatId) = self.currentRoute, currentChatId == chatId else { return }
+            RenderProbe.mark(
+                "ChatRuntimeDemandAfterFirstVisible",
+                fields: ["chat": chatId.uuidString]
+            )
+            self.scheduleChatRuntimeDemandIfReady(chatId: chatId)
+        }
     }
 
     private func shouldDeferChatRuntimeDemandUntilFirstVisible(chatId: UUID) -> Bool {
@@ -156,11 +163,13 @@ extension AppState {
         chatRuntimeDemandTask?.cancel()
         chatRuntimeDemandTask = Task { @MainActor [weak self] in
             await Task.yield()
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
             guard !Task.isCancelled,
                   let self,
                   case let .chat(currentChatId) = self.currentRoute,
                   currentChatId == chatId
             else { return }
+            self.openChatRuntimeSession(chatId: chatId)
             guard await self.ensureAgentRuntimeReady(reason: .chatOpened) else { return }
             guard let threadId = self.chat(byId: chatId)?.clawixThreadId,
                   let clawix = self.clawix,

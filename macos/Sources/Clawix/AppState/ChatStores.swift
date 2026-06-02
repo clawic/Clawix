@@ -340,9 +340,17 @@ final class ChatStore: ObservableObject {
 
     func updateSummary(id: UUID, _ body: (inout ChatSummary) -> Void) {
         if let idx = summaries.firstIndex(where: { $0.id == id }) {
-            body(&summaries[idx])
+            var next = summaries[idx]
+            body(&next)
+            if next != summaries[idx] {
+                summaries[idx] = next
+            }
         } else if let idx = archivedSummaries.firstIndex(where: { $0.id == id }) {
-            body(&archivedSummaries[idx])
+            var next = archivedSummaries[idx]
+            body(&next)
+            if next != archivedSummaries[idx] {
+                archivedSummaries[idx] = next
+            }
         }
     }
 

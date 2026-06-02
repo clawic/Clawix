@@ -65,7 +65,6 @@ final class AppState: ObservableObject {
             clearUnreadIfChatRoute()
             if case let .chat(id) = currentRoute {
                 scheduleRouteChatRuntimeDemand(chatId: id)
-                hydrateHistoryIfNeeded(chatId: id)
             }
             persistLaunchRoute()
             // Scope only outlives the search popup itself; once the user
@@ -279,8 +278,8 @@ final class AppState: ObservableObject {
     /// routes we can return to; `routeForwardStack` is repopulated as we step
     /// back so Forward can replay them. Bounded so a long session can't grow
     /// them without limit.
-    @Published var routeBackStack: [SidebarRoute] = []
-    @Published var routeForwardStack: [SidebarRoute] = []
+    var routeBackStack: [SidebarRoute] = []
+    var routeForwardStack: [SidebarRoute] = []
     /// True while `navigateRouteBack/Forward` or `cycleRecentlyViewedChat`
     /// is replaying a transition, so the `currentRoute` didSet doesn't record
     /// the replay as a fresh navigation.
@@ -522,7 +521,19 @@ final class AppState: ObservableObject {
         var hasMore: Bool
         var loadingOlder: Bool
     }
-    @Published var messagesPaginationByChat: [UUID: ChatPagination] = [:]
+    @MainActor
+    final class ChatPaginationStore: ObservableObject {
+        @Published private(set) var values: [UUID: ChatPagination] = [:]
+
+        fileprivate func replace(_ values: [UUID: ChatPagination]) {
+            self.values = values
+        }
+    }
+    let chatPaginationStore = ChatPaginationStore()
+    var messagesPaginationByChat: [UUID: ChatPagination] {
+        get { chatPaginationStore.values }
+        set { chatPaginationStore.replace(newValue) }
+    }
 
     /// Wire mirror of what the daemon (or the on-disk snapshot) last
     /// delivered. This preserves the same `WireSession` / `WireMessage`
@@ -540,10 +551,14 @@ final class AppState: ObservableObject {
     var agentRuntimeStartTask: Task<Bool, Never>?
     var chatRuntimeDemandTask: Task<Void, Never>?
     var chatRuntimeDemandWaitingForFirstVisible: Set<UUID> = []
+    var chatRuntimeDemandFirstVisibleTasks: [UUID: Task<Void, Never>] = [:]
     var deferredCodexImportTask: Task<Void, Never>?
     var codexRolloutLocator: @Sendable (String) -> URL? = { CodexRolloutLocator.find(threadId: $0) }
     var codexRolloutPathByThreadId: [String: URL] = [:]
     var missingCodexRolloutPathThreadIds: Set<String> = []
+    var initialTailPrewarmPayloads: [UUID: InitialTailHydrationPayload] = [:]
+    var initialTailPrewarmTasks: [UUID: Task<Void, Never>] = [:]
+    var initialTailHydrationTasks: [UUID: Task<Void, Never>] = [:]
     var localRolloutHydrationTasks: [UUID: Task<Void, Never>] = [:]
     var sessionHistoryHydrationTasks: [UUID: Task<Void, Never>] = [:]
     var sessionHistoryHydrationAttempts = 8
@@ -570,6 +585,12 @@ final class AppState: ObservableObject {
         }
         appStateCanonicalReconciliationTask?.cancel()
         for task in localRolloutHydrationTasks.values {
+            task.cancel()
+        }
+        for task in initialTailHydrationTasks.values {
+            task.cancel()
+        }
+        for task in initialTailPrewarmTasks.values {
             task.cancel()
         }
         for task in sessionHistoryHydrationTasks.values {
@@ -853,6 +874,7 @@ final class AppState: ObservableObject {
         applyLaunchRoute()
         syncChatStoreFromLegacySnapshots()
         scheduleAutomaticPostFirstFramePersistenceIfNeeded()
+        scheduleInitialTailPrewarmForSidebarChats()
 
         // Forward auth coordinator changes so views observing AppState
         // also rebuild when login / logout state flips. Coalesce bursts

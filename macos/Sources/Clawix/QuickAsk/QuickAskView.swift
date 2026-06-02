@@ -489,6 +489,7 @@ struct QuickAskView: View {
                             chatId: chatId,
                             transcript: transcript,
                             appState: appState,
+                            paginationStore: appState.chatPaginationStore,
                             visibleMessageLimit: $visibleMessageLimit,
                             bottomAnchor: $bottomAnchor,
                             onRequestScroll: {
@@ -608,12 +609,13 @@ struct QuickAskView: View {
         let chatId: UUID
         @ObservedObject var transcript: ChatTranscriptStore
         @ObservedObject var appState: AppState
+        @ObservedObject var paginationStore: AppState.ChatPaginationStore
         @Binding var visibleMessageLimit: Int
         @Binding var bottomAnchor: QuickAskScrollAnchor?
         let onRequestScroll: () -> Void
 
         var body: some View {
-            if appState.messagesPaginationByChat[chatId]?.loadingOlder == true {
+            if paginationStore.values[chatId]?.loadingOlder == true {
                 HStack {
                     Spacer()
                     ProgressView()

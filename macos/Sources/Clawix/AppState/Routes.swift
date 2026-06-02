@@ -20,7 +20,7 @@ extension AppState {
             ]
         )
         if case let .chat(id) = visibleRoute {
-            hydrateHistoryIfNeeded(chatId: id)
+            hydrateInitialTailForNavigation(chatId: id)
         }
         currentRoute = visibleRoute
     }
@@ -39,11 +39,8 @@ extension AppState {
     }
 
     func requestDriveQuickUpload() {
-        guard FeatureFlags.shared.isVisible(.tools) else {
-            navigate(to: .driveAdmin)
-            return
-        }
-        currentRoute = .driveAdmin
+        guard FeatureFlags.shared.isVisible(.tools) else { return }
+        navigate(to: .driveAdmin)
         driveQuickUploadRequestID = UUID()
     }
 

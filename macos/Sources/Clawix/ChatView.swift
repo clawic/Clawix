@@ -40,6 +40,7 @@ private struct ChatVisibleWindowMessageEvidence: Equatable {
 enum ChatVisibleWindowRenderLog {
     private static let lock = NSLock()
     nonisolated(unsafe) private static var lastEvidence: ChatVisibleWindowEvidence?
+    nonisolated(unsafe) private static var lastEvidenceAt: CFTimeInterval?
     private static let detailedMessageLimit = 12
 
     fileprivate static func record(_ evidence: ChatVisibleWindowEvidence, reason: String) {
@@ -52,6 +53,7 @@ enum ChatVisibleWindowRenderLog {
         }
         let previousEvidence = lastEvidence
         lastEvidence = evidence
+        lastEvidenceAt = now
         lock.unlock()
 
         PerfSignpost.uiChat.event("visible.window", evidence.visibleCount)
@@ -78,18 +80,27 @@ enum ChatVisibleWindowRenderLog {
         }
     }
 
-    static func latestPayload(chatId requestedChatId: UUID?, minVisibleMessages: Int) -> [String: Any]? {
+    static func latestPayload(
+        chatId requestedChatId: UUID?,
+        minVisibleMessages: Int,
+        recordedAfter: CFTimeInterval? = nil
+    ) -> [String: Any]? {
         lock.lock()
         let evidence = lastEvidence
+        let recordedAt = lastEvidenceAt
         lock.unlock()
 
         guard let evidence,
+              let recordedAt,
               requestedChatId == nil || evidence.chatId == requestedChatId,
-              evidence.visibleCount >= minVisibleMessages
+              evidence.visibleCount >= minVisibleMessages,
+              recordedAfter == nil || recordedAt >= (recordedAfter ?? 0)
         else { return nil }
 
         let incompleteRows = evidence.messages.filter { !$0.contentReady }.count
-        return [
+        let windowComplete = incompleteRows == 0 && (evidence.bottomArmed || evidence.hiddenCount == 0)
+        let observedElapsedMs = recordedAfter.map { max(0, (recordedAt - $0) * 1000) }
+        var payload: [String: Any] = [
             "chat": evidence.chatId.uuidString,
             "visibleCount": evidence.visibleCount,
             "requiredVisibleMessages": minVisibleMessages,
@@ -99,8 +110,13 @@ enum ChatVisibleWindowRenderLog {
             "lastMessageId": evidence.lastMessageId?.uuidString ?? "",
             "bottomArmed": evidence.bottomArmed,
             "incompleteRows": incompleteRows,
-            "windowComplete": evidence.bottomArmed && incompleteRows == 0,
+            "recordedAt": recordedAt,
+            "windowComplete": windowComplete,
         ]
+        if let observedElapsedMs {
+            payload["observedElapsedMs"] = observedElapsedMs
+        }
+        return payload
     }
 
     private static func recordCompleteFinalWindow(
@@ -126,6 +142,7 @@ enum ChatVisibleWindowRenderLog {
                 + roles.suffix(Self.detailedMessageLimit).joined()
         }
         let shouldRecordMessageDetails = evidence.visibleCount <= detailedMessageLimit
+        let windowComplete = incompleteRows == 0 && (evidence.bottomArmed || evidence.hiddenCount == 0)
         RenderProbe.mark(
             "ChatFinalWindow",
             fields: [
@@ -144,7 +161,7 @@ enum ChatVisibleWindowRenderLog {
                 "total": "\(evidence.totalCount)",
                 "userRows": "\(userRows)",
                 "visible": "\(evidence.visibleCount)",
-                "windowComplete": "\(incompleteRows == 0 && evidence.bottomArmed)"
+                "windowComplete": "\(windowComplete)"
             ]
         )
         guard shouldRecordMessageDetails else { return }
@@ -226,20 +243,17 @@ struct ChatView: View {
     @State private var visibleMessageLimit = Self.initialVisibleMessageLimit
     @State private var visibleMessageEndOffset = 0
     @State private var lastLocalRevealAt: Date = .distantPast
-    @State private var firstVisibleRuntimeDemandChatId: UUID?
-    @State private var closedMetadataReadyChatId: UUID?
-    @State private var closedMetadataScheduledChatId: UUID?
+    @State private var transcriptChangeNonce = 0
     /// Drives `scrollPosition`. `chatTailId` is the canonical "you are
     /// at the tail" marker; an `id`'d clear rectangle at the end of
     /// the LazyVStack carries the same id so SwiftUI knows where the
     /// bottom is. Stays `nil` whenever the user scrolls up so we
     /// don't fight their position.
-    @State private var bottomId: String?
+    @State private var bottomId: String? = nil
 
     init(chatId: UUID, isSideChat: Bool = false) {
         self.chatId = chatId
         self.isSideChat = isSideChat
-        _bottomId = State(initialValue: "chat-tail-\(chatId.uuidString)")
     }
 
     private var chat: Chat? {
@@ -248,6 +262,11 @@ struct ChatView: View {
 
     private var transcript: ChatTranscriptStore? {
         appState.chatStore.transcript(for: chatId)
+    }
+
+    private var isCurrentMainChatRoute: Bool {
+        guard case .chat(let currentChatId) = appState.currentRoute else { return false }
+        return currentChatId == chatId
     }
 
     /// Stable id for the trailing sentinel inside the chat's LazyVStack.
@@ -270,7 +289,12 @@ struct ChatView: View {
     var body: some View {
         RenderProbe.tick("ChatView")
         return Group {
-            if let chat, let transcript {
+            if !isSideChat, !isCurrentMainChatRoute {
+                Color.clear
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Palette.background)
+            } else if let chat, let transcript {
+                let _ = transcriptChangeNonce
                 let messageStores = transcript.messageStores
                 let clampedEndOffset = min(max(0, visibleMessageEndOffset), max(0, messageStores.count))
                 let endIndex = max(0, messageStores.count - clampedEndOffset)
@@ -281,8 +305,7 @@ struct ChatView: View {
                     : []
                 let hiddenLocalMessageCount = startIndex
                 let newerLocalMessageCount = max(0, messageStores.count - endIndex)
-                let initialTailWindow = firstVisibleRuntimeDemandChatId != chatId
-                    && clampedEndOffset == 0
+                let tailWindow = clampedEndOffset == 0
                     && visibleMessageStores.last?.id == transcript.messageIds.last
                 let visibleWindowEvidence = ChatVisibleWindowEvidence(
                     chatId: chatId,
@@ -291,7 +314,7 @@ struct ChatView: View {
                     hiddenCount: hiddenLocalMessageCount,
                     firstMessageId: visibleMessageStores.first?.id,
                     lastMessageId: visibleMessageStores.last?.id,
-                    bottomArmed: bottomId == chatTailId || initialTailWindow,
+                    bottomArmed: bottomId == chatTailId || tailWindow,
                     messages: visibleMessageStores.map {
                         ChatVisibleWindowMessageEvidence(message: $0.message)
                     }
@@ -304,6 +327,7 @@ struct ChatView: View {
                         chatId: chatId,
                         chat: chat,
                         transcript: transcript,
+                        paginationStore: appState.chatPaginationStore,
                         visibleMessageStores: visibleMessageStores,
                         hiddenLocalMessageCount: hiddenLocalMessageCount,
                         visibleMessageLimit: $visibleMessageLimit,
@@ -311,19 +335,19 @@ struct ChatView: View {
                         newerLocalMessageCount: newerLocalMessageCount,
                         lastLocalRevealAt: $lastLocalRevealAt,
                         bottomId: $bottomId,
-                        closedMetadataReady: closedMetadataReadyChatId == chatId,
                         chatTailId: chatTailId,
                         publishingReady: publishingReady
                     )
                     .onAppear {
                         recordVisibleWindowIfNeeded(visibleWindowEvidence, reason: "appear")
                         notifyFirstVisibleWindowIfNeeded(visibleWindowEvidence)
-                        markClosedMetadataReadyIfNeeded(visibleWindowEvidence)
                     }
                     .onChange(of: visibleWindowEvidence) { _, next in
                         recordVisibleWindowIfNeeded(next, reason: "change")
                         notifyFirstVisibleWindowIfNeeded(next)
-                        markClosedMetadataReadyIfNeeded(next)
+                    }
+                    .onReceive(transcript.objectWillChange) { _ in
+                        transcriptChangeNonce &+= 1
                     }
                     .clxControl("chat.visibleWindow.latest", role: "group", label: "Latest visible message window")
 
@@ -472,7 +496,7 @@ struct ChatView: View {
                     .background(Palette.background)
                     .clxControl("app.errorState", role: "error", label: "Chat not found")
         }
-    }
+        }
     }
 
     private func recordVisibleWindowIfNeeded(_ evidence: ChatVisibleWindowEvidence, reason: String) {
@@ -480,30 +504,8 @@ struct ChatView: View {
     }
 
     private func notifyFirstVisibleWindowIfNeeded(_ evidence: ChatVisibleWindowEvidence) {
-        guard firstVisibleRuntimeDemandChatId != evidence.chatId,
-              evidence.visibleCount > 0
-        else { return }
-        firstVisibleRuntimeDemandChatId = evidence.chatId
+        guard evidence.visibleCount > 0 else { return }
         appState.noteChatFirstVisibleForRuntimeDemand(chatId: evidence.chatId)
-    }
-
-    private func markClosedMetadataReadyIfNeeded(_ evidence: ChatVisibleWindowEvidence) {
-        guard closedMetadataReadyChatId != evidence.chatId else { return }
-        guard closedMetadataScheduledChatId != evidence.chatId else { return }
-        guard evidence.visibleCount > 0, evidence.bottomArmed else { return }
-        guard evidence.messages.allSatisfy(\.contentReady) else { return }
-        closedMetadataScheduledChatId = evidence.chatId
-        DispatchQueue.main.async {
-            guard closedMetadataReadyChatId != evidence.chatId else { return }
-            RenderProbe.mark(
-                "ChatClosedMetadataReady",
-                fields: [
-                    "chat": evidence.chatId.uuidString,
-                    "visible": "\(evidence.visibleCount)"
-                ]
-            )
-            closedMetadataReadyChatId = evidence.chatId
-        }
     }
 
     private func suggestedNewBranchName(for chat: Chat) -> String {

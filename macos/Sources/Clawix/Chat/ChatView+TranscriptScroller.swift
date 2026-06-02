@@ -36,6 +36,7 @@ struct ChatTranscriptScrollerView: View {
     let chatId: UUID
     let chat: Chat
     @ObservedObject var transcript: ChatTranscriptStore
+    @ObservedObject var paginationStore: AppState.ChatPaginationStore
     let visibleMessageStores: [ChatMessageStore]
     let hiddenLocalMessageCount: Int
     @Binding var visibleMessageLimit: Int
@@ -43,7 +44,6 @@ struct ChatTranscriptScrollerView: View {
     let newerLocalMessageCount: Int
     @Binding var lastLocalRevealAt: Date
     @Binding var bottomId: String?
-    let closedMetadataReady: Bool
     let chatTailId: String
     let publishingReady: Bool
 
@@ -53,6 +53,7 @@ struct ChatTranscriptScrollerView: View {
     @State private var revealAfterOlderPage = false
     @State private var messageFrames: [UUID: CGRect] = [:]
     @State private var olderAnchorProbeSequence = 0
+    @State private var deferredOlderPageRequest: Task<Void, Never>?
 
     private var bottomScrollBinding: Binding<String?> {
         Binding<String?>(
@@ -66,19 +67,13 @@ struct ChatTranscriptScrollerView: View {
         )
     }
 
-    private var visibleMessageWindowId: String {
-        let first = visibleMessageStores.first?.id.uuidString ?? "none"
-        let last = visibleMessageStores.last?.id.uuidString ?? "none"
-        return "\(first)-\(last)-\(newerLocalMessageCount)"
-    }
-
     private var canTriggerOlderHistory: Bool {
         if hiddenLocalMessageCount > 0 { return true }
         return canRequestOlderPage
     }
 
     private var canRequestOlderPage: Bool {
-        guard let pagination = appState.messagesPaginationByChat[chatId] else { return false }
+        guard let pagination = paginationStore.values[chatId] else { return false }
         return pagination.hasMore
             && !pagination.loadingOlder
             && pagination.oldestKnownId != nil
@@ -92,6 +87,12 @@ struct ChatTranscriptScrollerView: View {
         )
     }
 
+    private var shouldArmBottomAnchorOnMount: Bool {
+        isResponseStreaming(chat)
+            || chat.hasActiveTurn
+            || visibleMessageStores.count > 3
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -102,7 +103,7 @@ struct ChatTranscriptScrollerView: View {
                                 .frame(maxWidth: .infinity, minHeight: 360, alignment: .center)
                                 .transition(.opacity)
                         }
-                        if appState.messagesPaginationByChat[chatId]?.loadingOlder == true {
+                        if paginationStore.values[chatId]?.loadingOlder == true {
                             HStack {
                                 Spacer()
                                 ProgressView()
@@ -128,7 +129,6 @@ struct ChatTranscriptScrollerView: View {
                                 lastAssistantMessageId: lastAssistantMessageId,
                                 responseStreaming: responseStreaming,
                                 activeFindQuery: activeFindQuery,
-                                closedMetadataReady: closedMetadataReady,
                                 publishingReady: publishingReady,
                                 proxy: proxy
                             )
@@ -141,7 +141,7 @@ struct ChatTranscriptScrollerView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .id(visibleMessageWindowId)
+                    .id(chatId)
                     Color.clear
                         .frame(height: CGFloat(newerLocalMessageCount) * ChatView.virtualizedTranscriptRowEstimate)
                     Color.clear
@@ -200,23 +200,19 @@ struct ChatTranscriptScrollerView: View {
             .animation(.easeOut(duration: 0.18), value: awayFromBottom)
             .clxControl("chat.transcript.scroll", role: "scroll", label: "Chat transcript")
             .onAppear {
-                appState.ensureSelectedChat()
-                visibleMessageLimit = ChatView.initialVisibleMessageLimit
-                visibleMessageEndOffset = 0
-                lastLocalRevealAt = .distantPast
-                bottomId = chatTailId
-                awayFromBottom = false
-                markBottomAnchor("appear")
+                appState.hydrateInitialTailForNavigation(chatId: chatId)
+                resetInitialWindowState(reason: "appear")
             }
             .onChange(of: chatId) { _, _ in
-                appState.ensureSelectedChat()
+                deferredOlderPageRequest?.cancel()
+                deferredOlderPageRequest = nil
+                appState.hydrateInitialTailForNavigation(chatId: chatId)
                 appState.requestComposerFocus()
-                visibleMessageLimit = ChatView.initialVisibleMessageLimit
-                visibleMessageEndOffset = 0
-                lastLocalRevealAt = .distantPast
-                bottomId = chatTailId
-                awayFromBottom = false
-                markBottomAnchor("chat-change")
+                resetInitialWindowState(reason: "chat-change")
+            }
+            .onDisappear {
+                deferredOlderPageRequest?.cancel()
+                deferredOlderPageRequest = nil
             }
             .onChange(of: appState.currentFindIndex) { _, _ in
                 scrollToCurrentFindMatch(proxy: proxy)
@@ -338,6 +334,26 @@ struct ChatTranscriptScrollerView: View {
                 "reason": reason
             ].merging(scrollProbeFields(prefix: "tail")) { current, _ in current }
         )
+    }
+
+    private func resetInitialWindowState(reason: String) {
+        if visibleMessageLimit != ChatView.initialVisibleMessageLimit {
+            visibleMessageLimit = ChatView.initialVisibleMessageLimit
+        }
+        if visibleMessageEndOffset != 0 {
+            visibleMessageEndOffset = 0
+        }
+        if lastLocalRevealAt != .distantPast {
+            lastLocalRevealAt = .distantPast
+        }
+        let targetBottomId = shouldArmBottomAnchorOnMount ? chatTailId : nil
+        if bottomId != targetBottomId {
+            bottomId = targetBottomId
+            markBottomAnchor(reason)
+        }
+        if awayFromBottom {
+            awayFromBottom = false
+        }
     }
 
     private func handleScrollUpTrigger(proxy: ScrollViewProxy) {
@@ -472,8 +488,62 @@ struct ChatTranscriptScrollerView: View {
                 .merging(rowProbeFields()) { current, _ in current }
                 .merging(scrollProbeFields(prefix: "request")) { current, _ in current }
             )
-            appState.requestOlderIfNeeded(chatId: chatId)
+            scheduleDeferredOlderPageRequest()
         }
+    }
+
+    private func scheduleDeferredOlderPageRequest() {
+        deferredOlderPageRequest?.cancel()
+        let targetChatId = chatId
+        RenderProbe.mark(
+            "ChatOlderPageRequestDeferred",
+            fields: [
+                "chat": targetChatId.uuidString
+            ].merging(scrollProbeFields(prefix: "defer")) { current, _ in current }
+        )
+        deferredOlderPageRequest = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 320_000_000)
+            guard !Task.isCancelled else { return }
+            guard case let .chat(currentChatId) = appState.currentRoute,
+                  currentChatId == targetChatId,
+                  let pagination = appState.messagesPaginationByChat[targetChatId],
+                  pagination.hasMore,
+                  !pagination.loadingOlder,
+                  pagination.oldestKnownId != nil
+            else { return }
+            guard isStillNearTopForDeferredOlderRequest() else {
+                RenderProbe.mark(
+                    "ChatOlderPageRequestDeferredSkipped",
+                    fields: [
+                        "chat": targetChatId.uuidString,
+                        "reason": "not-near-top"
+                    ].merging(scrollProbeFields(prefix: "deferSkip")) { current, _ in current }
+                )
+                return
+            }
+            RenderProbe.mark(
+                "ChatOlderPageRequestDeferredFire",
+                fields: [
+                    "chat": targetChatId.uuidString
+                ].merging(scrollProbeFields(prefix: "deferFire")) { current, _ in current }
+            )
+            appState.requestOlderIfNeeded(chatId: targetChatId)
+        }
+    }
+
+    private func isStillNearTopForDeferredOlderRequest() -> Bool {
+        guard let scrollView = ClxScrollRegistry.shared.get("chat.transcript.scroll"),
+              let documentView = scrollView.documentView
+        else { return true }
+        scrollView.layoutSubtreeIfNeeded()
+        documentView.layoutSubtreeIfNeeded()
+        let clipView = scrollView.contentView
+        let origin = clipView.bounds.origin
+        let visibleSize = clipView.bounds.size
+        let documentSize = documentView.bounds.size
+        let maxY = max(0, documentSize.height - visibleSize.height)
+        let topDistance = documentView.isFlipped ? origin.y : maxY - origin.y
+        return maxY <= 0.5 || topDistance <= ChatView.loadOlderThreshold
     }
 
     private func restoreNativeAnchorIfNeeded(

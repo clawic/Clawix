@@ -199,9 +199,7 @@ enum RolloutReader {
         let sessionMetaLine = extractSessionMetaLine(headData)
 
         let maxTailBytes = min(totalSize, UInt64(maxBytes))
-        var targetTailBytes = totalSize <= UInt64(maxBytes)
-            ? maxTailBytes
-            : min(maxTailBytes, UInt64(initialTailBytes))
+        var targetTailBytes = min(maxTailBytes, UInt64(initialTailBytes))
         var lastResult = readTailSlice(
             handle: handle,
             totalSize: totalSize,

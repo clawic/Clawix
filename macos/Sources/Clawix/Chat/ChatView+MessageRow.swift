@@ -39,6 +39,38 @@ enum TimestampFormatters {
     }
 }
 
+enum MessageRowActionLabels {
+    private static let lock = NSLock()
+    private static var cachedLocaleId = ""
+    private static var cached = Labels(copy: "", copied: "", edit: "", fork: "", pushToPublishing: "")
+
+    struct Labels {
+        let copy: String
+        let copied: String
+        let edit: String
+        let fork: String
+        let pushToPublishing: String
+    }
+
+    static func resolved() -> Labels {
+        lock.lock()
+        defer { lock.unlock() }
+        let locale = AppLocale.current
+        let id = locale.identifier
+        if id != cachedLocaleId {
+            cached = Labels(
+                copy: String(localized: "Copy", bundle: AppLocale.bundle, locale: locale),
+                copied: String(localized: "Copied", bundle: AppLocale.bundle, locale: locale),
+                edit: String(localized: "Edit", bundle: AppLocale.bundle, locale: locale),
+                fork: String(localized: "Fork conversation", bundle: AppLocale.bundle, locale: locale),
+                pushToPublishing: String(localized: "Push to publishing", bundle: AppLocale.bundle, locale: locale)
+            )
+            cachedLocaleId = id
+        }
+        return cached
+    }
+}
+
 struct ChatMarkdownPrewarmKey: Hashable {
     let chatId: UUID
     let visibleMessageCount: Int
@@ -48,43 +80,83 @@ struct ChatMarkdownPrewarmKey: Hashable {
 }
 
 enum ChatMarkdownPrewarmer {
-    static func prewarm(messages: [ChatMessage], timelineEntryLimit: Int) async {
-        let prewarmSet = markdownTexts(messages: messages, timelineEntryLimit: timelineEntryLimit)
+    static func prewarm(
+        messages: [ChatMessage],
+        timelineEntryLimit: Int,
+        includeRenderedSegments: Bool = false
+    ) async {
+        let prewarmSet = markdownTexts(
+            messages: messages,
+            timelineEntryLimit: timelineEntryLimit,
+            includeRenderedSegments: includeRenderedSegments
+        )
+        let uncachedTexts = prewarmSet.texts.filter { !MarkdownParseCache.hasCachedResult($0) }
+        let filePreviewMessages = prewarmSet.filePreviewMessages
         PerfSignpost.renderMarkdown.event("prewarm.content_texts", prewarmSet.contentCount)
         PerfSignpost.renderMarkdown.event("prewarm.timeline_texts", prewarmSet.timelineCount)
+        PerfSignpost.renderMarkdown.event("prewarm.rendered_segment_texts", prewarmSet.renderedSegmentCount)
         RenderProbe.mark(
             "MarkdownPrewarmSet",
             fields: [
                 "content": "\(prewarmSet.contentCount)",
+                "renderedSegments": "\(prewarmSet.renderedSegmentCount)",
                 "timeline": "\(prewarmSet.timelineCount)",
-                "total": "\(prewarmSet.texts.count)"
+                "total": "\(prewarmSet.texts.count)",
+                "uncached": "\(uncachedTexts.count)"
             ]
         )
-        let texts = prewarmSet.texts
+        let texts = uncachedTexts
         if !texts.isEmpty {
             PerfSignpost.renderMarkdown.event("prewarm.texts", texts.count)
         }
-        guard !texts.isEmpty else { return }
+        guard !texts.isEmpty || !filePreviewMessages.isEmpty else { return }
         await Task.detached(priority: .utility) {
             for text in texts {
                 MarkdownParseCache.prewarm(text)
             }
+            FileLinkPreviewCache.shared.prewarm(messages: filePreviewMessages)
         }.value
+    }
+
+    static func prewarmNow(messages: [ChatMessage], timelineEntryLimit: Int) {
+        let prewarmSet = markdownTexts(messages: messages, timelineEntryLimit: timelineEntryLimit)
+        let texts = prewarmSet.texts.filter { !MarkdownParseCache.hasCachedResult($0) }
+        guard !texts.isEmpty || !prewarmSet.filePreviewMessages.isEmpty else { return }
+        for text in texts {
+            MarkdownParseCache.prewarm(text)
+        }
+        FileLinkPreviewCache.shared.prewarm(messages: prewarmSet.filePreviewMessages)
     }
 
     private struct PrewarmTextSet {
         var texts: [String] = []
+        var filePreviewMessages: [ChatMessage] = []
         var contentCount = 0
+        var renderedSegmentCount = 0
         var timelineCount = 0
     }
 
-    private static func markdownTexts(messages: [ChatMessage], timelineEntryLimit: Int) -> PrewarmTextSet {
+    private static func markdownTexts(
+        messages: [ChatMessage],
+        timelineEntryLimit: Int,
+        includeRenderedSegments: Bool = false
+    ) -> PrewarmTextSet {
         var result = PrewarmTextSet()
         result.texts.reserveCapacity(messages.count * 2)
         for message in messages where message.role == .assistant {
             if !message.content.isEmpty {
                 result.texts.append(message.content)
                 result.contentCount += 1
+                if message.streamingFinished, !message.isError {
+                    result.filePreviewMessages.append(message)
+                }
+                if includeRenderedSegments, PlanSegmenter.containsPlan(message.content) {
+                    for segment in PlanSegmenter.segments(from: message.content) {
+                        guard case .text(let text) = segment, !text.isEmpty else { continue }
+                        result.texts.append(text)
+                        result.renderedSegmentCount += 1
+                    }
+                }
             }
             let timeline = message.timeline.suffix(timelineEntryLimit)
             for entry in timeline {
@@ -101,7 +173,6 @@ enum ChatMarkdownPrewarmer {
         }
         return result
     }
-
 }
 
 enum TimelineEntryWindow {
@@ -190,7 +261,6 @@ struct MessageRow: View, Equatable {
     /// row's body. Combined with `.equatable()` on the row's call site,
     /// a delta on a single message only re-renders that one row.
     var findQuery: String = ""
-    var closedMetadataReady: Bool = true
     var onTimelineExpanded: ((UUID) -> Void)? = nil
     var onUserBubbleExpanded: ((UUID) -> Void)? = nil
     /// Closures bridge back to the `AppState` mutation surface from the
@@ -222,6 +292,8 @@ struct MessageRow: View, Equatable {
     @State private var timelineExpanded = false
     @State private var visibleTimelineEntryLimit = Self.initialTimelineEntryLimit
     @State private var lastTimelineRevealAt: Date = .distantPast
+    @State private var fileLinkPreview: FileLinkPreview? = nil
+    @State private var fileLinkPreviewTask: Task<Void, Never>? = nil
 
     private var isUser: Bool { message.role == .user }
     private var exposeMessageAccessibility: Bool { NSWorkspace.shared.isVoiceOverEnabled }
@@ -237,7 +309,6 @@ struct MessageRow: View, Equatable {
             && lhs.responseStreaming == rhs.responseStreaming
             && lhs.codeBlockWordWrap == rhs.codeBlockWordWrap
             && lhs.findQuery == rhs.findQuery
-            && lhs.closedMetadataReady == rhs.closedMetadataReady
             && lhs.publishingReady == rhs.publishingReady
     }
 
@@ -405,26 +476,26 @@ struct MessageRow: View, Equatable {
                     }
                 }
 
-                let fileLinks = finalAssistantFileLinkPreview
                 if !responseStreaming,
                    message.streamingFinished,
                    !message.isError,
-                   !PlanSegmenter.containsPlan(message.content),
-                   !fileLinks.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(fileLinks.visiblePaths, id: \.self) { path in
-                            FileLinkCard(path: path)
-                                .frame(maxWidth: chatRailMaxWidth * 0.7, alignment: .leading)
+                   !PlanSegmenter.containsPlan(message.content) {
+                    if let fileLinks = fileLinkPreview, !fileLinks.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(fileLinks.visiblePaths, id: \.self) { path in
+                                FileLinkCard(path: path)
+                                    .frame(maxWidth: chatRailMaxWidth * 0.7, alignment: .leading)
+                            }
+                            if fileLinks.remainingCount > 0 {
+                                Text(verbatim: "Show \(fileLinks.remainingCount) more")
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(Palette.textSecondary)
+                                    .padding(.top, 1)
+                            }
                         }
-                        if fileLinks.remainingCount > 0 {
-                            Text(verbatim: "Show \(fileLinks.remainingCount) more")
-                                .font(.system(size: 12, weight: .regular))
-                                .foregroundColor(Palette.textSecondary)
-                                .padding(.top, 1)
-                        }
+                        .padding(.top, 4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.top, 4)
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 if isLastAssistantMessage,
@@ -474,10 +545,36 @@ struct MessageRow: View, Equatable {
         .onChange(of: message.id) { _, _ in
             visibleTimelineEntryLimit = Self.initialTimelineEntryLimit
             lastTimelineRevealAt = .distantPast
+            fileLinkPreview = nil
+            scheduleFileLinkPreviewReveal()
+        }
+        .onAppear {
+            scheduleFileLinkPreviewReveal()
+        }
+        .onDisappear {
+            fileLinkPreviewTask?.cancel()
+            fileLinkPreviewTask = nil
         }
         .clxControl("chat.message.row", role: "row", label: "Message row")
         .clxControl(isUser ? "chat.message.user" : "chat.message.assistant", role: "text", label: isUser ? "User message" : "Assistant message")
         .clxControl(message.streamingFinished ? "chat.message.final" : "chat.streaming.deltaTarget", role: "text", label: message.streamingFinished ? "Final message" : "Streaming message")
+    }
+
+    private func scheduleFileLinkPreviewReveal() {
+        guard message.role == .assistant else { return }
+        guard fileLinkPreview == nil else { return }
+        fileLinkPreviewTask?.cancel()
+        fileLinkPreviewTask = Task { @MainActor in
+            let targetMessage = message
+            try? await Task.sleep(nanoseconds: 350_000_000)
+            guard !Task.isCancelled else { return }
+            let preview = await Task.detached(priority: .utility) {
+                FileLinkPreviewCache.shared.preview(for: targetMessage)
+            }.value
+            guard !Task.isCancelled else { return }
+            fileLinkPreview = preview
+            fileLinkPreviewTask = nil
+        }
     }
 
     private var hiddenTimelineEntryCount: Int {
@@ -538,10 +635,6 @@ struct MessageRow: View, Equatable {
 
     private var finalAssistantLinkPreviewURL: URL? {
         AssistantWebLinkPreviewPolicy.url(for: message)
-    }
-
-    private var finalAssistantFileLinkPreview: FileLinkPreview {
-        FileLinkPreviewCache.shared.preview(for: message)
     }
 
     private func tickStreamingRowCategory() {
@@ -747,11 +840,12 @@ struct MessageRow: View, Equatable {
 
     @ViewBuilder
     private var actionBar: some View {
+        let labels = MessageRowActionLabels.resolved()
         let copyLabel = justCopied
-            ? String(localized: "Copied", bundle: AppLocale.bundle, locale: AppLocale.current)
-            : String(localized: "Copy", bundle: AppLocale.bundle, locale: AppLocale.current)
-        let editLabel = String(localized: "Edit", bundle: AppLocale.bundle, locale: AppLocale.current)
-        let forkLabel = String(localized: "Fork conversation", bundle: AppLocale.bundle, locale: AppLocale.current)
+            ? labels.copied
+            : labels.copy
+        let editLabel = labels.edit
+        let forkLabel = labels.fork
 
         HStack(spacing: -1) {
             if isUser {
@@ -780,9 +874,7 @@ struct MessageRow: View, Equatable {
                 if publishingReady {
                     MessageActionIcon(
                         kind: .system("megaphone"),
-                        label: String(localized: "Push to publishing",
-                                      bundle: AppLocale.bundle,
-                                      locale: AppLocale.current)
+                        label: labels.pushToPublishing
                     ) {
                         onPushToPublishing(message.content)
                     }
@@ -1007,6 +1099,7 @@ enum AssistantFileLinkOutputs {
 final class FileLinkPreviewCache {
     static let shared = FileLinkPreviewCache()
 
+    private let lock = NSLock()
     private var values: [Key: FileLinkPreview] = [:]
     private var order: [Key] = []
     private let limit = 256
@@ -1014,11 +1107,20 @@ final class FileLinkPreviewCache {
 
     private init() {}
 
+    func prewarm(messages: [ChatMessage]) {
+        for message in messages {
+            _ = preview(for: message)
+        }
+    }
+
     func preview(for message: ChatMessage) -> FileLinkPreview {
         let key = Key(message: message)
+        lock.lock()
         if let cached = values[key] {
+            lock.unlock()
             return cached
         }
+        lock.unlock()
 
         RenderProbe.mark(
             "FileLinkPreviewExtract",
@@ -1043,6 +1145,12 @@ final class FileLinkPreviewCache {
     }
 
     private func store(_ value: FileLinkPreview, for key: Key) {
+        lock.lock()
+        defer { lock.unlock() }
+        if values[key] != nil {
+            values[key] = value
+            return
+        }
         values[key] = value
         order.append(key)
         if order.count > limit {

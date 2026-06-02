@@ -14,6 +14,14 @@ private func scheduleChatMarkdownPrewarm(
     }
 }
 
+struct InitialTailHydrationPayload {
+    var path: URL
+    var threadId: String?
+    var result: RolloutReader.ReadResult
+    var messages: [ChatMessage]
+    var elapsedMs: Double
+}
+
 extension AppState {
     // MARK: - Clawix bridge helpers
 
@@ -178,6 +186,269 @@ extension AppState {
                 await clawix.attach(chatId: chat.id, threadId: threadId)
             }
         }
+    }
+
+    func hydrateInitialTailForNavigation(chatId: UUID) {
+        guard let chat = chat(byId: chatId), shouldHydrateHistory(chat) else { return }
+        if messagesPaginationByChat[chatId] != nil,
+           chatStore.transcript(for: chatId)?.messageIds.isEmpty == false {
+            return
+        }
+        if let payload = initialTailPrewarmPayloads.removeValue(forKey: chatId) {
+            applyInitialTailHydrationPayload(
+                payload,
+                chatId: chatId,
+                markName: "ChatHydrationNavigationInitialTailPrewarmed"
+            )
+            return
+        }
+        guard initialTailHydrationTasks[chatId] == nil else { return }
+
+        let localPath = chat.rolloutPath
+        let threadId = chat.clawixThreadId
+        let cachedThreadPath = threadId.flatMap { codexRolloutPathByThreadId[$0] }
+        let locator = codexRolloutLocator
+
+        initialTailHydrationTasks[chatId] = Task.detached(priority: .userInitiated) { [weak self] in
+            let path: URL?
+            if let localPath,
+               FileManager.default.fileExists(atPath: localPath.path) {
+                path = localPath
+            } else if let cachedThreadPath,
+                      FileManager.default.fileExists(atPath: cachedThreadPath.path) {
+                path = cachedThreadPath
+            } else if let threadId {
+                path = CodexRolloutLocator.findLikelyDayMatch(threadId: threadId) ?? locator(threadId)
+            } else {
+                path = nil
+            }
+            guard let path else {
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.initialTailHydrationTasks[chatId] = nil
+                    if let threadId {
+                        self.startClawJSSessionHydrationTask(threadId: threadId, chatId: chatId)
+                    }
+                }
+                return
+            }
+
+            let readStarted = CFAbsoluteTimeGetCurrent()
+            let result = RolloutReader.readTailWithStatus(path: path)
+            guard !result.entries.isEmpty else {
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.initialTailHydrationTasks[chatId] = nil
+                    self.finishEmptyInitialTailHydration(
+                        path: path,
+                        threadId: threadId,
+                        chatId: chatId,
+                        result: result,
+                        markName: "ChatHydrationNavigationInitialTailEmpty"
+                    )
+                }
+                return
+            }
+            let messages = rolloutChatMessages(from: result)
+            guard !messages.isEmpty else {
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.initialTailHydrationTasks[chatId] = nil
+                    self.finishEmptyInitialTailHydration(
+                        path: path,
+                        threadId: threadId,
+                        chatId: chatId,
+                        result: result,
+                        markName: "ChatHydrationNavigationInitialTailNoMessages"
+                    )
+                }
+                return
+            }
+            await ChatMarkdownPrewarmer.prewarm(
+                messages: messages,
+                timelineEntryLimit: 0,
+                includeRenderedSegments: true
+            )
+            let payload = InitialTailHydrationPayload(
+                path: path,
+                threadId: threadId,
+                result: result,
+                messages: messages,
+                elapsedMs: (CFAbsoluteTimeGetCurrent() - readStarted) * 1000
+            )
+
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.initialTailHydrationTasks[chatId] = nil
+                guard let current = self.chat(byId: chatId),
+                      self.shouldHydrateHistory(current)
+                else { return }
+                if self.messagesPaginationByChat[chatId] != nil,
+                   self.chatStore.transcript(for: chatId)?.messageIds.isEmpty == false {
+                    return
+                }
+                self.applyInitialTailHydrationPayload(
+                    payload,
+                    chatId: chatId,
+                    markName: "ChatHydrationNavigationInitialTail"
+                )
+            }
+        }
+    }
+
+    func scheduleInitialTailPrewarmForSidebarChats(limit: Int = 6) {
+        let candidates = Array(chats.prefix(max(0, limit)))
+        guard !candidates.isEmpty else { return }
+        for chat in candidates {
+            let chatId = chat.id
+            guard shouldHydrateHistory(chat) else { continue }
+            guard initialTailPrewarmPayloads[chatId] == nil,
+                  initialTailPrewarmTasks[chatId] == nil,
+                  initialTailHydrationTasks[chatId] == nil
+            else { continue }
+            if messagesPaginationByChat[chatId] != nil,
+               chatStore.transcript(for: chatId)?.messageIds.isEmpty == false {
+                continue
+            }
+
+            let localPath = chat.rolloutPath
+            let threadId = chat.clawixThreadId
+            let cachedThreadPath = threadId.flatMap { codexRolloutPathByThreadId[$0] }
+            let locator = codexRolloutLocator
+
+            initialTailPrewarmTasks[chatId] = Task.detached(priority: .utility) { [weak self] in
+                let path: URL?
+                if let localPath,
+                   FileManager.default.fileExists(atPath: localPath.path) {
+                    path = localPath
+                } else if let cachedThreadPath,
+                          FileManager.default.fileExists(atPath: cachedThreadPath.path) {
+                    path = cachedThreadPath
+                } else if let threadId {
+                    path = CodexRolloutLocator.findLikelyDayMatch(threadId: threadId) ?? locator(threadId)
+                } else {
+                    path = nil
+                }
+                guard let path else {
+                    await MainActor.run { [weak self] in
+                        self?.initialTailPrewarmTasks[chatId] = nil
+                    }
+                    return
+                }
+
+                let readStarted = CFAbsoluteTimeGetCurrent()
+                let result = RolloutReader.readTailWithStatus(path: path)
+                let messages = rolloutChatMessages(from: result)
+                guard !messages.isEmpty else {
+                    await MainActor.run { [weak self] in
+                        self?.initialTailPrewarmTasks[chatId] = nil
+                    }
+                    return
+                }
+                await ChatMarkdownPrewarmer.prewarm(
+                    messages: messages,
+                    timelineEntryLimit: 0,
+                    includeRenderedSegments: true
+                )
+                let payload = InitialTailHydrationPayload(
+                    path: path,
+                    threadId: threadId,
+                    result: result,
+                    messages: messages,
+                    elapsedMs: (CFAbsoluteTimeGetCurrent() - readStarted) * 1000
+                )
+
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.initialTailPrewarmTasks[chatId] = nil
+                    guard let current = self.chat(byId: chatId),
+                          self.shouldHydrateHistory(current)
+                    else { return }
+                    if self.messagesPaginationByChat[chatId] != nil,
+                       self.chatStore.transcript(for: chatId)?.messageIds.isEmpty == false {
+                        return
+                    }
+                    self.initialTailPrewarmPayloads[chatId] = payload
+                    RenderProbe.markPassive(
+                        "ChatHydrationInitialTailPrewarmReady",
+                        fields: [
+                            "chat": chatId.uuidString,
+                            "entries": "\(payload.result.entries.count)",
+                            "readBytes": "\(payload.result.readBytes)",
+                            "hasMore": "\(payload.result.hasMoreBefore)",
+                            "ms": String(format: "%.1f", payload.elapsedMs)
+                        ]
+                    )
+                }
+            }
+        }
+    }
+
+    private func applyInitialTailHydrationPayload(
+        _ payload: InitialTailHydrationPayload,
+        chatId: UUID,
+        markName: String
+    ) {
+        if let threadId = payload.threadId {
+            codexRolloutPathByThreadId[threadId] = payload.path
+        }
+        messagesPaginationByChat[chatId] = ChatPagination(
+            oldestKnownId: payload.result.entries.first?.id.uuidString,
+            hasMore: payload.result.hasMoreBefore,
+            loadingOlder: false
+        )
+        if let plan = payload.result.latestPlan {
+            planByChat[chatId] = plan
+        }
+        applyRolloutMessages(
+            payload.messages,
+            lastTurnInterrupted: payload.result.lastTurnInterrupted,
+            chatId: chatId,
+            marksHistoryHydrated: false
+        )
+        RenderProbe.mark(
+            markName,
+            fields: [
+                "chat": chatId.uuidString,
+                "entries": "\(payload.result.entries.count)",
+                "readBytes": "\(payload.result.readBytes)",
+                "hasMore": "\(payload.result.hasMoreBefore)",
+                "ms": String(format: "%.1f", payload.elapsedMs)
+            ]
+        )
+    }
+
+    private func finishEmptyInitialTailHydration(
+        path: URL,
+        threadId: String?,
+        chatId: UUID,
+        result: RolloutReader.ReadResult,
+        markName: String
+    ) {
+        if let threadId {
+            codexRolloutPathByThreadId[threadId] = path
+        }
+        messagesPaginationByChat[chatId] = ChatPagination(
+            oldestKnownId: result.entries.first?.id.uuidString,
+            hasMore: result.hasMoreBefore,
+            loadingOlder: false
+        )
+        if let plan = result.latestPlan {
+            planByChat[chatId] = plan
+        }
+        chatStore.updateSummary(id: chatId) { summary in
+            summary.historyHydrated = true
+        }
+        syncLegacyChatFromStore(chatId: chatId)
+        RenderProbe.mark(
+            markName,
+            fields: [
+                "chat": chatId.uuidString,
+                "entries": "\(result.entries.count)",
+                "readBytes": "\(result.readBytes)",
+                "hasMore": "\(result.hasMoreBefore)"
+            ]
+        )
     }
 
     private func hydrateHistoryFromLocalRollout(path: URL, chatId: UUID, blocking: Bool) {
@@ -592,7 +863,8 @@ extension AppState {
     private func applyRolloutMessages(
         _ messages: [ChatMessage],
         lastTurnInterrupted: Bool,
-        chatId: UUID
+        chatId: UUID,
+        marksHistoryHydrated: Bool = true
     ) {
         chatStore.replaceMessageTail(
             chatId: chatId,
@@ -600,10 +872,12 @@ extension AppState {
             limit: bridgeInitialPageLimit,
             keeping: activeStreamingMessageIds(chatId: chatId)
         )
-        chatStore.updateSummary(id: chatId) { summary in
-            summary.lastTurnInterrupted = lastTurnInterrupted
-            summary.historyHydrated = true
-            summary.lastMessageAt = messages.last?.timestamp ?? summary.lastMessageAt
+        if marksHistoryHydrated {
+            chatStore.updateSummary(id: chatId) { summary in
+                summary.lastTurnInterrupted = lastTurnInterrupted
+                summary.historyHydrated = true
+                summary.lastMessageAt = messages.last?.timestamp ?? summary.lastMessageAt
+            }
         }
         if messages.isEmpty {
             syncLegacyChatFromStore(chatId: chatId)
@@ -1064,14 +1338,23 @@ extension AppState {
                 "loaded": "\(chatStore.transcript(for: chatId)?.messageIds.count ?? 0)"
             ]
         )
-        if let path = chat(byId: chatId)?.rolloutPath,
+        let currentChat = chat(byId: chatId)
+        let rolloutPath = currentChat?.rolloutPath
+            ?? currentChat?.clawixThreadId.flatMap { codexRolloutPathByThreadId[$0] }
+        if let path = rolloutPath,
            FileManager.default.fileExists(atPath: path.path) {
             Task { @MainActor [weak self] in
                 let started = CFAbsoluteTimeGetCurrent()
                 let result = await Task.detached(priority: .userInitiated) {
                     RolloutReader.readWindowBefore(path: path, beforeMessageId: cursor)
                 }.value
-                let messages = rolloutChatMessages(from: result).map { $0.toWire() }
+                let chatMessages = rolloutChatMessages(from: result)
+                await ChatMarkdownPrewarmer.prewarm(
+                    messages: chatMessages,
+                    timelineEntryLimit: 0,
+                    includeRenderedSegments: true
+                )
+                let messages = chatMessages.map { $0.toWire() }
                 RenderProbe.mark(
                     "ChatOlderPageLoaded",
                     fields: [
@@ -1145,7 +1428,13 @@ extension AppState {
                     let result = await Task.detached(priority: .userInitiated) {
                         RolloutReader.readWindowBefore(path: path, beforeMessageId: cursor)
                     }.value
-                    let messages = rolloutChatMessages(from: result).map { $0.toWire() }
+                    let chatMessages = rolloutChatMessages(from: result)
+                    await ChatMarkdownPrewarmer.prewarm(
+                        messages: chatMessages,
+                        timelineEntryLimit: 0,
+                        includeRenderedSegments: true
+                    )
+                    let messages = chatMessages.map { $0.toWire() }
                     self?.applyDaemonMessagesPage(
                         chatId: chatId.uuidString,
                         messages: messages,

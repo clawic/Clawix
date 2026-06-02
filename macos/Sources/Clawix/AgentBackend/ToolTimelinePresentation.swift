@@ -68,7 +68,7 @@ enum ToolTimelinePresentation {
     }
 
     static func snapshot(groupID: UUID, items: [WorkItem]) -> ToolTimelinePresentationSnapshot {
-        ToolTimelinePresentationCache.shared.snapshot(groupID: groupID, items: items)
+        buildSnapshot(version: 0, for: items)
     }
 
     static func updatedSnapshot(
@@ -77,12 +77,13 @@ enum ToolTimelinePresentation {
         currentSnapshot: ToolTimelinePresentationSnapshot?,
         applying item: WorkItem
     ) -> ToolTimelinePresentationSnapshot {
-        ToolTimelinePresentationCache.shared.updatedSnapshot(
-            groupID: groupID,
-            previousItems: previousItems,
-            currentSnapshot: currentSnapshot,
-            applying: item
-        )
+        var nextItems = previousItems
+        if let index = nextItems.firstIndex(where: { $0.id == item.id }) {
+            nextItems[index] = item
+        } else {
+            nextItems.append(item)
+        }
+        return buildSnapshot(version: (currentSnapshot?.version ?? 0) + 1, for: nextItems)
     }
 
     fileprivate static func buildSnapshot(for items: [WorkItem]) -> ToolTimelinePresentationSnapshot {
@@ -590,6 +591,7 @@ enum ToolTimelinePresentation {
 private final class ToolTimelinePresentationCache {
     static let shared = ToolTimelinePresentationCache()
 
+    private let lock = NSLock()
     private var accumulators: [UUID: Accumulator] = [:]
     private var order: [UUID] = []
     private let limit = 512
@@ -597,6 +599,8 @@ private final class ToolTimelinePresentationCache {
     private init() {}
 
     func snapshot(groupID: UUID, items: [WorkItem]) -> ToolTimelinePresentationSnapshot {
+        lock.lock()
+        defer { lock.unlock() }
         let accumulator = Accumulator(items: items)
         accumulators[groupID] = accumulator
         remember(groupID)
@@ -610,6 +614,8 @@ private final class ToolTimelinePresentationCache {
         currentSnapshot: ToolTimelinePresentationSnapshot?,
         applying item: WorkItem
     ) -> ToolTimelinePresentationSnapshot {
+        lock.lock()
+        defer { lock.unlock() }
         let accumulator: Accumulator
         if let existing = accumulators[groupID],
            existing.version == currentSnapshot?.version {

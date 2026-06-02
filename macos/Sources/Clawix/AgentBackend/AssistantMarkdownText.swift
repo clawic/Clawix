@@ -355,6 +355,16 @@ enum MarkdownParseCache {
         _ = parse(text)
     }
 
+    static func hasCachedResult(
+        _ text: String,
+        phase: MarkdownParseCachePhase = .settled
+    ) -> Bool {
+        guard phase == .settled,
+              text.utf8.count <= maxRenderableSourceBytes
+        else { return false }
+        return cache.get(for: text) != nil
+    }
+
     static func cachedResult(
         _ text: String,
         renderKey: AssistantMarkdownRenderKey? = nil,
@@ -688,7 +698,11 @@ struct AssistantMarkdownText: View {
             renderModel.cancel()
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: accessibilityPlainText))
+        .accessibilityLabel(Text(verbatim: shouldExposeAccessibility ? accessibilityPlainText : ""))
+    }
+
+    private var shouldExposeAccessibility: Bool {
+        NSWorkspace.shared.isVoiceOverEnabled
     }
 
     private static func firstFrameBlocksIfNeeded(
@@ -1008,7 +1022,7 @@ private struct PlainStreamingWord: View, Equatable {
 
     var body: some View {
         Text(verbatim: text)
-            .font(BodyFont.system(size: fontSize, wght: assistantWght(for: weight)))
+            .font(assistantFont(size: fontSize, for: weight))
             .foregroundColor(color)
             .opacity(opacity)
             .animation(.easeOut(duration: StreamingFade.duration), value: opacity)
@@ -1073,7 +1087,7 @@ struct AssistantMarkdownListView: View {
                 .frame(width: 10, alignment: .leading)
         case .numbered:
             Text(verbatim: "\(index + 1).")
-                .font(BodyFont.system(size: 13.5, wght: assistantWght(for: weight)))
+                .font(assistantFont(size: 13.5, for: weight))
                 .foregroundColor(color)
                 .fixedSize()
                 .frame(minWidth: 16, alignment: .leading)
@@ -1384,9 +1398,8 @@ struct ParagraphFlow: View, Equatable {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             ForEach(Array(paragraph.lines.enumerated()), id: \.offset) { _, line in
-                if let plain = stablePlainText(for: line) {
-                    Text(verbatim: plain)
-                        .font(BodyFont.system(size: fontSize, wght: assistantWght(for: weight)))
+                if let styled = stableStyledText(for: line) {
+                    styled
                         .foregroundColor(color)
                         .lineSpacing(6)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1410,18 +1423,47 @@ struct ParagraphFlow: View, Equatable {
         }
     }
 
-    private func stablePlainText(for line: AnnotatedLine) -> String? {
+    private func stableStyledText(for line: AnnotatedLine) -> Text? {
         guard checkpoints.isEmpty, findQuery.isEmpty else { return nil }
-        var text = ""
-        text.reserveCapacity(line.atoms.reduce(0) { total, annotated in
-            if case .word(let s) = annotated.atom { return total + s.count }
-            return total
-        })
-        for annotated in line.atoms {
-            guard case .word(let s) = annotated.atom else { return nil }
-            text.append(s)
+        var text = Text(verbatim: "")
+        var segment = ""
+        var segmentStyle: StableInlineStyle?
+        var appended = false
+
+        func flushSegment() {
+            guard let style = segmentStyle, !segment.isEmpty else { return }
+            let fragment = Text(verbatim: segment)
+                .font(style.font(size: fontSize, baseWeight: weight))
+            text = text + fragment
+            segment = ""
+            appended = true
         }
-        return text
+
+        for annotated in line.atoms {
+            let style: StableInlineStyle
+            let value: String
+            switch annotated.atom {
+            case .word(let s):
+                style = .regular
+                value = s
+            case .bold(let s):
+                style = .bold
+                value = s
+            case .italic(let s):
+                style = .italic
+                value = s
+            case .code, .link:
+                flushSegment()
+                return nil
+            }
+            if let segmentStyle, segmentStyle != style {
+                flushSegment()
+            }
+            segmentStyle = style
+            segment += value
+        }
+        flushSegment()
+        return appended ? text : nil
     }
 
     /// Hoists the per-atom opacity calculation out of `AtomView`. With
@@ -1439,6 +1481,23 @@ struct ParagraphFlow: View, Equatable {
     }
 }
 
+private enum StableInlineStyle: Equatable {
+    case regular
+    case bold
+    case italic
+
+    func font(size: CGFloat, baseWeight: Font.Weight) -> Font {
+        switch self {
+        case .regular:
+            return assistantFont(size: size, for: baseWeight)
+        case .bold:
+            return assistantFont(size: size, for: .semibold)
+        case .italic:
+            return assistantFont(size: size, for: baseWeight).italic()
+        }
+    }
+}
+
 // Drops the rendered Manrope weight one named-instance step below what
 // `BodyFont.system(size:weight:)` would emit (light/regular → 500,
 // medium → 600, semibold+ → 700), so assistant prose reads a touch
@@ -1449,6 +1508,17 @@ func assistantWght(for weight: Font.Weight) -> CGFloat {
     case .medium: return 600
     case .semibold, .bold, .heavy, .black: return 700
     default: return 500
+    }
+}
+
+func assistantFont(size: CGFloat, for weight: Font.Weight) -> Font {
+    switch assistantWght(for: weight) {
+    case ..<550:
+        return Font.custom("Manrope-Medium", size: size)
+    case ..<650:
+        return Font.custom("Manrope-SemiBold", size: size)
+    default:
+        return Font.custom("Manrope-Bold", size: size)
     }
 }
 
@@ -1494,17 +1564,17 @@ struct AtomView: View, Equatable {
         switch atom {
         case .word(let s):
             styledText(s)
-                .font(BodyFont.system(size: fontSize, wght: assistantWght(for: weight)))
+                .font(assistantFont(size: fontSize, for: weight))
                 .foregroundColor(color)
                 .opacity(opacity)
         case .bold(let s):
             styledText(s)
-                .font(BodyFont.system(size: fontSize, wght: assistantWght(for: .semibold)))
+                .font(assistantFont(size: fontSize, for: .semibold))
                 .foregroundColor(color)
                 .opacity(opacity)
         case .italic(let s):
             styledText(s)
-                .font(BodyFont.system(size: fontSize, wght: assistantWght(for: weight)).italic())
+                .font(assistantFont(size: fontSize, for: weight).italic())
                 .foregroundColor(color)
                 .opacity(opacity)
         case .code(let s):
@@ -1585,7 +1655,7 @@ struct LinkAtom: View {
                 }
                 .foregroundColor(linkColor.opacity(hovered ? 0.78 : 1))
                 Text(verbatim: label)
-                    .font(BodyFont.system(size: 14, wght: 600))
+                    .font(assistantFont(size: 14, for: .medium))
                     .foregroundColor(linkColor.opacity(hovered ? 0.78 : 1))
                     .underline(hovered, pattern: .dot, color: linkColor.opacity(0.85))
             }

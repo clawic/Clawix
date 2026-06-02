@@ -10,7 +10,6 @@ struct ChatMessageEntryView: View {
     let lastAssistantMessageId: UUID?
     let responseStreaming: Bool
     let activeFindQuery: String
-    let closedMetadataReady: Bool
     let publishingReady: Bool
     let proxy: ScrollViewProxy
 
@@ -28,7 +27,6 @@ struct ChatMessageEntryView: View {
             responseStreaming: responseStreamingForRow,
             codeBlockWordWrap: appState.chatCodeBlockWordWrap,
             findQuery: activeFindQuery,
-            closedMetadataReady: closedMetadataReady,
             onTimelineExpanded: { expandedId in
                 // Pin the bottom of the expanded bubble so inserted content grows upward.
                 DispatchQueue.main.async {

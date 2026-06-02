@@ -281,7 +281,7 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         XCTAssertFalse(result.readEntireFile)
     }
 
-    func testRolloutReaderReadsWholeShortRolloutBeforeTailWindow() throws {
+    func testRolloutReaderStartsAtTailWindowForRolloutAboveInitialWindow() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
@@ -312,9 +312,9 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
 
         let result = RolloutReader.readTailWithStatus(path: rollout)
 
-        XCTAssertEqual(result.entries.map(\.text), ["Audit this project.", "Audit complete."])
-        XCTAssertFalse(result.hasMoreBefore)
-        XCTAssertTrue(result.readEntireFile)
+        XCTAssertEqual(result.entries.map(\.text), ["Audit complete."])
+        XCTAssertTrue(result.hasMoreBefore)
+        XCTAssertFalse(result.readEntireFile)
     }
 
     func testRolloutReaderExpandsSparseSingleTurnAndRendersCompactionDivider() throws {

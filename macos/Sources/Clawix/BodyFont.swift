@@ -44,8 +44,27 @@ enum BodyFont {
     }
 
     private static let wghtAxisTag: NSNumber = NSNumber(value: UInt32(0x77676874)) // 'wght'
+    private struct VariableFontKey: Hashable {
+        let sizeHundredths: Int
+        let wght: Int
+
+        init(size: CGFloat, wght: CGFloat) {
+            sizeHundredths = Int((size * 100).rounded())
+            self.wght = Int(wght.rounded())
+        }
+    }
+    private static let variableFontCacheLock = NSLock()
+    private static var variableFontCache: [VariableFontKey: CTFont] = [:]
 
     private static func makeVariableManrope(size: CGFloat, wght: CGFloat) -> CTFont {
+        let key = VariableFontKey(size: size, wght: wght)
+        variableFontCacheLock.lock()
+        if let cached = variableFontCache[key] {
+            variableFontCacheLock.unlock()
+            return cached
+        }
+        variableFontCacheLock.unlock()
+
         register()
         let variation: [NSNumber: NSNumber] = [wghtAxisTag: NSNumber(value: Double(wght))]
         let attrs: [String: Any] = [
@@ -53,7 +72,12 @@ enum BodyFont {
             kCTFontVariationAttribute as String: variation
         ]
         let descriptor = CTFontDescriptorCreateWithAttributes(attrs as CFDictionary)
-        return CTFontCreateWithFontDescriptor(descriptor, size, nil)
+        let font = CTFontCreateWithFontDescriptor(descriptor, size, nil)
+
+        variableFontCacheLock.lock()
+        variableFontCache[key] = font
+        variableFontCacheLock.unlock()
+        return font
     }
 
     // SwiftPM bundles resources into a nested module bundle, so the

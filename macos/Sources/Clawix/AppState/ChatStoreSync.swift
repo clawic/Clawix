@@ -71,6 +71,8 @@ extension AppState {
             || lhs.title != rhs.title
             || lhs.createdAt != rhs.createdAt
             || lhs.clawixThreadId != rhs.clawixThreadId
+            || lhs.rolloutPath != rhs.rolloutPath
+            || lhs.historyHydrated != rhs.historyHydrated
             || lhs.hasActiveTurn != rhs.hasActiveTurn
             || lhs.contextUsage != rhs.contextUsage
             || lhs.projectId != rhs.projectId
@@ -85,9 +87,11 @@ extension AppState {
             || lhs.forkedFromChatId != rhs.forkedFromChatId
             || lhs.forkedFromTitle != rhs.forkedFromTitle
             || lhs.forkBannerAfterMessageId != rhs.forkBannerAfterMessageId
+            || lhs.lastTurnInterrupted != rhs.lastTurnInterrupted
             || lhs.isQuickAskTemporary != rhs.isQuickAskTemporary
             || lhs.isSideChat != rhs.isSideChat
             || lhs.agentId != rhs.agentId
+            || lhs.lastMessageAt != rhs.lastMessageAt
     }
 
     func replaceLegacyChatsFromStore() {

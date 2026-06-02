@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import ClawixCore
 import ClawixEngine
 
@@ -807,6 +808,9 @@ extension AppState {
     /// other places where the same composer view stays mounted but the
     /// user's intent is "let me start typing now".
     func requestComposerFocus() {
+        if NSApp.windows.contains(where: { $0.firstResponder is ComposerNSTextView }) {
+            return
+        }
         composer.focusToken &+= 1
     }
 
