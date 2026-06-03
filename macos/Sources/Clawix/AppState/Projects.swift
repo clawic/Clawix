@@ -87,8 +87,11 @@ extension AppState {
         } else {
             order.append(projectId)
         }
+        // Optimistic UI: the reorder above is the frame the user sees. Push
+        // the SQLite write + runtime patch off-main so the drop never blocks
+        // the frame, the same deferred pattern pins use.
         manualProjectOrder = order
-        projectOrdersRepo.setOrder(order)
+        projectOrdersRepo.setOrderDeferred(order)
     }
 
     // MARK: - Project assignment

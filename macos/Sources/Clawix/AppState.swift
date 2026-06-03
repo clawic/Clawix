@@ -45,7 +45,7 @@ final class AppState: ObservableObject {
     /// (the agent is mid-response). Drives the confirm-before-quit guard
     /// so a `⌘Q` during an active turn doesn't silently drop the work.
     var hasActiveLocalWork: Bool {
-        chats.contains { $0.hasActiveTurn }
+        chatStore.summaries.contains { $0.hasActiveTurn }
     }
 
     @Published var currentRoute: SidebarRoute = .home {
@@ -1187,7 +1187,6 @@ final class AppState: ObservableObject {
            let project = projects.first(where: { $0.id == pid }), !project.path.isEmpty {
             chatProjectsRepo.setOverride(threadId: threadId, projectPath: project.path)
         }
-        syncLegacyChatFromStore(chatId: chatId)
     }
 
     func appendAssistantPlaceholder(chatId: UUID) -> UUID? {
@@ -1203,7 +1202,6 @@ final class AppState: ObservableObject {
             chatStore.updateSummary(id: chatId) { summary in
                 summary.hasActiveTurn = true
             }
-            syncLegacyChatFromStore(chatId: chatId)
             return last.id
         }
         let msg = ChatMessage(
@@ -1216,7 +1214,6 @@ final class AppState: ObservableObject {
         chatStore.updateSummary(id: chatId) { summary in
             summary.hasActiveTurn = true
         }
-        syncLegacyChatFromStore(chatId: chatId)
         return msg.id
     }
 

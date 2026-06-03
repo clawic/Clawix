@@ -15,7 +15,7 @@ struct QuickAskRecentChatsPicker: View {
     @FocusState private var searchFocused: Bool
 
     private var allChats: [Chat] {
-        appState.chats
+        appState.chatStore.activeSnapshots
             .filter { !$0.isArchived && !$0.isQuickAskTemporary && !$0.isSideChat }
             .sorted { $0.createdAt > $1.createdAt }
     }

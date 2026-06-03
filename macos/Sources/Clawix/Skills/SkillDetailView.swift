@@ -564,8 +564,8 @@ struct SkillDetailView: View {
 
     private var currentProjectId: String? {
         if let chatId = currentChatId,
-           let chat = appState.chats.first(where: { $0.id == chatId }),
-           let pid = chat.projectId {
+           let summary = appState.chatStore.summary(id: chatId),
+           let pid = summary.projectId {
             return pid.uuidString
         }
         if let project = appState.selectedProject {

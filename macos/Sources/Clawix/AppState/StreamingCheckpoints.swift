@@ -54,9 +54,10 @@ extension AppState {
         PerfSignpost.renderStreaming.event("settle.checkpoints.before", beforeCount)
         PerfSignpost.renderStreaming.event("settle.checkpoints.after", afterCount)
 
-        if changed {
-            syncLegacyChatFromStore(chatId: chatId)
-        }
+        _ = changed
+        // No legacy mirror sync on the streaming hot path. Transcript
+        // content lives in ChatTranscriptStore/ChatMessageStore; the sidebar
+        // and chrome read the named summary projection, not AppState.chats.
     }
 
     func flushStreamingCheckpointTails(_ message: inout ChatMessage) {
@@ -126,18 +127,21 @@ extension AppState {
         guard case let .chat(id) = currentRoute,
               chatStore.summary(id: id)?.hasUnreadCompletion == true
         else { return }
+        // Named single-row event only: the sidebar row reacts to the
+        // `chatStore.$summaries` publish. No broad AppState.chats sync.
         chatStore.updateSummary(id: id) { summary in
             summary.hasUnreadCompletion = false
         }
-        syncLegacyChatFromStore(chatId: id)
     }
 
     func markChat(chatId: UUID, hasActiveTurn: Bool) {
         guard chatStore.summary(id: chatId) != nil else { return }
+        // Turn-boundary spinner flip is a single-row event. Routing it through
+        // the named summary update keeps the broad AppState.objectWillChange
+        // fan-out and the O(N-chats) legacy scan off the hot path.
         chatStore.updateSummary(id: chatId) { summary in
             summary.hasActiveTurn = hasActiveTurn
         }
-        syncLegacyChatFromStore(chatId: chatId)
     }
 
     /// Flip the sidebar's blue "unread" dot on the row, regardless of
@@ -148,7 +152,6 @@ extension AppState {
         chatStore.updateSummary(id: chatId) { summary in
             summary.hasUnreadCompletion.toggle()
         }
-        syncLegacyChatFromStore(chatId: chatId)
     }
 
 }

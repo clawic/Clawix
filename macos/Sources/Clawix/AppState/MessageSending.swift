@@ -32,7 +32,6 @@ extension AppState {
         if case .chat(let id) = currentRoute,
            chatStore.summary(id: id) != nil {
             chatStore.appendMessage(chatId: id, userMsg)
-            syncLegacyChatFromStore(chatId: id)
             chatId = id
         } else {
             // Create a new chat from home screen — inherits the project
@@ -149,7 +148,6 @@ extension AppState {
             chatStore.updateSummary(id: chatId) { summary in
                 summary.hasActiveTurn = false
             }
-            syncLegacyChatFromStore(chatId: chatId)
         }
         return true
     }
@@ -224,7 +222,6 @@ extension AppState {
                     ]
                 ))
             }
-            syncLegacyChatFromStore(chatId: chatId)
             return true
         } catch {
             appendErrorBubble(chatId: chatId, message: "Could not send through ClawJS sessions: \(error.localizedDescription)")
@@ -306,7 +303,6 @@ extension AppState {
         guard chatStore.summary(id: chatId) != nil else { return }
         let note = ChatMessage(role: .assistant, content: text, streamingFinished: true, timestamp: Date())
         chatStore.appendMessage(chatId: chatId, note)
-        syncLegacyChatFromStore(chatId: chatId)
     }
 
     private func handleCrisisPromptIfNeeded(text: String, chatId: UUID) -> Bool {
@@ -432,7 +428,6 @@ extension AppState {
             chatStore.updateSummary(id: id) { summary in
                 summary.lastTurnInterrupted = false
             }
-            syncLegacyChatFromStore(chatId: id)
             resolvedId = id
         } else {
             let titleSeed = trimmed.isEmpty
@@ -535,7 +530,6 @@ extension AppState {
         chatStore.updateSummary(id: chatId) { summary in
             summary.lastTurnInterrupted = false
         }
-        syncLegacyChatFromStore(chatId: chatId)
 
         if handleCrisisPromptIfNeeded(text: trimmed, chatId: chatId) {
             return
@@ -883,6 +877,5 @@ extension AppState {
                 }
             }
         }
-        syncLegacyChatFromStore(chatId: chatId)
     }
 }

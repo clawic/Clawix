@@ -23,16 +23,37 @@ final class ProjectOrdersRepository {
     }
 
     func setOrder(_ projectIds: [UUID]) {
-        if let db = dbProvider() {
-            try? db.write { db in
-                try db.execute(sql: "DELETE FROM project_sort_order")
-                for (idx, id) in projectIds.enumerated() {
-                    let row = ProjectSortOrderRow(projectId: id.uuidString,
-                                                  sortOrder: Int64(idx + 1) * Self.orderGap)
-                    try row.insert(db)
-                }
+        Self.persist(projectIds, dbProvider: dbProvider)
+        ClawJSAppStateClient.setProjectOrder(projectIds.map(\.uuidString))
+    }
+
+    /// Optimistic-UI variant: the caller has already reordered the in-memory
+    /// list (the frame the user sees), so the SQLite write and the runtime
+    /// patch are pushed off the main actor and never block project drag-drop.
+    /// Mirrors the deferred ordering pattern used for pins.
+    func setOrderDeferred(_ projectIds: [UUID]) {
+        let provider = dbProvider
+        let stringIds = projectIds.map(\.uuidString)
+        Task.detached(priority: .utility) {
+            Self.persist(projectIds, dbProvider: provider)
+            await MainActor.run {
+                ClawJSAppStateClient.setProjectOrder(stringIds)
             }
         }
-        ClawJSAppStateClient.setProjectOrder(projectIds.map(\.uuidString))
+    }
+
+    nonisolated private static func persist(
+        _ projectIds: [UUID],
+        dbProvider: @Sendable () -> DatabaseQueue?
+    ) {
+        guard let db = dbProvider() else { return }
+        try? db.write { db in
+            try db.execute(sql: "DELETE FROM project_sort_order")
+            for (idx, id) in projectIds.enumerated() {
+                let row = ProjectSortOrderRow(projectId: id.uuidString,
+                                              sortOrder: Int64(idx + 1) * Self.orderGap)
+                try row.insert(db)
+            }
+        }
     }
 }

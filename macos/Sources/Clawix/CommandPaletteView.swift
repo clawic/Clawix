@@ -247,7 +247,7 @@ struct CommandPaletteView: View {
     /// thread switcher: a few most-recent threads at rest, fuzzy-matched by
     /// title while searching.
     private func recentChatsSection(query q: String) -> PaletteSection? {
-        let matches = appState.chats
+        let matches = appState.chatStore.summaries
             .filter { q.isEmpty || $0.title.lowercased().contains(q) }
             .prefix(q.isEmpty ? 5 : 8)
         guard !matches.isEmpty else { return nil }

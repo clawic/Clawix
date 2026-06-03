@@ -106,9 +106,9 @@ enum ClxControlHandlers {
         ]
         if let appState {
             out["route"] = routeDescription(appState.currentRoute)
-            out["chatCount"] = appState.chats.count
-            out["archivedChatCount"] = appState.archivedChats.count
-            out["firstChats"] = appState.chats.prefix(5).map { chat in
+            out["chatCount"] = appState.chatStore.summaries.count
+            out["archivedChatCount"] = appState.chatStore.archivedSummaries.count
+            out["firstChats"] = appState.chatStore.activeSnapshots.prefix(5).map { chat in
                 chatDiagnostics(chat, appState: appState)
             }
             if let currentChatId = appState.currentChatId,
@@ -123,7 +123,8 @@ enum ClxControlHandlers {
         guard let appState else {
             return ClxControlResult(status: 503, json: ["error": "app state unavailable"])
         }
-        let allChats = appState.chats + appState.archivedChats
+        let allChats = appState.chatStore.activeSnapshots + appState.chatStore.archivedSnapshots
+        let activeChats = appState.chatStore.activeSnapshots
         let target: Chat?
         if let id = args["id"] as? String, let uuid = UUID(uuidString: id) {
             target = allChats.first { $0.id == uuid }
@@ -132,8 +133,8 @@ enum ClxControlHandlers {
         } else if let title = args["title"] as? String {
             target = allChats.first { $0.title.caseInsensitiveCompare(title) == .orderedSame }
                 ?? allChats.first { $0.title.localizedCaseInsensitiveContains(title) }
-        } else if let index = args["index"] as? Int, appState.chats.indices.contains(index) {
-            target = appState.chats[index]
+        } else if let index = args["index"] as? Int, activeChats.indices.contains(index) {
+            target = activeChats[index]
         } else {
             return badRequest("missing id, threadId, title, or index")
         }
@@ -344,7 +345,6 @@ enum ClxControlHandlers {
         }
         appState.composer.text = ""
         appState.composer.attachments = []
-        appState.syncLegacyChatFromStore(chatId: chatId)
         let assistantId = appState.appendAssistantPlaceholder(chatId: chatId)
         if assistantId != nil {
             appState.appendAssistantDelta(chatId: chatId, delta: "Preparing mock response...")
@@ -388,8 +388,8 @@ enum ClxControlHandlers {
             historyHydrated: true,
             hasActiveTurn: false
         )
-        appState.chats.insert(chat, at: 0)
-        appState.chatStore.upsert(chat)
+        // Source of truth is the chat store; the legacy mirror is derived.
+        appState.chatStore.upsert(chat, at: 0)
         appState.navigate(to: .chat(chat.id))
         return chat.id
     }
@@ -1153,7 +1153,6 @@ enum ClxControlHandlers {
         }
         let chatId = resolvedChatId(args, appState: appState)
             ?? appState.chatStore.summaries.first?.id
-            ?? appState.chats.first?.id
         guard let chatId,
               let existing = appState.chatStore.summary(id: chatId) else {
             return ClxControlResult(status: 404, json: ["error": "chat not found"])
@@ -1982,7 +1981,7 @@ enum ClxControlHandlers {
 
     private static func ensureTraceChatId(_ args: [String: Any], appState: AppState) -> UUID? {
         let selected = resolvedChatId(args, appState: appState)
-            ?? appState.chats.first?.id
+            ?? appState.chatStore.summaries.first?.id
         guard let chatId = selected else {
             return nil
         }
@@ -1998,7 +1997,8 @@ enum ClxControlHandlers {
     }
 
     private static func resolvedChatId(_ args: [String: Any], appState: AppState) -> UUID? {
-        let allChats = appState.chats + appState.archivedChats
+        let activeChats = appState.chatStore.activeSnapshots
+        let allChats = activeChats + appState.chatStore.archivedSnapshots
         if let id = args["id"] as? String, let uuid = UUID(uuidString: id) {
             return allChats.first { $0.id == uuid }?.id
         }
@@ -2009,8 +2009,8 @@ enum ClxControlHandlers {
             return allChats.first { $0.title.caseInsensitiveCompare(title) == .orderedSame }?.id
                 ?? allChats.first { $0.title.localizedCaseInsensitiveContains(title) }?.id
         }
-        if let index = args["index"] as? Int, appState.chats.indices.contains(index) {
-            return appState.chats[index].id
+        if let index = args["index"] as? Int, activeChats.indices.contains(index) {
+            return activeChats[index].id
         }
         return appState.currentChatId
     }

@@ -17,7 +17,6 @@ extension AppState {
             }
             summary.uncommittedFiles = nil
         }
-        syncLegacyChatFromStore(chatId: chatId)
     }
 
     /// Append a new branch to the chat's known list and switch to it.
@@ -33,7 +32,6 @@ extension AppState {
             summary.branch = trimmed
             summary.uncommittedFiles = nil
         }
-        syncLegacyChatFromStore(chatId: chatId)
     }
 
     func updateTokenUsage(chatId: UUID, usage: ThreadTokenUsage) {
@@ -45,7 +43,6 @@ extension AppState {
         chatStore.updateSummary(id: chatId) { summary in
             summary.contextUsage = contextUsage
         }
-        syncLegacyChatFromStore(chatId: chatId)
     }
 
     /// Context usage for whichever chat the user is currently looking at.
@@ -206,7 +203,6 @@ extension AppState {
         transcript.removeAll(from: mIdx)
         let edited = ChatMessage(role: .user, content: trimmed, timestamp: Date())
         chatStore.appendMessage(chatId: chatId, edited)
-        syncLegacyChatFromStore(chatId: chatId)
 
         if let clawix {
             Task { @MainActor in
@@ -475,7 +471,6 @@ extension AppState {
                 item.title = summary.title
             }
         }
-        syncLegacyChatFromStore(chatId: chatId)
 
         composer.text = ""
         composer.attachments = []
@@ -521,7 +516,6 @@ extension AppState {
         chatStore.updateSummary(id: chatId) { summary in
             summary.hasActiveTurn = false
         }
-        syncLegacyChatFromStore(chatId: chatId)
     }
 
     // MARK: - Titles
@@ -563,13 +557,11 @@ extension AppState {
             chatStore.updateSummary(id: chatId) { item in
                 item.title = trimmed
             }
-            syncLegacyChatFromStore(chatId: chatId)
             return
         }
         chatStore.updateSummary(id: chatId) { item in
             item.title = trimmed
         }
-        syncLegacyChatFromStore(chatId: chatId)
         titlesRepo.upsertManual(threadId: threadId, title: trimmed)
 
         guard SyncSettings.syncRenamesWithCodex else { return }
@@ -594,7 +586,6 @@ extension AppState {
         chatStore.updateSummary(id: summary.id) { item in
             item.title = trimmed
         }
-        syncLegacyChatFromStore(chatId: summary.id)
     }
 
     func archiveChat(chatId: UUID) {

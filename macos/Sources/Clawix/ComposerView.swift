@@ -22,6 +22,11 @@ struct ComposerView: View {
     @EnvironmentObject private var dictation: DictationCoordinator
     @StateObject private var localModelsService = LocalModelsService.shared
     @State private var sendOnStop = false
+    /// Mirror of the routed/queue chat's `hasActiveTurn`, refreshed from the
+    /// named `chatStore.$summaries` event (not the broad AppState publish that
+    /// P1 removed from the send/turn hot path).
+    @State private var activeTurnInChat = false
+    @State private var queueTargetHasActiveTurn = false
     @State private var addMenuOpen = false
     @State private var addMenuHover = false
     @State private var permissionsMenuOpen = false
@@ -267,16 +272,30 @@ struct ComposerView: View {
         }
         .animation(.easeOut(duration: 0.20), value: slashOpen)
         .animation(.easeOut(duration: 0.20), value: mentionOpen)
+        .onAppear { refreshActiveTurnFlags() }
+        .onReceive(appState.chatStore.$summaries) { _ in refreshActiveTurnFlags() }
+        .onReceive(appState.$currentRoute) { _ in refreshActiveTurnFlags() }
     }
 
     // MARK: - Toolbars
 
-    private var activeTurnInChat: Bool {
+    private func computeActiveTurnInChat() -> Bool {
         if case let .chat(id) = appState.currentRoute,
-           let chat = appState.chats.first(where: { $0.id == id }) {
-            return chat.hasActiveTurn
+           let summary = appState.chatStore.summary(id: id) {
+            return summary.hasActiveTurn
         }
         return false
+    }
+
+    /// Recompute the cached active-turn flags. Driven by the named
+    /// `chatStore.$summaries` / `$currentRoute` events so the composer's
+    /// Send/Stop/Queue affordances stay live without the broad AppState
+    /// fan-out the legacy mirror used to trigger.
+    private func refreshActiveTurnFlags() {
+        let active = computeActiveTurnInChat()
+        if active != activeTurnInChat { activeTurnInChat = active }
+        let queue = computeQueueTargetHasActiveTurn()
+        if queue != queueTargetHasActiveTurn { queueTargetHasActiveTurn = queue }
     }
 
     /// Chat the composer is currently anchored to (used by overlays
@@ -303,10 +322,10 @@ struct ComposerView: View {
     /// send should queue a follow-up instead of starting a turn. Mirrors
     /// `hasActiveTurn` of the target chat (not necessarily the routed one,
     /// so a side-chat composer queues into its own chat).
-    private var queueTargetHasActiveTurn: Bool {
+    private func computeQueueTargetHasActiveTurn() -> Bool {
         guard let chatId = queueChatId,
-              let chat = appState.chats.first(where: { $0.id == chatId }) else { return false }
-        return chat.hasActiveTurn
+              let summary = appState.chatStore.summary(id: chatId) else { return false }
+        return summary.hasActiveTurn
     }
 
     /// Queueing only applies to the mainstream agent flow. Local models and

@@ -227,9 +227,7 @@ struct ForkedFromBanner: View {
     }
 
     private func navigateToParent() {
-        guard appState.chats.contains(where: { $0.id == parentChatId })
-                || appState.archivedChats.contains(where: { $0.id == parentChatId })
-        else { return }
+        guard appState.chatStore.summary(id: parentChatId) != nil else { return }
         appState.currentRoute = .chat(parentChatId)
     }
 }

@@ -237,7 +237,7 @@ final class QuickAskController: ObservableObject {
 
     func show() {
         guard FeatureFlags.shared.isVisible(.quickAsk) else { return }
-        QuickAskDiag.log("show() begin activeChatId=\(activeChatId?.uuidString ?? "nil") chats=\(appState?.chats.count ?? -1) screens=\(NSScreen.screens.count) main=\(NSScreen.main?.localizedName ?? "nil")")
+        QuickAskDiag.log("show() begin activeChatId=\(activeChatId?.uuidString ?? "nil") chats=\(appState?.chatStore.summaries.count ?? -1) screens=\(NSScreen.screens.count) main=\(NSScreen.main?.localizedName ?? "nil")")
         // Apply the QuickAsk-scoped default model if the user has set
         // one in Settings. We rebind `appState.selectedModel` to that
         // value at every show() so the picker inside the HUD always
@@ -299,15 +299,25 @@ final class QuickAskController: ObservableObject {
         panel?.orderOut(nil)
     }
 
-    /// Drop every QuickAsk-temporary chat from `appState.chats` and
-    /// clear `activeChatId` if it pointed to one of them.
+    /// Drop every QuickAsk-temporary chat from the chat store (and the
+    /// derived legacy mirror) and clear `activeChatId` if it pointed to one
+    /// of them.
     private func purgeTemporaryChats() {
         guard let appState else { return }
         let temporaryIds = Set(
-            appState.chats.filter(\.isQuickAskTemporary).map(\.id)
+            appState.chatStore.summaries.filter(\.isQuickAskTemporary).map(\.id)
         )
         guard !temporaryIds.isEmpty else { return }
-        appState.chats.removeAll { temporaryIds.contains($0.id) }
+        for id in temporaryIds {
+            appState.chatStore.remove(chatId: id)
+        }
+        // Keep the derived legacy mirror coherent (structural readers that
+        // still consult AppState.chats this pass). Removing from the array
+        // does not re-add to the store: the temporaries are already gone from
+        // summaries, and replaceActive rebuilds from the cleaned array.
+        if appState.chats.contains(where: { temporaryIds.contains($0.id) }) {
+            appState.chats.removeAll { temporaryIds.contains($0.id) }
+        }
         if let active = activeChatId, temporaryIds.contains(active) {
             clearActiveChat()
         }
@@ -342,7 +352,7 @@ final class QuickAskController: ObservableObject {
     /// hitting a dead end.
     func cycleRecentChats(direction: Int) {
         guard let appState else { return }
-        let ordered = appState.chats
+        let ordered = appState.chatStore.summaries
             .filter { !$0.isArchived && !$0.isQuickAskTemporary && !$0.isSideChat }
             .sorted { $0.createdAt > $1.createdAt }
         guard !ordered.isEmpty else { return }

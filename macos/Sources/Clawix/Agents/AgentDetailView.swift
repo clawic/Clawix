@@ -195,7 +195,7 @@ struct AgentDetailView: View {
 
     @ViewBuilder
     private func chatsTab(for agent: Agent) -> some View {
-        let chats = appState.chats.filter { $0.agentId == agent.id }
+        let chats = appState.chatStore.activeSnapshots.filter { $0.agentId == agent.id }
         if chats.isEmpty {
             emptyTab(icon: "bubble.left",
                      title: "No chats yet",

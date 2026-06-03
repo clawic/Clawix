@@ -23,8 +23,8 @@ struct SkillsChipBar: View {
         guard let store = appState.skillsStore else { return [] }
         let projectId: String? = {
             if let chatId,
-               let chat = appState.chats.first(where: { $0.id == chatId }),
-               let pid = chat.projectId {
+               let summary = appState.chatStore.summary(id: chatId),
+               let pid = summary.projectId {
                 return pid.uuidString
             }
             return appState.selectedProject?.id.uuidString

@@ -32,7 +32,6 @@ extension AppState {
         chatStore.updateSummary(id: chatId) { summary in
             summary.hasActiveTurn = false
         }
-        syncLegacyChatFromStore(chatId: chatId)
         scheduleStreamingCheckpointSettlement(chatId: chatId, messageId: messageId)
     }
 
@@ -60,7 +59,6 @@ extension AppState {
         chatStore.updateSummary(id: chatId) { summary in
             summary.hasActiveTurn = false
         }
-        syncLegacyChatFromStore(chatId: chatId)
         scheduleStreamingCheckpointSettlement(chatId: chatId, messageId: messageId)
     }
 
@@ -332,8 +330,9 @@ extension AppState {
         }
         // If the user wasn't looking at this chat when the turn finished,
         // surface the soft-blue unread dot in the sidebar so they can spot
-        // the freshly-arrived reply at a glance.
-        syncLegacyChatFromStore(chatId: chatId)
+        // the freshly-arrived reply at a glance. The summary update above is
+        // the named single-row event the sidebar row reacts to; no broad
+        // AppState.chats mirror sync on the turn-completion hot path.
         scheduleStreamingCheckpointSettlement(chatId: chatId, messageId: lastMessage.id)
 
         // A clean completion is the moment to release the next queued

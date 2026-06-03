@@ -82,7 +82,7 @@ struct ProjectEditorSheet: View {
                     .foregroundColor(Color(red: 0.95, green: 0.6, blue: 0.35))
                 } else if !path.isEmpty && FileManager.default.fileExists(atPath: expandedPath) {
                     let projectId = context.project?.id
-                    let pathMatchCount = appState.chats.filter { chat in
+                    let pathMatchCount = appState.chatStore.summaries.filter { chat in
                         if let pid = projectId, chat.projectId == pid { return false }
                         guard chat.projectId == nil,
                               let cwd = chat.cwd, !cwd.isEmpty else { return false }

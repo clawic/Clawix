@@ -21,11 +21,11 @@ import XCTest
 /// `legacy.sync` scan + the broad publish, which is exactly what these probes
 /// capture (`legacy.sync.scanned` == N walked).
 ///
-/// Each `_baseline` test asserts the CURRENT (intentionally-bad) numbers and
-/// names the P1 target in a comment. When P1 retires the legacy mirror on the
-/// hot path these flip to the target (broad publish == 0, scan == 0) and
-/// become the permanent locks. The named single-row `chatStore` event
-/// (`summaries` publish) is the correct path and stays at 1.
+/// P1 retired the legacy mirror on the send/turn-boundary hot path. These
+/// tests are now the permanent locks: a single-row turn flip or a send routes
+/// only through the named `chatStore` events, so the broad `AppState.chats`
+/// publish and the O(N-chats) legacy scan are gone (both == 0), while the
+/// named single-row `summaries` publish stays at exactly 1.
 @MainActor
 final class UIThinnessContractTests: XCTestCase {
     private var cancellables: Set<AnyCancellable> = []
@@ -77,15 +77,12 @@ final class UIThinnessContractTests: XCTestCase {
 
     // MARK: - Turn boundary keystone
 
-    /// A turn-boundary status flip (`hasActiveTurn`) is conceptually a
-    /// single-row event: it should update exactly that row's spinner. Today
-    /// it ALSO re-publishes the whole `AppState.chats` mirror (fanning
-    /// `AppState.objectWillChange` to all observers) and walks the N-chat array
-    /// via the legacy sync.
-    ///
-    /// P1 target: chatsPublishes == 0, appStatePublishes == 0, scan == 0;
-    /// summariesPublishes stays == 1 (the named single-row event is all that fires).
-    func testTurnBoundaryFansOutToGlobalAppStateToday_baseline() {
+    /// A turn-boundary status flip (`hasActiveTurn`) is a single-row event: it
+    /// updates exactly that row's spinner through the named `chatStore`
+    /// summary update. P1 removed the legacy `AppState.chats` mirror sync from
+    /// this hot path, so the broad `AppState.objectWillChange` fan-out and the
+    /// O(N-chats) legacy scan are gone; only the named `summaries` publish fires.
+    func testTurnBoundaryDoesNotFanOutToGlobalAppState() {
         let (state, ids) = makeState(chatCount: 200)
         let target = ids[0]
         let sidebar = SidebarStore(appState: state)
@@ -102,20 +99,20 @@ final class UIThinnessContractTests: XCTestCase {
         state.markChat(chatId: target, hasActiveTurn: true)
         let scan = legacySyncScan()
 
-        // KEYSTONE BUG (P1 target == 0): the global mirror is broadcast for a single-row event.
-        XCTAssertGreaterThanOrEqual(
-            chatsPublishes, 1,
-            "Today a turn boundary re-publishes AppState.chats. P1 target: 0."
-        )
-        XCTAssertGreaterThanOrEqual(
-            appStatePublishes, 1,
-            "Today a turn boundary fans AppState.objectWillChange out to every @EnvironmentObject observer. P1 target: 0."
+        // Keystone fixed: no broad mirror broadcast for a single-row event.
+        XCTAssertEqual(
+            chatsPublishes, 0,
+            "A turn boundary must not re-publish AppState.chats."
         )
         XCTAssertEqual(
-            scan, 200,
-            "Today a single-row turn flip walks all N chats via the legacy sync. P1 target: 0."
+            appStatePublishes, 0,
+            "A turn boundary must not fan AppState.objectWillChange out to every @EnvironmentObject observer."
         )
-        // The correct named single-row event fires (this stays after P1).
+        XCTAssertEqual(
+            scan, 0,
+            "A single-row turn flip must not walk the N-chat array via the legacy sync."
+        )
+        // The correct named single-row event is all that fires.
         XCTAssertEqual(summariesPublishes, 1)
         XCTAssertGreaterThan(sidebar.revision, sidebarRevision)
         XCTAssertEqual(state.chatStore.summary(id: target)?.hasActiveTurn, true)
@@ -123,12 +120,12 @@ final class UIThinnessContractTests: XCTestCase {
 
     // MARK: - Send keystone
 
-    /// Mirrors `AppState.sendMessage()` lines 34-35 for an existing chat: the
-    /// named append event (correct, kept) followed by the legacy mirror sync
-    /// (the avoidable broad publish + O(N) scan on the send hot path).
-    ///
-    /// P1 target: chatsPublishes == 0, appStatePublishes == 0, scan == 0.
-    func testSendLegacyMirrorStepFansOutToGlobalAppStateToday_baseline() {
+    /// The send hot path for an existing chat now routes only through the named
+    /// `chatStore.appendMessage` event (which optimistically lands the bubble
+    /// and publishes one summary update). The legacy mirror sync that used to
+    /// follow it on the hot path is gone, so the broad `AppState.chats` publish
+    /// and the O(N) scan never fire.
+    func testSendDoesNotFanOutToGlobalAppState() {
         let (state, ids) = makeState(chatCount: 200)
         let target = ids[0]
         state.currentRoute = .chat(target)
@@ -139,28 +136,65 @@ final class UIThinnessContractTests: XCTestCase {
         state.$chats.dropFirst().sink { _ in chatsPublishes += 1 }.store(in: &cancellables)
 
         RenderProbe.resetMeasurementWindow()
-        // The send hot path, surgically: named append (kept) + legacy sync (removed in P1).
+        // The send hot path: named append only (no legacy mirror sync).
         state.chatStore.appendMessage(chatId: target, ChatMessage(role: .user, content: "hello"))
-        state.syncLegacyChatFromStore(chatId: target)
         let scan = legacySyncScan()
 
-        XCTAssertGreaterThanOrEqual(
-            chatsPublishes, 1,
-            "Today a send re-publishes AppState.chats before the bubble paints. P1 target: 0."
-        )
-        XCTAssertGreaterThanOrEqual(
-            appStatePublishes, 1,
-            "Today a send fans AppState.objectWillChange out to every observer. P1 target: 0."
+        XCTAssertEqual(
+            chatsPublishes, 0,
+            "A send must not re-publish AppState.chats before the bubble paints."
         )
         XCTAssertEqual(
-            scan, 200,
-            "Today a send walks all N chats via the legacy sync. P1 target: 0."
+            appStatePublishes, 0,
+            "A send must not fan AppState.objectWillChange out to every observer."
+        )
+        XCTAssertEqual(
+            scan, 0,
+            "A send must not walk the N-chat array via the legacy sync."
         )
         // The bubble is in the per-message store immediately (optimistic, kept).
         XCTAssertEqual(
             state.chatStore.transcript(for: target)?.messages.last?.content,
             "hello"
         )
+    }
+
+    // MARK: - Send call budget (independent of N-chats)
+
+    /// One send is exactly one `messageIds` structure publish + one `summaries`
+    /// single-row publish + zero broad `AppState.objectWillChange` / `$chats`
+    /// publishes, regardless of how many chats exist. `appendMessage` updates
+    /// `lastMessageAt`/`lastTurnInterrupted` on the summary (one summaries
+    /// publish) and appends one id to the transcript (one messageIds publish).
+    func testSendCallBudgetIsIndependentOfChatCount() {
+        for chatCount in [1, 500] {
+            cancellables.removeAll()
+            let (state, ids) = makeState(chatCount: chatCount)
+            let target = ids[0]
+            state.currentRoute = .chat(target)
+            guard let transcript = state.chatStore.transcript(for: target) else {
+                XCTFail("missing transcript for \(chatCount)")
+                continue
+            }
+
+            var appStatePublishes = 0
+            var chatsPublishes = 0
+            var summariesPublishes = 0
+            var messageIdsPublishes = 0
+            state.objectWillChange.sink { _ in appStatePublishes += 1 }.store(in: &cancellables)
+            state.$chats.dropFirst().sink { _ in chatsPublishes += 1 }.store(in: &cancellables)
+            state.chatStore.$summaries.dropFirst().sink { _ in summariesPublishes += 1 }.store(in: &cancellables)
+            transcript.$messageIds.dropFirst().sink { _ in messageIdsPublishes += 1 }.store(in: &cancellables)
+
+            RenderProbe.resetMeasurementWindow()
+            state.chatStore.appendMessage(chatId: target, ChatMessage(role: .user, content: "hello"))
+
+            XCTAssertEqual(messageIdsPublishes, 1, "chatCount=\(chatCount): exactly one structure publish")
+            XCTAssertEqual(summariesPublishes, 1, "chatCount=\(chatCount): exactly one single-row summary publish")
+            XCTAssertEqual(chatsPublishes, 0, "chatCount=\(chatCount): no AppState.chats publish")
+            XCTAssertEqual(appStatePublishes, 0, "chatCount=\(chatCount): no broad AppState publish")
+            XCTAssertEqual(legacySyncScan(), 0, "chatCount=\(chatCount): no legacy O(N) scan")
+        }
     }
 
     // MARK: - Streaming stays isolated (positive lock, already holds)
@@ -193,17 +227,21 @@ final class UIThinnessContractTests: XCTestCase {
     // MARK: - Code-latency observability primitive
 
     /// The refactor's measurement law (#6) requires reading code latency from
-    /// a test. Prove `RenderProbe.snapshotTimings()` surfaces the timed legacy
-    /// hot path so P1 can assert a send-to-bubble compute budget.
+    /// a test. The legacy-sync timing is gone from the hot path (P1); prove the
+    /// `RenderProbe.snapshotTimings()` primitive still surfaces a centralized
+    /// compute-layer duration (the sidebar snapshot build) to code so later
+    /// phases can assert code-latency budgets.
     func testRenderProbeTimingsAreReadableFromCode() {
-        let (state, ids) = makeState(chatCount: 50)
+        let (state, _) = makeState(chatCount: 50)
         RenderProbe.resetMeasurementWindow()
-        state.markChat(chatId: ids[0], hasActiveTurn: true)
+        // Building the sidebar store runs SidebarSnapshot.make under
+        // RenderProbe.time("makeSnapshot"), the bounded compute layer.
+        _ = SidebarStore(appState: state)
 
         let timings = RenderProbe.snapshotTimings()
-        let legacy = timings["legacy.sync"]
-        XCTAssertNotNil(legacy, "RenderProbe.time should expose the legacy sync duration to code.")
-        XCTAssertGreaterThanOrEqual(legacy?.count ?? 0, 1)
-        XCTAssertGreaterThanOrEqual(legacy?.totalMs ?? 0, 0)
+        let snapshot = timings["makeSnapshot"]
+        XCTAssertNotNil(snapshot, "RenderProbe.time should expose the snapshot build duration to code.")
+        XCTAssertGreaterThanOrEqual(snapshot?.count ?? 0, 1)
+        XCTAssertGreaterThanOrEqual(snapshot?.totalMs ?? 0, 0)
     }
 }
