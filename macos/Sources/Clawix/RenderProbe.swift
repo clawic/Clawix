@@ -131,6 +131,23 @@ enum RenderProbe {
         return queue.sync { counts }
     }
 
+    /// Deterministic, in-process read of the per-key timings recorded by
+    /// `time(_:_:)` since the last window reset. Lets unit tests assert
+    /// code-latency budgets (e.g. send-to-bubble compute, first-frame
+    /// compute) and call counts without an Instruments trace. Returns the
+    /// invocation count alongside cumulative and worst-case milliseconds.
+    /// Keys without a recorded duration (tick/count only) are omitted.
+    static func snapshotTimings() -> [String: (count: Int, totalMs: Double, maxMs: Double)] {
+        guard isEnabled else { return [:] }
+        return queue.sync {
+            var out: [String: (count: Int, totalMs: Double, maxMs: Double)] = [:]
+            for key in totalMs.keys {
+                out[key] = (counts[key] ?? 0, totalMs[key] ?? 0, maxMs[key] ?? 0)
+            }
+            return out
+        }
+    }
+
     static func resetMeasurementWindow() {
         guard isEnabled else { return }
         queue.sync {

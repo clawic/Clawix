@@ -24,34 +24,47 @@ extension AppState {
 
     func syncLegacyChatFromStore(chatId: UUID) {
         guard let snapshot = chatStore.summarySnapshot(id: chatId) else { return }
-        syncingLegacyChatsFromStore = true
-        if snapshot.isArchived {
-            if let idx = archivedChats.firstIndex(where: { $0.id == chatId }) {
-                if archivedChats[idx] != snapshot {
-                    archivedChats[idx] = snapshot
+        // The real per-send / per-turn legacy-mirror cost. Reassigning the
+        // `@Published chats` here fans `AppState.objectWillChange` out to every
+        // @EnvironmentObject observer (the open-session shell + chrome) for a
+        // conceptually single-row event, and walks/rebuilds the bounded `chats`
+        // array O(N-chats). NOTE: the `chats` didSet's replaceActive is skipped
+        // while `syncingLegacyChatsFromStore` is set, so the per-event cost is
+        // this scan + the broad publish, NOT a summary rebuild. Instrumented so
+        // both are countable from code; `legacy.sync.scanned` per call equals
+        // the array size walked, and should drop to zero once this mirror is
+        // retired on the send/turn hot path (ADR 0036 view-layer slice).
+        RenderProbe.count("legacy.sync.scanned", by: chats.count, recordsActivity: false)
+        RenderProbe.time("legacy.sync") {
+            syncingLegacyChatsFromStore = true
+            if snapshot.isArchived {
+                if let idx = archivedChats.firstIndex(where: { $0.id == chatId }) {
+                    if archivedChats[idx] != snapshot {
+                        archivedChats[idx] = snapshot
+                    }
+                } else {
+                    archivedChats.insert(snapshot, at: 0)
+                }
+                if chats.contains(where: { $0.id == chatId }) {
+                    chats.removeAll { $0.id == chatId }
                 }
             } else {
-                archivedChats.insert(snapshot, at: 0)
+                var nextChats = chats
+                if let idx = nextChats.firstIndex(where: { $0.id == chatId }) {
+                    nextChats[idx] = snapshot
+                } else {
+                    nextChats.insert(snapshot, at: 0)
+                }
+                let boundedChats = boundedSidebarChats(nextChats, preserving: chatId)
+                if chats != boundedChats {
+                    chats = boundedChats
+                }
+                if archivedChats.contains(where: { $0.id == chatId }) {
+                    archivedChats.removeAll { $0.id == chatId }
+                }
             }
-            if chats.contains(where: { $0.id == chatId }) {
-                chats.removeAll { $0.id == chatId }
-            }
-        } else {
-            var nextChats = chats
-            if let idx = nextChats.firstIndex(where: { $0.id == chatId }) {
-                nextChats[idx] = snapshot
-            } else {
-                nextChats.insert(snapshot, at: 0)
-            }
-            let boundedChats = boundedSidebarChats(nextChats, preserving: chatId)
-            if chats != boundedChats {
-                chats = boundedChats
-            }
-            if archivedChats.contains(where: { $0.id == chatId }) {
-                archivedChats.removeAll { $0.id == chatId }
-            }
+            syncingLegacyChatsFromStore = false
         }
-        syncingLegacyChatsFromStore = false
     }
 
     func syncLegacyChatFromStoreIfRenderedSummaryChanged(chatId: UUID) {

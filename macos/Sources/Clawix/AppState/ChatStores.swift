@@ -302,8 +302,17 @@ final class ChatStore: ObservableObject {
     }
 
     func replaceActive(with chats: [Chat]) {
-        summaries = chats.map(ChatSummary.init(chat:))
-        reconcileTranscripts(with: chats)
+        // O(N-chats) summary rebuild + transcript reconcile. Instrumented so the
+        // legacy-mirror cost is countable from code (one window's render log /
+        // a unit test snapshot), not only visible as a dropped frame. The
+        // `legacy.replaceActive.summaries` counter equals the work done per
+        // call; on the send/turn hot path it should trend to zero once the
+        // legacy `AppState.chats` mirror is retired (ADR 0036 view-layer slice).
+        RenderProbe.count("legacy.replaceActive.summaries", by: chats.count, recordsActivity: false)
+        RenderProbe.time("legacy.replaceActive") {
+            summaries = chats.map(ChatSummary.init(chat:))
+            reconcileTranscripts(with: chats)
+        }
     }
 
     func replaceArchived(with chats: [Chat]) {
