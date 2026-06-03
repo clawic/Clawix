@@ -175,6 +175,20 @@
       ]
     },
     {
+      "id": "work-summary-heavy-expand",
+      "priority": "P1",
+      "fixtureProfiles": ["dense-chat", "streaming-heavy", "worst-case"],
+      "kpiRefs": [
+        "p1.workSummary.expand_collapse_latency_ms"
+      ],
+      "steps": [
+        { "id": "open-heavy-chat", "action": "include-scenario", "wait": "wait-chat-final-window", "target": "open-heavy-chat-latest-window", "minVisibleMessages": 3 },
+        { "id": "expand-work-summary", "action": "measure-action", "wait": "wait-frame-stable", "target": "chat.message.workSummary", "kpi": "p1.workSummary.expand_collapse_latency_ms" },
+        { "id": "verify-expanded-window-stable", "action": "observe", "wait": "wait-chat-final-window", "target": "chat.visibleWindow.latest", "minVisibleMessages": 3, "kpi": "none" },
+        { "id": "collapse-work-summary", "action": "measure-action", "wait": "wait-frame-stable", "target": "chat.message.workSummary", "kpi": "p1.workSummary.expand_collapse_latency_ms" }
+      ]
+    },
+    {
       "id": "composer-and-send",
       "priority": "P0",
       "fixtureProfiles": ["smoke", "streaming-heavy"],

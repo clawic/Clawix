@@ -193,7 +193,40 @@ enum ClxControlHandlers {
         Task.detached(priority: .userInitiated) {
             await sleepMs(initialDelayMs)
             var sequence = 0
-            var appendTasks: [Task<Void, Never>] = []
+            var scheduler = StreamingRenderScheduler(
+                frameBudgetMs: 16.7,
+                maxBacklogMs: max(33.4, Double(intervalMs * 2))
+            )
+
+            func flushScheduledDeltas(force: Bool) async {
+                let nowMs = CACurrentMediaTime() * 1000
+                let batches = scheduler.flush(nowMs: nowMs, force: force)
+                guard !batches.isEmpty else { return }
+                await MainActor.run {
+                    for batch in batches {
+                        RenderProbe.mark(
+                            "LiveStreamRenderSchedulerBatch",
+                            fields: [
+                                "chat": batch.chatId.uuidString,
+                                "message": batch.messageId.uuidString,
+                                "kind": batch.kind == .content ? "content" : "reasoning",
+                                "deltaCount": "\(batch.deltaCount)",
+                                "chars": "\(batch.text.count)",
+                                "backlogMs": String(format: "%.1f", batch.backlogMs),
+                                "backpressured": "\(batch.wasBackpressured)"
+                            ]
+                        )
+                        switch batch.kind {
+                        case .content:
+                            appState.appendAssistantDelta(chatId: batch.chatId, delta: batch.text)
+                        case .reasoning:
+                            appState.appendReasoningDelta(chatId: batch.chatId, delta: batch.text)
+                        }
+                    }
+                    _ = scrollRegisteredToBottom(id: "chat.transcript.scroll")
+                }
+            }
+
             for chunk in reasoningChunks {
                 sequence += 1
                 RenderProbe.mark(
@@ -205,14 +238,19 @@ enum ClxControlHandlers {
                         "words": "\(completeWordCount(in: chunk))"
                     ]
                 )
-                appendTasks.append(Task { @MainActor in
-                    appState.appendReasoningDelta(chatId: chatId, delta: chunk)
-                    _ = scrollRegisteredToBottom(id: "chat.transcript.scroll")
-                })
+                scheduler.receive(StreamingRenderScheduler.Delta(
+                    chatId: chatId,
+                    messageId: messageId,
+                    kind: .reasoning,
+                    text: chunk,
+                    receivedAtMs: CACurrentMediaTime() * 1000
+                ))
                 await sleepMs(intervalMs)
+                await flushScheduledDeltas(force: true)
             }
 
             if includeTool {
+                await flushScheduledDeltas(force: true)
                 sequence += 1
                 let toolSequence = sequence
                 RenderProbe.mark(
@@ -229,10 +267,10 @@ enum ClxControlHandlers {
                     kind: .command(text: "mock streaming fixture", actions: [.unknown]),
                     status: .completed
                 )
-                appendTasks.append(Task { @MainActor in
+                await MainActor.run {
                     appState.upsertWorkItem(chatId: chatId, messageId: messageId, item: item)
                     _ = scrollRegisteredToBottom(id: "chat.transcript.scroll")
-                })
+                }
                 await sleepMs(intervalMs)
             }
 
@@ -247,16 +285,18 @@ enum ClxControlHandlers {
                         "words": "\(completeWordCount(in: chunk))"
                     ]
                 )
-                appendTasks.append(Task { @MainActor in
-                    appState.appendAssistantDelta(chatId: chatId, delta: chunk)
-                    _ = scrollRegisteredToBottom(id: "chat.transcript.scroll")
-                })
+                scheduler.receive(StreamingRenderScheduler.Delta(
+                    chatId: chatId,
+                    messageId: messageId,
+                    kind: .content,
+                    text: chunk,
+                    receivedAtMs: CACurrentMediaTime() * 1000
+                ))
                 await sleepMs(intervalMs)
+                await flushScheduledDeltas(force: true)
             }
 
-            for task in appendTasks {
-                await task.value
-            }
+            await flushScheduledDeltas(force: true)
             await MainActor.run {
                 appState.markAssistantFinished(chatId: chatId, messageId: messageId)
                 appState.completeWorkSummary(chatId: chatId, messageId: messageId, endedAt: Date())

@@ -364,6 +364,7 @@ const expectedScenarios = [
   "open-heavy-chat-latest-window",
   "old-history-scroll-anchor",
   "live-streaming-under-load",
+  "work-summary-heavy-expand",
   "composer-and-send",
   "terminal-under-conversation-load",
   "idle-stability",

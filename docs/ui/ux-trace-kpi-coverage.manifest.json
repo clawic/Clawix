@@ -60,15 +60,6 @@
       "closureCondition": "Add a live P1 scenario that switches browser-panel content and records frame-stable completion."
     },
     {
-      "kpiId": "p1.workSummary.expand_collapse_latency_ms",
-      "priority": "P1",
-      "status": "warning-until-scenario",
-      "owner": "chat-ux",
-      "reason": "Work-summary expansion requires fixture rows with work summaries and stable expansion control ids.",
-      "promotionTrigger": "Work summaries are edited, virtualized, or reported as slow in dense transcripts.",
-      "closureCondition": "Add a dense-chat or streaming-heavy P1 scenario that expands and collapses a work summary row."
-    },
-    {
       "kpiId": "p1.toolActionDetail.expand_collapse_latency_ms",
       "priority": "P1",
       "status": "warning-until-scenario",
