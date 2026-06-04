@@ -170,18 +170,36 @@ final class FeatureFlags: ObservableObject {
     static let experimentalSurfacesCapabilityID = "clawix.feature.experimentalSurfaces"
 
 #if DEBUG
-    @Published var developerSurfaces: Bool {
-        didSet { store.set(developerSurfaces, forKey: developerSurfacesKey) }
+    // Narrowed observation for the charter surfaces (sidebar + open session, P4):
+    // both flag values are manually published (not `@Published`) and dedup no-op
+    // writes, so re-applying the same `developerSurfaces` value or re-opting into
+    // a capability that's already enabled fires NO `objectWillChange`. A view
+    // observing FeatureFlags therefore re-evaluates only when the visible feature
+    // set actually changes, never on a redundant Settings write. (Plain
+    // `@Published` would fan `objectWillChange` out on every set, even a no-op.)
+    private var developerSurfacesStorage: Bool {
+        didSet {
+            guard developerSurfacesStorage != oldValue else { return }
+            store.set(developerSurfacesStorage, forKey: developerSurfacesKey)
+        }
+    }
+    var developerSurfaces: Bool {
+        get { developerSurfacesStorage }
+        set {
+            guard newValue != developerSurfacesStorage else { return }
+            objectWillChange.send()
+            developerSurfacesStorage = newValue
+        }
     }
 
     private let store: UserDefaults = UserDefaults(suiteName: appPrefsSuite) ?? .standard
     private let developerSurfacesKey = ClawixPersistentSurfaceKeys.featureFlagsDeveloperSurfaces
     private let enabledCapabilityIDsKey = ClawixPersistentSurfaceKeys.featureFlagsEnabledCapabilityIDs
-    @Published private var enabledCapabilityIDs: Set<String>
+    private var enabledCapabilityIDs: Set<String>
 
     private init() {
         let s = UserDefaults(suiteName: appPrefsSuite) ?? .standard
-        self.developerSurfaces = s.object(forKey: ClawixPersistentSurfaceKeys.featureFlagsDeveloperSurfaces) as? Bool ?? false
+        self.developerSurfacesStorage = s.object(forKey: ClawixPersistentSurfaceKeys.featureFlagsDeveloperSurfaces) as? Bool ?? false
         self.enabledCapabilityIDs = Set(s.stringArray(forKey: enabledCapabilityIDsKey) ?? [])
     }
 
@@ -199,6 +217,12 @@ final class FeatureFlags: ObservableObject {
     }
 
     func setCapabilityOptIn(_ enabled: Bool, capabilityID: String) {
+        // Dedup: opting into an already-enabled capability (or out of one that's
+        // already disabled) is a no-op that must not fire objectWillChange (P4
+        // narrowed observation). Manual publish only on a real change.
+        let alreadyEnabled = enabledCapabilityIDs.contains(capabilityID)
+        guard enabled != alreadyEnabled else { return }
+        objectWillChange.send()
         if enabled {
             enabledCapabilityIDs.insert(capabilityID)
         } else {

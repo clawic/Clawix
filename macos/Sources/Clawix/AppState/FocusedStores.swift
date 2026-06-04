@@ -45,6 +45,38 @@ final class SearchStore: ObservableObject {
     @Published var searchResultRoutes: [String: SidebarRoute] = [:]
 }
 
+/// Mid-turn plan state keyed by chat: the agent's `update_plan` checklist per
+/// chat, and the per-chat `requestUserInput` question awaiting an answer. Only
+/// the thread-summary panel (the Progress checklist) and the composer's plan
+/// question card consume these; routing them through the god-object meant a plan
+/// update for chat A fanned `AppState.objectWillChange` out to every observer,
+/// re-deriving chat B's session and the whole sidebar. They live on a focused
+/// store so a plan change publishes only `planStore.objectWillChange`, scoped to
+/// the surfaces that actually read it.
+@MainActor
+final class PlanStore: ObservableObject {
+    /// Latest plan (from the agent's `update_plan` tool) per chat, parsed from
+    /// the rollout on hydration. Drives the thread-summary panel's Progress
+    /// checklist. Last `update_plan` wins.
+    @Published var planByChat: [UUID: [PlanStep]] = [:]
+    /// Per-chat plan-mode questions awaiting an answer. Set when the backend
+    /// sends `item/tool/requestUserInput`; cleared on submit / dismiss / turn
+    /// completion.
+    @Published var pendingPlanQuestions: [UUID: PendingPlanQuestion] = [:]
+}
+
+/// Type-ahead queue keyed by chat: follow-up messages the user lined up while a
+/// chat's turn was still running. Only the composer's queued-rows surface reads
+/// it, so a queue change for chat A has no business re-deriving chat B's session
+/// or the sidebar. Lives on a focused store so an enqueue/dequeue publishes only
+/// `queueStore.objectWillChange`.
+@MainActor
+final class QueueStore: ObservableObject {
+    /// Follow-up messages queued per chat. Each entry is dispatched, oldest
+    /// first, when the chat's current turn completes cleanly.
+    @Published var queuedMessages: [UUID: [QueuedMessage]] = [:]
+}
+
 /// Browser chrome state that lives outside the per-tab controller observation
 /// chain (favicon memory, per-tab loading spinners, sampled page background
 /// colours, and the one-shot reload / command / focus signals). The chat and

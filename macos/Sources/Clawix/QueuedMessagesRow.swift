@@ -1,5 +1,32 @@
 import SwiftUI
 
+/// Composer-side wrapper that observes the focused `QueueStore` directly so a
+/// queue change for the target chat re-renders the queued rows without fanning
+/// `AppState.objectWillChange` out to the chat/sidebar surfaces (P4). Owns the
+/// presence guard, padding, transition, and count-driven insert/remove
+/// animation that used to live inline in the composer.
+struct ComposerQueuedRows: View {
+    let chatId: UUID
+    @ObservedObject var queueStore: QueueStore
+    let onRemove: (UUID) -> Void
+
+    private var queued: [QueuedMessage] {
+        queueStore.queuedMessages[chatId] ?? []
+    }
+
+    var body: some View {
+        Group {
+            if !queued.isEmpty {
+                QueuedMessagesRow(messages: queued, onRemove: onRemove)
+                    .padding(.horizontal, 9)
+                    .padding(.top, 9)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.20), value: queued.count)
+    }
+}
+
 /// Compact list of follow-ups the user lined up while the agent is still
 /// working. Renders just above the composer input, oldest at the top, each
 /// row removable on hover. Dispatch happens automatically as turns complete

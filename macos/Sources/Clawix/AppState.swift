@@ -237,16 +237,35 @@ final class AppState: ObservableObject {
     /// `item/tool/requestUserInput` instead of acting directly. Toggled by
     /// `/plan`, the composer pill, or the "+" menu row.
     @Published var planMode: Bool = false
+    /// Mid-turn plan payload (the per-chat `update_plan` checklist + the per-chat
+    /// `requestUserInput` question) lives on a focused child store so a plan
+    /// change for one chat fires only `planStore.objectWillChange`, scoped to the
+    /// thread-summary Progress panel and the composer's plan card, instead of
+    /// fanning `AppState.objectWillChange` out to chat/sidebar observers (P4).
+    /// The `planByChat` / `pendingPlanQuestions` forwarders keep existing call
+    /// sites compiling; surfaces that re-render on these observe `planStore`.
+    let planStore = PlanStore()
     /// Per-chat plan-mode questions awaiting an answer. Set when the
     /// backend sends `item/tool/requestUserInput`; cleared on submit /
-    /// dismiss / turn completion. The sidebar surfaces an awaiting-answer
-    /// hint while this is non-nil for a chat.
-    @Published var pendingPlanQuestions: [UUID: PendingPlanQuestion] = [:]
+    /// dismiss / turn completion.
+    var pendingPlanQuestions: [UUID: PendingPlanQuestion] {
+        get { planStore.pendingPlanQuestions }
+        set { planStore.pendingPlanQuestions = newValue }
+    }
+    /// Type-ahead queue payload lives on a focused child store so an
+    /// enqueue/dequeue for one chat fires only `queueStore.objectWillChange`
+    /// (scoped to the composer's queued rows) instead of fanning out to the
+    /// chat/sidebar surfaces (P4). The `queuedMessages` forwarder keeps existing
+    /// call sites compiling; the composer observes `queueStore`.
+    let queueStore = QueueStore()
     /// Follow-up messages the user lined up while a chat's turn was still
     /// running, keyed by chat id. Each entry is dispatched, oldest first,
     /// when the chat's current turn completes cleanly (type-ahead queue).
     /// See `MessageQueue.swift`.
-    @Published var queuedMessages: [UUID: [QueuedMessage]] = [:]
+    var queuedMessages: [UUID: [QueuedMessage]] {
+        get { queueStore.queuedMessages }
+        set { queueStore.queuedMessages = newValue }
+    }
     /// URL of an image currently being previewed in the fullscreen
     /// viewer. Same overlay used by composer chips and chat bubbles.
     @Published var imagePreviewURL: URL?
@@ -260,8 +279,12 @@ final class AppState: ObservableObject {
     @Published var pendingConfirmation: ConfirmationRequest?
     /// Latest plan (from the agent's `update_plan` tool) per chat, parsed
     /// from the rollout on hydration. Drives the thread-summary panel's
-    /// Progress checklist. Last `update_plan` wins.
-    @Published var planByChat: [UUID: [PlanStep]] = [:]
+    /// Progress checklist. Last `update_plan` wins. Backed by `planStore` so a
+    /// plan update stays scoped to the Progress panel (P4).
+    var planByChat: [UUID: [PlanStep]] {
+        get { planStore.planByChat }
+        set { planStore.planByChat = newValue }
+    }
     /// Composer text + staged attachments + focus token live here so
     /// typing only fires `objectWillChange` on this child object,
     /// leaving AppState's other observers untouched.
@@ -960,7 +983,9 @@ final class AppState: ObservableObject {
                 $projects.dropFirst().sink { _ in RenderProbe.tick("AppState.projects") },
                 $selectedProject.dropFirst().sink { _ in RenderProbe.tick("AppState.selectedProject") },
                 $currentRoute.dropFirst().sink { _ in RenderProbe.tick("AppState.currentRoute") },
-                $pendingPlanQuestions.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingPlanQuestions") },
+                planStore.$pendingPlanQuestions.dropFirst().sink { _ in RenderProbe.tick("PlanStore.pendingPlanQuestions") },
+                planStore.$planByChat.dropFirst().sink { _ in RenderProbe.tick("PlanStore.planByChat") },
+                queueStore.$queuedMessages.dropFirst().sink { _ in RenderProbe.tick("QueueStore.queuedMessages") },
                 backendStatusStore.$status.dropFirst().sink { _ in RenderProbe.tick("BackendStatusStore.status") },
                 backendStatusStore.$rescueDecision.dropFirst().sink { _ in RenderProbe.tick("BackendStatusStore.rescueDecision") },
                 rateLimitStore.$rateLimits.dropFirst().sink { _ in RenderProbe.tick("RateLimitStore.rateLimits") },

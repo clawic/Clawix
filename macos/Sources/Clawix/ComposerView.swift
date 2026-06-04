@@ -338,12 +338,6 @@ struct ComposerView: View {
         return true
     }
 
-    /// Count of follow-ups queued for the target chat. Drives the queued
-    /// rows' insert/remove animation.
-    private var queuedCount: Int {
-        guard let chatId = queueChatId else { return 0 }
-        return appState.queuedMessages[chatId]?.count ?? 0
-    }
 
     /// Default composer toolbar: + / permissions / model / mic / send.
     /// During transcription the mic button is replaced by a small spinner
@@ -835,19 +829,19 @@ struct ComposerView: View {
     private var mainComposerStack: some View {
         VStack(spacing: -projectOverlap) {
             VStack(spacing: 0) {
-                if let chatId = queueChatId,
-                   let queued = appState.queuedMessages[chatId], !queued.isEmpty {
-                    QueuedMessagesRow(
-                        messages: queued,
+                if let chatId = queueChatId {
+                    // The queued rows observe the focused `queueStore` directly,
+                    // so an enqueue/dequeue re-renders this region without fanning
+                    // `AppState.objectWillChange` out to the chat/sidebar (P4).
+                    ComposerQueuedRows(
+                        chatId: chatId,
+                        queueStore: appState.queueStore,
                         onRemove: { id in
                             withAnimation(.easeInOut(duration: 0.20)) {
                                 appState.removeQueuedMessage(id: id, forChatId: chatId)
                             }
                         }
                     )
-                    .padding(.horizontal, 9)
-                    .padding(.top, 9)
-                    .transition(.opacity)
                 }
 
                 if !composer.attachments.isEmpty {
@@ -912,7 +906,6 @@ struct ComposerView: View {
                     .fill(composerFill)
             )
             .animation(.easeInOut(duration: 0.20), value: composer.attachments)
-            .animation(.easeInOut(duration: 0.20), value: queuedCount)
             .zIndex(1)
 
             if !chatMode {

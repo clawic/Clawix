@@ -57,7 +57,7 @@ struct ThreadSummaryPanel: View {
         Group {
             if let chatId = appState.currentChatId,
                let transcript = appState.chatStore.transcript(for: chatId) {
-                ThreadSummaryContent(chatId: chatId, transcript: transcript)
+                ThreadSummaryContent(chatId: chatId, transcript: transcript, planStore: appState.planStore)
             } else {
                 emptyState
             }
@@ -81,12 +81,22 @@ private struct ThreadSummaryContent: View {
     let chatId: UUID
     @ObservedObject var transcript: ChatTranscriptStore
     @EnvironmentObject private var appState: AppState
+    /// Observe the focused plan store directly: `planByChat` no longer fans
+    /// `AppState.objectWillChange` out (P4), so the Progress checklist binds to
+    /// `planStore` to re-render when this chat's plan changes.
+    @ObservedObject private var planStore: PlanStore
+
+    init(chatId: UUID, transcript: ChatTranscriptStore, planStore: PlanStore) {
+        self.chatId = chatId
+        self.transcript = transcript
+        self.planStore = planStore
+    }
 
     private var items: [WorkItem] {
         transcript.messages.flatMap { $0.workSummary?.items ?? [] }
     }
 
-    private var plan: [PlanStep] { appState.planByChat[chatId] ?? [] }
+    private var plan: [PlanStep] { planStore.planByChat[chatId] ?? [] }
 
     private var changedPaths: [String] {
         var seen = Set<String>()

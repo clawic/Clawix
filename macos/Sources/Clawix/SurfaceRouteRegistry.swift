@@ -62,9 +62,9 @@ enum SurfaceRouteRegistry {
         case .project:
             return entry(route) { MainContentView() }
         case .appsHome:
-            return entry(route) { AppsHomeView() }
+            return entry(route) { AppsHomeView().appsPollingLease() }
         case .app(let id):
-            return entry(route) { AppSurfaceView(appId: id) }
+            return entry(route) { AppSurfaceView(appId: id).appsPollingLease() }
         case .chat(let id):
             let appState = appStateProvider()
             return entry(route) { ChatView(appState: appState, chatId: id) }
@@ -113,17 +113,17 @@ enum SurfaceRouteRegistry {
         case .iotDeviceDetail(let id):
             return entry(route) { IoTDeviceDetailView(deviceId: id) }
         case .designStylesHome:
-            return entry(route) { StylesHomeView() }
+            return entry(route) { StylesHomeView().designPollingLease() }
         case .designStyleDetail(let id):
-            return entry(route) { StyleDetailView(styleId: id) }
+            return entry(route) { StyleDetailView(styleId: id).designPollingLease() }
         case .designTemplatesHome:
-            return entry(route) { TemplatesHomeView() }
+            return entry(route) { TemplatesHomeView().designPollingLease() }
         case .designTemplateDetail(let id):
-            return entry(route) { TemplateDetailView(templateId: id) }
+            return entry(route) { TemplateDetailView(templateId: id).designPollingLease() }
         case .designReferencesHome:
-            return entry(route) { ReferencesHomeView() }
+            return entry(route) { ReferencesHomeView().designPollingLease() }
         case .designEditor(let id):
-            return entry(route) { EditorView(documentId: id) }
+            return entry(route) { EditorView(documentId: id).designPollingLease() }
         case .agentsHome:
             return entry(route) { AgentsHomeView() }
         case .agentDetail(let id):

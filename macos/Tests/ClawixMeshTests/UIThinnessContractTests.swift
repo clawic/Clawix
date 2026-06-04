@@ -356,4 +356,166 @@ final class UIThinnessContractTests: XCTestCase {
         state.browserChromeStore.pendingReloadTabId = nil
         XCTAssertNil(state.pendingReloadTabId)
     }
+
+    // MARK: - Phase B: mid-turn plan/queue payload is per-chat-bounded
+
+    /// The Phase B contract: the mid-turn live payload (`planByChat`,
+    /// `pendingPlanQuestions`, `queuedMessages`) lives on focused stores. A plan
+    /// or queue update for chat A re-derives ZERO bodies of chat B's open
+    /// session (`SessionPresentationStore.revision` unchanged) and ZERO sidebar
+    /// rows (`SidebarStore.revision` unchanged), and never fans
+    /// `AppState.objectWillChange` out to those surfaces. The focused store's own
+    /// publish still fires for the surfaces that actually read it (the Progress
+    /// panel, the composer's queued rows).
+    func testPlanUpdateForOneChatDoesNotReEvaluateChatOrSidebar() {
+        let (state, sidebar, session, target) = makeChartedSurfaces(chatCount: 200)
+        // The open session is chat B; the plan update targets chat A.
+        let otherChat = UUID()
+        XCTAssertNotEqual(otherChat, target)
+        let sidebarRevision = sidebar.revision
+        let sessionRevision = session.revision
+
+        var appStatePublishes = 0
+        var planPublishes = 0
+        state.objectWillChange.sink { _ in appStatePublishes += 1 }.store(in: &cancellables)
+        state.planStore.objectWillChange.sink { _ in planPublishes += 1 }.store(in: &cancellables)
+
+        // A plan update + a pending-question registration for chat A.
+        state.planByChat[otherChat] = [PlanStep(step: "step", status: .pending)]
+        state.registerPendingPlanQuestion(
+            PendingPlanQuestion(
+                rpcId: .string("rpc-1"),
+                chatId: otherChat,
+                threadId: "thread",
+                turnId: "turn",
+                itemId: "item",
+                questions: []
+            )
+        )
+
+        XCTAssertEqual(appStatePublishes, 0, "A plan update for chat A must not fan AppState.objectWillChange out to chat B / sidebar observers.")
+        XCTAssertEqual(sidebar.revision, sidebarRevision, "A plan update for chat A must not advance the sidebar compute layer.")
+        XCTAssertEqual(session.revision, sessionRevision, "A plan update for chat A must not advance chat B's session presentation layer.")
+        XCTAssertGreaterThan(planPublishes, 0, "The focused plan store still publishes to the Progress panel.")
+    }
+
+    func testQueueUpdateForOneChatDoesNotReEvaluateChatOrSidebar() {
+        let (state, sidebar, session, target) = makeChartedSurfaces(chatCount: 200)
+        let otherChat = UUID()
+        XCTAssertNotEqual(otherChat, target)
+        let sidebarRevision = sidebar.revision
+        let sessionRevision = session.revision
+
+        var appStatePublishes = 0
+        var queuePublishes = 0
+        state.objectWillChange.sink { _ in appStatePublishes += 1 }.store(in: &cancellables)
+        state.queueStore.objectWillChange.sink { _ in queuePublishes += 1 }.store(in: &cancellables)
+
+        // Queue a follow-up for chat A, then drain it.
+        state.enqueueMessage(text: "follow-up", attachments: [], forChatId: otherChat)
+        state.removeQueuedMessage(id: state.queuedMessages[otherChat]!.first!.id, forChatId: otherChat)
+
+        XCTAssertEqual(appStatePublishes, 0, "A queue update for chat A must not fan AppState.objectWillChange out to chat B / sidebar observers.")
+        XCTAssertEqual(sidebar.revision, sidebarRevision, "A queue update for chat A must not advance the sidebar compute layer.")
+        XCTAssertEqual(session.revision, sessionRevision, "A queue update for chat A must not advance chat B's session presentation layer.")
+        XCTAssertGreaterThan(queuePublishes, 0, "The focused queue store still publishes to the composer's queued rows.")
+    }
+
+    // MARK: - Phase B: lease-gated polling (idle-quiescence)
+
+    /// `DesignStore` does not tick its 4s disk-reload timer while idle (no Design
+    /// surface on screen). The timer starts only while a lease is held and stops
+    /// when the last lease is released.
+    func testDesignStorePollingIsLeaseGated() {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let store = DesignStore(rootURL: root, autoLoad: false, startPolling: true)
+
+        // Idle: polling is permitted but no surface is leasing, so no tick.
+        XCTAssertFalse(store.isPolling, "An idle DesignStore must not run its reload timer.")
+        XCTAssertEqual(store.activePollingLeaseCount, 0)
+
+        let lease = store.acquirePollingLease()
+        XCTAssertNotNil(lease, "Polling is allowed, so a lease is granted.")
+        XCTAssertTrue(store.isPolling, "A held lease keeps the reload timer alive.")
+        XCTAssertEqual(store.activePollingLeaseCount, 1)
+
+        // A second surface shares the same timer.
+        let lease2 = store.acquirePollingLease()
+        XCTAssertEqual(store.activePollingLeaseCount, 2)
+        XCTAssertTrue(store.isPolling)
+
+        lease?.cancel()
+        XCTAssertTrue(store.isPolling, "One remaining lease keeps polling alive.")
+        lease2?.cancel()
+        XCTAssertFalse(store.isPolling, "Releasing the last lease stops the timer (idle again).")
+        XCTAssertEqual(store.activePollingLeaseCount, 0)
+    }
+
+    /// `DesignStore` with polling disabled (tests/previews) grants no lease and
+    /// never starts a timer.
+    func testDesignStorePollingDisabledGrantsNoLease() {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let store = DesignStore(rootURL: root, autoLoad: false, startPolling: false)
+        XCTAssertNil(store.acquirePollingLease())
+        XCTAssertFalse(store.isPolling)
+    }
+
+    /// `AppsStore` keeps its FSEvent stream but does not tick its periodic
+    /// rescue/fallback timers while idle. They start only while a lease is held.
+    func testAppsStorePollingTimersAreLeaseGated() {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: true)
+
+        XCTAssertFalse(store.isScheduledPollingActive, "An idle AppsStore must not run its scheduled reload timer.")
+        XCTAssertEqual(store.activePollingLeaseCount, 0)
+
+        let lease = store.acquirePollingLease()
+        XCTAssertNotNil(lease)
+        XCTAssertTrue(store.isScheduledPollingActive, "A held lease keeps a scheduled reload timer alive.")
+        XCTAssertEqual(store.activePollingLeaseCount, 1)
+
+        lease?.cancel()
+        XCTAssertFalse(store.isScheduledPollingActive, "Releasing the last lease stops the scheduled timer (idle again).")
+        XCTAssertEqual(store.activePollingLeaseCount, 0)
+    }
+
+    func testAppsStorePollingDisabledGrantsNoLease() {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let store = AppsStore(rootURL: root, autoLoad: false, startPolling: false)
+        XCTAssertNil(store.acquirePollingLease())
+        XCTAssertFalse(store.isScheduledPollingActive)
+    }
+
+    /// The plan/queue forwarders round-trip through their focused stores, so the
+    /// existing `appState.planByChat` / `appState.queuedMessages` call sites read
+    /// and write the same value as the store does directly.
+    func testPlanQueueForwardersRoundTrip() {
+        let state = AppState()
+        let chat = UUID()
+
+        state.planByChat[chat] = [PlanStep(step: "a", status: .pending)]
+        XCTAssertEqual(state.planStore.planByChat[chat]?.count, 1)
+        state.planStore.planByChat = [:]
+        XCTAssertTrue(state.planByChat.isEmpty)
+
+        let question = PendingPlanQuestion(
+            rpcId: .string("rpc"),
+            chatId: chat,
+            threadId: "thread",
+            turnId: "turn",
+            itemId: "item",
+            questions: []
+        )
+        state.pendingPlanQuestions[chat] = question
+        XCTAssertNotNil(state.planStore.pendingPlanQuestions[chat])
+
+        state.enqueueMessage(text: "hi", attachments: [], forChatId: chat)
+        XCTAssertEqual(state.queueStore.queuedMessages[chat]?.count, 1)
+        state.queueStore.queuedMessages = [:]
+        XCTAssertTrue(state.queuedMessages.isEmpty)
+    }
 }

@@ -46,6 +46,44 @@ final class AppsStore: ObservableObject {
     /// Last-known mtime per slug; used to detect agent-side file changes
     /// without diffing every file's bytes on each filesystem event.
     private var lastSeenMtime: [String: Date] = [:]
+    /// Whether disk monitoring is permitted at all (tests/previews opt out).
+    private let pollingAllowed: Bool
+    /// True once the FSEvent stream is running. The stream is event-driven, so
+    /// it stays on even when no Apps surface is visible: it only fires on real
+    /// disk changes and never "ticks" when idle.
+    private var diskMonitoringStarted = false
+    /// True when the FSEvent stream failed to start and the 30s fallback poll is
+    /// the only disk-change detector for this store.
+    private var usingFallbackPolling = false
+    private var pollingLeaseCount = 0
+
+    /// Lease that keeps `AppsStore`'s scheduled disk-reload timers (the 5min
+    /// rescue scan and the 30s fallback poll) alive while an Apps surface is on
+    /// screen. The FSEvent stream is unaffected; only the periodic timers, which
+    /// otherwise tick on a schedule regardless of visibility, are gated so an
+    /// idle app (no Apps surface open) does not tick (P4 lease-gate).
+    @MainActor
+    final class PollingLease {
+        private weak var store: AppsStore?
+        private var active = true
+
+        fileprivate init(store: AppsStore) {
+            self.store = store
+        }
+
+        deinit {
+            if active {
+                let store = store
+                Task { @MainActor in store?.releasePollingLease() }
+            }
+        }
+
+        func cancel() {
+            guard active else { return }
+            active = false
+            store?.releasePollingLease()
+        }
+    }
 
     init(
         rootURL: URL? = nil,
@@ -64,11 +102,15 @@ final class AppsStore: ObservableObject {
         self.loadOperation = loadOperation ?? { rootURL, manifestName in
             try await AppsStore.loadSnapshot(rootURL: rootURL, manifestName: manifestName)
         }
+        self.pollingAllowed = startPolling
         ensureRootExists()
         if autoLoad {
             reloadFromDisk()
         }
         if startPolling {
+            // The FSEvent stream is event-driven and quiescent when idle, so it
+            // starts eagerly. The periodic timers it would otherwise start now
+            // wait for the first lease (see acquirePollingLease).
             startDiskMonitoring()
         }
     }
@@ -548,12 +590,53 @@ final class AppsStore: ObservableObject {
 
     private func startDiskMonitoring() {
         ensureRootExists()
-        if startEventStream() {
-            startRescueTimer()
-        } else {
-            startFallbackPollingTimer()
+        // Start only the event-driven stream eagerly; it is quiescent when idle.
+        // Whether the rescue scan (stream OK) or the fallback poll (stream
+        // failed) runs is recorded here but the timer itself waits for a lease.
+        usingFallbackPolling = !startEventStream()
+        diskMonitoringStarted = true
+    }
+
+    // MARK: - Polling lease (idle-quiescence)
+
+    /// Acquire a lease that keeps the scheduled disk-reload timers alive while an
+    /// Apps surface is on screen. Returns nil when polling is disabled
+    /// (tests/previews opt out). The applicable timer starts on the first lease
+    /// and stops when the last one is released; a fresh `reloadFromDisk()` on the
+    /// first lease catches up on changes missed while no surface was visible.
+    func acquirePollingLease() -> PollingLease? {
+        guard pollingAllowed else { return nil }
+        pollingLeaseCount += 1
+        if pollingLeaseCount == 1 {
+            reloadFromDisk()
+            startScheduledPollingTimer()
+        }
+        return PollingLease(store: self)
+    }
+
+    fileprivate func releasePollingLease() {
+        guard pollingLeaseCount > 0 else { return }
+        pollingLeaseCount -= 1
+        if pollingLeaseCount == 0 {
+            rescueTimer?.invalidate()
+            rescueTimer = nil
+            fallbackPollingTimer?.invalidate()
+            fallbackPollingTimer = nil
         }
     }
+
+    private func startScheduledPollingTimer() {
+        if usingFallbackPolling {
+            startFallbackPollingTimer()
+        } else {
+            startRescueTimer()
+        }
+    }
+
+    /// Test/inspection hooks for the idle-quiescence lock.
+    var activePollingLeaseCount: Int { pollingLeaseCount }
+    /// True while a scheduled disk-reload timer is running.
+    var isScheduledPollingActive: Bool { rescueTimer != nil || fallbackPollingTimer != nil }
 
     private func startEventStream() -> Bool {
         guard eventStream == nil else { return true }

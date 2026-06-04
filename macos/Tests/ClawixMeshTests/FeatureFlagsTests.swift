@@ -1,3 +1,4 @@
+import Combine
 import XCTest
 @testable import Clawix
 
@@ -166,6 +167,47 @@ final class FeatureFlagsTests: XCTestCase {
         )
         XCTAssertEqual(appDefaults.string(forKey: AgentRuntimeChoice.runtimeKey), AgentRuntimeChoice.opencode.rawValue)
         XCTAssertEqual(bridgeDefaults.string(forKey: AgentRuntimeChoice.runtimeKey), AgentRuntimeChoice.opencode.rawValue)
+    }
+
+    /// P4 narrowed observation: a no-op flag write (re-applying the same
+    /// `developerSurfaces` value, or re-opting into a capability that is already
+    /// enabled) must NOT fire `objectWillChange`, so a charter surface observing
+    /// FeatureFlags re-evaluates only when the visible feature set actually
+    /// changes. A real change still publishes exactly once.
+    func test_noOpFlagWriteDoesNotPublish() {
+        let flags = FeatureFlags.shared
+        let wasDeveloper = flags.developerSurfaces
+        let wasExperimental = flags.experimentalSurfaces
+        defer {
+            flags.developerSurfaces = wasDeveloper
+            flags.experimentalSurfaces = wasExperimental
+        }
+
+        // Settle to a known state first.
+        flags.developerSurfaces = false
+        flags.experimentalSurfaces = false
+
+        var publishes = 0
+        let cancellable = flags.objectWillChange.sink { _ in publishes += 1 }
+        defer { cancellable.cancel() }
+
+        // No-op writes: value is already false / already opted-out.
+        flags.developerSurfaces = false
+        flags.experimentalSurfaces = false
+        XCTAssertEqual(publishes, 0, "Redundant flag writes must not fan objectWillChange out to charter surfaces.")
+
+        // A real change publishes exactly once.
+        flags.developerSurfaces = true
+        XCTAssertEqual(publishes, 1, "A real developerSurfaces flip publishes once.")
+        // Re-applying the same value is again a no-op.
+        flags.developerSurfaces = true
+        XCTAssertEqual(publishes, 1, "Re-applying the same developerSurfaces value must not publish again.")
+
+        // A real capability opt-in publishes exactly once; a redundant one does not.
+        flags.experimentalSurfaces = true
+        XCTAssertEqual(publishes, 2, "A real capability opt-in publishes once.")
+        flags.experimentalSurfaces = true
+        XCTAssertEqual(publishes, 2, "Re-opting into an already-enabled capability must not publish again.")
     }
 
     private func restore(_ value: Any?, key: String, defaults: UserDefaults) {

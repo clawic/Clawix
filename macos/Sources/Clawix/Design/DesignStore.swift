@@ -39,6 +39,39 @@ final class DesignStore: ObservableObject {
     private var pollingTimer: Timer?
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
+    /// Whether disk polling is permitted at all. When false the lease API is a
+    /// no-op (tests and previews opt out). When true the 4s reload timer runs
+    /// only while at least one surface holds a lease (P4 lease-gate): idle (no
+    /// Design surface on screen) does not tick.
+    private let pollingAllowed: Bool
+    private var pollingLeaseCount = 0
+
+    /// Lease that keeps `DesignStore`'s disk polling alive while a Design
+    /// surface is on screen. The surface acquires one in `.onAppear` and lets it
+    /// deinit (or calls `cancel()`) in `.onDisappear`; the timer stops when the
+    /// last lease is released.
+    @MainActor
+    final class PollingLease {
+        private weak var store: DesignStore?
+        private var active = true
+
+        fileprivate init(store: DesignStore) {
+            self.store = store
+        }
+
+        deinit {
+            if active {
+                let store = store
+                Task { @MainActor in store?.releasePollingLease() }
+            }
+        }
+
+        func cancel() {
+            guard active else { return }
+            active = false
+            store?.releasePollingLease()
+        }
+    }
 
     init(
         rootURL: URL? = nil,
@@ -52,20 +85,49 @@ final class DesignStore: ObservableObject {
         self.loadOperation = loadOperation ?? { rootURL in
             try await DesignStore.loadSnapshot(rootURL: rootURL)
         }
+        self.pollingAllowed = startPolling
         ensureLayoutExists()
         seedBuiltinsIfNeeded()
         if autoLoad {
             reloadFromDisk()
         }
-        if startPolling {
-            startPollingTimer()
-        }
+        // The timer no longer starts eagerly: it starts on the first lease so an
+        // idle app (no Design surface visible) never ticks the 4s reload.
     }
 
     deinit {
         pollingTimer?.invalidate()
         reloadTask?.cancel()
     }
+
+    // MARK: - Polling lease (idle-quiescence)
+
+    /// Acquire a lease that keeps disk polling alive. Returns nil when polling
+    /// is disabled (tests/previews opt out). The 4s timer starts on the first
+    /// lease and stops when the last one is released.
+    func acquirePollingLease() -> PollingLease? {
+        guard pollingAllowed else { return nil }
+        pollingLeaseCount += 1
+        if pollingLeaseCount == 1 {
+            // Pick up any disk changes that landed while no surface was visible.
+            reloadFromDisk()
+            startPollingTimer()
+        }
+        return PollingLease(store: self)
+    }
+
+    fileprivate func releasePollingLease() {
+        guard pollingLeaseCount > 0 else { return }
+        pollingLeaseCount -= 1
+        if pollingLeaseCount == 0 {
+            pollingTimer?.invalidate()
+            pollingTimer = nil
+        }
+    }
+
+    /// Test/inspection hooks for the idle-quiescence lock.
+    var activePollingLeaseCount: Int { pollingLeaseCount }
+    var isPolling: Bool { pollingTimer != nil }
 
     static func defaultRootURL(fileManager: FileManager = .default) -> URL {
         _ = fileManager
