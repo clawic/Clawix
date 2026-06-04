@@ -2,6 +2,9 @@ import SwiftUI
 
 struct BrowserView: View {
     @EnvironmentObject var appState: AppState
+    /// Observe browser chrome one-shot signals directly so `.onChange`
+    /// (reload / command) fires without the AppState god-object fan-out (P4).
+    @EnvironmentObject private var browserChrome: BrowserChromeStore
     @EnvironmentObject private var flags: FeatureFlags
     @State private var store = BrowserControllerStore()
     @State private var moreMenuOpen = false
@@ -134,7 +137,7 @@ struct BrowserView: View {
             store.discardOrphans(currentTabIds: Set(newIds))
             if activeWeb == nil { moreMenuOpen = false }
         }
-        .onChange(of: appState.pendingReloadTabId) { _, newValue in
+        .onChange(of: browserChrome.pendingReloadTabId) { _, newValue in
             guard let tabId = newValue,
                   let payload = activeWeb,
                   payload.id == tabId
@@ -143,7 +146,7 @@ struct BrowserView: View {
             controller.reload()
             appState.pendingReloadTabId = nil
         }
-        .onChange(of: appState.pendingBrowserCommand) { _, newValue in
+        .onChange(of: browserChrome.pendingBrowserCommand) { _, newValue in
             guard let request = newValue else { return }
             handleBrowserCommand(request.action)
             appState.pendingBrowserCommand = nil

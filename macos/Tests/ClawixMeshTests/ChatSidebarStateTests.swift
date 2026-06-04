@@ -256,16 +256,27 @@ final class ChatSidebarStateTests: XCTestCase {
         let webId = UUID()
         state.browserTabsLoading = [webId]
 
-        var publishes = 0
-        let cancellable = state.objectWillChange.sink { publishes += 1 }
+        // P4: browser-tab loading lives on the focused `BrowserChromeStore`, so
+        // a spinner flip publishes only there. It must NOT fan
+        // `AppState.objectWillChange` out to the chat / sidebar surfaces; the
+        // tab-strip pill observes the chrome store directly.
+        var appStatePublishes = 0
+        var chromePublishes = 0
+        let appCancellable = state.objectWillChange.sink { appStatePublishes += 1 }
+        let chromeCancellable = state.browserChromeStore.objectWillChange.sink { chromePublishes += 1 }
 
+        // No-op (already loading): neither store publishes.
         state.setBrowserTabLoading(webId, loading: true)
-        XCTAssertEqual(publishes, 0)
+        XCTAssertEqual(chromePublishes, 0)
+        XCTAssertEqual(appStatePublishes, 0)
 
+        // Real change: exactly one focused-store publish, zero AppState fan-out.
         state.setBrowserTabLoading(webId, loading: false)
-        XCTAssertEqual(publishes, 1)
+        XCTAssertEqual(chromePublishes, 1)
+        XCTAssertEqual(appStatePublishes, 0, "A browser spinner flip must not re-evaluate the chat/sidebar surfaces.")
         XCTAssertFalse(state.browserTabsLoading.contains(webId))
-        withExtendedLifetime(cancellable) {}
+        withExtendedLifetime(appCancellable) {}
+        withExtendedLifetime(chromeCancellable) {}
     }
 
     private func restore(_ value: Any?, key: String, defaults: UserDefaults) {

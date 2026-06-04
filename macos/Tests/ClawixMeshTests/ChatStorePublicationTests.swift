@@ -194,7 +194,9 @@ final class ChatStorePublicationTests: XCTestCase {
         state.chatStore.$summaries.dropFirst().sink { _ in
             summariesPublishes += 1
         }.store(in: &cancellables)
-        state.$searchResultRoutes.dropFirst().sink { _ in
+        // `searchResultRoutes` now lives on the focused `SearchStore` (P4); the
+        // negative lock is the same intent (a stream must not touch search).
+        state.searchStore.$searchResultRoutes.dropFirst().sink { _ in
             searchRoutePublishes += 1
         }.store(in: &cancellables)
         let messageStore = state.chatStore.transcript(for: chatId)?.messageStore(id: assistant.id)

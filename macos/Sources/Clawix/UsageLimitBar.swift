@@ -9,8 +9,15 @@ import SwiftUI
 // This is an informational state indicator, not an upsell.
 
 struct UsageLimitBar: View {
-    @EnvironmentObject private var appState: AppState
+    /// Observe the focused rate-limit store directly so a status refresh
+    /// re-renders this bar without fanning out through the AppState
+    /// god-object (P4).
+    @ObservedObject private var rateLimits: RateLimitStore
     @State private var dismissedAtPercent: Int = 0
+
+    init(rateLimitStore: RateLimitStore) {
+        self.rateLimits = rateLimitStore
+    }
 
     private struct Worst {
         let percent: Int
@@ -20,10 +27,10 @@ struct UsageLimitBar: View {
 
     private var worst: Worst? {
         var candidates: [Worst] = []
-        if let p = appState.rateLimits?.primary {
+        if let p = rateLimits.rateLimits?.primary {
             candidates.append(Worst(percent: p.usedPercent, windowMins: p.windowDurationMins, resetsAt: p.resetsAt))
         }
-        if let s = appState.rateLimits?.secondary {
+        if let s = rateLimits.rateLimits?.secondary {
             candidates.append(Worst(percent: s.usedPercent, windowMins: s.windowDurationMins, resetsAt: s.resetsAt))
         }
         return candidates.max(by: { $0.percent < $1.percent })

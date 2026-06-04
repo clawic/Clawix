@@ -244,4 +244,116 @@ final class UIThinnessContractTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(snapshot?.count ?? 0, 1)
         XCTAssertGreaterThanOrEqual(snapshot?.totalMs ?? 0, 0)
     }
+
+    // MARK: - P4 god-object split: focused-store writes are isolated
+
+    /// Wires the three charter surfaces (the god-object publish itself, the
+    /// sidebar compute layer, and an open session's presentation layer) so a
+    /// test can prove an unrelated write touches none of them.
+    private func makeChartedSurfaces(
+        chatCount: Int
+    ) -> (state: AppState, sidebar: SidebarStore, session: SessionPresentationStore, target: UUID) {
+        let (state, ids) = makeState(chatCount: chatCount)
+        let target = ids[0]
+        state.currentRoute = .chat(target)
+        // Seed one message so the session presentation layer has a row to draw.
+        state.chatStore.appendMessage(chatId: target, ChatMessage(role: .user, content: "hello"))
+
+        let sidebar = SidebarStore(appState: state)
+        let session = SessionPresentationStore()
+        session.bind(chatId: target, chatStore: state.chatStore)
+        return (state, sidebar, session, target)
+    }
+
+    /// The P4 contract: a write to a focused store (browser chrome / rate
+    /// limit / search) fires only that store's `objectWillChange`. It must NOT
+    /// fan `AppState.objectWillChange` out to the ~90 `@EnvironmentObject`
+    /// observers, must NOT advance `SidebarStore.revision`, and must NOT
+    /// advance the open session's `SessionPresentationStore.revision`. The
+    /// focused store's OWN publish still fires (the store is reactive for its
+    /// own consumers); only the chat/sidebar surfaces are unaffected.
+    func testRateLimitWriteDoesNotReEvaluateChatOrSidebar() {
+        let (state, sidebar, session, _) = makeChartedSurfaces(chatCount: 200)
+        let sidebarRevision = sidebar.revision
+        let sessionRevision = session.revision
+
+        var appStatePublishes = 0
+        var rateLimitPublishes = 0
+        state.objectWillChange.sink { _ in appStatePublishes += 1 }.store(in: &cancellables)
+        state.rateLimitStore.objectWillChange.sink { _ in rateLimitPublishes += 1 }.store(in: &cancellables)
+
+        state.rateLimits = RateLimitSnapshot(primary: nil, secondary: nil, credits: nil, limitId: nil, limitName: nil)
+        state.rateLimitsByLimitId = ["codex": RateLimitSnapshot(primary: nil, secondary: nil, credits: nil, limitId: nil, limitName: nil)]
+
+        XCTAssertEqual(appStatePublishes, 0, "A rate-limit write must not fan AppState.objectWillChange out to chat/sidebar observers.")
+        XCTAssertEqual(sidebar.revision, sidebarRevision, "A rate-limit write must not advance the sidebar compute layer.")
+        XCTAssertEqual(session.revision, sessionRevision, "A rate-limit write must not advance the open session's presentation layer.")
+        XCTAssertGreaterThan(rateLimitPublishes, 0, "The focused store still publishes to its own consumers.")
+    }
+
+    func testSearchWriteDoesNotReEvaluateChatOrSidebar() {
+        let (state, sidebar, session, _) = makeChartedSurfaces(chatCount: 200)
+        let sidebarRevision = sidebar.revision
+        let sessionRevision = session.revision
+
+        var appStatePublishes = 0
+        var searchPublishes = 0
+        state.objectWillChange.sink { _ in appStatePublishes += 1 }.store(in: &cancellables)
+        state.searchStore.objectWillChange.sink { _ in searchPublishes += 1 }.store(in: &cancellables)
+
+        // A keystroke into the search field plus a results update.
+        state.searchQuery = "design"
+        state.searchResults = ["Design — title match"]
+        state.searchResultRoutes = ["Design — title match": .home]
+
+        XCTAssertEqual(appStatePublishes, 0, "A search write must not fan AppState.objectWillChange out to chat/sidebar observers.")
+        XCTAssertEqual(sidebar.revision, sidebarRevision, "A search write must not advance the sidebar compute layer.")
+        XCTAssertEqual(session.revision, sessionRevision, "A search write must not advance the open session's presentation layer.")
+        XCTAssertGreaterThan(searchPublishes, 0, "The focused store still publishes to its own consumers.")
+    }
+
+    func testBrowserChromeWriteDoesNotReEvaluateChatOrSidebar() {
+        let (state, sidebar, session, _) = makeChartedSurfaces(chatCount: 200)
+        let sidebarRevision = sidebar.revision
+        let sessionRevision = session.revision
+
+        var appStatePublishes = 0
+        var chromePublishes = 0
+        state.objectWillChange.sink { _ in appStatePublishes += 1 }.store(in: &cancellables)
+        state.browserChromeStore.objectWillChange.sink { _ in chromePublishes += 1 }.store(in: &cancellables)
+
+        let tab = UUID()
+        state.browserTabsLoading = [tab]
+        state.browserPageBackgroundColors = [tab: .black]
+        state.pendingReloadTabId = tab
+        state.hostFavicons = ["example.com": URL(string: "https://example.com/favicon.ico")!]
+
+        XCTAssertEqual(appStatePublishes, 0, "A browser-chrome write must not fan AppState.objectWillChange out to chat/sidebar observers.")
+        XCTAssertEqual(sidebar.revision, sidebarRevision, "A browser-chrome write must not advance the sidebar compute layer.")
+        XCTAssertEqual(session.revision, sessionRevision, "A browser-chrome write must not advance the open session's presentation layer.")
+        XCTAssertGreaterThan(chromePublishes, 0, "The focused store still publishes to its own consumers.")
+    }
+
+    /// The forwarders are not write-only sugar: a value written through the
+    /// `AppState.<x>` forwarder round-trips, and reading it back returns the
+    /// child store's value (and vice versa). Proves the split preserves the
+    /// existing source-compatible call sites.
+    func testFocusedStoreForwardersRoundTrip() {
+        let state = AppState()
+
+        state.searchQuery = "abc"
+        XCTAssertEqual(state.searchStore.searchQuery, "abc")
+        state.searchStore.searchQuery = "xyz"
+        XCTAssertEqual(state.searchQuery, "xyz")
+
+        let snapshot = RateLimitSnapshot(primary: nil, secondary: nil, credits: nil, limitId: nil, limitName: nil)
+        state.rateLimits = snapshot
+        XCTAssertNotNil(state.rateLimitStore.rateLimits)
+
+        let tab = UUID()
+        state.pendingReloadTabId = tab
+        XCTAssertEqual(state.browserChromeStore.pendingReloadTabId, tab)
+        state.browserChromeStore.pendingReloadTabId = nil
+        XCTAssertNil(state.pendingReloadTabId)
+    }
 }

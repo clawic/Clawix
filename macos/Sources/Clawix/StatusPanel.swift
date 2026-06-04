@@ -10,6 +10,15 @@ struct StatusPanel: View {
     let onClose: () -> Void
 
     @EnvironmentObject private var appState: AppState
+    /// Observe the focused rate-limit store directly so a status refresh
+    /// re-renders the limits section without fanning out through the AppState
+    /// god-object (P4).
+    @ObservedObject private var rateLimits: RateLimitStore
+
+    init(rateLimitStore: RateLimitStore, onClose: @escaping () -> Void) {
+        self.rateLimits = rateLimitStore
+        self.onClose = onClose
+    }
 
     private var chatIdShort: String? {
         if case let .chat(id) = appState.currentRoute {
@@ -60,7 +69,7 @@ struct StatusPanel: View {
                         infoRow(L10n.t("Plan mode"), appState.planMode ? L10n.t("On") : L10n.t("Off"))
                     }
 
-                    if let limits = appState.rateLimits {
+                    if let limits = rateLimits.rateLimits {
                         limitsSection(limits)
                     }
                 }

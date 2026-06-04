@@ -16,6 +16,10 @@ let contentCornerRadius: CGFloat = 14
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
+    /// Observe browser chrome (sampled page background colours) directly so the
+    /// corner-cutout blend re-renders without fanning out through the AppState
+    /// god-object (P4). Injected at the main-window root.
+    @EnvironmentObject private var browserChrome: BrowserChromeStore
     @EnvironmentObject private var flags: FeatureFlags
 
     @AppStorage(ClawixPersistentSurfaceKeys.leftSidebarWidth, store: SidebarPrefs.store)
@@ -94,7 +98,7 @@ struct ContentView: View {
     private var trailingBottomWedgeColor: Color {
         guard appState.isRightSidebarOpen else { return .clear }
         if let id = appState.activeWebTabId,
-           let color = appState.browserPageBackgroundColors[id] {
+           let color = browserChrome.browserPageBackgroundColors[id] {
             return color
         }
         return .black

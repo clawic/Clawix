@@ -2,7 +2,14 @@ import SwiftUI
 
 struct SearchView: View {
     @EnvironmentObject var appState: AppState
+    /// Observe the focused search store directly so a keystroke re-renders this
+    /// surface without going through the AppState god-object (P4).
+    @ObservedObject private var search: SearchStore
     @FocusState private var fieldFocused: Bool
+
+    init(appState: AppState) {
+        self.search = appState.searchStore
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -12,16 +19,16 @@ struct SearchView: View {
             HStack(spacing: 8) {
                 SearchIcon(size: 13)
                     .foregroundColor(Palette.textTertiary)
-                TextField("Search in conversations…", text: $appState.searchQuery)
+                TextField("Search in conversations…", text: $search.searchQuery)
                     .font(BodyFont.system(size: 14, wght: 500))
                     .foregroundColor(Palette.textPrimary)
                     .textFieldStyle(.plain)
                     .focused($fieldFocused)
-                    .onChange(of: appState.searchQuery) { _, q in
+                    .onChange(of: search.searchQuery) { _, q in
                         appState.performSearch(q)
                     }
                     .accessibilityLabel("Search field")
-                if !appState.searchQuery.isEmpty {
+                if !search.searchQuery.isEmpty {
                     Button {
                         appState.searchQuery = ""
                         appState.searchResults = []
@@ -49,12 +56,12 @@ struct SearchView: View {
 
             Spacer().frame(height: 14)
 
-            if !appState.searchResults.isEmpty {
+            if !search.searchResults.isEmpty {
                 ScrollView {
                     LazyVStack(spacing: 5) {
-                        ForEach(appState.searchResults, id: \.self) { result in
+                        ForEach(search.searchResults, id: \.self) { result in
                             SearchResultRow(text: result) {
-                                if let route = appState.searchResultRoutes[result] {
+                                if let route = search.searchResultRoutes[result] {
                                     appState.navigate(to: route)
                                 }
                             }
@@ -63,11 +70,11 @@ struct SearchView: View {
                     .padding(.horizontal, 24)
                 }
                 .thinScrollers()
-            } else if appState.searchQuery.isEmpty {
+            } else if search.searchQuery.isEmpty {
                 emptyState(String(localized: "Type to search your conversations", bundle: AppLocale.bundle, locale: AppLocale.current),
                            icon: "magnifyingglass")
             } else {
-                emptyState(L10n.noSearchResults(query: appState.searchQuery), icon: "questionmark.circle")
+                emptyState(L10n.noSearchResults(query: search.searchQuery), icon: "questionmark.circle")
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

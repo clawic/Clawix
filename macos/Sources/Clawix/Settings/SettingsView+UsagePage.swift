@@ -32,6 +32,10 @@ enum UsageDisplayMode: String, CaseIterable {
 
 struct UsagePage: View {
     @EnvironmentObject var appState: AppState
+    /// Observe the focused rate-limit store directly so a status refresh
+    /// re-renders this page without fanning out through the AppState
+    /// god-object (P4). Injected at the main-window root.
+    @EnvironmentObject private var rateLimitStore: RateLimitStore
     @AppStorage(ClawixPersistentSurfaceKeys.usageDisplayMode) private var displayMode: UsageDisplayMode = .used
     @State private var usageRefreshInFlight = false
     @State private var usageRefreshError: String?
@@ -41,19 +45,19 @@ struct UsagePage: View {
     /// the general snapshot we already render at the top). Sorted by
     /// limit name so the order is stable across renders.
     private var perModelBuckets: [(id: String, snapshot: RateLimitSnapshot)] {
-        appState.rateLimitsByLimitId
+        rateLimitStore.rateLimitsByLimitId
             .filter { $0.key != "codex" }
             .sorted { ($0.value.limitName ?? $0.key) < ($1.value.limitName ?? $1.key) }
             .map { ($0.key, $0.value) }
     }
 
     private var hasAnyBars: Bool {
-        let general = appState.rateLimits.map { $0.primary != nil || $0.secondary != nil } ?? false
+        let general = rateLimitStore.rateLimits.map { $0.primary != nil || $0.secondary != nil } ?? false
         return general || !perModelBuckets.isEmpty
     }
 
     private var hasAnyUsageData: Bool {
-        hasAnyBars || appState.rateLimits?.credits != nil
+        hasAnyBars || rateLimitStore.rateLimits?.credits != nil
     }
 
     private var usageOptions: [(UsageDisplayMode, String)] {
@@ -66,7 +70,7 @@ struct UsagePage: View {
 
             usageStatus
 
-            if let snapshot = appState.rateLimits, snapshot.primary != nil || snapshot.secondary != nil {
+            if let snapshot = rateLimitStore.rateLimits, snapshot.primary != nil || snapshot.secondary != nil {
                 HStack(alignment: .center) {
                     Text("General usage limits")
                         .font(BodyFont.system(size: 13, wght: 600))
@@ -97,7 +101,7 @@ struct UsagePage: View {
                 }
             }
 
-            if let credits = appState.rateLimits?.credits {
+            if let credits = rateLimitStore.rateLimits?.credits {
                 SectionLabel(title: "Credit")
                 SettingsCard {
                     CreditRow(title: SettingsLimitsFormatter.creditTitle(for: credits),

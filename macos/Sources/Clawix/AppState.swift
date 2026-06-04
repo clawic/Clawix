@@ -90,9 +90,25 @@ final class AppState: ObservableObject {
     }
     @Published var driveQuickUploadRequestID: UUID? = nil
 
-    @Published var searchQuery: String = ""
-    @Published var searchResults: [String] = []
-    @Published var searchResultRoutes: [String: SidebarRoute] = [:]
+    /// Conversation-search state, owned by a focused child store so each
+    /// keystroke fires only `searchStore.objectWillChange` instead of fanning
+    /// `AppState.objectWillChange` out to the chat / sidebar surfaces (P4). The
+    /// `searchQuery` / `searchResults` / `searchResultRoutes` forwarders below
+    /// keep existing call sites compiling; the search surface observes
+    /// `searchStore` directly.
+    let searchStore = SearchStore()
+    var searchQuery: String {
+        get { searchStore.searchQuery }
+        set { searchStore.searchQuery = newValue }
+    }
+    var searchResults: [String] {
+        get { searchStore.searchResults }
+        set { searchStore.searchResults = newValue }
+    }
+    var searchResultRoutes: [String: SidebarRoute] {
+        get { searchStore.searchResultRoutes }
+        set { searchStore.searchResultRoutes = newValue }
+    }
     /// In-page Find (⌘F) state. Operates on the chat that owns the
     /// current view; closes when the user navigates anywhere else.
     @Published var isFindBarOpen: Bool = false
@@ -329,41 +345,66 @@ final class AppState: ObservableObject {
     /// Persisted independently from per-chat sidebars so Home browser tabs
     /// survive relaunches without leaking into individual conversations.
     @Published var globalSidebar: ChatSidebarState = .empty
+    /// Browser chrome state, owned by a focused child store so a favicon
+    /// update / tab-spinner flip / sampled-colour change never fans
+    /// `AppState.objectWillChange` out to the chat / sidebar surfaces (P4).
+    /// The `hostFavicons` / `pendingReloadTabId` / ... forwarders below keep
+    /// existing call sites compiling; browser views observe
+    /// `browserChromeStore` directly.
+    let browserChromeStore = BrowserChromeStore()
     /// Cross-tab favicon memory keyed by the registrable host. A tab freshly
     /// opened to a host visited before therefore renders its real favicon
     /// from the very first frame instead of cycling through the monogram and
     /// the Google s2 fallback while WKWebView re-extracts the page's
     /// `<link rel="icon">`. Persisted to UserDefaults under
     /// `HostFavicons` so it survives relaunches.
-    @Published var hostFavicons: [String: URL] = [:]
+    var hostFavicons: [String: URL] {
+        get { browserChromeStore.hostFavicons }
+        set { browserChromeStore.hostFavicons = newValue }
+    }
     /// One-shot signal consumed by `BrowserView` to reload the active web
     /// view. Set when `openLinkInBrowser` is asked to open a URL already
     /// present in the strip and the user expects the existing tab to refresh
     /// instead of a duplicate opening. The view resets it back to nil after
     /// firing the reload.
-    @Published var pendingReloadTabId: UUID?
+    var pendingReloadTabId: UUID? {
+        get { browserChromeStore.pendingReloadTabId }
+        set { browserChromeStore.pendingReloadTabId = newValue }
+    }
     /// One-shot command the menu / keyboard shortcuts dispatch toward the
     /// active browser tab. `BrowserView` consumes this via `.onChange`,
     /// translates it to a controller method, and resets it to nil. We use a
     /// counter-tagged value so two consecutive same-action presses (e.g.
     /// Cmd+R twice) still fire as distinct events even if the enum case
     /// matches.
-    @Published var pendingBrowserCommand: BrowserCommandRequest?
+    var pendingBrowserCommand: BrowserCommandRequest? {
+        get { browserChromeStore.pendingBrowserCommand }
+        set { browserChromeStore.pendingBrowserCommand = newValue }
+    }
     /// Tagged signal for the URL field to grab focus and pre-fill with the
     /// full URL. Carries the active tab's id at dispatch time so a stale
     /// view in another tab doesn't hijack the focus.
-    @Published var pendingFocusURLBar: BrowserFocusURLBarRequest?
+    var pendingFocusURLBar: BrowserFocusURLBarRequest? {
+        get { browserChromeStore.pendingFocusURLBar }
+        set { browserChromeStore.pendingFocusURLBar = newValue }
+    }
     /// Per-tab "is the WKWebView currently navigating" mirror. The
     /// `BrowserTabController` keeps the source-of-truth as `@Published
     /// isLoading`, but the tab-strip pills live outside that observation
     /// chain, so we forward the bit here so each pill can show a spinner
     /// without needing a reference to the live controller.
-    @Published var browserTabsLoading: Set<UUID> = []
+    var browserTabsLoading: Set<UUID> {
+        get { browserChromeStore.browserTabsLoading }
+        set { browserChromeStore.browserTabsLoading = newValue }
+    }
     /// Per-web-tab live page background colour sampled from the bottom-left
     /// pixel of each browser webview. Keyed by the web item's id so the
     /// bottom-trailing rounded-corner cutout blends with whatever the
     /// active page is currently painting at that edge.
-    @Published var browserPageBackgroundColors: [UUID: Color] = [:]
+    var browserPageBackgroundColors: [UUID: Color] {
+        get { browserChromeStore.browserPageBackgroundColors }
+        set { browserChromeStore.browserPageBackgroundColors = newValue }
+    }
     let backendStatusStore = BackendStatusStore()
     var clawixBackendStatus: ClawixService.Status = .idle {
         didSet {
@@ -379,15 +420,27 @@ final class AppState: ObservableObject {
         }
     }
     var rescueDecision: RescueSurvivalDecision = RescueSurvivalPolicy.evaluate(signals: [], availableRuntimeCount: 1)
+    /// Rate-limit / metered-bucket status, owned by a focused child store so a
+    /// status refresh never fans `AppState.objectWillChange` out to the chat /
+    /// sidebar surfaces (P4). `rateLimits` / `rateLimitsByLimitId` stay as
+    /// same-named computed forwarders for source compatibility; views that need
+    /// to re-render observe `rateLimitStore` directly.
+    let rateLimitStore = RateLimitStore()
     /// Snapshot of the user's primary/secondary rate-limit windows as
     /// reported by the backend (`account/rateLimits/read` once at boot,
     /// then refreshed by `account/rateLimits/updated`). nil while the
     /// initial fetch is in flight or when the backend declined to answer.
-    @Published var rateLimits: RateLimitSnapshot? = nil
+    var rateLimits: RateLimitSnapshot? {
+        get { rateLimitStore.rateLimits }
+        set { rateLimitStore.rateLimits = newValue }
+    }
     /// Per-bucket rate-limit snapshots keyed by metered `limit_id`
     /// (e.g. "codex", "codex_<model>"). Empty when the backend doesn't
     /// surface a per-bucket view.
-    @Published var rateLimitsByLimitId: [String: RateLimitSnapshot] = [:]
+    var rateLimitsByLimitId: [String: RateLimitSnapshot] {
+        get { rateLimitStore.rateLimitsByLimitId }
+        set { rateLimitStore.rateLimitsByLimitId = newValue }
+    }
     /// Paths whose right-sidebar file viewer is rendering raw text with
     /// line numbers and basic syntax tinting instead of the parsed
     /// markdown body. Toggled from the breadcrumb's ellipsis menu via
@@ -910,12 +963,12 @@ final class AppState: ObservableObject {
                 $pendingPlanQuestions.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingPlanQuestions") },
                 backendStatusStore.$status.dropFirst().sink { _ in RenderProbe.tick("BackendStatusStore.status") },
                 backendStatusStore.$rescueDecision.dropFirst().sink { _ in RenderProbe.tick("BackendStatusStore.rescueDecision") },
-                $rateLimits.dropFirst().sink { _ in RenderProbe.tick("AppState.rateLimits") },
-                $rateLimitsByLimitId.dropFirst().sink { _ in RenderProbe.tick("AppState.rateLimitsByLimitId") },
-                $hostFavicons.dropFirst().sink { _ in RenderProbe.tick("AppState.hostFavicons") },
-                $browserPageBackgroundColors.dropFirst().sink { _ in RenderProbe.tick("AppState.browserPageBackgroundColors") },
+                rateLimitStore.$rateLimits.dropFirst().sink { _ in RenderProbe.tick("RateLimitStore.rateLimits") },
+                rateLimitStore.$rateLimitsByLimitId.dropFirst().sink { _ in RenderProbe.tick("RateLimitStore.rateLimitsByLimitId") },
+                browserChromeStore.$hostFavicons.dropFirst().sink { _ in RenderProbe.tick("BrowserChromeStore.hostFavicons") },
+                browserChromeStore.$browserPageBackgroundColors.dropFirst().sink { _ in RenderProbe.tick("BrowserChromeStore.browserPageBackgroundColors") },
                 $chatSidebars.dropFirst().sink { _ in RenderProbe.tick("AppState.chatSidebars") },
-                $pendingReloadTabId.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingReloadTabId") },
+                browserChromeStore.$pendingReloadTabId.dropFirst().sink { _ in RenderProbe.tick("BrowserChromeStore.pendingReloadTabId") },
                 $richViewDisabledPaths.dropFirst().sink { _ in RenderProbe.tick("AppState.richViewDisabledPaths") },
                 $wordWrapEnabledPaths.dropFirst().sink { _ in RenderProbe.tick("AppState.wordWrapEnabledPaths") },
                 $isLeftSidebarOpen.dropFirst().sink { open in
@@ -927,8 +980,8 @@ final class AppState: ObservableObject {
                 $imagePreviewURL.dropFirst().sink { _ in RenderProbe.tick("AppState.imagePreviewURL") },
                 $pendingRenameChat.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingRenameChat") },
                 $pendingConfirmation.dropFirst().sink { _ in RenderProbe.tick("AppState.pendingConfirmation") },
-                $searchQuery.dropFirst().sink { _ in RenderProbe.tick("AppState.searchQuery") },
-                $searchResults.dropFirst().sink { _ in RenderProbe.tick("AppState.searchResults") },
+                searchStore.$searchQuery.dropFirst().sink { _ in RenderProbe.tick("SearchStore.searchQuery") },
+                searchStore.$searchResults.dropFirst().sink { _ in RenderProbe.tick("SearchStore.searchResults") },
             ]
         }
 

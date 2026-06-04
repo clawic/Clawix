@@ -759,7 +759,7 @@ struct ComposerView: View {
         VStack(spacing: 8) {
             // Functional notice when the account is near or at a usage
             // window limit. Renders nothing otherwise.
-            UsageLimitBar()
+            UsageLimitBar(rateLimitStore: appState.rateLimitStore)
 
             // Active skills chip row. Renders only when at least one
             // skill is active in the current chat (resolved across
@@ -774,7 +774,7 @@ struct ComposerView: View {
                 .environmentObject(appState)
         }
         .sheet(isPresented: $showStatus) {
-            StatusPanel { showStatus = false }
+            StatusPanel(rateLimitStore: appState.rateLimitStore) { showStatus = false }
                 .environmentObject(appState)
         }
         .sheet(isPresented: $showFiles) {

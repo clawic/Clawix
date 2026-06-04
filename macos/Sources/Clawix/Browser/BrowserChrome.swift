@@ -4,6 +4,9 @@ import SwiftUI
 
 struct BrowserTabStrip: View {
     @EnvironmentObject var appState: AppState
+    /// Observe browser chrome (per-tab loading spinners) directly so a spinner
+    /// flip re-renders the strip without the AppState god-object fan-out (P4).
+    @EnvironmentObject private var browserChrome: BrowserChromeStore
     @EnvironmentObject private var flags: FeatureFlags
     @State private var hoveredItemId: UUID?
     @State private var faviconCacheRefreshToken = 0
@@ -15,7 +18,7 @@ struct BrowserTabStrip: View {
                     item: item,
                     isActive: appState.activeSidebarItemId == item.id,
                     isHovered: hoveredItemId == item.id,
-                    isLoading: appState.browserTabsLoading.contains(item.id),
+                    isLoading: browserChrome.browserTabsLoading.contains(item.id),
                     faviconCacheRefreshToken: faviconCacheRefreshToken,
                     onSelect: { appState.activeSidebarItemId = item.id },
                     onClose:  { appState.closeSidebarItem(item.id) }
@@ -632,6 +635,9 @@ private struct ZoomRow: View {
 
 struct BrowserURLField: View {
     @EnvironmentObject var appState: AppState
+    /// Observe browser chrome (focus-URL-bar signal) directly so `.onChange`
+    /// fires without the AppState god-object fan-out (P4).
+    @EnvironmentObject private var browserChrome: BrowserChromeStore
     @ObservedObject var controller: BrowserTabController
     @State private var draft: String = ""
     @State private var editing: Bool = false
@@ -681,7 +687,7 @@ struct BrowserURLField: View {
         .onChange(of: controller.currentURL) { _, _ in
             if !editing { syncFromController() }
         }
-        .onChange(of: appState.pendingFocusURLBar) { _, newValue in
+        .onChange(of: browserChrome.pendingFocusURLBar) { _, newValue in
             guard let request = newValue, request.tabId == controller.id else { return }
             draft = controller.currentURL.absoluteString
             editing = true
