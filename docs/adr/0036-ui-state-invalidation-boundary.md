@@ -144,3 +144,16 @@ tests, and `scripts/ui_state_invalidation_boundary_check.mjs`.
   `ChatMessageStore.message` activity against `makeSnapshot`, `SidebarView`, and
   `state.appstate`; sidebar/global invalidations during streaming-only windows
   are treated as regressions.
+
+## Amendment 2026-06-04: boundary extends from store shape to the view layer
+
+The original boundary kept high-churn state out of global app state at the STORE
+layer. ADR 0041 extends the same boundary to the VIEW layer: a render-layer leaf
+is draw-only and receives precomputed display values, and ADR 0042 gives the open
+session its own narrow compute store (`SessionPresentationStore`), mirroring the
+sidebar's `SidebarStore`. The legacy `AppState.chats` mirror is retired from the
+send/turn-boundary hot path: a single-row event publishes one `messageIds`
+structure change plus one `summaries` single-row update, never the broad mirror
+or the O(N-chats) legacy scan. The deterministic locks live in
+`macos/Tests/ClawixMeshTests/UIThinnessContractTests.swift`; the static view
+boundary is enforced by `scripts/view_render_thinness_check.mjs`.

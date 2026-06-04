@@ -1,0 +1,8 @@
+{
+  "number": "0041",
+  "slug": "render-layer-thinness-boundary",
+  "title": "Render-layer thinness and precomputed view-model boundary",
+  "status": "accepted",
+  "adr": "docs/adr/0041-render-layer-thinness-boundary.md",
+  "canonicalName": "adr:render-layer-thinness-boundary"
+}

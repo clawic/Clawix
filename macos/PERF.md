@@ -237,8 +237,9 @@ in the listed file:line, and check the indicated lane / artifact.
   `AgentBackend/ToolTimelinePresentation.swift`.
 - In the trace: `ui.chat` should show bounded
   `timeline.entries.visible` values after the first expand, not the
-  full timeline cardinality. `tool.snapshot.cache_hit` should dominate
-  repeated expand/collapse. `hitch>250ms` in `clawix-renders.log`
+  full timeline cardinality. `tool.snapshot.cache_hit` (emitted by
+  `Chat/TimelineDetailProvider.swift` via `PerfSignpost.uiChat.event`) should
+  dominate repeated expand/collapse. `hitch>250ms` in `clawix-renders.log`
   during normal expansion is a regression.
 
 ### RAM keeps growing during a long session

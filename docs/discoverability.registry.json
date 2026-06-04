@@ -1155,6 +1155,114 @@
       "canonicalName": "adr:macos-ux-trace-harness"
     },
     {
+      "id": "adr-docs-adr-0041-render-layer-thinness-boundary",
+      "kind": "adr",
+      "steward": "clawix",
+      "canonicalSource": "docs/adr/0041-render-layer-thinness-boundary.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0041: Render-layer thinness and precomputed view-model boundary",
+        "0041-render-layer-thinness-boundary",
+        "ADR 0041",
+        "render layer draw-only",
+        "render-layer thinness",
+        "precomputed view-model boundary",
+        "adr:render-layer-thinness-boundary"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0041: Render-layer thinness and precomputed view-model boundary",
+          "expectPath": "docs/adr/0041-render-layer-thinness-boundary.md"
+        },
+        {
+          "query": "adr:render-layer-thinness-boundary",
+          "expectPath": "docs/adr/0041-render-layer-thinness-boundary.md"
+        }
+      ],
+      "guard": "scripts/view_render_thinness_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:render-layer-thinness-boundary"
+    },
+    {
+      "id": "adr-docs-adr-0042-session-presentation-compute-layer",
+      "kind": "adr",
+      "steward": "clawix",
+      "canonicalSource": "docs/adr/0042-session-presentation-compute-layer.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0042: Session presentation and compute layer",
+        "0042-session-presentation-compute-layer",
+        "ADR 0042",
+        "session presentation compute layer",
+        "SessionPresentationStore",
+        "TranscriptWindowModel wired",
+        "adr:session-presentation-compute-layer"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0042: Session presentation and compute layer",
+          "expectPath": "docs/adr/0042-session-presentation-compute-layer.md"
+        },
+        {
+          "query": "adr:session-presentation-compute-layer",
+          "expectPath": "docs/adr/0042-session-presentation-compute-layer.md"
+        }
+      ],
+      "guard": "scripts/hot_path_guard.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:session-presentation-compute-layer"
+    },
+    {
+      "id": "adr-docs-adr-0043-code-level-render-observability",
+      "kind": "adr",
+      "steward": "clawix",
+      "canonicalSource": "docs/adr/0043-code-level-render-observability.md",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "CONSTITUTION.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "ADR 0043: Code-level render observability and latency budgets",
+        "0043-code-level-render-observability",
+        "ADR 0043",
+        "code-level render observability",
+        "render latency budgets",
+        "RenderProbe deterministic locks",
+        "adr:code-level-render-observability"
+      ],
+      "searchQueries": [
+        {
+          "query": "ADR 0043: Code-level render observability and latency budgets",
+          "expectPath": "docs/adr/0043-code-level-render-observability.md"
+        },
+        {
+          "query": "adr:code-level-render-observability",
+          "expectPath": "docs/adr/0043-code-level-render-observability.md"
+        }
+      ],
+      "guard": "scripts/markdown_render_heavy_check.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18",
+      "canonicalName": "adr:code-level-render-observability"
+    },
+    {
       "id": "clawix-surface-route-graph",
       "kind": "surface-route",
       "steward": "clawix",
@@ -3862,6 +3970,31 @@
         }
       ],
       "guard": "scripts/verify-system-telemetry-goal.mjs",
+      "status": "enforced",
+      "reviewDate": "2026-08-18"
+    },
+    {
+      "id": "guard-scripts-view-render-thinness-check",
+      "kind": "guardrail",
+      "steward": "clawix",
+      "canonicalSource": "scripts/view_render_thinness_check.mjs",
+      "requiredEntrypoints": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/discoverability.md",
+        "docs/decision-map.md"
+      ],
+      "discoveryTerms": [
+        "view_render_thinness_check",
+        "View Render Thinness Check"
+      ],
+      "searchQueries": [
+        {
+          "query": "view_render_thinness_check",
+          "expectPath": "scripts/view_render_thinness_check.mjs"
+        }
+      ],
+      "guard": "scripts/view_render_thinness_check.mjs",
       "status": "enforced",
       "reviewDate": "2026-08-18"
     },

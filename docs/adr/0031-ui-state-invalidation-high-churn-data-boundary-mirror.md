@@ -77,3 +77,14 @@ routes to sibling ClawJS ADR 0045 and local ADR 0026.
 
 Clawix reviews must ask where high-churn state lives, what summary updates
 globally, and which test proves unrelated UI does not recompute.
+
+## Amendment 2026-06-04: mid-turn payload lives in per-chat stores
+
+The high-churn boundary now explicitly covers mid-turn payload, not only token
+text. Per-chat mid-turn state (queued messages, plan-by-chat, pending plan
+questions) moves into bounded per-chat stores rather than the global god object,
+so a mid-turn update touches only that chat's surface. The macOS realization is
+the `SessionPresentationStore` compute layer (ADR 0042) plus the focused-store
+split (ADR 0041 charter, phase P4); the deterministic isolation lock is
+`macos/Tests/ClawixMeshTests/UIThinnessContractTests.swift`
+(`testRateLimitWriteDoesNotReEvaluateChatOrSidebar` and siblings).

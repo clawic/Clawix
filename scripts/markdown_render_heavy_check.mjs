@@ -21,7 +21,14 @@ const allowedFlags = new Set([
   "--render-log",
   "--phase",
   "--allow-hitch100",
+  "--allow-rowbody",
 ]);
+
+// Default per-window bound on cumulative `row.body` evaluations. ADR 0041/0043:
+// a draw-only row re-evaluates only on a named event, so a scroll/stream window
+// must stay bounded, not scale with token or timeline cardinality. Override per
+// scenario with --allow-rowbody when a window legitimately mounts more rows.
+const DEFAULT_ROW_BODY_BUDGET = 240;
 
 for (const arg of rawArgs) {
   if (arg.startsWith("--") && !allowedFlags.has(arg)) {
@@ -92,7 +99,7 @@ function countNeedle(lines, needle) {
   }, 0);
 }
 
-function analyzeRenderLog(text, { label, phase = "scroll-chat", allowHitch100 = 0 }) {
+function analyzeRenderLog(text, { label, phase = "scroll-chat", allowHitch100 = 0, allowRowBody = DEFAULT_ROW_BODY_BUDGET }) {
   const result = {
     sawWindow: false,
     hitch33: 0,
@@ -150,6 +157,15 @@ function analyzeRenderLog(text, { label, phase = "scroll-chat", allowHitch100 = 
     result.findings.push(
       `${label} ${phase} exceeds allowed hitch>100ms count ` +
         `(${result.hitch100} > ${allowHitch100})`
+    );
+  }
+  // Bound (not just observe) cumulative row.body evaluations: a draw-only row
+  // re-evaluates per named event, so the window must not scale with token or
+  // timeline cardinality.
+  if (result.rowBodies > allowRowBody) {
+    result.findings.push(
+      `${label} ${phase} exceeds allowed row.body count ` +
+        `(${result.rowBodies} > ${allowRowBody})`
     );
   }
   if (result.cacheHits + result.cacheMisses > 0 && result.cacheHits < result.cacheMisses) {
@@ -215,6 +231,31 @@ function runSelfTest() {
   if (emptyWindow.findings.length === 0) {
     fail("empty render window fixture must fail");
   }
+
+  // row.body bound: a window whose cumulative row.body evaluations exceed the
+  // budget is a regression (a draw-only row should not re-evaluate per token).
+  const overBudgetRowBodyFixture = [
+    "[1.000] === MARK: scroll-chat-start ===",
+    "[1.500 Δ0.50s] ChatView=1 row.body=500 timeline.entries.visible=8",
+    "[2.500] === MARK: scroll-chat-end ===",
+  ].join("\n");
+  const overBudget = analyzeRenderLog(overBudgetRowBodyFixture, {
+    label: "over-budget-rowbody-fixture",
+    allowHitch100: 0,
+    allowRowBody: 240,
+  });
+  if (!overBudget.findings.some((finding) => finding.includes("row.body count"))) {
+    fail("over-budget row.body fixture must fail the bound");
+  }
+  // The same window passes when the scenario legitimately raises the budget.
+  const raised = analyzeRenderLog(overBudgetRowBodyFixture, {
+    label: "raised-rowbody-budget-fixture",
+    allowHitch100: 0,
+    allowRowBody: 600,
+  });
+  if (raised.findings.length !== 0) {
+    fail("raised row.body budget fixture must pass");
+  }
 }
 
 requireSnippet("macos/PERF.md", "Long chat scrolls badly");
@@ -240,11 +281,13 @@ if (renderLog) {
     fail(`render log does not exist: ${renderLog}`);
   } else {
     const allowHitch100 = Number(valueAfter("--allow-hitch100") ?? 0);
+    const allowRowBody = Number(valueAfter("--allow-rowbody") ?? DEFAULT_ROW_BODY_BUDGET);
     const phase = valueAfter("--phase") ?? "scroll-chat";
     const analysis = analyzeRenderLog(fs.readFileSync(absolute, "utf8"), {
       label: renderLog,
       phase,
       allowHitch100,
+      allowRowBody,
     });
     for (const finding of analysis.findings) fail(finding);
   }

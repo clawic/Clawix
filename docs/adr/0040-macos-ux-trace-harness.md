@@ -130,3 +130,13 @@ Future macOS UI performance closure must not rely on Computer Use alone,
 screenshots alone, or click-dispatch timing alone. P0 closure requires evidence
 that ties an agent-control-bus action to the expected visual condition, stable
 geometry/scroll state, and relevant performance metrics.
+
+## Amendment 2026-06-04: deterministic unit-test complement
+
+This runtime, wall-clock, agent-control-bus harness is complemented by ADR 0043's
+deterministic in-process layer: machine-independent body-eval bounds, publish/
+call budgets, first-frame snapshot counts, and `RenderProbe.time` code-latency
+read as ordinary unit tests. The two are distinct and both required: this harness
+measures real action-to-visual-completion latency (machine-noisy, advisory
+thresholds until approved); ADR 0043's counts are hard CI. Neither replaces the
+other.

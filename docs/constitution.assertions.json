@@ -2082,20 +2082,25 @@
         "permissions",
         "audit",
         "storage",
-        "docs"
+        "docs",
+        "ui"
       ],
       "canonicalDocs": [
         "CONSTITUTION.md",
         "docs/agent-rules/index.md",
         "../../clawjs/docs/adr/0007-cli-agent-interface.md",
         "../../clawjs/docs/adr/0010-cli-jit-guidance-actor-assertions-resource-registry.md",
-        "docs/governance/performance-governance.md"
+        "docs/governance/performance-governance.md",
+        "docs/adr/0041-render-layer-thinness-boundary.md",
+        "docs/adr/0042-session-presentation-compute-layer.md",
+        "docs/adr/0043-code-level-render-observability.md"
       ],
       "protectorScripts": [
         "scripts/constitution-assertions-check.mjs",
         "scripts/check-clawjs-skills-sync.mjs",
         "scripts/discoverability-check.mjs",
-        "scripts/performance_governance_check.mjs"
+        "scripts/performance_governance_check.mjs",
+        "scripts/view_render_thinness_check.mjs"
       ],
       "evidenceMode": "delegated",
       "repoScope": "shared",

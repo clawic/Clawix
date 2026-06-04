@@ -203,6 +203,48 @@ if (!engineHost.includes(".throttle(for: .milliseconds(16)")) {
   fail("EngineHost transcript bridge snapshots must be coalesced to a frame before snapshot generation");
 }
 
+// macOS render-layer-thinness boundary (ADR 0041/0042): the send/turn-boundary
+// hot path routes only through named chatStore events and must not re-publish
+// the legacy AppState.chats mirror before the bubble paints.
+const messageSending = read("macos/Sources/Clawix/AppState/MessageSending.swift");
+if (!messageSending.includes("chatStore.appendMessage")) {
+  fail("MessageSending send path must land the bubble through the named chatStore.appendMessage event");
+}
+if (messageSending.includes("syncLegacyChatFromStore")) {
+  fail("MessageSending send/turn hot path must not call syncLegacyChatFromStore (legacy AppState.chats mirror is retired from the hot path)");
+}
+if (/\bself\.chats\s*=/.test(messageSending) || /\bchats\.append\s*\(/.test(messageSending)) {
+  fail("MessageSending send path must not write the legacy AppState.chats array directly");
+}
+
+// The session presentation/compute layer (ADR 0042) is the chat-side mirror of
+// SidebarStore: it subscribes ONLY to the narrow per-chat publishers, never the
+// god object, and produces draw-only display models.
+const sessionStore = read("macos/Sources/Clawix/Chat/SessionPresentationStore.swift");
+// Code (not doc-comment prose) must not wire the god object: no @EnvironmentObject,
+// no `appState.` member access, no AppState-typed stored property.
+if (/@EnvironmentObject/.test(sessionStore)
+  || /\bappState\s*\./.test(sessionStore)
+  || /:\s*AppState\b/.test(sessionStore)) {
+  fail("SessionPresentationStore must not observe AppState; it binds to the per-chat ChatStore publishers");
+}
+if (!sessionStore.includes("transcript.$messageIds")) {
+  fail("SessionPresentationStore must subscribe to the per-chat ChatTranscriptStore.$messageIds for structure");
+}
+if (!sessionStore.includes("store.$message")) {
+  fail("SessionPresentationStore must subscribe to each visible message's ChatMessageStore.$message for content");
+}
+
+// The permanent deterministic locks for the boundary must stay present.
+requireSnippet(
+  "macos/Tests/ClawixMeshTests/UIThinnessContractTests.swift",
+  "testSendCallBudgetIsIndependentOfChatCount"
+);
+requireSnippet(
+  "macos/Tests/ClawixMeshTests/UIThinnessContractTests.swift",
+  "testRateLimitWriteDoesNotReEvaluateChatOrSidebar"
+);
+
 const webSearchView = read("web/src/screens/search/search-view.tsx");
 if (webSearchView.includes("s.messagesBySession")) {
   fail("Web SearchView must consume the debounced searchMessagesBySession snapshot, not live messagesBySession");

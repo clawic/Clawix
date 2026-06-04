@@ -549,6 +549,8 @@ fast() {
   run node "$ROOT_DIR/scripts/core_ux_reliability_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/hot_path_guard.mjs"
   run node "$ROOT_DIR/scripts/hot_path_guard.mjs" --self-test
+  run node "$ROOT_DIR/scripts/view_render_thinness_check.mjs"
+  run node "$ROOT_DIR/scripts/view_render_thinness_check.mjs" --self-test
   run node "$ROOT_DIR/scripts/boundedness_guard.mjs"
   run node "$ROOT_DIR/scripts/boundedness_guard.mjs" --self-test
   run node "$ROOT_DIR/scripts/actionable-error.mjs" --self-test

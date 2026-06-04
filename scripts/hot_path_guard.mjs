@@ -210,16 +210,57 @@ function findMultilineRisk(content, rule) {
   return findings;
 }
 
+// Replace the inside of line comments, block comments, and string literals with
+// spaces (preserving newlines and length) so risk rules only fire on real code,
+// not on doc comments that DESCRIBE a forbidden operation (e.g. a draw-only row
+// documenting that it performs no MarkdownParseCache.parse).
+function maskCommentsAndStrings(source) {
+  const out = source.split("");
+  const length = source.length;
+  let index = 0;
+  let state = "code"; // code | line | block | string
+  while (index < length) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (state === "code") {
+      if (char === "/" && next === "/") { out[index] = " "; out[index + 1] = " "; state = "line"; index += 2; continue; }
+      if (char === "/" && next === "*") { out[index] = " "; out[index + 1] = " "; state = "block"; index += 2; continue; }
+      if (char === '"') { state = "string"; index += 1; continue; }
+      index += 1;
+      continue;
+    }
+    if (state === "line") {
+      if (char === "\n") { state = "code"; index += 1; continue; }
+      out[index] = " "; index += 1; continue;
+    }
+    if (state === "block") {
+      if (char === "*" && next === "/") { out[index] = " "; out[index + 1] = " "; state = "code"; index += 2; continue; }
+      if (char !== "\n") out[index] = " ";
+      index += 1; continue;
+    }
+    // string
+    if (char === "\\") { out[index] = " "; out[index + 1] = next === "\n" ? "\n" : " "; index += 2; continue; }
+    if (char === '"') { state = "code"; index += 1; continue; }
+    if (char !== "\n") out[index] = " ";
+    index += 1;
+  }
+  return out.join("");
+}
+
 function scanFile(rootDir, relativePath) {
-  const content = readText(rootDir, relativePath);
-  const lines = content.split(/\r?\n/u);
+  const raw = readText(rootDir, relativePath);
+  // Risk patterns match on masked code (no comments/strings); context windows and
+  // the hot-path-ok inline marker live in comments, so they read the RAW lines.
+  const masked = maskCommentsAndStrings(raw);
+  const rawLines = raw.split(/\r?\n/u);
+  const lines = masked.split(/\r?\n/u);
   const findings = [];
   for (const rule of riskRules) {
     if (rule.multiline) {
-      for (const match of findMultilineRisk(content, rule)) {
-        const line = lineNumberForOffset(content, match.offset);
+      for (const match of findMultilineRisk(masked, rule)) {
+        const line = lineNumberForOffset(masked, match.offset);
         const index = line - 1;
-        if (!matchesContext(rule, relativePath, lines, index) || hasInlineException(lines, index)) continue;
+        if (!matchesContext(rule, relativePath, lines, index) || hasInlineException(rawLines, index)) continue;
         findings.push({ path: relativePath, line, riskKind: rule.kind, linePattern: match.snippet, snippet: match.snippet });
       }
       continue;
@@ -227,8 +268,8 @@ function scanFile(rootDir, relativePath) {
     for (const [index, line] of lines.entries()) {
       if (!rule.pattern.test(line)) continue;
       if (/^\s*import\s/u.test(line)) continue;
-      if (!matchesContext(rule, relativePath, lines, index) || hasInlineException(lines, index)) continue;
-      const linePattern = line.trim().slice(0, 180);
+      if (!matchesContext(rule, relativePath, lines, index) || hasInlineException(rawLines, index)) continue;
+      const linePattern = rawLines[index].trim().slice(0, 180);
       findings.push({ path: relativePath, line: index + 1, riskKind: rule.kind, linePattern, snippet: linePattern });
     }
   }
@@ -244,6 +285,33 @@ function requireSnippet(rootDir, relativePath, snippet, failures) {
   if (!fs.readFileSync(filePath, "utf8").includes(snippet)) failures.push(`${relativePath} must include ${JSON.stringify(snippet)}`);
 }
 
+// Dead-mirror check (ADR 0042): a presentation mirror/cache type that is defined
+// but has no consumer outside its own defining file is unwired governance debt.
+// Either wire it or delete it. Types with no definition at all are skipped.
+const deadMirrorTypes = ["TranscriptWindowModel", "ToolTimelinePresentationCache"];
+
+function checkDeadMirrors(rootDir, failures) {
+  const files = listFiles(rootDir, "macos/Sources").filter((file) => file.endsWith(".swift"));
+  for (const typeName of deadMirrorTypes) {
+    const definitionPattern = new RegExp(`\\b(?:final\\s+)?(?:class|struct|enum|actor)\\s+${typeName}\\b`, "u");
+    const usagePattern = new RegExp(`\\b${typeName}\\b`, "u");
+    let definedIn = null;
+    const consumers = [];
+    for (const file of files) {
+      const text = readText(rootDir, file);
+      if (definedIn === null && definitionPattern.test(text)) definedIn = file;
+    }
+    if (definedIn === null) continue; // not present: nothing to flag
+    for (const file of files) {
+      if (file === definedIn) continue;
+      if (usagePattern.test(readText(rootDir, file))) consumers.push(file);
+    }
+    if (consumers.length === 0) {
+      failures.push(`${typeName} is defined in ${definedIn} but unwired (no consumer outside its file): wire it or delete it (ADR 0042 dead-mirror)`);
+    }
+  }
+}
+
 function checkRoot(rootDir) {
   const failures = [];
   requireSnippet(rootDir, "docs/governance/performance-governance.md", "Hot Path Guard P1", failures);
@@ -257,6 +325,7 @@ function checkRoot(rootDir) {
       failures.push(`${finding.path}:${finding.line} ${finding.riskKind} needs hot-path-ok with maxBytes/maxItems/maxPixels or ${baselinePath}: ${finding.snippet}`);
     }
   }
+  checkDeadMirrors(rootDir, failures);
   return { failures, filesScanned: files.length, findings };
 }
 

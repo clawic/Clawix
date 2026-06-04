@@ -353,6 +353,84 @@
           "command": "claw search \"ADR number reservation governance mirror\" --json"
         }
       ]
+    },
+    {
+      "adr": "docs/adr/0041-render-layer-thinness-boundary.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/view_render_thinness_check.mjs",
+        "scripts/markdown_render_heavy_check.mjs",
+        "scripts/hot_path_guard.mjs"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "macos/PERF.md"
+      ],
+      "programmaticSurface": [
+        "scripts/view_render_thinness_check.mjs",
+        "macos/Tests/ClawixMeshTests/UIThinnessContractTests.swift"
+      ],
+      "persistence": [
+        "docs/discoverability.registry.json",
+        "docs/adr/reservations"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw search \"adr:render-layer-thinness-boundary\" --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0042-session-presentation-compute-layer.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/hot_path_guard.mjs",
+        "scripts/ui_state_invalidation_boundary_check.mjs"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "macos/PERF.md"
+      ],
+      "programmaticSurface": [
+        "scripts/hot_path_guard.mjs",
+        "macos/Tests/ClawixMeshTests/SessionPresentationStoreTests.swift"
+      ],
+      "persistence": [
+        "docs/discoverability.registry.json",
+        "docs/adr/reservations"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw search \"adr:session-presentation-compute-layer\" --json"
+        }
+      ]
+    },
+    {
+      "adr": "docs/adr/0043-code-level-render-observability.md",
+      "decisionMap": "docs/decision-map.md",
+      "guardrails": [
+        "scripts/markdown_render_heavy_check.mjs"
+      ],
+      "humanSurface": [
+        "docs/decision-map.md",
+        "macos/PERF.md"
+      ],
+      "programmaticSurface": [
+        "scripts/markdown_render_heavy_check.mjs",
+        "macos/Tests/ClawixMeshTests/UIThinnessContractTests.swift"
+      ],
+      "persistence": [
+        "docs/discoverability.registry.json",
+        "docs/adr/reservations"
+      ],
+      "cliSearch": "docs/discoverability.registry.json searchQueries",
+      "cliInspect": [
+        {
+          "command": "claw search \"adr:code-level-render-observability\" --json"
+        }
+      ]
     }
   ]
 }

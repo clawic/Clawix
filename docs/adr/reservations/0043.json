@@ -1,0 +1,8 @@
+{
+  "number": "0043",
+  "slug": "code-level-render-observability",
+  "title": "Code-level render observability and latency budgets",
+  "status": "accepted",
+  "adr": "docs/adr/0043-code-level-render-observability.md",
+  "canonicalName": "adr:code-level-render-observability"
+}

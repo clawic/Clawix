@@ -1,0 +1,8 @@
+{
+  "number": "0042",
+  "slug": "session-presentation-compute-layer",
+  "title": "Session presentation and compute layer",
+  "status": "accepted",
+  "adr": "docs/adr/0042-session-presentation-compute-layer.md",
+  "canonicalName": "adr:session-presentation-compute-layer"
+}

@@ -69,3 +69,12 @@ routes to sibling ClawJS ADR 0044.
 
 New Clawix host/UI surfaces must prove they are lazy and become quiet at idle
 before closure.
+
+## Amendment 2026-06-04: polling lease-gated, stream via scheduler
+
+The idle contract now covers two render-layer-thinness pressures. Background
+polling (design/apps stores) is lease-gated in the `VisualClock` style so an idle
+session stops the loop, and the live token stream is coalesced through
+`StreamingRenderScheduler` (one body-eval per frame budget, ~16.7ms) instead of
+publishing per token. Both keep the open session quiet at idle and bounded under
+load; the deterministic complement is ADR 0043's code-level observability locks.
