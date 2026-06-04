@@ -17,6 +17,10 @@ final class SidebarStore: ObservableObject {
     private var archivedLoading: Bool
     private var summarySignature: [SidebarSummarySignature]
     private var archivedSummarySignature: [SidebarSummarySignature]
+    /// Coarse named tick for relative-age labels. Fires when the wall-clock
+    /// minute rolls over (not per body, not per frame), recomputing only the
+    /// precomputed display models so "3 min" becomes "4 min" without re-sorting.
+    private var ageTickTimer: Timer?
 
     init(appState: AppState) {
         summaries = appState.chatStore.summaries
@@ -84,6 +88,49 @@ final class SidebarStore: ObservableObject {
                 self?.updateArchivedLoading(loading)
             }
             .store(in: &cancellables)
+
+        scheduleAgeTick()
+    }
+
+    deinit {
+        ageTickTimer?.invalidate()
+    }
+
+    /// Recompute the precomputed leaf display models against the current wall
+    /// clock and re-publish only if at least one row's label rolled over. A
+    /// named, coarse event: the labels are the only thing that changes, so we
+    /// rebuild the `displayByChat` map in place and keep the heavy sorted
+    /// buckets untouched.
+    func refreshAgeLabels(now: Date = Date()) {
+        guard !snapshot.displayByChat.isEmpty else { return }
+        var next = snapshot.displayByChat
+        var changed = false
+        let allChats = snapshot.pinned + snapshot.chrono + snapshot.archived
+        for chat in allChats {
+            let model = RecentChatRowDisplayModel.make(from: chat, now: now)
+            if next[chat.id] != model {
+                next[chat.id] = model
+                changed = true
+            }
+        }
+        guard changed else { return }
+        snapshot = snapshot.replacingDisplay(next)
+        revision &+= 1
+    }
+
+    /// Fire the age tick at the next minute boundary, then every minute. The
+    /// minute granularity matches the coarsest sub-hour bucket of the relative
+    /// label, so a label can only roll over on a tick.
+    private func scheduleAgeTick() {
+        ageTickTimer?.invalidate()
+        let timer = Timer(timeInterval: 60, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.refreshAgeLabels()
+            }
+        }
+        // `.common` so the tick keeps firing during scroll/drag tracking.
+        RunLoop.main.add(timer, forMode: .common)
+        ageTickTimer = timer
     }
 
     private func updateSummaries(_ next: [ChatSummary]) {
@@ -136,7 +183,12 @@ final class SidebarStore: ObservableObject {
             currentRoute: currentRoute,
             archivedLoading: archivedLoading
         )
-        guard next != snapshot else { return }
+        // Compare structure only. The precomputed `displayByChat` carries a
+        // wall-clock-dependent relative-age label, so two rebuilds of the same
+        // structure milliseconds apart can differ purely in that label. Folding
+        // it into this gate would turn a structural no-op into a spurious
+        // revision bump. Age-label rollover is the age tick's job, not here.
+        guard !next.structurallyEqual(to: snapshot) else { return }
         snapshot = next
         revision &+= 1
     }
@@ -184,6 +236,32 @@ private struct SidebarSummarySignature: Equatable {
     }
 }
 
+/// Draw-only display values for one sidebar chat row, precomputed once by the
+/// compute layer (`SidebarSnapshot.make`) so `RecentChatRow.body` never derives
+/// at render time: no `Date()`/`Calendar` relative-age math, no empty-title
+/// fallback branch. The two leaf derivations the row used to run inline live
+/// here. `ageLabel` is refreshed on a coarse named tick (a wall-clock unit
+/// rollover), not per body.
+struct RecentChatRowDisplayModel: Equatable {
+    let id: UUID
+    /// Title with the empty-title fallback already applied.
+    let displayTitle: String
+    /// Relative-age string ("now", "4 min", "4 d"), already formatted/localized.
+    let ageLabel: String
+
+    /// Self-derive a model from a chat. Used by the snapshot's compute layer and
+    /// as a safe accessor fallback. Never called from a view body.
+    static func make(from chat: Chat, now: Date) -> RecentChatRowDisplayModel {
+        RecentChatRowDisplayModel(
+            id: chat.id,
+            displayTitle: chat.title.isEmpty
+                ? String(localized: "Conversation", bundle: AppLocale.packageBundle)
+                : chat.title,
+            ageLabel: SidebarRelativeAgeLabel.label(from: chat.createdAt, now: now)
+        )
+    }
+}
+
 struct SidebarSnapshot: Equatable {
     let pinned: [Chat]
     let byProject: [UUID: [Chat]]
@@ -200,6 +278,9 @@ struct SidebarSnapshot: Equatable {
     let projectsCustom: [Project]
     let pinnedFilterSources: [PinnedFilterSource]
     let chronoFilterSources: [PinnedFilterSource]
+    /// Precomputed leaf display values per chat id. The row looks its model up
+    /// here instead of deriving in `body`.
+    let displayByChat: [UUID: RecentChatRowDisplayModel]
 
     static let empty = SidebarSnapshot(
         pinned: [],
@@ -216,8 +297,59 @@ struct SidebarSnapshot: Equatable {
         projectsName: [],
         projectsCustom: [],
         pinnedFilterSources: [],
-        chronoFilterSources: []
+        chronoFilterSources: [],
+        displayByChat: [:]
     )
+
+    /// Draw-only accessor for the row. Returns the precomputed model, or a freshly
+    /// derived one (compute layer, not render) for an id the map somehow lacks.
+    func display(for chat: Chat) -> RecentChatRowDisplayModel {
+        displayByChat[chat.id] ?? RecentChatRowDisplayModel.make(from: chat, now: Date())
+    }
+
+    /// Structural equality that ignores the wall-clock-dependent `displayByChat`
+    /// projection. Used by the store's rebuild gate so a no-op rebuild stays a
+    /// no-op even though its display labels were recomputed with a fresh `now`.
+    func structurallyEqual(to other: SidebarSnapshot) -> Bool {
+        pinned == other.pinned
+            && byProject == other.byProject
+            && recentDateByProject == other.recentDateByProject
+            && chrono == other.chrono
+            && projectless == other.projectless
+            && archived == other.archived
+            && archivedLoading == other.archivedLoading
+            && currentRoute == other.currentRoute
+            && projects == other.projects
+            && projectsRecent == other.projectsRecent
+            && projectsCreation == other.projectsCreation
+            && projectsName == other.projectsName
+            && projectsCustom == other.projectsCustom
+            && pinnedFilterSources == other.pinnedFilterSources
+            && chronoFilterSources == other.chronoFilterSources
+    }
+
+    /// Return a copy with only the precomputed display map swapped. Used by the
+    /// coarse age tick to roll relative-age labels without re-sorting buckets.
+    func replacingDisplay(_ next: [UUID: RecentChatRowDisplayModel]) -> SidebarSnapshot {
+        SidebarSnapshot(
+            pinned: pinned,
+            byProject: byProject,
+            recentDateByProject: recentDateByProject,
+            chrono: chrono,
+            projectless: projectless,
+            archived: archived,
+            archivedLoading: archivedLoading,
+            currentRoute: currentRoute,
+            projects: projects,
+            projectsRecent: projectsRecent,
+            projectsCreation: projectsCreation,
+            projectsName: projectsName,
+            projectsCustom: projectsCustom,
+            pinnedFilterSources: pinnedFilterSources,
+            chronoFilterSources: chronoFilterSources,
+            displayByChat: next
+        )
+    }
 
     func sortedProjects(for mode: ProjectSortMode) -> [Project] {
         switch mode {
@@ -239,7 +371,8 @@ struct SidebarSnapshot: Equatable {
         projects: [Project],
         manualProjectOrder: [UUID],
         currentRoute: SidebarRoute,
-        archivedLoading: Bool
+        archivedLoading: Bool,
+        now: Date = Date()
     ) -> SidebarSnapshot {
         PerfSignpost.uiSidebar.interval("snapshot") {
         RenderProbe.time("makeSnapshot") {
@@ -281,6 +414,19 @@ struct SidebarSnapshot: Equatable {
             }
 
             let projectless = chronoRaw.filter { $0.projectId == nil }
+
+            // Precompute the two leaf display values per row (relative age +
+            // empty-title fallback) once here, so RecentChatRow.body draws and
+            // never derives. Covers every bucket a row can be drawn from.
+            var displayByChat: [UUID: RecentChatRowDisplayModel] = [:]
+            displayByChat.reserveCapacity(chats.count + archived.count)
+            for chat in chats {
+                displayByChat[chat.id] = RecentChatRowDisplayModel.make(from: chat, now: now)
+            }
+            for chat in archived where displayByChat[chat.id] == nil {
+                displayByChat[chat.id] = RecentChatRowDisplayModel.make(from: chat, now: now)
+            }
+
             return SidebarSnapshot(
                 pinned: pinnedRaw,
                 byProject: byProject,
@@ -296,7 +442,8 @@ struct SidebarSnapshot: Equatable {
                 projectsName: sortedProjectsName(projects),
                 projectsCustom: sortedProjectsCustom(projects, manualProjectOrder: manualProjectOrder),
                 pinnedFilterSources: filterSources(from: pinnedRaw, projects: projects),
-                chronoFilterSources: filterSources(from: chronoRaw, projects: projects)
+                chronoFilterSources: filterSources(from: chronoRaw, projects: projects),
+                displayByChat: displayByChat
             )
         }
         }

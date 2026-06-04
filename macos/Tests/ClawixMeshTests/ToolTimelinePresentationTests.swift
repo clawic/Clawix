@@ -1,7 +1,64 @@
+import Foundation
 import XCTest
 @testable import Clawix
 
 final class ToolTimelinePresentationTests: XCTestCase {
+    // MARK: - P3 lazy-heavy contract: zero snapshots built on session open
+
+    /// Opening a synthetic large session (file parse via `RolloutReader`) builds
+    /// ZERO `ToolTimelinePresentation` snapshots before any tool group is
+    /// expanded/rendered. The parse now stores a nil presentation per group; the
+    /// heavy presentation materializes lazily on render (`ToolGroupView`) or on
+    /// expand (`TimelineDetailProvider`). The snapshot-build counter is the
+    /// deterministic lock (law #5: cheap first frame, heavy lazy).
+    func testOpeningLargeSessionBuildsZeroPresentationSnapshotsPreExpand() throws {
+        setenv("CLAWIX_RENDER_PROBE", "1", 1)
+        defer { unsetenv("CLAWIX_RENDER_PROBE") }
+
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let rollout = tmp.appendingPathComponent("rollout.jsonl")
+        var lines = [
+            #"{"timestamp":"2026-05-09T10:00:00.000Z","type":"session_meta","payload":{"id":"session-fixture","cwd":"/tmp"}}"#,
+            #"{"timestamp":"2026-05-09T10:00:01.000Z","type":"event_msg","payload":{"type":"user_message","message":"go"}}"#
+        ]
+        // A large turn: 300 shell commands grouped into the timeline, then a
+        // final answer. Pre-P3 this built one snapshot per appended item.
+        for index in 0..<300 {
+            lines.append(
+                #"{"timestamp":"2026-05-09T10:00:02.000Z","type":"event_msg","payload":{"type":"exec_command_end","call_id":"cmd-\#(index)","command":["pwd"],"parsed_cmd":[],"exit_code":0}}"#
+            )
+        }
+        lines.append(
+            #"{"timestamp":"2026-05-09T10:05:00.000Z","type":"event_msg","payload":{"type":"agent_message","message":"Done.","phase":"final_answer"}}"#
+        )
+        lines.append(
+            #"{"timestamp":"2026-05-09T10:05:00.100Z","type":"event_msg","payload":{"type":"task_complete","duration_ms":298000}}"#
+        )
+        try (lines.joined(separator: "\n") + "\n").write(to: rollout, atomically: true, encoding: .utf8)
+
+        RenderProbe.resetMeasurementWindow()
+        let result = RolloutReader.readFullWithStatusForDiagnostics(path: rollout)
+        let buildsDuringOpen = RenderProbe.snapshotCounts()["tool.snapshot.build"] ?? 0
+
+        XCTAssertEqual(buildsDuringOpen, 0, "Opening a large session must build ZERO presentation snapshots pre-expand.")
+
+        // Sanity: the session really did parse a non-trivial tool group, and it
+        // carries a nil (lazy) presentation that a renderer fills on demand.
+        let toolEntries = result.entries.flatMap { entry in
+            entry.timeline.compactMap { tEntry -> (items: [WorkItem], presentation: ToolTimelinePresentationSnapshot?)? in
+                guard case .tools(_, let items, let presentation) = tEntry else { return nil }
+                return (items, presentation)
+            }
+        }
+        XCTAssertFalse(toolEntries.isEmpty, "the fixture should produce at least one tool group")
+        XCTAssertTrue(toolEntries.allSatisfy { $0.presentation == nil }, "parsed tool groups must store a nil (lazy) presentation")
+        XCTAssertEqual(toolEntries.reduce(0) { $0 + $1.items.count }, 300)
+    }
+
     func testIncrementalAppendAdvancesVersionAndMatchesFullSnapshot() {
         let groupID = UUID()
         let first = WorkItem(
@@ -454,5 +511,77 @@ final class ToolTimelinePresentationTests: XCTestCase {
         XCTAssertEqual(computerUseActionVerb(tool: "click", active: true), "Clicking")
         XCTAssertEqual(computerUseActionVerb(tool: "computer_use.type_text", active: false), "Typed text")
         XCTAssertEqual(computerUseActionVerb(tool: "press_key", active: true), "Pressing")
+    }
+
+    // MARK: - P3 compact descriptor + lazy provider
+
+    /// The collapsed-row descriptor stays compact: it counts items and pulls a
+    /// bounded set of changed-file basenames without building a presentation.
+    func testWorkedForDescriptorIsCompactAndBounded() {
+        XCTAssertEqual(WorkedForDescriptor.make(items: []), .none)
+
+        let items = [
+            WorkItem(id: "edit-1", kind: .fileChange(paths: ["/repo/a/One.swift", "/repo/b/Two.swift"]), status: .completed),
+            WorkItem(id: "edit-2", kind: .fileChange(paths: ["/repo/a/One.swift"]), status: .completed),
+            WorkItem(id: "cmd-1", kind: .command(text: "swift test", actions: []), status: .completed)
+        ]
+        let descriptor = WorkedForDescriptor.make(items: items, elapsedSeconds: 42)
+
+        XCTAssertTrue(descriptor.exists)
+        XCTAssertEqual(descriptor.toolCount, 3)
+        XCTAssertEqual(descriptor.elapsedSeconds, 42)
+        // De-duplicated basenames, in first-seen order.
+        XCTAssertEqual(descriptor.fileNames, ["One.swift", "Two.swift"])
+    }
+
+    func testWorkedForDescriptorCapsFileNamesAtSix() {
+        let paths = (0..<20).map { "/repo/File\($0).swift" }
+        let items = [WorkItem(id: "edit", kind: .fileChange(paths: paths), status: .completed)]
+        XCTAssertEqual(WorkedForDescriptor.make(items: items).fileNames.count, 6)
+    }
+
+    /// The provider materializes a group's presentation once and serves it from
+    /// cache thereafter: re-asking for the same group builds zero new snapshots.
+    @MainActor
+    func testTimelineDetailProviderCachesPresentationPerGroup() {
+        setenv("CLAWIX_RENDER_PROBE", "1", 1)
+        defer { unsetenv("CLAWIX_RENDER_PROBE") }
+
+        let provider = TimelineDetailProvider.shared
+        let groupID = UUID()
+        provider.invalidate(groupID: groupID)
+        let items = [
+            WorkItem(id: "cmd-1", kind: .command(text: "pwd", actions: []), status: .completed),
+            WorkItem(id: "cmd-2", kind: .command(text: "ls", actions: [.listFiles]), status: .completed)
+        ]
+
+        RenderProbe.resetMeasurementWindow()
+        let first = provider.presentation(groupID: groupID, items: items)
+        let buildsAfterFirst = RenderProbe.snapshotCounts()["tool.snapshot.build"] ?? 0
+        XCTAssertEqual(buildsAfterFirst, 1, "first access builds exactly one snapshot")
+
+        let second = provider.presentation(groupID: groupID, items: items)
+        let buildsAfterSecond = RenderProbe.snapshotCounts()["tool.snapshot.build"] ?? 0
+        XCTAssertEqual(buildsAfterSecond, 1, "a cache hit builds no new snapshot")
+        XCTAssertEqual(first, second)
+        // The cached snapshot is the same one a direct build would produce. Note
+        // the `aggregateRows` reference itself is built via buildSnapshot, so it
+        // also bumps the build counter; we measure the grow case in a fresh
+        // window below to isolate it.
+        XCTAssertEqual(second.aggregateRows, ToolTimelinePresentation.aggregateRows(for: items))
+
+        // A changed item set (new fingerprint) misses the cache and rebuilds.
+        RenderProbe.resetMeasurementWindow()
+        let grown = items + [WorkItem(id: "cmd-3", kind: .webSearch, status: .completed)]
+        _ = provider.presentation(groupID: groupID, items: grown)
+        let buildsForGrow = RenderProbe.snapshotCounts()["tool.snapshot.build"] ?? 0
+        XCTAssertEqual(buildsForGrow, 1, "a changed item set rebuilds exactly once")
+
+        // ...and is then itself cached.
+        RenderProbe.resetMeasurementWindow()
+        _ = provider.presentation(groupID: groupID, items: grown)
+        XCTAssertEqual(RenderProbe.snapshotCounts()["tool.snapshot.build"] ?? 0, 0, "the rebuilt set is cached")
+
+        provider.invalidate(groupID: groupID)
     }
 }

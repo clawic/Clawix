@@ -10,9 +10,23 @@ struct ToolGroupView: View {
     let items: [WorkItem]
     private let snapshot: ToolTimelinePresentationSnapshot
 
-    init(items: [WorkItem], presentation: ToolTimelinePresentationSnapshot? = nil) {
+    init(
+        items: [WorkItem],
+        presentation: ToolTimelinePresentationSnapshot? = nil,
+        groupID: UUID? = nil
+    ) {
         self.items = items
-        self.snapshot = presentation ?? ToolTimelinePresentation.snapshot(for: items)
+        if let presentation {
+            self.snapshot = presentation
+        } else if let groupID {
+            // Lazy-heavy: hydration/parse stored a nil presentation. Materialize
+            // it once here through the centralized provider so re-mounting the
+            // same group (scroll, expand toggle) reuses the cached build instead
+            // of rebuilding per render.
+            self.snapshot = TimelineDetailProvider.shared.presentation(groupID: groupID, items: items)
+        } else {
+            self.snapshot = ToolTimelinePresentation.snapshot(for: items)
+        }
     }
 
     var body: some View {

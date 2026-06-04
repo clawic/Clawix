@@ -1524,24 +1524,24 @@ private struct PendingAssistant {
         // into one compact row, even when shell commands and MCP calls are
         // interleaved.
         if !forceNewToolGroup,
-           case .tools(let groupId, let items, let presentation) = timeline.last {
-            let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
-                groupID: groupId,
-                previousItems: items,
-                currentSnapshot: presentation,
-                applying: item
-            )
+           case .tools(let groupId, let items, _) = timeline.last {
+            // Lazy-heavy (law #5): the file-parse builder no longer materializes
+            // a `ToolTimelinePresentation` snapshot per tool item. The collapsed
+            // row draws from the compact descriptor; the full presentation is
+            // built on render (`ToolGroupView`) or on expand
+            // (`TimelineDetailProvider`). Opening a 50k session builds ZERO
+            // snapshots pre-expand.
             timeline[timeline.count - 1] = .tools(
                 id: groupId,
                 items: items + [item],
-                presentation: nextPresentation
+                presentation: nil
             )
         } else {
             let groupId = UUID()
             timeline.append(.tools(
                 id: groupId,
                 items: [item],
-                presentation: ToolTimelinePresentation.snapshot(groupID: groupId, items: [item])
+                presentation: nil
             ))
         }
         forceNewToolGroup = false
@@ -1551,21 +1551,15 @@ private struct PendingAssistant {
     /// that arrived before its exec_command_end) with the richer payload.
     mutating func updateCommand(id: String, text: String?, actions: [CommandActionKind]) {
         for tIdx in timeline.indices {
-            if case .tools(let gid, var items, let presentation) = timeline[tIdx],
+            if case .tools(let gid, var items, _) = timeline[tIdx],
                let itemIdx = items.firstIndex(where: { $0.id == id }) {
                 let item = WorkItem(
                     id: id,
                     kind: .command(text: text, actions: actions),
                     status: .completed
                 )
-                let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
-                    groupID: gid,
-                    previousItems: items,
-                    currentSnapshot: presentation,
-                    applying: item
-                )
                 items[itemIdx] = item
-                timeline[tIdx] = .tools(id: gid, items: items, presentation: nextPresentation)
+                timeline[tIdx] = .tools(id: gid, items: items, presentation: nil)
                 return
             }
         }
@@ -1582,24 +1576,19 @@ private struct PendingAssistant {
             shouldRespectReasoningBoundary = true
         }
         if (!forceNewToolGroup || !shouldRespectReasoningBoundary),
-           case .tools(let gid, let items, let presentation) = timeline.last {
-            let nextPresentation = ToolTimelinePresentation.updatedSnapshot(
-                groupID: gid,
-                previousItems: items,
-                currentSnapshot: presentation,
-                applying: item
-            )
+           case .tools(let gid, let items, _) = timeline.last {
+            // Lazy-heavy: no per-item presentation snapshot during file parse.
             timeline[timeline.count - 1] = .tools(
                 id: gid,
                 items: items + [item],
-                presentation: nextPresentation
+                presentation: nil
             )
         } else {
             let gid = UUID()
             timeline.append(.tools(
                 id: gid,
                 items: [item],
-                presentation: ToolTimelinePresentation.snapshot(groupID: gid, items: [item])
+                presentation: nil
             ))
         }
         forceNewToolGroup = false

@@ -175,7 +175,7 @@ struct WorkItem: Equatable, Identifiable {
     var generatedImagePath: String? = nil
 }
 
-enum WorkItemStatus: Equatable { case inProgress, completed, failed }
+enum WorkItemStatus: Equatable, Hashable { case inProgress, completed, failed }
 
 enum WorkItemKind: Equatable {
     case command(text: String?, actions: [CommandActionKind])

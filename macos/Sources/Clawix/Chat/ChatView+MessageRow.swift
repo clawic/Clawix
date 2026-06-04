@@ -199,6 +199,10 @@ enum TimelineEntryWindow {
             if pendingTools.count == 1, let first = pendingTools.first {
                 result.append(.tools(id: first.id, items: first.items, presentation: first.presentation))
             } else if let first = pendingTools.first {
+                // Merged adjacent groups are computed at visible-window time (the
+                // entries are already on screen), not during hydration, so this
+                // build does not violate the "zero snapshots pre-expand" budget.
+                // It is the merged group's canonical presentation.
                 let mergedItems = pendingTools.flatMap(\.items)
                 result.append(.tools(
                     id: first.id,
@@ -550,6 +554,7 @@ struct MessageRow: View, Equatable {
         }
         .onAppear {
             scheduleFileLinkPreviewReveal()
+            prewarmCollapsedTimelineDetail()
         }
         .onDisappear {
             fileLinkPreviewTask?.cancel()
@@ -574,6 +579,22 @@ struct MessageRow: View, Equatable {
             guard !Task.isCancelled else { return }
             fileLinkPreview = preview
             fileLinkPreviewTask = nil
+        }
+    }
+
+    /// When a collapsed assistant row appears, prewarm the first chunk of its
+    /// tool-group presentations off the main thread (law #5 mitigation). The
+    /// first expand then reads a cached snapshot instead of building one on the
+    /// main thread. No-op while streaming (the live group is still mutating) and
+    /// for groups whose presentation was already built.
+    private func prewarmCollapsedTimelineDetail() {
+        guard message.role == .assistant, message.streamingFinished, !message.isError else { return }
+        for entry in message.timeline {
+            guard case .tools(let groupID, let items, let presentation) = entry,
+                  presentation == nil,
+                  !items.isEmpty
+            else { continue }
+            TimelineDetailProvider.shared.prewarm(groupID: groupID, items: items)
         }
     }
 
@@ -780,8 +801,11 @@ struct MessageRow: View, Equatable {
         case .divider(_, let text):
             TimelineDivider(text: text)
                 .accessibilityHidden(!exposeMessageAccessibility)
-        case .tools(_, let items, let presentation):
-            ToolGroupView(items: items, presentation: presentation)
+        case .tools(let groupID, let items, let presentation):
+            // Pass the group id so a nil (lazy) presentation materializes once
+            // through TimelineDetailProvider's cache instead of rebuilding per
+            // render.
+            ToolGroupView(items: items, presentation: presentation, groupID: groupID)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityHidden(!exposeMessageAccessibility)
         }

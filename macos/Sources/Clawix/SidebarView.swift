@@ -202,7 +202,8 @@ struct SidebarView: View {
                 },
                 menuOpen: projectMenuOpenId == project.id,
                 selectedChatId: currentChatId,
-                chatCallbacks: { recentChatCallbacks(for: $0, archived: false) }
+                chatCallbacks: { recentChatCallbacks(for: $0, archived: false) },
+                displayForChat: { snapshot.display(for: $0) }
             )
             .equatable()
             .onAppear {
@@ -294,7 +295,8 @@ struct SidebarView: View {
                         PinnedReorderableList(
                             appState: appState,
                             pinned: visiblePinned,
-                            selectedChatId: selectedPinnedChatId
+                            selectedChatId: selectedPinnedChatId,
+                            displayForChat: { snapshot.display(for: $0) }
                         )
                         .equatable()
                         .padding(.leading, 8)
@@ -345,6 +347,7 @@ struct SidebarView: View {
                                 ForEach(visibleChrono.prefix(chronoLimit), id: \.id) { chat in
                                     RecentChatRow(
                                         chat: chat,
+                                        display: snapshot.display(for: chat),
                                         isSelected: currentChatId == chat.id,
                                         leadingIcon: .pinOnHover,
                                         callbacks: recentChatCallbacks(for: chat, archived: false)
@@ -382,6 +385,7 @@ struct SidebarView: View {
                                 ForEach(projectlessChats) { chat in
                                     RecentChatRow(
                                         chat: chat,
+                                        display: snapshot.display(for: chat),
                                         isSelected: currentChatId == chat.id,
                                         leadingIcon: .pinOnHover,
                                         callbacks: recentChatCallbacks(for: chat, archived: false)
@@ -704,6 +708,7 @@ struct SidebarView: View {
                         ForEach(sidebarStore.snapshot.archived) { chat in
                             RecentChatRow(
                                 chat: chat,
+                                display: sidebarStore.snapshot.display(for: chat),
                                 isSelected: currentChatId == chat.id,
                                 leadingIcon: .unarchive,
                                 archivedRow: true,

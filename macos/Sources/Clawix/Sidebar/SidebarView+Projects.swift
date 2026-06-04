@@ -26,6 +26,12 @@ struct ProjectAccordion: View, Equatable {
     /// excluded from `==`; it captures `appState` and the chat id on the
     /// parent side, both stable across renders.
     let chatCallbacks: (Chat) -> RecentChatRowCallbacks
+    /// Lookup of the precomputed leaf display model (age label + title
+    /// fallback) for a chat, from the sidebar snapshot. Excluded from `==`:
+    /// the chat-equality check above already covers title/createdAt changes,
+    /// and an age-tick rebuilds the snapshot's chats so `chatsEqual` will catch
+    /// a relevant change. The closure reads the snapshot map, never derives.
+    let displayForChat: (Chat) -> RecentChatRowDisplayModel
 
     /// Default number of chats shown when a project is freshly expanded.
     /// "Show more" promotes the slice to `maxVisible`.
@@ -210,6 +216,7 @@ struct ProjectAccordion: View, Equatable {
                     ForEach(Array(visibleChats)) { chat in
                         RecentChatRow(
                             chat: chat,
+                            display: displayForChat(chat),
                             isSelected: selectedChatId == chat.id,
                             leadingIcon: .pinOnHover,
                             callbacks: chatCallbacks(chat)

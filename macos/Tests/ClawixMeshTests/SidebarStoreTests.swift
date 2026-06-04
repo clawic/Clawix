@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import Clawix
 
@@ -244,6 +245,130 @@ final class SidebarStoreTests: XCTestCase {
 
         XCTAssertFalse(store.snapshot.chrono.contains { $0.id == secondId })
         XCTAssertEqual(store.snapshot.archived.map(\.id), [secondId])
+    }
+
+    // MARK: - P3 leaf-thin contracts
+
+    /// A single title update re-derives only that sidebar row's precomputed
+    /// display model. Every other row's `RecentChatRowDisplayModel` is byte-for-
+    /// byte identical, so SwiftUI (which compares the row's `Equatable`) re-
+    /// evaluates exactly one row body.
+    func testSingleTitleUpdateReDerivesOnlyThatRowDisplayModel() {
+        let state = AppState()
+        let first = UUID()
+        let second = UUID()
+        let third = UUID()
+        state.projects = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        state.chats = [
+            Chat(id: first, title: "First", messages: [], createdAt: Date(timeIntervalSince1970: 100)),
+            Chat(id: second, title: "Second", messages: [], createdAt: Date(timeIntervalSince1970: 200)),
+            Chat(id: third, title: "Third", messages: [], createdAt: Date(timeIntervalSince1970: 300))
+        ]
+        let store = SidebarStore(appState: state)
+        let before = store.snapshot.displayByChat
+
+        state.chatStore.updateSummary(id: second) { summary in
+            summary.title = "Renamed"
+        }
+
+        let after = store.snapshot.displayByChat
+        // Exactly the renamed row changed.
+        XCTAssertNotEqual(before[second], after[second])
+        XCTAssertEqual(after[second]?.displayTitle, "Renamed")
+        // The other two rows' display models are untouched.
+        XCTAssertEqual(before[first], after[first])
+        XCTAssertEqual(before[third], after[third])
+    }
+
+    /// Selection (current route) is NOT part of a row's precomputed data, so a
+    /// route change leaves every row's display model identical. The only thing
+    /// that re-renders is the pair whose `isSelected` flips, which is encoded in
+    /// `RecentChatRow.==`. This proves the "old + new rows only" selection
+    /// contract from both sides.
+    func testSelectionChangeTouchesOnlyOldAndNewRows() {
+        let state = AppState()
+        let first = UUID()
+        let second = UUID()
+        state.projects = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        state.chats = [
+            Chat(id: first, title: "First", messages: [], createdAt: Date(timeIntervalSince1970: 100)),
+            Chat(id: second, title: "Second", messages: [], createdAt: Date(timeIntervalSince1970: 200))
+        ]
+        state.currentRoute = .chat(first)
+        let store = SidebarStore(appState: state)
+        let before = store.snapshot.displayByChat
+
+        state.currentRoute = .chat(second)
+
+        // No row's precomputed display model changed on a pure selection move.
+        XCTAssertEqual(before, store.snapshot.displayByChat)
+
+        // The row Equatable decides which bodies re-evaluate. Identical data but
+        // different `isSelected` must compare unequal (old + new re-render);
+        // everything-equal must compare equal (untouched rows skip body).
+        let firstChat = store.snapshot.chrono.first { $0.id == first }!
+        let firstDisplay = store.snapshot.display(for: firstChat)
+        let cb = Self.noopCallbacks
+        let selected = RecentChatRow(chat: firstChat, display: firstDisplay, isSelected: true, callbacks: cb)
+        let unselected = RecentChatRow(chat: firstChat, display: firstDisplay, isSelected: false, callbacks: cb)
+        let unselectedAgain = RecentChatRow(chat: firstChat, display: firstDisplay, isSelected: false, callbacks: cb)
+        XCTAssertNotEqual(selected, unselected, "isSelected flip must re-render the row")
+        XCTAssertEqual(unselected, unselectedAgain, "an unchanged row must skip body")
+    }
+
+    /// The coarse age tick rolls relative-age labels without re-sorting the
+    /// snapshot: rebuilding `displayByChat` against a later `now` advances the
+    /// store revision (the rows with a rolled label re-render) while the heavy
+    /// sorted buckets are byte-identical.
+    func testAgeTickRefreshesLabelsWithoutResortingBuckets() {
+        let state = AppState()
+        let chatId = UUID()
+        state.projects = []
+        state.pinnedOrder = []
+        state.archivedChats = []
+        // Created ~90s ago relative to the tick's `now` below, so the label
+        // rolls from "1 min" to "2 min".
+        let created = Date(timeIntervalSince1970: 1_000)
+        state.chats = [Chat(id: chatId, title: "Aging", messages: [], createdAt: created)]
+        let store = SidebarStore(appState: state)
+        // Seed the labels at +90s.
+        store.refreshAgeLabels(now: created.addingTimeInterval(90))
+        let revAfterSeed = store.revision
+        let chronoIdsBefore = store.snapshot.chrono.map(\.id)
+        let labelBefore = store.snapshot.displayByChat[chatId]?.ageLabel
+
+        // Roll the clock to +150s: the minute bucket changes.
+        store.refreshAgeLabels(now: created.addingTimeInterval(150))
+
+        XCTAssertGreaterThan(store.revision, revAfterSeed, "a label rollover advances the revision")
+        XCTAssertNotEqual(store.snapshot.displayByChat[chatId]?.ageLabel, labelBefore)
+        XCTAssertEqual(store.snapshot.chrono.map(\.id), chronoIdsBefore, "buckets must not re-sort")
+
+        // A second tick within the same bucket is a no-op (no revision bump).
+        let revStable = store.revision
+        store.refreshAgeLabels(now: created.addingTimeInterval(160))
+        XCTAssertEqual(store.revision, revStable, "same-bucket tick must not re-publish")
+    }
+
+    private static var noopCallbacks: RecentChatRowCallbacks {
+        RecentChatRowCallbacks(
+            onSelect: {},
+            onArchive: {},
+            onUnarchive: {},
+            onTogglePin: {},
+            onRename: {},
+            onToggleUnread: {},
+            onOpenInFinder: {},
+            onCopyWorkingDirectory: {},
+            onCopySessionId: {},
+            onCopyDeeplink: {},
+            onForkLocal: {},
+            onContextMenu: { _ in }
+        )
     }
 
     func testSideChatsAreExcludedFromSidebarSnapshot() {

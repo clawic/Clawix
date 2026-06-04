@@ -6,7 +6,12 @@ private enum SidebarRowTextStyle {
     static let metadata = BodyFont.system(size: 11, wght: 500)
 }
 
-private enum SidebarRelativeAgeLabelCache {
+/// Relative-age label formatter for sidebar chat rows. Lives in the compute
+/// layer (called by `SidebarSnapshot.make`), never from a view body. `now` is
+/// explicit so the snapshot builder and the coarse age tick control the clock,
+/// and so tests are deterministic. Buckets are cached so the localized string
+/// build happens once per (locale, unit, value).
+enum SidebarRelativeAgeLabel {
     private struct Key: Hashable {
         let localeIdentifier: String
         let unit: UInt8
@@ -14,10 +19,10 @@ private enum SidebarRelativeAgeLabelCache {
     }
 
     private static let lock = NSLock()
-    private static var values: [Key: String] = [:]
+    nonisolated(unsafe) private static var values: [Key: String] = [:]
 
-    static func label(from date: Date) -> String {
-        let elapsed = max(0, Date().timeIntervalSince(date))
+    static func label(from date: Date, now: Date = Date()) -> String {
+        let elapsed = max(0, now.timeIntervalSince(date))
         let key = key(for: elapsed, localeIdentifier: AppLocale.current.identifier)
         lock.lock()
         if let cached = values[key] {
@@ -553,6 +558,10 @@ struct RecentChatRowCallbacks {
 
 struct RecentChatRow: View, Equatable {
     let chat: Chat
+    /// Precomputed leaf display values (relative-age label + empty-title
+    /// fallback) from the sidebar snapshot. The body draws these verbatim and
+    /// never derives them, keeping the render layer draw-only.
+    let display: RecentChatRowDisplayModel
     /// Pre-computed `currentRoute == .chat(chat.id)`. Lifted out of the row
     /// so the row's `Equatable` check can detect selection changes without
     /// having to subscribe to `AppState`.
@@ -587,18 +596,19 @@ struct RecentChatRow: View, Equatable {
     /// of them moved, even when the closure identities did.
     static func == (lhs: RecentChatRow, rhs: RecentChatRow) -> Bool {
         lhs.chat.id == rhs.chat.id
-            && lhs.chat.title == rhs.chat.title
             && lhs.chat.hasActiveTurn == rhs.chat.hasActiveTurn
             && lhs.chat.hasUnreadCompletion == rhs.chat.hasUnreadCompletion
-            && lhs.chat.createdAt == rhs.chat.createdAt
+            // Title + age now ride on the precomputed display model. Comparing
+            // it (instead of chat.title/createdAt) means a coarse age-tick that
+            // rolls "3 min" -> "4 min" re-renders the affected rows, and a title
+            // edit re-renders only that row.
+            && lhs.display == rhs.display
             && lhs.isSelected == rhs.isSelected
             && lhs.indent == rhs.indent
             && lhs.leadingIcon == rhs.leadingIcon
             && lhs.suppressHoverStyling == rhs.suppressHoverStyling
             && lhs.archivedRow == rhs.archivedRow
     }
-
-    private var ageLabel: String { Self.relative(from: chat.createdAt) }
 
     @ViewBuilder
     private var trailingStatusView: some View {
@@ -625,7 +635,7 @@ struct RecentChatRow: View, Equatable {
                         .clxControl("sidebar.runningIndicator", role: "indicator", label: "Unread conversation")
                         .transition(.scale(scale: 0.0, anchor: .center).combined(with: .opacity))
                 } else {
-                    Text(ageLabel)
+                    Text(display.ageLabel)
                         .font(SidebarRowTextStyle.metadata)
                         .foregroundColor(Color.gray(light: 0.45, dark: 0.55))
                         .lineLimit(1)
@@ -660,9 +670,9 @@ struct RecentChatRow: View, Equatable {
 
     var body: some View {
         RenderProbe.tick("RecentChatRow")
-        let title = chat.title.isEmpty
-            ? String(localized: "Conversation", bundle: AppLocale.packageBundle)
-            : chat.title
+        // Draw-only: the title fallback and age label were precomputed by the
+        // compute layer (SidebarSnapshot.make). No Date()/L10n derivation here.
+        let title = display.displayTitle
         return HStack(spacing: 10) {
             leadingIconView
             Text(verbatim: title)
@@ -838,10 +848,6 @@ struct RecentChatRow: View, Equatable {
         if isSelected { return Color.overlay(0.05) }
         if hovered && !suppressHoverStyling { return Color.overlay(0.035) }
         return .clear
-    }
-
-    private static func relative(from date: Date) -> String {
-        SidebarRelativeAgeLabelCache.label(from: date)
     }
 }
 

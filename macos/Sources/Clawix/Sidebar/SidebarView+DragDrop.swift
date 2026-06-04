@@ -60,6 +60,11 @@ struct PinnedReorderableList: View, Equatable {
     let appState: AppState
     let pinned: [Chat]
     let selectedChatId: UUID?
+    /// Lookup of the precomputed leaf display model (age label + title
+    /// fallback) for a pinned chat, from the sidebar snapshot. Excluded from
+    /// `==`: `pinnedEqual` already compares title/createdAt, and an age tick
+    /// rebuilds the pinned chats so the gate catches a relevant change.
+    let displayForChat: (Chat) -> RecentChatRowDisplayModel
 
     static func == (lhs: PinnedReorderableList, rhs: PinnedReorderableList) -> Bool {
         lhs.selectedChatId == rhs.selectedChatId
@@ -192,6 +197,7 @@ struct PinnedReorderableList: View, Equatable {
                 ))
             RecentChatRow(
                 chat: chat,
+                display: displayForChat(chat),
                 isSelected: selectedChatId == chat.id,
                 leadingIcon: .pin,
                 suppressHoverStyling: dragActive,

@@ -267,7 +267,10 @@ extension AppState {
             await ChatMarkdownPrewarmer.prewarm(
                 messages: messages,
                 timelineEntryLimit: 0,
-                includeRenderedSegments: true
+                // Off-screen hydration: don't eagerly prewarm rendered plan
+                // segments (law #5). The visible rows still prewarm their
+                // content; segment derivation happens on render.
+                includeRenderedSegments: false
             )
             let payload = InitialTailHydrationPayload(
                 path: path,
@@ -348,7 +351,8 @@ extension AppState {
                 await ChatMarkdownPrewarmer.prewarm(
                     messages: messages,
                     timelineEntryLimit: 0,
-                    includeRenderedSegments: true
+                    // Off-screen hydration: skip eager rendered-segment prewarm.
+                    includeRenderedSegments: false
                 )
                 let payload = InitialTailHydrationPayload(
                     path: path,
@@ -1352,7 +1356,8 @@ extension AppState {
                 await ChatMarkdownPrewarmer.prewarm(
                     messages: chatMessages,
                     timelineEntryLimit: 0,
-                    includeRenderedSegments: true
+                    // Older-page load is off-screen: skip rendered-segment prewarm.
+                    includeRenderedSegments: false
                 )
                 let messages = chatMessages.map { $0.toWire() }
                 RenderProbe.mark(
@@ -1432,7 +1437,8 @@ extension AppState {
                     await ChatMarkdownPrewarmer.prewarm(
                         messages: chatMessages,
                         timelineEntryLimit: 0,
-                        includeRenderedSegments: true
+                        // Daemon older-page load is off-screen: skip segment prewarm.
+                        includeRenderedSegments: false
                     )
                     let messages = chatMessages.map { $0.toWire() }
                     self?.applyDaemonMessagesPage(
@@ -1629,10 +1635,17 @@ extension AppState {
         case .tools(let id, let items):
             guard let uuid = UUID(uuidString: id) else { return nil }
             let workItems = items.compactMap(workItem(from:))
+            // Lazy-heavy (law #5): hydrating a finished session no longer builds
+            // a `ToolTimelinePresentation` snapshot here. The compact summary the
+            // collapsed row needs is derived elsewhere; the full presentation
+            // materializes only when a tool group actually renders (`ToolGroupView`
+            // builds it from `items` when `presentation` is nil) or on expand via
+            // `TimelineDetailProvider`. Opening a 50k session builds ZERO snapshots
+            // pre-expand.
             return .tools(
                 id: uuid,
                 items: workItems,
-                presentation: ToolTimelinePresentation.snapshot(groupID: uuid, items: workItems)
+                presentation: nil
             )
         }
     }
