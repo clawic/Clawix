@@ -1,6 +1,70 @@
 import Foundation
+import QuartzCore
 
 extension AppState {
+    /// Live-stream entry point for the real backend. Instead of applying every
+    /// delta the instant it arrives (which lets a fast stream re-derive the
+    /// active row many times per frame), deltas are coalesced by
+    /// `StreamingRenderScheduler` and drained once per main-runloop tick at the
+    /// frame budget (~16.7ms). The synchronous `flushPendingAssistantTextDeltas`
+    /// /`flushPendingReasoningDeltas` drains used by turn completion, interrupts
+    /// and tests force-flush the scheduler first, so the apply order and the
+    /// "buffer never lags the authoritative state" contract are preserved.
+    func enqueueLiveStreamDelta(chatId: UUID, delta: String, kind: StreamingRenderScheduler.Delta.Kind) {
+        guard !delta.isEmpty else { return }
+        // Coalesce text and reasoning under one key per (chat, message, kind).
+        // The active assistant message id is implicit (last message of the
+        // chat) at apply time, so a stable per-(chat,kind) key is enough to
+        // batch a frame's worth of deltas; the apply path resolves the live
+        // message. Using the chatId as the message-key keeps it bounded.
+        liveStreamScheduler.receive(StreamingRenderScheduler.Delta(
+            chatId: chatId,
+            messageId: chatId,
+            kind: kind,
+            text: delta,
+            receivedAtMs: CACurrentMediaTime() * 1000
+        ))
+        scheduleLiveStreamDrain()
+    }
+
+    private func scheduleLiveStreamDrain() {
+        guard !liveStreamFlushScheduled else { return }
+        liveStreamFlushScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            self?.drainLiveStreamScheduler(force: false)
+        }
+    }
+
+    /// Drain the live scheduler's frame-budget batches into the apply path.
+    /// `force` flushes everything regardless of budget (used by the synchronous
+    /// per-chat drains so finalization never leaves coalesced text behind).
+    func drainLiveStreamScheduler(force: Bool) {
+        liveStreamFlushScheduled = false
+        let nowMs = CACurrentMediaTime() * 1000
+        let batches = liveStreamScheduler.flush(nowMs: nowMs, force: force)
+        for batch in batches {
+            switch batch.kind {
+            case .content:
+                appendAssistantDelta(chatId: batch.chatId, delta: batch.text)
+            case .reasoning:
+                appendReasoningDelta(chatId: batch.chatId, delta: batch.text)
+            }
+        }
+        // If the budget left some deltas pending (non-force path), keep draining
+        // on the next tick until the scheduler is empty.
+        if !force, liveStreamScheduler.pendingDeltaCount > 0 {
+            scheduleLiveStreamDrain()
+        }
+    }
+
+    /// Force-drain any coalesced live deltas for a single chat. Both per-chat
+    /// kinds share the scheduler, so a force flush empties it entirely; that is
+    /// the correct ordering at finalization boundaries.
+    func flushLiveStreamScheduler(chatId: UUID) {
+        guard liveStreamScheduler.pendingDeltaCount > 0 else { return }
+        drainLiveStreamScheduler(force: true)
+    }
+
     func appendAssistantDelta(chatId: UUID, delta: String) {
         if delta.isEmpty { return }
         RenderProbe.mark(
@@ -82,6 +146,7 @@ extension AppState {
     /// rehydrate, interrupt) so the buffer never lags behind the
     /// authoritative state.
     func flushPendingAssistantTextDeltas(chatId: UUID) {
+        flushLiveStreamScheduler(chatId: chatId)
         guard let delta = pendingAssistantTextBuffers.removeValue(forKey: chatId),
               !delta.isEmpty
         else { return }
@@ -93,6 +158,7 @@ extension AppState {
     /// `appendDaemonMessage`) so we don't double-append after the
     /// authoritative replace.
     func dropPendingAssistantText(chatId: UUID) {
+        liveStreamScheduler.discard(chatId: chatId)
         pendingAssistantTextBuffers.removeValue(forKey: chatId)
     }
 
@@ -107,6 +173,7 @@ extension AppState {
     }
 
     func flushPendingReasoningDeltas(chatId: UUID) {
+        flushLiveStreamScheduler(chatId: chatId)
         guard let delta = pendingReasoningBuffers.removeValue(forKey: chatId),
               !delta.isEmpty
         else { return }
@@ -114,6 +181,7 @@ extension AppState {
     }
 
     func dropPendingReasoning(chatId: UUID) {
+        liveStreamScheduler.discard(chatId: chatId)
         pendingReasoningBuffers.removeValue(forKey: chatId)
     }
 

@@ -40,6 +40,13 @@ struct StreamingRenderScheduler: Equatable {
         pending.values.reduce(0) { $0 + $1.count }
     }
 
+    /// Discard every pending delta for a chat without applying it. Used when an
+    /// authoritative replace (daemon canonical content, hydration) supersedes
+    /// the coalesced live deltas so they are not double-appended on a later tick.
+    mutating func discard(chatId: UUID) {
+        pending = pending.filter { $0.key.chatId != chatId }
+    }
+
     mutating func receive(_ delta: Delta) {
         guard !delta.text.isEmpty else { return }
         let key = Key(chatId: delta.chatId, messageId: delta.messageId, kind: delta.kind)

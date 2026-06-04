@@ -639,7 +639,7 @@ final class ClawixService: ObservableObject {
                     words: Self.completeWordCount(in: payload.delta)
                 )
                 ensureAssistantPlaceholder(chatId: chatId, turnId: payload.turnId)
-                appState?.appendAssistantDelta(chatId: chatId, delta: payload.delta)
+                appState?.enqueueLiveStreamDelta(chatId: chatId, delta: payload.delta, kind: .content)
             }
 
         case let .reasoningTextDelta(payload), let .reasoningSummaryTextDelta(payload):
@@ -654,7 +654,7 @@ final class ClawixService: ObservableObject {
                     words: Self.completeWordCount(in: payload.delta)
                 )
                 ensureAssistantPlaceholder(chatId: chatId, turnId: payload.turnId)
-                appState?.appendReasoningDelta(chatId: chatId, delta: payload.delta)
+                appState?.enqueueLiveStreamDelta(chatId: chatId, delta: payload.delta, kind: .reasoning)
             }
 
         case let .itemStarted(payload):

@@ -1238,6 +1238,14 @@ final class AppState: ObservableObject {
     var pendingReasoningBuffers: [UUID: String] = [:]
     var reasoningFlushScheduled = false
     var streamingSettlementTasks: [UUID: Task<Void, Never>] = [:]
+    /// Frame-budget coalescer for the LIVE stream. The real backend
+    /// (`ClawixService.agentMessageDelta`/`reasoningTextDelta`) routes deltas
+    /// through `enqueueLiveStreamDelta`, which feeds this scheduler and drains
+    /// it once per main-runloop tick into the existing apply path. Previously
+    /// only the mock fixture used a scheduler; the live path applied every
+    /// delta immediately, so a fast stream could apply many times per frame.
+    var liveStreamScheduler = StreamingRenderScheduler()
+    var liveStreamFlushScheduled = false
     /// Wall-clock of the previous `applyAssistantTextDelta` call, used by
     /// the perf log to surface inter-arrival jitter.
     var lastDeltaArrivalTime: Double = 0
