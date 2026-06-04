@@ -2,6 +2,17 @@ import AppKit
 import SwiftUI
 import ClawixCore
 
+/// The minimal value that, when it changes, must re-run the find-match scroll.
+/// Threaded from `ChatView` (which observes the narrow shell observer) so the
+/// scroller reacts to find navigation without observing the god object.
+struct ChatFindReactivityKey: Equatable {
+    let isFindBarOpen: Bool
+    let findChatId: UUID?
+    let findQuery: String
+    let currentFindIndex: Int
+    let matchCount: Int
+}
+
 struct ChatTranscriptEmptyStatePresentation: Equatable {
     enum Kind: Equatable {
         case loading
@@ -37,6 +48,9 @@ struct ChatTranscriptScrollerView: View {
     let chat: Chat
     @ObservedObject var transcript: ChatTranscriptStore
     @ObservedObject var paginationStore: AppState.ChatPaginationStore
+    /// The session compute layer for this open chat (ADR 0042). Threaded down so
+    /// each row sources its precomputed draw-only model from it.
+    @ObservedObject var presentation: SessionPresentationStore
     let visibleMessageStores: [ChatMessageStore]
     let hiddenLocalMessageCount: Int
     @Binding var visibleMessageLimit: Int
@@ -46,6 +60,12 @@ struct ChatTranscriptScrollerView: View {
     @Binding var bottomId: String?
     let chatTailId: String
     let publishingReady: Bool
+    /// Find-bar state, threaded from `ChatView` (which observes the narrow shell
+    /// observer) instead of read off the non-observed `appState`, so find
+    /// navigation re-evaluates this scroller. The authoritative match value is
+    /// still resolved from `appState` at trigger time.
+    let activeFindQuery: String
+    let findReactivityKey: ChatFindReactivityKey
 
     /// True once the reader has scrolled meaningfully above the tail of
     /// an overflowing transcript; gates the scroll-to-bottom button.
@@ -119,12 +139,12 @@ struct ChatTranscriptScrollerView: View {
                             $0.role == .assistant && $0.streamingFinished && !$0.isError
                         }
                         let responseStreaming = isResponseStreaming(chat)
-                        let activeFindQuery = appState.isFindBarOpen ? appState.findQuery : ""
                         ForEach(visibleMessageStores) { messageStore in
                             ChatMessageEntryView(
                                 appState: appState,
                                 chat: chat,
                                 messageStore: messageStore,
+                                presentation: presentation,
                                 lastUserMessageId: lastUserMessageId,
                                 lastAssistantMessageId: lastAssistantMessageId,
                                 responseStreaming: responseStreaming,
@@ -214,10 +234,7 @@ struct ChatTranscriptScrollerView: View {
                 deferredOlderPageRequest?.cancel()
                 deferredOlderPageRequest = nil
             }
-            .onChange(of: appState.currentFindIndex) { _, _ in
-                scrollToCurrentFindMatch(proxy: proxy)
-            }
-            .onChange(of: appState.findMatches.count) { _, _ in
+            .onChange(of: findReactivityKey) { _, _ in
                 scrollToCurrentFindMatch(proxy: proxy)
             }
             .onChange(of: transcript.messageIds.count) { oldCount, newCount in

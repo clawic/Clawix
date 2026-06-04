@@ -68,7 +68,7 @@ struct SurfaceRouterView: View {
 
     @MainActor
     private var routeRegistryEntry: SurfaceRouteRegistryEntry {
-        SurfaceRouteRegistry.entry(for: route)
+        SurfaceRouteRegistry.entry(for: route, appState: appState)
     }
 
     private var activeVariantResolution: AppVariantResolution? {

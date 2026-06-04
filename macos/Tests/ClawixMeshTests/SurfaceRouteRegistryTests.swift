@@ -164,7 +164,7 @@ final class SurfaceRouteRegistryTests: XCTestCase {
 
     @MainActor
     func testReadinessModesAndDirectChildReportedRoutesStayExact() {
-        let entries = Self.reviewedReadinessRoutes.map(SurfaceRouteRegistry.entry(for:))
+        let entries = Self.reviewedReadinessRoutes.map { SurfaceRouteRegistry.entry(for: $0) }
         let reviewedModeKinds = Set(
             [
                 SurfaceRouteReadinessMode.immediateAfterFirstRender,

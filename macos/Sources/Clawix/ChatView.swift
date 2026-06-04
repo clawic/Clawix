@@ -220,9 +220,28 @@ struct ChatView: View {
     /// to this `chatId` directly instead of going through
     /// `currentRoute`. Default `false` keeps the main route untouched.
     var isSideChat: Bool = false
-    @EnvironmentObject var appState: AppState
+    /// A plain, NON-observed reference to the god object (mirrors `SidebarView`):
+    /// `ChatView` uses it for actions and one-shot reads but does NOT observe
+    /// `AppState.objectWillChange`, so an unrelated `AppState` write no longer
+    /// re-evaluates the whole open session shell. Session transcript display
+    /// state comes from the narrow `SessionPresentationStore` instead (ADR 0042).
+    let appState: AppState
     @EnvironmentObject var meshStore: MeshStore
     @EnvironmentObject private var flags: FeatureFlags
+
+    /// The session compute/presentation layer for this open chat. Created once
+    /// per `ChatView` identity and rebound to the active `chatId` by the route;
+    /// it subscribes only to the per-chat publishers and produces the draw-only
+    /// `MessageRowDisplayModel`s the transcript rows render. Bound at
+    /// construction (mirrors `SidebarView`/`SidebarStore`) so the first frame
+    /// already has the rows, with `.onAppear`/`.onChange(of: chatId)` keeping it
+    /// pointed at the active chat (`bind` is idempotent).
+    @StateObject private var presentation: SessionPresentationStore
+
+    /// The narrow shell observer (route / find bar / per-chat summary). Replaces
+    /// `ChatView`'s former observation of the whole god object so an unrelated
+    /// `AppState` write no longer re-evaluates the session shell.
+    @StateObject private var shell: ChatViewShellObserver
 
     private var publishingReady: Bool {
         flags.isVisible(.publishing)
@@ -251,13 +270,22 @@ struct ChatView: View {
     /// don't fight their position.
     @State private var bottomId: String? = nil
 
-    init(chatId: UUID, isSideChat: Bool = false) {
+    init(appState: AppState, chatId: UUID, isSideChat: Bool = false) {
+        self.appState = appState
         self.chatId = chatId
         self.isSideChat = isSideChat
+        let presentation = SessionPresentationStore()
+        presentation.bind(chatId: chatId, chatStore: appState.chatStore)
+        _presentation = StateObject(wrappedValue: presentation)
+        let shell = ChatViewShellObserver()
+        shell.bind(chatId: chatId, appState: appState)
+        _shell = StateObject(wrappedValue: shell)
     }
 
     private var chat: Chat? {
-        appState.chat(byId: chatId)
+        // Summary-only snapshot from the narrow shell observer (no transcript
+        // payload). The transcript is observed separately via `transcript`.
+        shell.chat
     }
 
     private var transcript: ChatTranscriptStore? {
@@ -265,8 +293,7 @@ struct ChatView: View {
     }
 
     private var isCurrentMainChatRoute: Bool {
-        guard case .chat(let currentChatId) = appState.currentRoute else { return false }
-        return currentChatId == chatId
+        shell.isCurrentMainChatRoute(chatId: chatId)
     }
 
     /// Stable id for the trailing sentinel inside the chat's LazyVStack.
@@ -328,6 +355,7 @@ struct ChatView: View {
                         chat: chat,
                         transcript: transcript,
                         paginationStore: appState.chatPaginationStore,
+                        presentation: presentation,
                         visibleMessageStores: visibleMessageStores,
                         hiddenLocalMessageCount: hiddenLocalMessageCount,
                         visibleMessageLimit: $visibleMessageLimit,
@@ -336,7 +364,15 @@ struct ChatView: View {
                         lastLocalRevealAt: $lastLocalRevealAt,
                         bottomId: $bottomId,
                         chatTailId: chatTailId,
-                        publishingReady: publishingReady
+                        publishingReady: publishingReady,
+                        activeFindQuery: shell.isFindBarOpen ? shell.findQuery : "",
+                        findReactivityKey: ChatFindReactivityKey(
+                            isFindBarOpen: shell.isFindBarOpen,
+                            findChatId: shell.findChatId,
+                            findQuery: shell.findQuery,
+                            currentFindIndex: shell.currentFindIndex,
+                            matchCount: shell.findMatchCount
+                        )
                     )
                     .onAppear {
                         recordVisibleWindowIfNeeded(visibleWindowEvidence, reason: "appear")
@@ -419,7 +455,7 @@ struct ChatView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Palette.background)
                 .overlay(alignment: .topTrailing) {
-                    if appState.isFindBarOpen, appState.findChatId == chatId {
+                    if shell.isFindBarOpen, shell.findChatId == chatId {
                         FindBarView()
                             .padding(.top, 14)
                             .padding(.trailing, 18)
@@ -427,7 +463,7 @@ struct ChatView: View {
                             .zIndex(10)
                     }
                 }
-                .animation(.easeOut(duration: 0.18), value: appState.isFindBarOpen)
+                .animation(.easeOut(duration: 0.18), value: shell.isFindBarOpen)
                 .overlayPreferenceValue(WorkPillAnchorKey.self) { anchor in
                     GeometryReader { proxy in
                         if flags.isVisible(.remoteMesh), workMenuOpen, let anchor {
@@ -497,6 +533,17 @@ struct ChatView: View {
                     .clxControl("app.errorState", role: "error", label: "Chat not found")
         }
         }
+        .onAppear { bindSessionStores() }
+        .onChange(of: chatId) { _, _ in bindSessionStores() }
+    }
+
+    /// Bind / rebind the per-route session stores to the active chat. Created
+    /// once per `ChatView` identity (`@StateObject`) and pointed at the current
+    /// `chatId`; the route owns the lifecycle. `bind` is idempotent for an
+    /// unchanged (chatId, chatStore) pair.
+    private func bindSessionStores() {
+        presentation.bind(chatId: chatId, chatStore: appState.chatStore)
+        shell.bind(chatId: chatId, appState: appState)
     }
 
     private func recordVisibleWindowIfNeeded(_ evidence: ChatVisibleWindowEvidence, reason: String) {

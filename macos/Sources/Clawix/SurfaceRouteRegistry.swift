@@ -27,7 +27,23 @@ struct SurfaceRouteRegistryEntry {
 
 enum SurfaceRouteRegistry {
     @MainActor
-    static func entry(for route: SidebarRoute) -> SurfaceRouteRegistryEntry {
+    static func entry(
+        for route: SidebarRoute,
+        appState: AppState? = nil
+    ) -> SurfaceRouteRegistryEntry {
+        // The chat surface needs the (non-observed) app-state reference threaded
+        // explicitly (ChatView no longer pulls it from the environment). Other
+        // surfaces ignore it; tests that only inspect descriptor/module/readiness
+        // may omit it. Resolve a fallback only for the chat case so non-chat
+        // callers never allocate one.
+        return entry(for: route, resolvingAppState: { appState ?? AppState() })
+    }
+
+    @MainActor
+    private static func entry(
+        for route: SidebarRoute,
+        resolvingAppState appStateProvider: () -> AppState
+    ) -> SurfaceRouteRegistryEntry {
         switch route {
         case .home:
             return entry(route) { MainContentView() }
@@ -50,7 +66,8 @@ enum SurfaceRouteRegistry {
         case .app(let id):
             return entry(route) { AppSurfaceView(appId: id) }
         case .chat(let id):
-            return entry(route) { ChatView(chatId: id) }
+            let appState = appStateProvider()
+            return entry(route) { ChatView(appState: appState, chatId: id) }
         case .settings:
             return entry(route) { SettingsContent() }
         case .rescue:

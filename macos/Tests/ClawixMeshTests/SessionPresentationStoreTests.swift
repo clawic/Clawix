@@ -192,6 +192,97 @@ final class SessionPresentationStoreTests: XCTestCase {
         XCTAssertEqual(store.rows, rowsBefore)
     }
 
+    // MARK: - Phase A cutover lock: streaming re-derives ONLY the active row's
+    // display model; an unrelated AppState write re-derives NO row.
+
+    /// The wired-cutover contract the open-session transcript now relies on: a
+    /// streaming delta on the active assistant message re-derives ONLY that
+    /// row's `MessageRowDisplayModel`. Every sibling row's model stays
+    /// byte-for-byte identical across the whole stream, and the structure
+    /// (id list) never republishes. This is the per-row isolation the live
+    /// `MessageRowView` boundary depends on to skip unchanged siblings.
+    func testStreamingDeltaReDerivesOnlyActiveRowDisplayModel() {
+        let chatId = UUID()
+        let siblingAId = UUID()
+        let siblingBId = UUID()
+        let activeId = UUID()
+        let (state, store) = makeBoundStore(
+            chatId: chatId,
+            messages: [
+                ChatMessage(id: siblingAId, role: .user, content: "question"),
+                ChatMessage(id: siblingBId, role: .assistant, content: "older answer"),
+                ChatMessage(id: activeId, role: .assistant, content: "", streamingFinished: false)
+            ]
+        )
+
+        let siblingAModelBefore = store.model(for: siblingAId)
+        let siblingBModelBefore = store.model(for: siblingBId)
+        let activeModelBefore = store.model(for: activeId)
+        XCTAssertNotNil(siblingAModelBefore)
+        XCTAssertNotNil(siblingBModelBefore)
+        XCTAssertEqual(activeModelBefore?.state, .streaming)
+
+        var structurePublishes = 0
+        if let transcript = state.chatStore.transcript(for: chatId) {
+            transcript.$messageIds.dropFirst().sink { _ in structurePublishes += 1 }.store(in: &cancellables)
+        }
+
+        // Stream several deltas into the active message and finalize it.
+        for index in 0..<25 {
+            state.appendAssistantDelta(chatId: chatId, delta: "tok-\(index) ")
+            state.flushPendingAssistantTextDeltas(chatId: chatId)
+        }
+        state.markAssistantFinished(chatId: chatId, messageId: activeId)
+
+        // The active row's model was re-derived (state/content changed).
+        XCTAssertEqual(store.model(for: activeId)?.state, .done)
+        XCTAssertNotEqual(store.model(for: activeId), activeModelBefore)
+        // Both sibling rows' models are byte-for-byte unchanged: the stream
+        // never re-derived them.
+        XCTAssertEqual(store.model(for: siblingAId), siblingAModelBefore, "sibling user row must not be re-derived")
+        XCTAssertEqual(store.model(for: siblingBId), siblingBModelBefore, "sibling assistant row must not be re-derived")
+        // A pure content stream republishes no structure.
+        XCTAssertEqual(structurePublishes, 0, "streaming content must not republish the transcript id structure")
+    }
+
+    /// An unrelated god-object write must not re-derive a single session row.
+    /// The store observes the per-chat publishers only, so a browser/search/
+    /// image-preview write leaves every row model byte-for-byte unchanged and
+    /// does not advance the revision. This is the isolation the cutover relies
+    /// on now that `ChatView` no longer observes `AppState.objectWillChange`.
+    func testUnrelatedAppStateWriteReDerivesNoRow() {
+        let chatId = UUID()
+        let userId = UUID()
+        let assistantId = UUID()
+        let (state, store) = makeBoundStore(
+            chatId: chatId,
+            messages: [
+                ChatMessage(id: userId, role: .user, content: "hi"),
+                ChatMessage(id: assistantId, role: .assistant, content: "hello there")
+            ]
+        )
+        let userModelBefore = store.model(for: userId)
+        let assistantModelBefore = store.model(for: assistantId)
+        let rowsBefore = store.rows
+        let revisionBefore = store.revision
+
+        var sessionPublishes = 0
+        store.objectWillChange.sink { _ in sessionPublishes += 1 }.store(in: &cancellables)
+
+        // Unrelated god-object writes across several focused surfaces.
+        state.imagePreviewURL = URL(string: "file:///tmp/x.png")
+        state.searchQuery = "anything"
+        state.browserTabsLoading = [UUID()]
+        state.archivedLoading = true
+        state.rateLimits = RateLimitSnapshot(primary: nil, secondary: nil, credits: nil, limitId: nil, limitName: nil)
+
+        XCTAssertEqual(store.revision, revisionBefore, "an unrelated AppState write must not advance the session revision")
+        XCTAssertEqual(sessionPublishes, 0, "an unrelated AppState write must not publish the session store")
+        XCTAssertEqual(store.rows, rowsBefore)
+        XCTAssertEqual(store.model(for: userId), userModelBefore)
+        XCTAssertEqual(store.model(for: assistantId), assistantModelBefore)
+    }
+
     // MARK: - Detach on route teardown
 
     func testRebindingToNilDetachesAndClears() {

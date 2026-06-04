@@ -78,7 +78,7 @@ struct BrowserView: View {
                         .id(payload.id)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let payload = activeChat {
-                    ChatView(chatId: payload.id, isSideChat: true)
+                    ChatView(appState: appState, chatId: payload.id, isSideChat: true)
                         .id(payload.id)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let payload = activeFileTree {

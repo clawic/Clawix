@@ -6,6 +6,10 @@ struct ChatMessageEntryView: View {
     let appState: AppState
     let chat: Chat
     @ObservedObject var messageStore: ChatMessageStore
+    /// The session compute layer for this open chat. The row's draw-only
+    /// display model is sourced from here (precomputed once per named per-chat
+    /// event), never derived in the row body.
+    @ObservedObject var presentation: SessionPresentationStore
     let lastUserMessageId: UUID?
     let lastAssistantMessageId: UUID?
     let responseStreaming: Bool
@@ -19,7 +23,16 @@ struct ChatMessageEntryView: View {
             && message.role == .assistant
             && !message.streamingFinished
             && !message.isError
-        MessageRow(
+        // Draw-only boundary: the transcript mounts MessageRowView fed by the
+        // precomputed model from SessionPresentationStore. The store re-derives
+        // only the row whose message changed, so a delta updates exactly this
+        // one row's model and leaves siblings untouched. The model is `make`d
+        // here as a cheap fallback only when the store has not yet produced one
+        // for this id (first frame before the structure subscription lands).
+        let displayModel = presentation.model(for: message.id)
+            ?? MessageRowDisplayModel.make(from: message, now: Date())
+        MessageRowView(
+            displayModel: displayModel,
             chatId: chat.id,
             message: message,
             isLastUserMessage: message.id == lastUserMessageId,
@@ -27,6 +40,7 @@ struct ChatMessageEntryView: View {
             responseStreaming: responseStreamingForRow,
             codeBlockWordWrap: appState.chatCodeBlockWordWrap,
             findQuery: activeFindQuery,
+            publishingReady: publishingReady,
             onTimelineExpanded: { expandedId in
                 // Pin the bottom of the expanded bubble so inserted content grows upward.
                 DispatchQueue.main.async {
@@ -71,10 +85,8 @@ struct ChatMessageEntryView: View {
             },
             onToggleCodeBlockWordWrap: {
                 appState.chatCodeBlockWordWrap.toggle()
-            },
-            publishingReady: publishingReady
+            }
         )
-        .equatable()
         .id(message.id)
         .transaction { transaction in
             transaction.animation = nil
