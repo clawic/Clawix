@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Lucide `list-todo` glyph, path data replicated from the Lucide source
+/// Lucide checklist glyph, path data replicated from the Lucide source
 /// (lucide-react v0.469.0, ISC). Own Swift file so stroke weight and
 /// proportions stay tunable, on the project's 24-in-28 grid with the
 /// shared 2.5/28 stroke ratio to match `SearchIcon` / `GlobeIcon`.

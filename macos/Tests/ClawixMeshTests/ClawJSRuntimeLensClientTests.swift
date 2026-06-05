@@ -365,7 +365,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
     }
 
     func testRuntimeLensDecodesApprovalGateFixtureReceipts() async throws {
-        let data = Self.hermesFixtureDataWithApprovalGateReceipt()
+        let data = Self.hermesApprovalGateReceiptFixturePayload()
         let client = ClawJSRuntimeLensClient(runner: .init { args in
             XCTAssertEqual(args, ["runtime", "hermes", "domains", "--json"])
             return .init(data: data, exitCode: 2)
@@ -390,7 +390,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
     }
 
     func testRuntimeLensDecodesLiveEvidenceFixtureReceipts() async throws {
-        let data = Self.hermesFixtureDataWithLiveEvidenceReceipt()
+        let data = Self.hermesLiveEvidenceReceiptFixturePayload()
         let client = ClawJSRuntimeLensClient(runner: .init { args in
             XCTAssertEqual(args, ["runtime", "hermes", "domains", "--json"])
             return .init(data: data, exitCode: 2)
@@ -414,7 +414,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
     }
 
     func testRuntimeLensDecodesOfficialContractFixtureReceipts() async throws {
-        let data = Self.hermesFixtureDataWithWriteBackContractReceipt()
+        let data = Self.hermesWriteBackContractReceiptFixturePayload()
         let client = ClawJSRuntimeLensClient(runner: .init { args in
             XCTAssertEqual(args, ["runtime", "hermes", "domains", "--json"])
             return .init(data: data, exitCode: 2)
@@ -686,7 +686,7 @@ final class ClawJSRuntimeLensClientTests: XCTestCase {
 }
 
 private extension ClawJSRuntimeLensClientTests {
-    static func hermesFixtureDataWithApprovalGateReceipt() -> Data {
+    static func hermesApprovalGateReceiptFixturePayload() -> Data {
         Data(
             """
             {
@@ -774,7 +774,7 @@ private extension ClawJSRuntimeLensClientTests {
         )
     }
 
-    static func hermesFixtureDataWithLiveEvidenceReceipt() -> Data {
+    static func hermesLiveEvidenceReceiptFixturePayload() -> Data {
         Data(
             """
             {
@@ -860,7 +860,7 @@ private extension ClawJSRuntimeLensClientTests {
         )
     }
 
-    static func hermesFixtureDataWithWriteBackContractReceipt() -> Data {
+    static func hermesWriteBackContractReceiptFixturePayload() -> Data {
         Data(
             """
             {

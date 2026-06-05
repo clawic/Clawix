@@ -110,6 +110,84 @@
           "reason": "Large source baselines must shrink or block additional growth."
         }
       }
+    },
+    "macos/Sources/Clawix/AgentControl/ClxControlHandlers.swift": {
+      "lines": 2616,
+      "reason": "Existing oversized control-bus handler surface tracked by source file boundary contract; split handler families before expanding.",
+      "debtControl": {
+        "ownerArea": "source-size",
+        "expiresAt": "2026-08-19",
+        "severity": "P2",
+        "budget": {
+          "metric": "source_lines",
+          "unit": "line",
+          "current": 2616,
+          "maxAllowed": 2616,
+          "nextMaxAllowed": 2615,
+          "target": 1200,
+          "cadence": "next_touch_or_expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/source-size-check.mjs",
+          "reason": "Large source baselines must shrink or block additional growth."
+        }
+      }
+    },
+    "macos/Sources/Clawix/ClawJS/ClawJSRuntimeLensClient.swift": {
+      "lines": 2222,
+      "reason": "Existing oversized runtime-lens client surface tracked by source file boundary contract; extract domain decoders before expanding.",
+      "debtControl": {
+        "ownerArea": "source-size",
+        "expiresAt": "2026-08-19",
+        "severity": "P2",
+        "budget": {
+          "metric": "source_lines",
+          "unit": "line",
+          "current": 2222,
+          "maxAllowed": 2222,
+          "nextMaxAllowed": 2221,
+          "target": 1200,
+          "cadence": "next_touch_or_expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/source-size-check.mjs",
+          "reason": "Large source baselines must shrink or block additional growth."
+        }
+      }
+    },
+    "scripts/run_macos_ux_trace_harness.mjs": {
+      "lines": 2024,
+      "reason": "Existing oversized UX trace harness tracked by source file boundary contract; extract scenario orchestration before expanding.",
+      "debtControl": {
+        "ownerArea": "source-size",
+        "expiresAt": "2026-08-19",
+        "severity": "P2",
+        "budget": {
+          "metric": "source_lines",
+          "unit": "line",
+          "current": 2024,
+          "maxAllowed": 2024,
+          "nextMaxAllowed": 2023,
+          "target": 1200,
+          "cadence": "next_touch_or_expiry"
+        },
+        "releaseEffect": {
+          "mode": "blocks_growth",
+          "targets": [
+            "changed-work"
+          ],
+          "gate": "node scripts/source-size-check.mjs",
+          "reason": "Large source baselines must shrink or block additional growth."
+        }
+      }
     }
   }
 }
