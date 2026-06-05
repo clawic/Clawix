@@ -91,6 +91,9 @@ let package = Package(
                 .product(name: "ClawHostKit", package: "host")
             ],
             path: "Sources/Clawix",
+            exclude: [
+                "Apps/AGENT_CONTRACT.md"
+            ],
             resources: [
                 .process("Resources")
             ],
