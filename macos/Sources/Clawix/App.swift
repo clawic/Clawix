@@ -119,28 +119,26 @@ enum ClawixSingleInstanceGuard {
 /// chrome reservation that protects the sidebar toggle from sitting under
 /// them must collapse to zero whenever any window enters fullscreen.
 @MainActor
-final class WindowState: ObservableObject {
+final class WindowState: NSObject, ObservableObject {
     @Published var isFullscreen: Bool = false
-    private var observers: [NSObjectProtocol] = []
 
-    init() {
+    override init() {
+        super.init()
         let nc = NotificationCenter.default
-        observers.append(nc.addObserver(
-            forName: NSWindow.didEnterFullScreenNotification,
-            object: nil, queue: .main
-        ) { [weak self] _ in
-            self?.isFullscreen = true
-        })
-        observers.append(nc.addObserver(
-            forName: NSWindow.didExitFullScreenNotification,
-            object: nil, queue: .main
-        ) { [weak self] _ in
-            self?.isFullscreen = false
-        })
+        nc.addObserver(self, selector: #selector(windowDidEnterFullScreen(_:)), name: NSWindow.didEnterFullScreenNotification, object: nil)
+        nc.addObserver(self, selector: #selector(windowDidExitFullScreen(_:)), name: NSWindow.didExitFullScreenNotification, object: nil)
     }
 
     deinit {
-        observers.forEach(NotificationCenter.default.removeObserver)
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func windowDidEnterFullScreen(_ note: Notification) {
+        isFullscreen = true
+    }
+
+    @objc private func windowDidExitFullScreen(_ note: Notification) {
+        isFullscreen = false
     }
 }
 
