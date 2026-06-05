@@ -8,7 +8,7 @@
     "prebuild": "node ../../scripts/legal_safety_check.mjs",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run --pool forks --poolOptions.forks.singleFork",
+    "test": "vitest run --pool forks --maxWorkers 1 --no-file-parallelism",
     "tauri": "tauri"
   },
   "dependencies": {
@@ -41,9 +41,9 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.14",
     "typescript": "^5.6.3",
-    "vite": "^5.4.10",
+    "vite": "^6.4.3",
     "vite-plugin-solid": "^2.10.2",
-    "vitest": "^2.1.9"
+    "vitest": "^4.1.8"
   },
   "packageManager": "npm@11.12.1"
 }
