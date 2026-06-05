@@ -374,7 +374,7 @@ struct ClawixApp: App {
 
 private struct AgentInstanceMenuBarLabel: View {
     @Environment(\.openWindow) private var openWindow
-    @State private var requestedAgentWindow = false
+    @State private var requestedStartupWindow = false
 
     var body: some View {
         Image(nsImage: ClawixLogoTemplateImage.make(size: 18))
@@ -385,8 +385,8 @@ private struct AgentInstanceMenuBarLabel: View {
                 activate: openMainWindow
             )
             .onAppear {
-                guard ClxAgentInstance.isAgent, !requestedAgentWindow else { return }
-                requestedAgentWindow = true
+                guard !requestedStartupWindow else { return }
+                requestedStartupWindow = true
                 DispatchQueue.main.async {
                     openMainWindow()
                 }
