@@ -27,6 +27,8 @@ coverage/
 .tmp-*/
 linux/app/dist/
 linux/app/node_modules/
+linux/app/src-tauri/gen/
+linux/app/src-tauri/target/
 docs/codebase-manifest.json
 packages/*/.build/
 packages/*/build/

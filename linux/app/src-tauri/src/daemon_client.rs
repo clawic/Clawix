@@ -311,7 +311,7 @@ impl DaemonClient {
         let qr_json = serde_json::json!({
             "v": BRIDGE_SCHEMA_VERSION,
             "host": pairing_host(),
-            "port": DEFAULT_PORT,
+            "port": crate::bridge_endpoint::DEFAULT_BRIDGE_PORT,
             "token": &token,
             "shortCode": &short_code,
         })

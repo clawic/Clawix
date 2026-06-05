@@ -13,7 +13,6 @@ mod text_injector;
 mod tray;
 
 use std::sync::Arc;
-use tauri::Manager;
 use tokio::sync::Mutex;
 use tracing_subscriber::EnvFilter;
 
@@ -105,7 +104,7 @@ mod commands {
     use super::AppState;
     use crate::{daemon_client, dictation, selection_sniffer, service_manager, text_injector};
     use serde::{Deserialize, Serialize};
-    use tauri::{Manager, State};
+    use tauri::State;
 
     #[derive(Serialize)]
     pub struct WireSessionBrief {
