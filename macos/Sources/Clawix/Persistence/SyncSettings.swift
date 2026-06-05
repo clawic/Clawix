@@ -8,7 +8,7 @@ import Foundation
 // Stored in UserDefaults under the standard app prefs suite, mirroring
 // the convention used by PreferredLanguage and the sidebar toggles.
 enum SyncSettings {
-    static let store: UserDefaults = UserDefaults(suiteName: appPrefsSuite) ?? .standard
+    static var store: UserDefaults { UserDefaults(suiteName: appPrefsSuite) ?? .standard }
     static let archiveKey = "SyncArchiveWithCodex"
     static let renamesKey = "SyncRenamesWithCodex"
     static let autoReloadKey = "AutoReloadOnFocus"
