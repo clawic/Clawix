@@ -11,6 +11,7 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertEqual(AppFeature.screenTools.maturity, .stable)
         XCTAssertEqual(AppFeature.macUtilities.maturity, .stable)
         XCTAssertEqual(AppFeature.macControl.maturity, .stable)
+        XCTAssertEqual(AppFeature.publishing.maturity, .beta)
         XCTAssertEqual(
             Set(AppFeature.allCases.filter { $0.maturity == .experimental }),
             [
@@ -25,7 +26,6 @@ final class FeatureFlagsTests: XCTestCase {
                 .database,
                 .index,
                 .iotHome,
-                .publishing,
                 .composerExperiments,
                 .remoteMesh,
                 .agents,
@@ -85,7 +85,7 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertTrue(flags.isVisible(.database))
         XCTAssertTrue(flags.isVisible(.index))
         XCTAssertTrue(flags.isVisible(.iotHome))
-        XCTAssertTrue(flags.isVisible(.publishing))
+        XCTAssertFalse(flags.isVisible(.publishing))
         XCTAssertTrue(flags.isVisible(.composerExperiments))
         XCTAssertTrue(flags.isVisible(.remoteMesh))
         XCTAssertTrue(flags.isVisible(.networkControl))
@@ -97,6 +97,27 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertTrue(flags.isVisible(.claw))
         XCTAssertTrue(flags.isVisible(.telegram))
         XCTAssertFalse(flags.isVisible(.simulators))
+    }
+
+    func test_betaSurfacesRequireCapabilityOptIn() {
+        let flags = FeatureFlags.shared
+        let wasExperimental = flags.experimentalSurfaces
+        let wasDeveloper = flags.developerSurfaces
+        let defaults = UserDefaults(suiteName: appPrefsSuite) ?? .standard
+        let enabledCapabilityIDsKey = ClawixPersistentSurfaceKeys.featureFlagsEnabledCapabilityIDs
+        let wasPublishingOptedIn = defaults.stringArray(forKey: enabledCapabilityIDsKey)?.contains(AppFeature.publishing.capabilityID) == true
+        flags.experimentalSurfaces = true
+        flags.developerSurfaces = false
+        flags.setCapabilityOptIn(false, capabilityID: AppFeature.publishing.capabilityID)
+        defer {
+            flags.experimentalSurfaces = wasExperimental
+            flags.developerSurfaces = wasDeveloper
+            flags.setCapabilityOptIn(wasPublishingOptedIn, capabilityID: AppFeature.publishing.capabilityID)
+        }
+
+        XCTAssertFalse(flags.isVisible(.publishing))
+        flags.setCapabilityOptIn(true, capabilityID: AppFeature.publishing.capabilityID)
+        XCTAssertTrue(flags.isVisible(.publishing))
     }
 
     func test_settingsHideExperimentalConfigurationByDefault() {

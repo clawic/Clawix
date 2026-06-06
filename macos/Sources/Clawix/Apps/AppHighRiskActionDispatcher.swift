@@ -64,9 +64,6 @@ struct AppFrameworkHighRiskActionDispatcher: AppHighRiskActionDispatcher {
     }
 
     func dispatch(_ request: AppHighRiskActionDispatchRequest) async -> AppHighRiskActionDispatchResult {
-        guard FeatureFlags.shared.isVisible(.apps) else {
-            return .unavailable("Apps dispatch is experimental and disabled in stable mode.")
-        }
         switch request.descriptor.id {
         case "jobs.start":
             return await dispatchJobsStart(request)

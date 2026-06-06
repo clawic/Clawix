@@ -163,7 +163,7 @@ struct AppSwiftSurfaceActionBridge {
             let query = try AppBridgeQueryDSL.dbQuery(from: action.bridgeArguments)
             surfaceReporter.loading("Querying Swift surface database", progress: 0.2)
             let response = try await databaseManager.client.listRecords(
-                namespaceId: databaseManager.currentNamespace,
+                namespaceId: ClawJSProjectHandoffClient.defaultWorkspaceId,
                 collection: query.collection,
                 filter: query.backendFilterJSON,
                 sort: query.sortString,
@@ -205,7 +205,7 @@ struct AppSwiftSurfaceActionBridge {
                 try Task.checkCancellation()
                 guard matched < query.limit else { break }
                 let response = try await databaseManager.client.listRecords(
-                    namespaceId: databaseManager.currentNamespace,
+                    namespaceId: ClawJSProjectHandoffClient.defaultWorkspaceId,
                     collection: collection,
                     filter: nil,
                     sort: "-updatedAt",

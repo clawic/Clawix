@@ -101,8 +101,10 @@ enum AppFeature: Equatable, CaseIterable {
              .identity, .screenTools, .macUtilities, .macControl,
              .computerUse, .openCode:
             return .stable
+        case .publishing:
+            return .beta
         case .secrets, .mcp, .databaseWorkbench, .marketplace, .calendar,
-             .contacts, .database, .index, .iotHome, .publishing,
+             .contacts, .database, .index, .iotHome,
              .composerExperiments, .remoteMesh,
              .tools, .networkControl, .apps,
              .design, .life, .skills, .skillCollections, .claw,
