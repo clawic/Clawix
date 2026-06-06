@@ -31,6 +31,7 @@ final class ProfileSurfaceStore: ObservableObject {
 
     private var client: any ClawJSProfileClienting
     private let tokenOperation: TokenOperation
+    private let requiresVisibleIndexService: Bool
     private var bootstrapTask: Task<Void, Never>?
     private var bootstrapGeneration = 0
     private var feedRefreshTask: Task<Void, Never>?
@@ -50,6 +51,7 @@ final class ProfileSurfaceStore: ObservableObject {
         client: (any ClawJSProfileClienting)? = nil,
         tokenOperation: TokenOperation? = nil
     ) {
+        requiresVisibleIndexService = client == nil
         self.tokenOperation = tokenOperation ?? {
             ClawJSServiceManager.shared.adminTokenIfSpawned(for: .index)
                 ?? (try? ClawJSServiceManager.adminTokenFromTokenFile(for: .index))
@@ -96,13 +98,22 @@ final class ProfileSurfaceStore: ObservableObject {
             [.index],
             isVisible: FeatureFlags.shared.isVisible
         )
-        guard !services.isEmpty else { return }
-        let lease = await ClawJSServiceManager.shared.acquire(
-            services: services,
-            reason: .capability("Profile search"),
-            consumer: "capability.profile.search"
-        )
-        defer { Task { await ClawJSServiceManager.shared.release(lease) } }
+        guard !services.isEmpty || !requiresVisibleIndexService else { return }
+        let lease: ServiceDemandLease?
+        if services.isEmpty {
+            lease = nil
+        } else {
+            lease = await ClawJSServiceManager.shared.acquire(
+                services: services,
+                reason: .capability("Profile search"),
+                consumer: "capability.profile.search"
+            )
+        }
+        defer {
+            if let lease {
+                Task { await ClawJSServiceManager.shared.release(lease) }
+            }
+        }
         ensureToken()
         loadState = .loading
         do {
