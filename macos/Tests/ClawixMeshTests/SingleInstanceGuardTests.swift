@@ -4,7 +4,7 @@ import XCTest
 final class SingleInstanceGuardTests: XCTestCase {
     func testSingleInstanceGuardIgnoresAgentSnapshotBundlePaths() {
         let currentBundle = URL(fileURLWithPath: "/Applications/Clawix.app")
-        let agentBundle = URL(fileURLWithPath: "/Users/test/Library/Caches/Clawix-Agents/snapshots/1/Clawix.app")
+        let agentBundle = URL(fileURLWithPath: "/tmp/Clawix-Agents/snapshots/1/Clawix.app")
 
         XCTAssertFalse(ClawixSingleInstanceGuard.isExistingMainInstanceCandidate(
             bundleURL: agentBundle,

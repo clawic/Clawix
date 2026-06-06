@@ -480,20 +480,21 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
 
         let result = RolloutReader.readTailWithStatus(path: rollout)
         let assistant = try XCTUnwrap(result.entries.first)
-        let tools = assistant.timeline.compactMap { entry -> ([WorkItem], ToolTimelinePresentationSnapshot?)? in
+        let tools = assistant.timeline.compactMap { entry -> [WorkItem]? in
             if case .tools(_, let items, let presentation) = entry {
-                return (items, presentation)
+                XCTAssertNil(presentation)
+                return items
             }
             return nil
         }
 
         XCTAssertEqual(tools.count, 1)
-        XCTAssertEqual(tools.first?.0.count, 2)
-        XCTAssertTrue(tools.first?.0.allSatisfy {
+        XCTAssertEqual(tools.first?.count, 2)
+        XCTAssertTrue(tools.first?.allSatisfy {
             if case .command(nil, []) = $0.kind { return true }
             return false
         } ?? false)
-        XCTAssertEqual(tools.first?.1?.aggregateRows.first?.text, "Ran 2 commands")
+        XCTAssertEqual(tools.first.map { ToolTimelinePresentation.aggregateRows(for: $0).first?.text }, "Ran 2 commands")
     }
 
     func testRolloutReaderSkipsEmptyWriteStdinPollsForRunningCommands() throws {
@@ -538,13 +539,16 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
 
         let result = RolloutReader.readTailWithStatus(path: rollout)
         let assistant = try XCTUnwrap(result.entries.first)
-        let tools = assistant.timeline.compactMap { entry -> ToolTimelinePresentationSnapshot? in
-            if case .tools(_, _, let presentation) = entry { return presentation }
+        let tools = assistant.timeline.compactMap { entry -> [WorkItem]? in
+            if case .tools(_, let items, let presentation) = entry {
+                XCTAssertNil(presentation)
+                return items
+            }
             return nil
         }
 
         XCTAssertEqual(tools.count, 1)
-        XCTAssertEqual(tools.first?.aggregateRows.first?.text, "Ran 1 command")
+        XCTAssertEqual(tools.first.map { ToolTimelinePresentation.aggregateRows(for: $0).first?.text }, "Ran 1 command")
     }
 
     func testRolloutReaderPreservesViewImageFunctionCallPreviewPath() throws {
@@ -643,14 +647,17 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
 
         let result = RolloutReader.readTailWithStatus(path: rollout)
         let assistant = try XCTUnwrap(result.entries.first)
-        let tools = assistant.timeline.compactMap { entry -> ToolTimelinePresentationSnapshot? in
-            if case .tools(_, _, let presentation) = entry { return presentation }
+        let tools = assistant.timeline.compactMap { entry -> [ToolTimelineRow]? in
+            if case .tools(_, let items, let presentation) = entry {
+                XCTAssertNil(presentation)
+                return ToolTimelinePresentation.aggregateRows(for: items)
+            }
             return nil
         }
 
         XCTAssertEqual(tools.count, 2)
-        XCTAssertEqual(tools[0].aggregateRows.map(\.text), ["Explored 1 file, ran 1 command, used Computer Use"])
-        XCTAssertEqual(tools[1].aggregateRows.map(\.text), ["Ran 1 command"])
+        XCTAssertEqual(tools[0].map(\.text), ["Explored 1 file, ran 1 command, used Computer Use"])
+        XCTAssertEqual(tools[1].map(\.text), ["Ran 1 command"])
     }
 
     func testRolloutReaderGroupsWebSearchesAndCurlLikeCodex() throws {
@@ -740,8 +747,9 @@ final class UserMessageAttachmentRenderingTests: XCTestCase {
         let result = RolloutReader.readTailWithStatus(path: rollout)
         let assistant = try XCTUnwrap(result.entries.first)
         let rows = assistant.timeline.compactMap { entry -> [String]? in
-            if case .tools(_, _, let presentation) = entry {
-                return presentation?.aggregateRows.map(\.text)
+            if case .tools(_, let items, let presentation) = entry {
+                XCTAssertNil(presentation)
+                return ToolTimelinePresentation.aggregateRows(for: items).map(\.text)
             }
             return nil
         }
