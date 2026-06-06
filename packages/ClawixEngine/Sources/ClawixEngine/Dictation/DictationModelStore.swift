@@ -26,7 +26,7 @@ public final class DictationModelStore: ObservableObject {
     /// the broken model from `installedModels`. The notification's
     /// object is the `DictationModel.rawValue` string so observers can
     /// surface a targeted "re-download needed" error in Settings.
-    public static let modelInvalidatedNotification = Notification.Name("DictationModelInvalidated")
+    public nonisolated static let modelInvalidatedNotification = Notification.Name("DictationModelInvalidated")
 
     @Published public private(set) var activeModel: DictationModel
     @Published public private(set) var downloadProgress: [DictationModel: Double] = [:]
@@ -230,12 +230,11 @@ public final class DictationModelStore: ObservableObject {
         guard !deletingModels.contains(model) else { return }
         deletingModels.insert(model)
         let urls = Self.candidatePaths(for: model)
-        Task.detached(priority: .userInitiated) { [weak self] in
+        Task.detached(priority: .userInitiated) { [self] in
             for url in urls {
                 try? FileManager.default.removeItem(at: url)
             }
             await MainActor.run {
-                guard let self else { return }
                 self.installedModels.remove(model)
                 self.downloadProgress[model] = nil
                 self.downloadErrors[model] = nil
