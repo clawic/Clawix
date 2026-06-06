@@ -39,7 +39,7 @@ Options:
   --suite <id>             Suite id. Currently supports p0.
   --scenario <id>          Scenario id from docs/ui/ux-trace-scenarios.manifest.json.
   --fixture-profile <id>   Fixture profile declared by the scenario. With --suite, filters to compatible scenarios.
-  --control-url <url>      Agent control bus base URL, for example http://127.0.0.1:24500.
+  --control-url <url>      Agent control bus base URL, for example http://<loopback-host>:<port>.
   --token <token>          Owner token for the isolated agent instance.
   --out-dir <dir>          Evidence root. Defaults to a temporary directory.
   --baseline <file>        Optional metrics.json or baseline-comparison source.

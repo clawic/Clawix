@@ -153,7 +153,8 @@ function assertMacOSFixturePack(profile, outDir, requiredScalingDimensions) {
     if (!String(thread.path).startsWith(outDir)) fail(`${profile} thread ${thread.id} path must stay inside generated pack`);
     if (!fs.existsSync(thread.path)) fail(`${profile} rollout missing for ${thread.id}`);
   }
-  const firstRollout = fs.readFileSync(threads[0].path, "utf8").trim().split(/\n/).map((line) => JSON.parse(line));
+  const maxRolloutRecords = 512;
+  const firstRollout = fs.readFileSync(threads[0].path, "utf8").trim().split(/\n/).slice(0, maxRolloutRecords).map((line) => JSON.parse(line));
   if (firstRollout[0]?.type !== "session_meta") fail(`${profile} first rollout must begin with session_meta`);
   if (!firstRollout.some((record) => record.type === "event_msg" && record.payload?.type === "user_message")) fail(`${profile} rollout missing user_message`);
   if (!firstRollout.some((record) => record.type === "event_msg" && record.payload?.type === "agent_message" && record.payload?.phase === "final_answer")) fail(`${profile} rollout missing final assistant message`);

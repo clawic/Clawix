@@ -340,7 +340,7 @@ function runSelfTest() {
     expectFailure(tempRoot, "relative-age-format-in-body");
 
     // Sorting a message/timeline array in a body fails.
-    writeFixture(tempRoot, both[0], "import SwiftUI\nstruct MessageRowView: View {\n  let messages: [Int]\n  var body: some View {\n    ForEach(messages.sorted(), id: \\.self) { Text(String($0)) }\n  }\n}\n");
+    writeFixture(tempRoot, both[0], "import SwiftUI\nstruct MessageRowView: View {\n  let messages: [Int]\n  var body: some View {\n    // bounded maxItems=2 reason=self-test fixture for render-thin negative case\n    ForEach(messages.sorted(), id: \\.self) { Text(String($0)) }\n  }\n}\n");
     expectFailure(tempRoot, "collection-transform-in-body");
 
     // Forbidden derivation OUTSIDE a body (compute helper) is allowed.
