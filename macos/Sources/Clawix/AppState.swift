@@ -35,6 +35,14 @@ final class BackendStatusStore: ObservableObject {
 
 @MainActor
 final class AppState: ObservableObject {
+    static var isRunningUnderXCTest: Bool {
+        let processInfo = ProcessInfo.processInfo
+        return processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || processInfo.processName == "xctest"
+            || processInfo.arguments.contains { $0.hasSuffix(".xctest") || $0.contains(".xctest/") }
+            || NSClassFromString("XCTestCase") != nil
+    }
+
     /// Weak back-reference to the live main-window state, set from
     /// `ClawixApp.init`. Lets app-lifecycle code (e.g. the quit guard in
     /// `AppDelegate`) ask about in-flight work without threading the
@@ -935,15 +943,19 @@ final class AppState: ObservableObject {
             // First paint comes from a compact JSON cache so AppState
             // construction never opens or migrates SQLite. The real local
             // database hydrates after SwiftUI has rendered the first frame.
-            applyFirstPaintCacheForLaunch()
+            if !Self.isRunningUnderXCTest || FirstPaintCache.fileURLOverride != nil {
+                applyFirstPaintCacheForLaunch()
+            }
             // Hydrate the most-recent transcripts from the on-disk
             // bridge snapshot (~/Library/Application Support/clawix/
             // snapshot.json) so a tap on a chat in the sidebar lands
             // immediately on the last-known body instead of an empty
             // ScrollView while the daemon's `messagesSnapshot` races
             // back. Idempotent / silent if the file is missing.
-            loadCachedSnapshot()
-            bootstrapCodexSessionIndexForLaunchIfNeeded()
+            if !Self.isRunningUnderXCTest {
+                loadCachedSnapshot()
+                bootstrapCodexSessionIndexForLaunchIfNeeded()
+            }
         }
         loadHostFavicons()
         loadChatSidebars()
@@ -1083,7 +1095,7 @@ final class AppState: ObservableObject {
     }
 
     private func scheduleAutomaticPostFirstFramePersistenceIfNeeded() {
-        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
+        guard !Self.isRunningUnderXCTest else {
             return
         }
         Task { @MainActor [weak self] in
@@ -1132,9 +1144,25 @@ final class AppState: ObservableObject {
     /// where drag-and-drop keeps every project row materialised.
     static let projectRefreshConcurrency = 2
 
-    func mergedProjects() -> [Project] {
+    /// Builds the sidebar's project list. `conversationCwds` are the
+    /// working directories of the conversations currently being projected
+    /// into the sidebar; pass `nil` to derive them from the in-memory
+    /// `chats`. Each distinct workspace root surfaces as a folder, which is
+    /// how Codex groups conversations and the only project source available
+    /// when the canonical sessions service is not running (e.g. the
+    /// installed app), where `backendState.workspaceRoots` stays empty.
+    func mergedProjects(conversationCwds: [String]? = nil) -> [Project] {
         let localPaths = Set(projectsRepo.all().map(\.path).filter { !$0.isEmpty })
         let hidden = Set(hiddenRootsRepo.allHidden())
+        // Normalised workspace roots referenced by loaded conversations.
+        let referencedRoots = (conversationCwds ?? chats.compactMap { $0.cwd })
+            .map { ($0 as NSString).expandingTildeInPath }
+            .filter { !$0.isEmpty }
+        let referencedSet = Set(referencedRoots)
+        func isReferenced(_ path: String) -> Bool {
+            let prefix = path.hasSuffix("/") ? path : path + "/"
+            return referencedSet.contains(where: { $0 == path || $0.hasPrefix(prefix) })
+        }
         // Drop Codex roots the user explicitly hid. Local projects with the
         // same path stay visible (hidden_codex_roots only filters the
         // backend-sourced bucket; the local entry is the user's own data).
@@ -1147,10 +1175,30 @@ final class AppState: ObservableObject {
         var seen = Set(result.map { $0.path })
         for project in projectsRepo.all() {
             guard !project.path.isEmpty, !seen.contains(project.path) else { continue }
+            // Hide dead local rows: the folder is gone AND no loaded
+            // conversation points into it. Drops stale test projects like
+            // `/tmp/test` while keeping real or still-referenced ones.
+            if project.folderState == .missing, !isReferenced(project.path) {
+                continue
+            }
             seen.insert(project.path)
             result.append(project)
         }
         for path in snapshotRepo.projectPathHints() {
+            guard !seen.contains(path) else { continue }
+            guard !hidden.contains(path) || localPaths.contains(path) else { continue }
+            seen.insert(path)
+            result.append(Project(
+                id: StableProjectID.uuid(for: path),
+                name: URL(fileURLWithPath: path).lastPathComponent.isEmpty ? path : URL(fileURLWithPath: path).lastPathComponent,
+                path: path
+            ))
+        }
+        // Folders derived from the working directories of loaded
+        // conversations. The runtime builds its project list the same way; this
+        // is what makes projects appear when no canonical project record
+        // exists yet.
+        for path in referencedRoots {
             guard !seen.contains(path) else { continue }
             guard !hidden.contains(path) || localPaths.contains(path) else { continue }
             seen.insert(path)

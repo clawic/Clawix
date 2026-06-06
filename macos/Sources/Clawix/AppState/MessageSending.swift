@@ -47,6 +47,7 @@ extension AppState {
                 lastMessageAt: userMsg.timestamp
             )
             chats.insert(newChat, at: 0)
+            chatStore.upsert(newChat, archived: false, at: 0)
             currentRoute = .chat(newChat.id)
             chatId = newChat.id
         }
@@ -605,7 +606,6 @@ extension AppState {
         // group entries for hydrate-time matching, which we don't
         // exercise in the in-process path (no rollout rebuild here).
         let threadId = chatId.uuidString
-        let chatIdString = chatId.uuidString
         let messageIdString = messageId.uuidString
         Task { [weak self] in
             do {
@@ -802,7 +802,11 @@ extension AppState {
     /// other places where the same composer view stays mounted but the
     /// user's intent is "let me start typing now".
     func requestComposerFocus() {
-        if NSApp.windows.contains(where: { $0.firstResponder is ComposerNSTextView }) {
+        guard let app = NSApp else {
+            composer.focusToken &+= 1
+            return
+        }
+        if app.windows.contains(where: { $0.firstResponder is ComposerNSTextView }) {
             return
         }
         composer.focusToken &+= 1

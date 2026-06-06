@@ -516,6 +516,7 @@ extension AppState {
         chatStore.updateSummary(id: chatId) { summary in
             summary.hasActiveTurn = false
         }
+        syncLegacyChatFromStoreIfRenderedSummaryChanged(chatId: chatId)
     }
 
     // MARK: - Titles

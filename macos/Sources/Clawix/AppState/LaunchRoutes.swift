@@ -43,7 +43,7 @@ extension AppState {
             currentRoute = .home
             openBrowser()
         default:
-            if !restorePersistedLaunchRoute() {
+            if Self.isRunningUnderXCTest || !restorePersistedLaunchRoute() {
                 currentRoute = .home
             }
         }

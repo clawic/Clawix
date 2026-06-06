@@ -952,6 +952,7 @@ extension AppState {
         // the GUI had cached against the previous daemon UUID.
         let oldByThreadId = chatByThreadId(chats)
         let oldArchivedByThreadId = chatByThreadId(archivedChats)
+        let activeLocalSnapshots = chatStore.activeSnapshots.filter(shouldPreserveThreadlessLocalSnapshot)
         func resolveOld(for wire: WireSession) -> Chat? {
             if let id = UUID(uuidString: wire.id) {
                 if let hit = oldById[id] ?? oldArchivedById[id] { return hit }
@@ -969,16 +970,25 @@ extension AppState {
             guard wire.isArchived else { return nil }
             return chat(from: wire, old: resolveOld(for: wire))
         }
+        for local in activeLocalSnapshots.reversed() where !nextChats.contains(where: { $0.id == local.id }) {
+            nextChats.insert(local, at: 0)
+        }
         if case let .chat(id) = currentRoute,
-           let selected = chat(byId: id),
-           let threadId = selected.clawixThreadId,
-           !uniqueWireChats.contains(where: { $0.threadId?.caseInsensitiveCompare(threadId) == .orderedSame }) {
-            if selected.isArchived {
-                if !nextArchived.contains(where: { $0.id == selected.id || $0.clawixThreadId == selected.clawixThreadId }) {
-                    nextArchived.insert(selected, at: 0)
+           let selected = chat(byId: id) {
+            let shouldPreserveSelected: Bool
+            if let threadId = selected.clawixThreadId {
+                shouldPreserveSelected = !uniqueWireChats.contains(where: { $0.threadId?.caseInsensitiveCompare(threadId) == .orderedSame })
+            } else {
+                shouldPreserveSelected = shouldPreserveThreadlessLocalSnapshot(selected)
+            }
+            if shouldPreserveSelected {
+                if selected.isArchived {
+                    if !nextArchived.contains(where: { $0.id == selected.id || $0.clawixThreadId == selected.clawixThreadId }) {
+                        nextArchived.insert(selected, at: 0)
+                    }
+                } else if !nextChats.contains(where: { $0.id == selected.id || $0.clawixThreadId == selected.clawixThreadId }) {
+                    nextChats.insert(selected, at: 0)
                 }
-            } else if !nextChats.contains(where: { $0.id == selected.id || $0.clawixThreadId == selected.clawixThreadId }) {
-                nextChats.insert(selected, at: 0)
             }
         }
         // Fast path: the daemon resends the same chat snapshot on every
@@ -1279,7 +1289,11 @@ extension AppState {
             summary.hasActiveTurn = !finished
         }
         if finished {
+            let beforeSync = chats
             syncLegacyChatFromStore(chatId: id)
+            if chats == beforeSync {
+                publishLegacyChatsUnchanged()
+            }
             scheduleStreamingCheckpointSettlement(chatId: id, messageId: msgId)
         }
     }

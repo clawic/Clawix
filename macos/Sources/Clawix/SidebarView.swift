@@ -1288,16 +1288,14 @@ private struct SidebarArchivedLoadingSpinner: NSViewRepresentable {
 }
 
 private struct RescueRepairSidebarStatus: View {
-    let appState: AppState
-    @ObservedObject private var backendStatusStore: BackendStatusStore
+    @ObservedObject private var appState: AppState
 
     init(appState: AppState) {
-        self.appState = appState
-        _backendStatusStore = ObservedObject(wrappedValue: appState.backendStatusStore)
+        _appState = ObservedObject(wrappedValue: appState)
     }
 
     var body: some View {
-        if let rescueSummary = RescueRepairStatusSummary(decision: backendStatusStore.rescueDecision) {
+        if let rescueSummary = RescueRepairStatusSummary(decision: appState.rescueDecision) {
             RescueRepairSidebarButton(summary: rescueSummary) {
                 appState.openRescueSurface()
             }

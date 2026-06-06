@@ -79,6 +79,20 @@ extension AppState {
         syncLegacyChatFromStore(chatId: chatId)
     }
 
+    func publishLegacyChatsUnchanged() {
+        syncingLegacyChatsFromStore = true
+        chats = chats
+        syncingLegacyChatsFromStore = false
+    }
+
+    func shouldPreserveThreadlessLocalSnapshot(_ chat: Chat) -> Bool {
+        guard chat.clawixThreadId == nil, !chat.isArchived else { return false }
+        guard chats.contains(where: { $0.id == chat.id }) else { return false }
+        if chat.hasActiveTurn { return true }
+        guard case let .chat(id) = currentRoute, id == chat.id else { return false }
+        return chatStore.transcript(for: chat.id)?.messages.isEmpty == false
+    }
+
     private func legacyRenderedSummaryDiffers(_ lhs: Chat, _ rhs: Chat) -> Bool {
         lhs.id != rhs.id
             || lhs.title != rhs.title

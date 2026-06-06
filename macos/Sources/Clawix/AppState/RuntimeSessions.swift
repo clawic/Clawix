@@ -5,7 +5,7 @@ import ClawixCore
 extension AppState {
     func bootstrapCodexSessionIndexForLaunchIfNeeded() {
         guard snapshotEnabled,
-              ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
+              !Self.isRunningUnderXCTest,
               ProcessInfo.processInfo.environment["CLAWIX_DUMMY_MODE"] != "1",
               ProcessInfo.processInfo.environment["CLAWIX_DISABLE_BACKEND"] != "1",
               AgentThreadStore.fixtureThreads() == nil
@@ -34,7 +34,7 @@ extension AppState {
             return
         }
         if runtimeThreadPageLoader == nil,
-           ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+           !Self.isRunningUnderXCTest {
             let pinnedThreadIds = AgentThreadStore.codexPinnedThreadIds()
             let indexThreads = await AgentThreadStore.codexSessionIndexThreadsAsync(
                 limit: Self.sidebarBootstrapRecentLimit,

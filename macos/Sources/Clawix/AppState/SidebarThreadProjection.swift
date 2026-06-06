@@ -202,7 +202,9 @@ extension AppState {
 
     func applyThreads(_ threads: [AgentThreadSummary], extraPinnedThreadIds: [String] = []) {
         if !clawJSSessionsCanonicalActive {
-            projects = mergedProjects()
+            // Derive folders from the incoming threads' cwds: `chats` still
+            // holds the previous set here and is overwritten below.
+            projects = mergedProjects(conversationCwds: threads.compactMap { $0.cwd })
         }
         let projectByPath = Dictionary(uniqueKeysWithValues: projects.map { ($0.path, $0) })
         let pinIds = pinsRepo.orderedThreadIds()
@@ -214,14 +216,19 @@ extension AppState {
 
         let oldByThread = chatByThreadId(chats)
         let oldArchivedByThread = chatByThreadId(archivedChats)
+        let activeLocalSnapshots = chatStore.activeSnapshots.filter(shouldPreserveThreadlessLocalSnapshot)
 
         let sorted = boundedThreads.sorted { $0.updatedAt > $1.updatedAt }
         let selectedSnapshotChat: Chat?
         if case let .chat(id) = currentRoute,
-           let selected = chat(byId: id),
-           let threadId = selected.clawixThreadId,
-           !sorted.contains(where: { $0.id.caseInsensitiveCompare(threadId) == .orderedSame }) {
-            selectedSnapshotChat = selected
+           let selected = chat(byId: id) {
+            if let threadId = selected.clawixThreadId {
+                selectedSnapshotChat = sorted.contains(where: { $0.id.caseInsensitiveCompare(threadId) == .orderedSame })
+                    ? nil
+                    : selected
+            } else {
+                selectedSnapshotChat = shouldPreserveThreadlessLocalSnapshot(selected) ? selected : nil
+            }
         } else {
             selectedSnapshotChat = nil
         }
@@ -239,6 +246,9 @@ extension AppState {
             } else {
                 nextChats.append(chat)
             }
+        }
+        for local in activeLocalSnapshots.reversed() where !nextChats.contains(where: { $0.id == local.id }) {
+            nextChats.insert(local, at: 0)
         }
         if let selectedSnapshotChat {
             if selectedSnapshotChat.isArchived {
@@ -273,7 +283,11 @@ extension AppState {
     /// don't wipe chats from other projects already in memory.
     func mergeThreads(_ threads: [AgentThreadSummary]) {
         if !clawJSSessionsCanonicalActive {
-            projects = mergedProjects()
+            // Additive merge: keep folders for already-loaded chats and add
+            // any new ones from this payload.
+            projects = mergedProjects(
+                conversationCwds: chats.compactMap { $0.cwd } + threads.compactMap { $0.cwd }
+            )
         }
         let projectByPath = Dictionary(uniqueKeysWithValues: projects.map { ($0.path, $0) })
         let pinIds = pinsRepo.orderedThreadIds()
