@@ -17,6 +17,7 @@ use tokio_tungstenite::tungstenite::Message;
 use tracing::{debug, info, warn};
 
 const BRIDGE_SCHEMA_VERSION: u8 = 1;
+const DEFAULT_PORT: u16 = crate::bridge_endpoint::DEFAULT_BRIDGE_PORT;
 const RECONNECT_BACKOFF_MS: u64 = 1500;
 const FRAME_BATCH_WINDOW_MS: u64 = 16;
 
@@ -311,7 +312,7 @@ impl DaemonClient {
         let qr_json = serde_json::json!({
             "v": BRIDGE_SCHEMA_VERSION,
             "host": pairing_host(),
-            "port": crate::bridge_endpoint::DEFAULT_BRIDGE_PORT,
+            "port": DEFAULT_PORT,
             "token": &token,
             "shortCode": &short_code,
         })
