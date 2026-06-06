@@ -335,6 +335,102 @@
       "steward": "framework"
     },
     {
+      "id": "composerExperiments",
+      "featureFlag": "composerExperiments",
+      "status": "stable",
+      "humanSurface": "Clawix composer experimental affordances gated by feature visibility",
+      "programmaticSurface": "Host composer feature gate and attachment/message draft APIs",
+      "storageOwner": "host-ui-state-plus-framework-message-contract",
+      "validation": "Composer visibility tests and bridge message fixture parity",
+      "surfaceNarrative": {
+        "concept": "Composer Experiments covers opt-in composer affordances that are visible only when the feature gate allows them.",
+        "authorizingDecision": {
+          "ref": "Interface matrix composer experiments row",
+          "path": "docs/interface-matrix.md"
+        },
+        "completingSurface": {
+          "human": "Composer experimental controls and affordances inside the chat composer.",
+          "programmatic": "Host composer feature visibility plus attachment and message draft APIs."
+        },
+        "nonInference": "This surface does not promote experimental composer behavior to default visibility or change the framework message contract without its own route decision."
+      },
+      "resourceContract": {
+        "startup": "Composer experiment state is read with the composer and does not start background work on launch.",
+        "idle": "Idle state keeps only feature visibility and draft UI state; no timer, poller, or worker is owned here.",
+        "memory": "State is bounded to the active composer draft and small feature metadata.",
+        "streaming": "Message streaming remains owned by the chat/message pipeline, not this feature gate.",
+        "storage": "Draft state remains host UI state while durable message data follows the framework message contract.",
+        "hotPath": "Composer rendering reads the feature flag and avoids heavy derivation in the body.",
+        "scale": "Designed for a small set of composer controls; larger experiment catalogs require a separate paged registry.",
+        "validation": "node scripts/surface_narrative_guard.mjs, node scripts/surface_resource_contract_guard.mjs, and composer visibility tests"
+      },
+      "steward": "host"
+    },
+    {
+      "id": "tools",
+      "featureFlag": "tools",
+      "status": "stable",
+      "humanSurface": "Clawix tool timeline groups, command palette entries and tool-gated menus",
+      "programmaticSurface": "Bridge V1 timeline tool entries plus host command/action policy",
+      "storageOwner": "framework-message-contract-plus-host-policy",
+      "validation": "Bridge V1 tool timeline fixtures and feature visibility checks",
+      "surfaceNarrative": {
+        "concept": "Tools covers the human rendering and controls for tool timeline groups while the underlying work items remain framework/bridge records.",
+        "authorizingDecision": {
+          "ref": "Interface matrix tools row",
+          "path": "docs/interface-matrix.md"
+        },
+        "completingSurface": {
+          "human": "Tool timeline groups, tool-gated command palette entries and sidebar/menu affordances.",
+          "programmatic": "Bridge V1 timeline tool entries plus host command/action policy."
+        },
+        "nonInference": "This surface does not make Clawix the steward of tool execution semantics or bypass host approval policy for sensitive actions."
+      },
+      "resourceContract": {
+        "startup": "Tool UI does not execute tools on launch; it renders existing timeline metadata when a message is visible.",
+        "idle": "Idle state retains bounded presentation state and no polling or execution worker.",
+        "memory": "Tool groups are bounded by visible message/timeline presentation and bridge fixture contracts.",
+        "streaming": "Streaming tool updates flow through the existing message stream with coalesced presentation updates.",
+        "storage": "Durable tool records remain in framework session/message storage; host policy stores only approval settings.",
+        "hotPath": "Visible tool row rendering consumes precomputed presentation models.",
+        "scale": "Designed for visible timeline groups; large histories require transcript windowing before rendering.",
+        "validation": "Bridge V1 tool timeline fixtures, node scripts/surface_narrative_guard.mjs, and node scripts/surface_resource_contract_guard.mjs"
+      },
+      "steward": "framework+host"
+    },
+    {
+      "id": "networkControl",
+      "featureFlag": "networkControl",
+      "status": "stable",
+      "humanSurface": "Clawix Network control route, sidebar entry and MCP/network commands",
+      "programmaticSurface": "Framework network/connector routes plus host visibility gate",
+      "storageOwner": "framework-connector-state-plus-host-policy",
+      "validation": "Surface route registry checks and feature-gated sidebar/command tests",
+      "surfaceNarrative": {
+        "concept": "Network Control exposes connector/network status and commands through a gated Clawix route while connector state remains framework-owned.",
+        "authorizingDecision": {
+          "ref": "Interface matrix network control row",
+          "path": "docs/interface-matrix.md"
+        },
+        "completingSurface": {
+          "human": "Network control route, sidebar entry and MCP/network command affordances.",
+          "programmatic": "Framework network and connector routes consumed through host visibility gates."
+        },
+        "nonInference": "This surface does not move connector state into Clawix or enable network actions without the framework route and host policy."
+      },
+      "resourceContract": {
+        "startup": "Network Control is route-demanded and does not start connector work while hidden.",
+        "idle": "Idle state keeps only feature visibility and last visible route status; background connector work must declare its own inventory.",
+        "memory": "Rendered state is bounded to the visible connector/network summary.",
+        "streaming": "Connector updates must use route-owned bounded streams or snapshots.",
+        "storage": "Connector state remains framework-owned with host policy references for sensitive actions.",
+        "hotPath": "Sidebar and command visibility checks are simple feature-flag reads.",
+        "scale": "Designed for visible connector summaries; large connector sets require search or pagination.",
+        "validation": "Surface route registry checks, node scripts/surface_narrative_guard.mjs, and node scripts/surface_resource_contract_guard.mjs"
+      },
+      "steward": "framework+host"
+    },
+    {
       "id": "database",
       "featureFlag": "database",
       "status": "stable",

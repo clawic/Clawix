@@ -10,8 +10,8 @@
       "expires": "2026-08-18",
       "missingResourceContract": {
         "persistentNodes": {
-          "count": 529,
-          "idsSha256": "ab2e99a30617869708084c8cc4afb4fff57dd20db9f412504b4bdde26ac1466e",
+          "count": 525,
+          "idsSha256": "6cab0bf01437ab88d3262c721bf4a7833efcfc25cfa0e0f841c9b13e877322ba",
           "ids": [
             "claw.framework.agents",
             "claw.framework.apps",
@@ -306,7 +306,6 @@
             "clawix.prefs.browser.historyApproval",
             "clawix.prefs.browser.websiteApproval",
             "clawix.prefs.clawjs.advancedExpanded",
-            "clawix.prefs.composer.attempts",
             "clawix.prefs.computerUse.alwaysAllowedApps",
             "clawix.prefs.computerUse.anyAppEnabled",
             "clawix.prefs.computerUse.lockedUseEnabled",
@@ -400,9 +399,6 @@
             "clawix.prefs.feed.displayMode",
             "clawix.prefs.git.commitInstructions",
             "clawix.prefs.goals.active",
-            "clawix.prefs.home.ambientDismissed",
-            "clawix.prefs.home.role",
-            "clawix.prefs.home.roleDismissed",
             "clawix.prefs.hostPolicy.macControl.approval",
             "clawix.prefs.hostPolicy.macUtilities.approval",
             "clawix.prefs.hostPolicy.screenTools.approval",
@@ -606,9 +602,9 @@
         "budget": {
           "metric": "missing_surface_resource_contract",
           "unit": "entry",
-          "current": 569,
-          "maxAllowed": 569,
-          "nextMaxAllowed": 568,
+          "current": 565,
+          "maxAllowed": 565,
+          "nextMaxAllowed": 564,
           "target": 0,
           "cadence": "expiry"
         },

@@ -9,8 +9,8 @@
       "reason": "Swift manifest export currently lacks source locator metadata for generated nodes, edges, and routes.",
       "missingSource": {
         "nodes": {
-          "count": 522,
-          "idsSha256": "bbde56ae5b284c8682327ac61921d457eeab76e9056c4d75dc26df06b062081b",
+          "count": 518,
+          "idsSha256": "e9f2e6d9a4f15741bccbb8ef4e3a7b025855fbdc126ff0eb6d1054fcc7744870",
           "ids": [
             "claw.framework.agents",
             "claw.framework.apps",
@@ -305,7 +305,6 @@
             "clawix.prefs.browser.historyApproval",
             "clawix.prefs.browser.websiteApproval",
             "clawix.prefs.clawjs.advancedExpanded",
-            "clawix.prefs.composer.attempts",
             "clawix.prefs.computerUse.alwaysAllowedApps",
             "clawix.prefs.computerUse.anyAppEnabled",
             "clawix.prefs.computerUse.lockedUseEnabled",
@@ -399,9 +398,6 @@
             "clawix.prefs.feed.displayMode",
             "clawix.prefs.git.commitInstructions",
             "clawix.prefs.goals.active",
-            "clawix.prefs.home.ambientDismissed",
-            "clawix.prefs.home.role",
-            "clawix.prefs.home.roleDismissed",
             "clawix.prefs.hostPolicy.macControl.approval",
             "clawix.prefs.hostPolicy.macUtilities.approval",
             "clawix.prefs.hostPolicy.screenTools.approval",
@@ -565,9 +561,9 @@
         "budget": {
           "metric": "missing_surface_evidence",
           "unit": "entry",
-          "current": 486,
-          "maxAllowed": 486,
-          "nextMaxAllowed": 485,
+          "current": 482,
+          "maxAllowed": 482,
+          "nextMaxAllowed": 481,
           "target": 0,
           "cadence": "expiry"
         },
