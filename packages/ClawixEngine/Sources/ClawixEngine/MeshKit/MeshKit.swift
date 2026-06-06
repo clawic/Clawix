@@ -45,13 +45,14 @@ public protocol MeshNode: AnyObject {
 
 public enum MeshKit {
     public static func makeNode(relayURL: URL? = nil) async throws -> MeshNode {
-        if let factory = MeshNodeFactoryRegistry.factory {
+        if let factory = await MeshNodeFactoryRegistry.currentFactory() {
             return try await factory(relayURL)
         }
         return StubMeshNode(relayURL: relayURL)
     }
 }
 
+@MainActor
 public enum MeshNodeFactoryRegistry {
     public typealias Factory = (URL?) async throws -> MeshNode
     fileprivate static var factory: Factory?
@@ -62,6 +63,10 @@ public enum MeshNodeFactoryRegistry {
 
     public static func clear() {
         Self.factory = nil
+    }
+
+    fileprivate static func currentFactory() -> Factory? {
+        factory
     }
 }
 
