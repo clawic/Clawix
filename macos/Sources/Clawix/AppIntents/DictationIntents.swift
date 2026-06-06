@@ -13,13 +13,13 @@ import AppKit
 
 @available(macOS 13.0, *)
 struct ToggleDictationIntent: AppIntent {
-    static var title: LocalizedStringResource = "Toggle dictation"
-    static var description = IntentDescription(
+    static let title: LocalizedStringResource = "Toggle dictation"
+    static let description = IntentDescription(
         "Start dictation if idle; stop dictation and paste the transcript if recording."
     )
     /// `openAppWhenRun` keeps Clawix backgrounded; the dictation
     /// pipeline doesn't need a foreground window.
-    static var openAppWhenRun: Bool = false
+    static let openAppWhenRun: Bool = false
 
     @MainActor
     func perform() async throws -> some IntentResult {
@@ -30,11 +30,11 @@ struct ToggleDictationIntent: AppIntent {
 
 @available(macOS 13.0, *)
 struct CancelDictationIntent: AppIntent {
-    static var title: LocalizedStringResource = "Cancel dictation"
-    static var description = IntentDescription(
+    static let title: LocalizedStringResource = "Cancel dictation"
+    static let description = IntentDescription(
         "Abandon the current dictation session without pasting."
     )
-    static var openAppWhenRun: Bool = false
+    static let openAppWhenRun: Bool = false
 
     @MainActor
     func perform() async throws -> some IntentResult {
@@ -45,11 +45,11 @@ struct CancelDictationIntent: AppIntent {
 
 @available(macOS 13.0, *)
 struct PasteLastTranscriptionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Paste last transcription"
-    static var description = IntentDescription(
+    static let title: LocalizedStringResource = "Paste last transcription"
+    static let description = IntentDescription(
         "Re-paste the most recent dictation transcript at the cursor."
     )
-    static var openAppWhenRun: Bool = false
+    static let openAppWhenRun: Bool = false
 
     @MainActor
     func perform() async throws -> some IntentResult {
@@ -60,11 +60,11 @@ struct PasteLastTranscriptionIntent: AppIntent {
 
 @available(macOS 13.0, *)
 struct RetryLastTranscriptionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Retry last transcription"
-    static var description = IntentDescription(
+    static let title: LocalizedStringResource = "Retry last transcription"
+    static let description = IntentDescription(
         "Re-run transcription on the previous audio with the currently active model."
     )
-    static var openAppWhenRun: Bool = false
+    static let openAppWhenRun: Bool = false
 
     @MainActor
     func perform() async throws -> some IntentResult {
@@ -88,11 +88,11 @@ enum ClawixIntentNotifications {
 
 @available(macOS 13.0, *)
 struct NewChatIntent: AppIntent {
-    static var title: LocalizedStringResource = "New chat in Clawix"
-    static var description = IntentDescription(
+    static let title: LocalizedStringResource = "New chat in Clawix"
+    static let description = IntentDescription(
         "Open Clawix and start a fresh chat ready for input."
     )
-    static var openAppWhenRun: Bool = true
+    static let openAppWhenRun: Bool = true
 
     @MainActor
     func perform() async throws -> some IntentResult {
@@ -107,11 +107,11 @@ struct NewChatIntent: AppIntent {
 
 @available(macOS 13.0, *)
 struct SendMessageIntent: AppIntent {
-    static var title: LocalizedStringResource = "Send prompt to Clawix"
-    static var description = IntentDescription(
+    static let title: LocalizedStringResource = "Send prompt to Clawix"
+    static let description = IntentDescription(
         "Submit the given text as a new chat prompt."
     )
-    static var openAppWhenRun: Bool = true
+    static let openAppWhenRun: Bool = true
 
     @Parameter(title: "Prompt", description: "What to send to Clawix.")
     var prompt: String

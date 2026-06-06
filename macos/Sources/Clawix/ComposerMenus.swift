@@ -4,35 +4,35 @@ import AppKit
 // MARK: - Anchor keys
 
 struct PlusButtonAnchorKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
+    static let defaultValue: Anchor<CGRect>? = nil
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
         value = value ?? nextValue()
     }
 }
 
 struct ModelButtonAnchorKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
+    static let defaultValue: Anchor<CGRect>? = nil
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
         value = value ?? nextValue()
     }
 }
 
 struct PermissionsButtonAnchorKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
+    static let defaultValue: Anchor<CGRect>? = nil
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
         value = value ?? nextValue()
     }
 }
 
 struct ProjectPickerAnchorKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
+    static let defaultValue: Anchor<CGRect>? = nil
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
         value = value ?? nextValue()
     }
 }
 
 struct ContextIndicatorAnchorKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
+    static let defaultValue: Anchor<CGRect>? = nil
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
         value = value ?? nextValue()
     }
@@ -384,7 +384,7 @@ enum ModelSubmenu { case none, model, otherModels, speed }
 enum ModelChevronRow: Hashable { case gpt, velocidad, otrosModelos }
 
 struct ModelChevronAnchorsKey: PreferenceKey {
-    static var defaultValue: [ModelChevronRow: Anchor<CGRect>] = [:]
+    static let defaultValue: [ModelChevronRow: Anchor<CGRect>] = [:]
     static func reduce(value: inout [ModelChevronRow: Anchor<CGRect>],
                        nextValue: () -> [ModelChevronRow: Anchor<CGRect>]) {
         value.merge(nextValue()) { _, new in new }
@@ -397,7 +397,7 @@ struct ModelChevronAnchorsKey: PreferenceKey {
 /// hit area so clicks on submenu rows propagate to SwiftUI buttons
 /// instead of being swallowed as outside-clicks.
 struct PopupFramesPref: PreferenceKey {
-    static var defaultValue: [CGRect] = []
+    static let defaultValue: [CGRect] = []
     static func reduce(value: inout [CGRect], nextValue: () -> [CGRect]) {
         value.append(contentsOf: nextValue())
     }

@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct OrganizeMenuAnchorKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
+    static let defaultValue: Anchor<CGRect>? = nil
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
         value = value ?? nextValue()
     }
@@ -13,7 +13,7 @@ enum OrganizeSubmenu { case none, byProject }
 enum OrganizeChevronRow: Hashable { case byProject }
 
 struct OrganizeChevronAnchorsKey: PreferenceKey {
-    static var defaultValue: [OrganizeChevronRow: Anchor<CGRect>] = [:]
+    static let defaultValue: [OrganizeChevronRow: Anchor<CGRect>] = [:]
     static func reduce(value: inout [OrganizeChevronRow: Anchor<CGRect>],
                        nextValue: () -> [OrganizeChevronRow: Anchor<CGRect>]) {
         value.merge(nextValue()) { _, new in new }

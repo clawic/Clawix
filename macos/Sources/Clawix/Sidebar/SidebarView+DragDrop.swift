@@ -635,7 +635,7 @@ struct WindowDragArea: NSViewRepresentable {
 }
 
 struct PinnedRowFrameKey: PreferenceKey {
-    static var defaultValue: [UUID: CGRect] = [:]
+    static let defaultValue: [UUID: CGRect] = [:]
     static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { $1 })
     }
@@ -813,7 +813,7 @@ struct ProjectDragChipView: View {
 }
 
 struct ProjectRowFrameKey: PreferenceKey {
-    static var defaultValue: [UUID: CGRect] = [:]
+    static let defaultValue: [UUID: CGRect] = [:]
     static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { $1 })
     }

@@ -227,7 +227,7 @@ struct SettingsDropdown<T: Hashable>: View {
 }
 
 struct SettingsDropdownOpenKey: PreferenceKey {
-    static var defaultValue: Bool = false
+    static let defaultValue: Bool = false
     static func reduce(value: inout Bool, nextValue: () -> Bool) {
         value = value || nextValue()
     }
@@ -268,7 +268,7 @@ struct SettingsRow<Leading: View, Trailing: View>: View {
 }
 
 struct SettingsDropdownAnchorKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
+    static let defaultValue: Anchor<CGRect>? = nil
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
         value = value ?? nextValue()
     }

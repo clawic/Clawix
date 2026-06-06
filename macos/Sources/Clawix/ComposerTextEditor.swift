@@ -280,7 +280,7 @@ final class ComposerCursorRectsBridge {
 }
 
 struct ComposerPopupRectsKey: PreferenceKey {
-    static var defaultValue: [CGRect] = []
+    static let defaultValue: [CGRect] = []
     static func reduce(value: inout [CGRect], nextValue: () -> [CGRect]) {
         value.append(contentsOf: nextValue())
     }
